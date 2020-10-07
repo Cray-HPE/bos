@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker build . -t bos-testing --target testing
+docker run --rm -v $PWD/results:/results bos-testing

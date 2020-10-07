@@ -1,0 +1,10 @@
+# Copyright 2019, Cray Inc. All Rights Reserved.
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boa-job-template
+  namespace: services
+data:
+  boa_job_create.yaml.j2: |
+    {{- .Files.Get "files/boa-job-create.yaml.j2" | nindent 4 }}

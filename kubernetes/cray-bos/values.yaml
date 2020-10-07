@@ -1,0 +1,115 @@
+# Please refer to https://stash.us.cray.com/projects/CLOUD/repos/cray-charts/browse/stable/cray-service/values.yaml?at=refs%2Fheads%2Fmaster
+# for more info on values you can set/override
+# Note that cray-service.containers[*].image and cray-service.initContainers[*].image map values are one of the only structures that
+# differ from the standard kubernetes container spec:
+# image:
+#   repository: ""
+#   tag: "" (default = "latest")
+#   pullPolicy: "" (default = "IfNotPresent")
+
+boa_image:
+  repository: cray/cray-boa
+  tag: IMAGE_CRAY_BOA_TAG
+
+cray-service:
+  type: Deployment
+  nameOverride: cray-bos
+  serviceAccountName: bos-service-launch-job
+  containers:
+    - name: cray-bos
+      image:
+        repository: cray/cray-bos
+      ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+      env:
+      - name: CA_CERT
+        value: /mnt/ca-vol/certificate_authority.crt
+      - name: SERVICE_NAME
+        value: bos
+      - name: PROXY_PATH
+        value: /apis/bos
+      - name: BOS_BOA_IMAGE
+        valueFrom:
+          configMapKeyRef:
+            name: boa-config
+            key: boa_image
+      - name: S3_CREDENTIALS
+        value: "bos-s3-credentials"
+      - name: S3_PROTOCOL
+        value: "https"
+      - name: S3_GATEWAY
+        value: "rgw-vip"
+      # Default confguration for the number of retries is
+      # 30 minutes (5s x 360 ~ 1800s or 30 minutes).
+      # This value is placed in the boa-job-template config map.
+      - name: NODE_STATE_CHECK_NUMBER_OF_RETRIES
+        value: "360"
+      # Time in seconds to wait before declaring a graceful shutdown a failure.
+      - name: GRACEFUL_SHUTDOWN_TIMEOUT
+        value: "300"
+      # Time in seconds to wait before declaring a forceful shutdown a failure.
+      - name: FORCEFUL_SHUTDOWN_TIMEOUT
+        value: "180"
+      # Time in seconds to wait before initially querying the component for its status.
+      # This gives the component time to 'settle'.
+      - name: GRACEFUL_SHUTDOWN_PREWAIT
+        value: "20"
+      # Time in seconds to wait before re-checking the power status.
+      - name: POWER_STATUS_FREQUENCY
+        value: "10"
+      volumeMounts:
+      - name: ca-vol
+        mountPath: /mnt/ca-vol
+      - name:  job-template
+        mountPath: /mnt/bos/job_templates/
+      livenessProbe:
+        httpGet:
+          path: /v1/version
+          port: 80
+        initialDelaySeconds: 10
+        periodSeconds: 60
+        timeoutSeconds: 10
+        failureThreshold: 5
+      readinessProbe:
+        httpGet:
+          path: /v1/healthz
+          port: 80
+        periodSeconds: 20
+        timeoutSeconds: 10
+        failureThreshold: 30
+        # Note: This allows for a maximum of 10 minutes
+        # for the service to become initially ready. This
+        # allows for the required etcd instance to be up
+        # before we report initial readiness. The /v1/healthz
+        # endpoint requires a healthy db connection.
+  volumes:  
+  - name: ca-vol
+    configMap:
+      name: cray-configmap-ca-public-key
+  - name: job-template
+    configMap:
+      name: boa-job-template
+  ingress:
+    ui: false
+    enabled: true
+    prefix: /apis/bos
+    uri: /
+  etcdCluster:
+    enabled: true
+    pvc:
+      storage: 8Gi
+    compactionMode: revision
+    compactionRetention: "100000"
+    snapshotMax: "1"
+    snapshotCount: "5000000"
+    heartbeatInterval: "4200"
+    enforceAntiAffinity: "21000"
+    resources:
+      limits:
+        cpu:     4
+        memory:  8Gi
+      requests:
+        cpu: 10m
+        memory: 64Mi

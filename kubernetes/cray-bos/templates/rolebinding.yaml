@@ -1,0 +1,26 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cray-bos
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cray-bos
+subjects:
+  - kind: ServiceAccount
+    name: cray-bos
+    namespace: services
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: bos-service-launch-job
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: bos-service-launch-job
+subjects:
+  - kind: ServiceAccount
+    name: bos-service-launch-job
+    namespace: services
