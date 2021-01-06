@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2020, Cray Inc.
+# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 
 import copy
 import datetime
@@ -19,7 +19,7 @@ os.environ["ETCD_HOST"] = 'localhost'
 os.environ["ETCD_PORT"] = '2379'
 
 from bos.controllers.v1.status import InvalidCategory, BadPhase, BootSetDoesNotExist  # noqa: E402
-from bos.controllers.v1.status import Session, BootSet, Metadata, get_v1_session_status  # noqa: E402
+from bos.controllers.v1.status import SessionStatus, BootSet, Metadata, get_v1_session_status  # noqa: E402
 from bos.controllers.v1.status import update_v1_session_status_by_bootset  # noqa: E402
 from bos.controllers.v1.status import create_v1_boot_set_status  # noqa: E402
 from bos.controllers.v1.status import get_v1_session_status_by_bootset  # noqa: E402
@@ -421,7 +421,7 @@ class TestAPIEndpoints(object):
         _compare_bootset(bs, bs_comp)
         BootSet.delete(session_id, boot_set_name)
 
-    def testUpdateV1SessionStatusByBootSetNodeChangeList(self, monkeypatch):
+    def testUpdateV1SessionStatusStatusByBootSetNodeChangeList(self, monkeypatch):
 
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
         monkeypatch.setattr(connexion, "request", MockResponseBootSetCreation)
@@ -444,7 +444,7 @@ class TestAPIEndpoints(object):
         _compare_bootset(bs, bs_comp)
         BootSet.delete(session_id, boot_set_name)
 
-    def testUpdateV1SessionStatusByBootSetNodeErrorsList(self, monkeypatch):
+    def testUpdateV1SessionStatusStatusByBootSetNodeErrorsList(self, monkeypatch):
 
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
         monkeypatch.setattr(connexion, "request", MockResponseBootSetCreation)
@@ -468,7 +468,7 @@ class TestAPIEndpoints(object):
         _compare_bootset(bs, bs_comp)
         BootSet.delete(session_id, boot_set_name)
 
-    def testUpdateV1SessionStatusByBootSetGenericMetadata(self, monkeypatch):
+    def testUpdateV1SessionStatusStatusByBootSetGenericMetadata(self, monkeypatch):
 
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
         monkeypatch.setattr(connexion, "request", MockResponseBootSetCreation)
@@ -495,7 +495,7 @@ class TestAPIEndpoints(object):
         assert phase.metadata.stop_time == phase_comp.metadata.stop_time
         BootSet.delete(session_id, boot_set_name)
 
-    def testGetV1SessionStatusByBootSet(self, monkeypatch):
+    def testGetV1SessionStatusStatusByBootSet(self, monkeypatch):
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
         monkeypatch.setattr(connexion, "request", MockResponseBootSetCreation)
         session_id = "session-123"
@@ -514,7 +514,7 @@ class TestAPIEndpoints(object):
         assert status == 201
         BootSet.delete(session_id, boot_set_name)
 
-    def testGetV1SessionStatusByBootSetAndPhase(self, monkeypatch):
+    def testGetV1SessionStatusStatusByBootSetAndPhase(self, monkeypatch):
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
         monkeypatch.setattr(connexion, "request", MockResponseBootSetCreation)
         session_id = "session-123"
@@ -535,7 +535,7 @@ class TestAPIEndpoints(object):
             _compare_phases(current_phase, bs_comp.get_phase(phase))
         BootSet.delete(session_id, boot_set_name)
 
-    def testGetV1SessionStatusByBootSetAndPhaseAndCategory(self, monkeypatch):
+    def testGetV1SessionStatusStatusByBootSetAndPhaseAndCategory(self, monkeypatch):
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
         monkeypatch.setattr(connexion, "request", MockResponseBootSetCreation)
         session_id = "session-123"
@@ -561,7 +561,7 @@ class TestAPIEndpoints(object):
                 _compare_categories(current_category, category_comp)
         BootSet.delete(session_id, boot_set_name)
 
-    def testCreateV1SessionStatus(self, monkeypatch):
+    def testCreateV1SessionStatusStatus(self, monkeypatch):
 
         session_id = "session-123"
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
@@ -580,15 +580,15 @@ class TestAPIEndpoints(object):
         # That is why it must be converted.
         feeder_dict = {'boot_sets': boot_sets, 'id': session_id,
                        'metadata': _convert_metadata(session.metadata)}
-        session_from_dict = Session.from_dict(feeder_dict)
-        session_from_params = Session(boot_sets=boot_sets, metadata=session.metadata)
+        session_from_dict = SessionStatus.from_dict(feeder_dict)
+        session_from_params = SessionStatus(boot_sets=boot_sets, metadata=session.metadata)
         session_from_params.id = session_id
 
         _compare_session(session, session_from_dict)
         _compare_session(session, session_from_params)
-        Session.delete(session_id)
+        SessionStatus.delete(session_id)
 
-    def testGetV1SessionStatus(self, monkeypatch):
+    def testGetV1SessionStatusStatus(self, monkeypatch):
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
         monkeypatch.setattr(connexion, "request", MockResponse2)
         session_id = "session-123"
@@ -596,16 +596,16 @@ class TestAPIEndpoints(object):
         session, _status = get_v1_session_status(session_id)
         # TODO Find a way to pass in these parameters
         boot_sets = ['boot_set1', 'boot_set2', 'boot_set3']
-        session_comp = Session(boot_sets=boot_sets, metadata=session.metadata, id=session_id)
+        session_comp = SessionStatus(boot_sets=boot_sets, metadata=session.metadata, id=session_id)
 
         _compare_session(session, session_comp)
-        Session.delete(session_id)
+        SessionStatus.delete(session_id)
 
-    def testUpdateV1SessionStatus(self, monkeypatch):
+    def testUpdateV1SessionStatusStatus(self, monkeypatch):
         monkeypatch.setattr("flask.helpers.url_for", self.mockresponse)
 
         session_id = "session-123"
-        # Create Session Status
+        # Create SessionStatus Status
         monkeypatch.setattr(connexion, "request", MockResponse2)
         session, _status = create_v1_session_status(session_id)
         # TODO Find a way to pass in these parameters
@@ -617,13 +617,13 @@ class TestAPIEndpoints(object):
                        'metadata': _convert_metadata(session.metadata)}
         feeder_dict['metadata']['start_time'] = '1:00'
         feeder_dict['metadata']['stop_time'] = '2:00'
-        session_from_dict = Session.from_dict(feeder_dict)
+        session_from_dict = SessionStatus.from_dict(feeder_dict)
 
-        # Update Session's Status with start_time and stop_time
+        # Update SessionStatus's Status with start_time and stop_time
         monkeypatch.setattr(connexion, "request", MockResponse5)
         session, status = update_v1_session_status(session_id)
 
         assert status == 200
         _compare_session(session, session_from_dict)
 
-        Session.delete(session_id)
+        SessionStatus.delete(session_id)
