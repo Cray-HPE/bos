@@ -1,0 +1,11 @@
+
+@Library('dst-shared@release/shasta-1.4') _
+rpmBuild(
+    specfile: "bos-crayctldeploy.spec",
+    timeout: 5,
+    channel: "casmcms-builds",
+    slack_notify: ['BEGIN', 'FAILURE', 'SUCCESS'],
+    product: "csm",
+    fanout_params: ["sle15sp1"],
+    target_node: "ncn"
+)

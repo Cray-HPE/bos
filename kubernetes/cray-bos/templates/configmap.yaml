@@ -1,0 +1,9 @@
+{{- $baseChartValues := index .Values "cray-service" -}}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: boa-config
+  namespace: services
+data:
+  boa_image: "{{ $baseChartValues.imagesHost }}/{{ .Values.boa_image.repository }}:{{ .Values.boa_image.tag }}"
