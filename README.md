@@ -116,39 +116,8 @@ $ ./run_codestylecheck
 ```
 
 ### CT Tests
-CT tests can be found in /ct-tests
 
-On a physical system, CMS tests can be found in /opt/cray/tests/crayctl-stage{NUMBER}/cms
-Please see https://connect.us.cray.com/confluence/display/DST/Stage+Tests+Guidelines for more details.
-
-example: run CT test for BOS at crayctl stage 4
-```
-# /opt/cray/tests/crayctl-stage4/cms/bos_stage4_ct_tests.sh 
-or
-# cmsdev test bos --ct
-```
-
-### Smoke Tests
-Smoke tests can be ran on a system via the cmsdev tool.
-https://stash.us.cray.com/projects/SCMS/repos/cms-tools/browse/cmsdev
-
-example: run smoke tests. smoke test execution includes running CT tests
-```
-# cmsdev test bos --smoke --verbose
-```
-### API Tests
-API tests can also be run with the cmsdev tool.
-
-example: run BOS API sessions endpoint tests
-```
-# cmsdev test bos --api sessions -v
-```
-In addition to connectivity tests, cmsdev currently can target post, session, sessiontemplate, and version tests
-
-example: run all BOS API tests
-```
-# cmsdev test bos --api -v
-```
+See cms-tools repo for details on running CT tests for this service.
 
 #### Run API tests with docker
 
