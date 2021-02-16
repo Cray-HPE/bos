@@ -1,5 +1,5 @@
 # Cray-provided controllers for the Boot Orchestration Service
-# Copyright 2019-2020, Cray Inc. All Rights Reserved.
+# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 
 import connexion
 import pickle
@@ -16,7 +16,7 @@ from kubernetes.config.config_exception import ConfigException
 from kubernetes.client.rest import ApiException
 
 from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplate
-from bos.controllers.v1.status import BootSetDoesNotExist
+from bos.controllers.v1.status import BootSetDoesNotExist, create_v1_session_status
 from bos.dbclient import BosEtcdClient, DB_HOST, DB_PORT
 from bos.models.session import Session  # noqa: E501
 
@@ -26,9 +26,7 @@ BASEKEY = "/session"
 
 def create_v1_session():  # noqa: E501
     """POST /v1/session
-
     Creates a new boot session. # noqa: E501
-
     :param session: A JSON object for creating sessions
     :type session: dict | bytes
 
@@ -41,10 +39,8 @@ def create_v1_session():  # noqa: E501
         session = Session.from_dict(connexion.request.get_json())  # noqa: E501
     else:
         return "Post must be in JSON format", 400
-
     LOGGER.debug("Template UUID: %s operation: %s", session.template_uuid,
                  session.operation)
-
     # Check that the sessionTemplate ID exists.
     session_template_response = get_v1_sessiontemplate(session.template_uuid)
     if isinstance(session_template_response, ConnexionResponse):
@@ -53,7 +49,6 @@ def create_v1_session():  # noqa: E501
         return msg, 404
     else:
         session_template, _ = session_template_response
-
     # Validate health/validity of the sessiontemplate before creating a session
     boot_sets = session_template['boot_sets']
     if not boot_sets:
@@ -70,18 +65,15 @@ def create_v1_session():  # noqa: E501
                 % (session.template_uuid, bs_name,
                    ', '.join(sorted(hardware_specifier_fields)))
             return msg, 400
-
     # Handle empty limit so that the environment var is not set to "None"
     if not session.limit:
         session.limit = ''
-
     # Kubernetes set-up
     # Get the Kubernetes configuration
     try:
         config.load_incluster_config()
     except ConfigException:  # pragma: no cover
         config.load_kube_config()  # Development
-
     # Create API endpoint instance and API resource instances
     k8s_client = client.ApiClient()
     try:
@@ -89,11 +81,9 @@ def create_v1_session():  # noqa: E501
     except ApiException as err:
         LOGGER.error("Exception when calling CoreV1API to create an API instance: %s\n", err)
         raise
-
     # Create the configMap for the BOA
     json_data = {'data.json': json.dumps(session_template)}
     namespace = os.getenv("NAMESPACE", 'services')
-
     # Determine the session ID and BOA K8s job name
     session_id, boa_job_name = _get_boa_naming_for_session()
     LOGGER.debug("session_id: %s", session_id)
@@ -106,12 +96,10 @@ def create_v1_session():  # noqa: E501
         LOGGER.error("Exception when calling CoreV1API to create a configMap: %s\n", err)
         raise
     LOGGER.debug("ConfigMap: %s", api_response)
-
     # Create the BOA master job
     # Fill out the template first with the input parameters
     env = Environment(loader=FileSystemLoader('/mnt/bos/job_templates/'))
     template = env.get_template('boa_job_create.yaml.j2')
-
     try:
         log_level = os.getenv("LOG_LEVEL", "DEBUG")
         bos_boa_image = os.getenv("BOS_BOA_IMAGE")
@@ -123,11 +111,9 @@ def create_v1_session():  # noqa: E501
         forceful_shutdown_timeout = os.getenv("FORCEFUL_SHUTDOWN_TIMEOUT")
         graceful_shutdown_prewait = os.getenv("GRACEFUL_SHUTDOWN_PREWAIT")
         power_status_frequency = os.getenv("POWER_STATUS_FREQUENCY")
-
     except KeyError as error:
         LOGGER.error("Missing information necessary to create session %s", error)
         raise
-
     # Render the job submission template
     rendered_template = template.render(boa_job_name=boa_job_name,
                                         boa_image=bos_boa_image,
@@ -147,18 +133,15 @@ def create_v1_session():  # noqa: E501
                                         graceful_shutdown_prewait=graceful_shutdown_prewait,
                                         power_status_frequency=power_status_frequency)
     LOGGER.debug(rendered_template)
-
     # Write the rendered job template
     ntf = tempfile.NamedTemporaryFile(delete=False).name
     with open(ntf, 'w') as outf:
         outf.write(rendered_template)
-
     try:
         utils.create_from_yaml(k8s_client, ntf)
     except utils.FailToCreateError as err:
         LOGGER.error("Failed to create BOA Job: %s", err)
         raise
-
     with BosEtcdClient() as bec:
         key = "{}/{}/templateUuid".format(BASEKEY, session_id)
         bec.put(key=key, value=session.template_uuid)
@@ -168,7 +151,6 @@ def create_v1_session():  # noqa: E501
         bec.put(key=key, value=boa_job_name)
         key = "{}/{}/status_link".format(BASEKEY, session_id)
         bec.put(key=key, value="/v1/session/{}/status".format(session_id))
-
     return_json_data = {
         "operation": session.operation,
         "templateUuid": session.template_uuid,
@@ -187,10 +169,10 @@ def create_v1_session():  # noqa: E501
             }
         ]
     }
-
     if session.limit:
         return_json_data['limit'] = session.limit
-
+    # Create a Session Status Record whenever we create a session
+    create_v1_session_status(session_id)
     return return_json_data, 201
 
 
@@ -248,7 +230,7 @@ def get_v1_session(session_id):  # noqa: E501
         status_key = "%sstatus" % (key)
         try:
             value, _ = bec.get(status_key)
-        except ValueError:
+        except (ValueError, AttributeError):
             # No status available
             return session, 200
         if not value:

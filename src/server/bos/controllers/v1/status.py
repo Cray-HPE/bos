@@ -1,5 +1,5 @@
 '''
-Copyright 2020 Hewlett Packard Enterprise Development LP
+Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 @author: Jason Sollom
 '''
 import connexion
@@ -9,7 +9,7 @@ import pickle
 import flask
 
 from bos.dbclient import BosEtcdClient
-from bos.models.session_status import SessionStatus
+from bos.models.session_status import SessionStatus as SessionStatusModel
 from bos.models.boot_set_status import BootSetStatus
 from bos.models.node_change_list import NodeChangeList
 from bos.models.node_errors_list import NodeErrorsList
@@ -74,7 +74,6 @@ class Metadata(object):
     Generic metadata
     Start - Time when processing started.
     Stop  - Time when processing ended
-    Complete - processing is complete
     In_Progress - processing is in progress
     error_count - The number of errors encounter; Not finalized until complete is true
     """
@@ -82,17 +81,6 @@ class Metadata(object):
     def __init__(self, start=None):
         self.start_time = start
         self.stop_time = None
-
-    @property
-    def complete(self):
-        """
-        Is the object associated with this Metadata complete?
-        This method is expected to be overridden.
-
-        Returns:
-          True or False  
-        """
-        return False
 
     @property
     def in_progress(self):
@@ -118,6 +106,8 @@ class Metadata(object):
 
 
 class MetadataSession(Metadata):
+    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
+    A_LONG_TIME_AGO = datetime.datetime(year=1970, month=1, day=1)
 
     def __init__(self, session, start=None):
         self.session = session
@@ -151,21 +141,6 @@ class MetadataSession(Metadata):
         return in_progress
 
     @property
-    def complete(self):
-        """
-        The Session is complete when each Boot Set it contains is complete.
-
-        Returns:
-          complete (bool): True if the Session is complete. False if it is not.
-        """
-        complete = True
-        for bs in self.boot_sets:
-            if not bs.metadata.complete:
-                complete = False
-                break
-        return complete
-
-    @property
     def error_count(self):
         """
         The number of nodes that have failed in a Session. This counts all
@@ -175,6 +150,30 @@ class MetadataSession(Metadata):
         for bs in self.boot_sets:
             count += bs.metadata.error_count
         return count
+
+    @property
+    def start_date(self):
+        try:
+            return datetime.datetime(self.metadata.start_time, self.DATETIME_FORMAT)
+        except:  # noqa: E722
+            return self.A_LONG_TIME_AGO
+
+    @property
+    def end_date(self):
+        try:
+            return datetime.datetime(self.metadata.stop_time, self.DATETIME_FORMAT)
+        except:  # noqa: E722
+            return self.A_LONG_TIME_AGO
+
+    @property
+    def complete(self):
+        """
+        We operationally define completion as any session that is started sooner than
+        it has stopped. This means that it is imperative that BOA marks the end time of
+        the session for this logic to make sense. In short, your status records are only
+        as accurate as you can keep them.
+        """
+        return self.start_date > self.end_date
 
 
 class MetadataBootSet(Metadata):
@@ -523,7 +522,7 @@ class BootSet(BootSetStatus):
         return self.phases[phase_index].categories
 
 
-class Session(SessionStatus):
+class SessionStatus(SessionStatusModel):
     """
     A Session lists the boot sets it contains as well as some metadata.
 
@@ -602,7 +601,7 @@ class Session(SessionStatus):
                         did not exist
         """
         try:
-            Session.load(session_id)
+            SessionStatus.load(session_id)
         except SessionStatusDoesNotExist:
             return False
         except Exception:
@@ -625,17 +624,17 @@ def create_v1_session_status(session_id):
     # Look up the Session. If it already exists, do not create a new one, but 
     # return a 409.
     try:
-        session = Session.load(session_id)
+        session_status = SessionStatus.load(session_id)
         status = 409
     except SessionStatusDoesNotExist:
         request_body = connexion.request.get_json()
         request_body['id'] = session_id
-        session = Session.from_dict(request_body)
-        session.initialize()
-        session.start()
-        session.save()
+        session_status = SessionStatus.from_dict(request_body)
+        session_status.initialize()
+        session_status.start()
+        session_status.save()
         status = 200
-    return session, status
+    return session_status, status
 
 
 def create_v1_boot_set_status(session_id, boot_set_name):
@@ -673,15 +672,15 @@ def update_v1_session_status(session_id):
     """
     request_body = connexion.request.get_json()
     try:
-        session = Session.load(session_id)        
+        session_status = SessionStatus.load(session_id)
     except SessionStatusDoesNotExist:
         return None, 404
     if 'start_time' in request_body:
-        session.start(request_body['start_time'])
+        session_status.start(request_body['start_time'])
     if 'stop_time' in request_body:
-        session.stop(request_body['stop_time'])
-    session.save()
-    return session, 200
+        session_status.stop(request_body['stop_time'])
+    session_status.save()
+    return session_status, 200
 
 
 def update_v1_session_status_by_bootset(session_id, boot_set_name):
@@ -726,7 +725,7 @@ def get_v1_session_status(session_id):
     Provide some metadata
     """
     try:
-        session = Session.load(session_id)
+        session = SessionStatus.load(session_id)
         status = 200
     except SessionStatusDoesNotExist:
         status = 404
@@ -761,7 +760,7 @@ def get_v1_session_status_by_bootset_and_phase_and_category(session_id,
 
 
 def delete_v1_session_status(session_id):
-    if Session.delete(session_id):
+    if SessionStatus.delete(session_id):
         return 204
     else:
         return 404
