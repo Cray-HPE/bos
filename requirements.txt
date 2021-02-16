@@ -1,5 +1,4 @@
---index-url http://dst.us.cray.com/piprepo/simple
---trusted-host dst.us.cray.com
+--index-url https://arti.dev.cray.com:443/artifactory/api/pypi/pypi-remote/simple
 -c constraints.txt
 -r lib/server/requirements.txt
 
