@@ -20,8 +20,6 @@ WORKDIR /app
 COPY --from=codegen /app .
 COPY constraints.txt requirements.txt ./
 RUN apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
-    PIP_INDEX_URL=http://dst.us.cray.com/piprepo/simple \
-    PIP_TRUSTED_HOST=dst.us.cray.com \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -r requirements.txt
 COPY src/server/bos/controllers lib/server/bos/controllers
