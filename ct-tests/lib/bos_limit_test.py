@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 """
 See bos_limit_test/argparse.py for command line usage.
@@ -30,6 +30,7 @@ from common.bos import delete_bos_session_templates, list_bos_session_templates,
 from common.helpers import CMSTestError, create_tmpdir, debug, error_exit, exit_test, \
                            init_logger, info, log_exception_error, raise_test_exception_error, \
                            remove_tmpdir, section, subtest, warn
+from common.k8s import get_csm_private_key
 from common.utils import get_compute_nids_xnames, validate_node_hostnames
 from common.vcs import clone_vcs_repo, remove_vcs_test_branches
 import copy
@@ -61,6 +62,10 @@ def do_test(test_variables):
         info("Using API")
     else:
         info("Using CLI")
+
+    # We don't need the CSM private key until it comes time to ssh into the compute nodes, but we'd
+    # rather know up front if this fails, to save time
+    do_subtest("Get CSM private key (for later use to ssh to computes)", get_csm_private_key)
 
     nid_to_xname, xname_to_nid = do_subtest("Find compute nids & xnames", 
                                             get_compute_nids_xnames, use_api=use_api, 
