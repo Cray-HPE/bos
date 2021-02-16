@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 # This script will edit all the values.yaml files under the kubernetes
 # directory, and replace instances of IMAGE_XXX_TAG with a value that is
@@ -11,11 +11,11 @@
 # that are expected to be generated from the manifest.txt files.  If
 # they don't exist it will cause this script to fail.
 #
-# Lines that start with "teams:" can contain one or more <repo>:<team> elements
+# Lines that start with "teams:" can contain one or more <team> elements
 #
 # Example:
 #   tags: IMAGE_CRAY_BOA_TAG
-#   teams: SCMS:cms-team"
+#   teams: csm"
 
 set -o pipefail
 
@@ -62,9 +62,8 @@ get_teams() {
 
     while read teams; do
         for item in ${teams}; do
-            proj=${item##*:}
-            team=${item%%:*}
-            if [ -z "${proj}" -o -z "${team}" ]; then
+            team=${item}
+            if [ -z "${team}" ]; then
                 echo "Invalid team: ${item}"
                 return 1
             fi
@@ -99,10 +98,9 @@ get_container_versions_on_branch() {
 
     # There can be multiple manifest.txt files that need to be pulled in
     for item in ${TEAM_LIST}; do
-        proj=${item%%:*}
-        team=${item##*:}
+        team=${item}
 
-        url="http://car.dev.cray.com/artifactory/shasta-premium/${proj}/noos/noarch/${branch}/${team}/manifest.txt"
+        url="https://arti.dev.cray.com/artifactory/${team}-misc-${branch}-local/manifest/manifest.txt"
         if ! wget -nv "${url}"; then
             echo "ERROR: Could not wget ${url}"
             return 1
@@ -134,13 +132,13 @@ get_container_versions_on_branch() {
 get_container_versions() {
     if [[ "${GIT_BRANCH}" =~ release\/.* ]]; then
         echo "Release Branch: ${GIT_BRANCH}"
-        get_container_versions_on_branch "${GIT_BRANCH}"
+        get_container_versions_on_branch "stable"
     elif [[ "${PARENT_BRANCH}" =~ release\/.* ]]; then
         echo "Parent Release Branch: ${PARENT_BRANCH}"
-        get_container_versions_on_branch "${PARENT_BRANCH}"
+        get_container_versions_on_branch "stable"
     else
         echo "non-Release Branch"
-        get_container_versions_on_branch "dev/master"
+        get_container_versions_on_branch "master"
     fi
 }
 
