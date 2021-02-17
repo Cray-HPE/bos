@@ -1,11 +1,12 @@
 # coding: utf-8
-# Copyright 2019-2020 Cray Inc.
+# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 
 from __future__ import absolute_import
 
 from bos.controllers.v1.sessiontemplate import create_v1_sessiontemplate
 from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplate
 from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplates
+from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplatetemplate
 from bos.controllers.v1.sessiontemplate import delete_v1_sessiontemplate
 
 import connexion
@@ -159,6 +160,15 @@ class TestSessiontemplateController(testtools.TestCase):
                 mocked_class.return_value.__enter__.return_value.delete.assert_not_called()
                 self.assertEqual(status.status_code, 404)
                 mocked_st_func.assert_called_once()
+
+    def test_get_v1_sessiontemplatetemplate(self):
+        """Test case for get_v1_sessiontemplatetemplate
+
+        Get the example Session Template
+        """
+        result, status = get_v1_sessiontemplatetemplate()
+        self.assertEqual(200, status)
+        self.assertEqual(result["name"], 'name-your-template')
 
 
 if __name__ == '__main__':
