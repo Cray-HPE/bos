@@ -1,4 +1,4 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 """
 BOS limit test helper functions that involve multiple services
@@ -11,9 +11,8 @@ from common.bss import get_bss_host_by_nid, \
 from common.capmc import get_capmc_node_status
 from common.hsm import list_hsm_groups
 from common.helpers import any_dict_value, debug, error, info, \
-                           is_pingable, raise_test_error, \
-                           ssh_command_passes, sleep
-from common.utils import node_hostname
+                           raise_test_error, sleep
+from common.utils import is_xname_pingable, ssh_command_passes_on_xname
 import time
 
 def bootset_bss_match(bootset, manifest, params):
@@ -220,7 +219,6 @@ def verify_node_states(use_api, current_node_states, template_objects, target_ni
 
         if actual_power_state == "on" and expected_power_state == "on":
             kparams = bootset["kernel_parameters"]
-            nodehost = node_hostname(xname)
             
             connection_cmd = "date"
             boot_verification_cmd = "dmesg | grep -q '%s'" % kparams
@@ -231,21 +229,21 @@ def verify_node_states(use_api, current_node_states, template_objects, target_ni
                 config_verification_cmd = "tail -1 /etc/motd | grep -vq 'branch='"
             show_motd_cmd = "tail -1 /etc/motd"
             while True:
-                if is_pingable(nodehost):
-                    if ssh_command_passes(nodehost, connection_cmd):
+                if is_xname_pingable(xname):
+                    if ssh_command_passes_on_xname(xname, connection_cmd):
                         if operation in { "boot", "reboot" }:
-                            if ssh_command_passes(nodehost, boot_verification_cmd):
+                            if ssh_command_passes_on_xname(xname, boot_verification_cmd):
                                 debug("Node %d appears to be booted using the expected kernel parameters" % nid)
                             else:
                                 error("Node %d is booted but appears to have the wrong kernel parameters")
-                                ssh_command_passes(nodehost, show_kernel_cmd)
+                                ssh_command_passes_on_xname(xname, show_kernel_cmd)
                                 errors_found = True
-                        if ssh_command_passes(nodehost, config_verification_cmd):
+                        if ssh_command_passes_on_xname(xname, config_verification_cmd):
                             debug("Node %d appears to be configured as we expect" % nid)
                             current_node_states[nid]["motd_template_name"] = motd_tname
                         else:
                             error("Node %d is booted but appears to have the wrong motd")
-                            ssh_command_passes(nodehost, show_motd_cmd)
+                            ssh_command_passes_on_xname(xname, show_motd_cmd)
                             errors_found = True
                         break
                 if nid not in target_nids:

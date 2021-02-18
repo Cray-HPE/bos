@@ -1,5 +1,5 @@
 # Cray-provided controllers for the Boot Orchestration Service
-# Copyright 2019-2020 Cray Inc.
+# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 
 import logging
 import connexion
@@ -14,6 +14,26 @@ from bos.utils import _canonize_xname
 
 LOGGER = logging.getLogger('bos.controllers.sessiontemplate')
 BASEKEY = "/sessionTemplate"
+
+EXAMPLE_BOOT_SET = {
+    "type": "your-boot-type",
+    "boot_ordinal": 1,
+    "etag": "your_boot_image_etag",
+    "kernel_parameters": "your-kernel-parameters",
+    "network": "nmn",
+    "node_list": [
+        "xname1", "xname2", "xname3"],
+    "path": "your-boot-path",
+    "rootfs_provider": "your-rootfs-provider",
+    "rootfs_provider_passthrough": "your-rootfs-provider-passthrough"}
+
+EXAMPLE_SESSION_TEMPLATE = {
+    "boot_sets": {
+        "name_your_boot_set": EXAMPLE_BOOT_SET},
+    "cfs": {
+        "configuration": "desired-cfs-config"},
+    "enable_cfs": True,
+    "name": "name-your-template"}
 
 
 def sanitize_xnames(st_json):
@@ -160,6 +180,15 @@ def get_v1_sessiontemplate(session_template_id):
             return connexion.problem(status=404,
                                      title="The Session Template was not found",
                                      detail="The Session Template '{}' was not found.".format(session_template_id))  # noqa: E501
+
+
+def get_v1_sessiontemplatetemplate():
+    """
+    GET /v1/sessiontemplatetemplate
+
+    Get the example session template
+    """
+    return EXAMPLE_SESSION_TEMPLATE, 200
 
 
 def delete_v1_sessiontemplate(session_template_id):
