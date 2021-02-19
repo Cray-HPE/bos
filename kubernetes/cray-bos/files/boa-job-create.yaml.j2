@@ -56,6 +56,16 @@ spec:
             value: "{{ GRACEFUL_SHUTDOWN_PREWAIT }}"
           - name: POWER_STATUS_FREQUENCY
             value: "{{ POWER_STATUS_FREQUENCY }}"
+          - name: VCS_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: vcs-user-credentials
+                key: vcs_username
+          - name: VCS_PASSWORD
+           valueFrom:
+             secretKeyRef:
+               name: vcs-user-credentials
+               key: vcs_password
       volumes:
       - name: boot-session
         configMap:
