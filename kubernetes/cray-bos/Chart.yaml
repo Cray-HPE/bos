@@ -2,7 +2,7 @@ apiVersion: v1
 description: "Kubernetes resources for BOS"
 name: "cray-bos"
 home: "scms/bos"
-version: 1.6.11
+version: 1.6.12
 keywords:
   - bos
   - boa
