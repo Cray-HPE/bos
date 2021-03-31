@@ -21,7 +21,7 @@
 # (MIT License)
 
 Name: bos-crayctldeploy-test
-License: Cray Software License Agreement
+License: MIT
 Summary: Cray post-install tests for Boot Orchestration Services (BOS)
 Group: System/Management
 # The version is substituted at built time by update_versions.sh
