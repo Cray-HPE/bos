@@ -1,7 +1,7 @@
 # Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 
 Name: bos-crayctldeploy-test
-License: Cray Software License Agreement
+License: MIT
 Summary: Cray post-install tests for Boot Orchestration Services (BOS)
 Group: System/Management
 Version: %(cat .rpm_version_bos-crayctldeploy-test)
