@@ -4,6 +4,6 @@ rpmBuild(
     product: "ct-tests",
     target_node: "ncn",
     channel: "casmcms-builds",
-    fanout_params: ["sle15sp1"],
+    fanout_params: ["sle15sp1", "sle15sp2"],
     recv_triggers: ["cme-premium-cf"]
 )
