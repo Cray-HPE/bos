@@ -1,4 +1,22 @@
 # Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 Name: bos-crayctldeploy-test
 License: MIT
@@ -8,19 +26,18 @@ Version: %(cat .rpm_version_bos-crayctldeploy-test)
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
-Requires: cray-cmstools-crayctldeploy-test >= 0.2.8
+Requires: cray-cmstools-crayctldeploy-test >= 0.2.11
+Conflicts: cray-crus-crayctldeploy-test < 0.2.9
 Requires: python3-requests
 
 # Test defines. These may make sense to put in a central location
 %define tests /opt/cray/tests
 %define smsfunc %{tests}/sms-functional
-%define smslong %{tests}/sms-long
 %define testdat %{tests}/dat
 %define testlib %{tests}/lib
 
 # CMS test defines
 %define smsfunccms %{smsfunc}/cms
-%define smslongcms %{smslong}/cms
 %define cmsdat %{testdat}/cms
 %define cmslib %{testlib}/cms
 %define cmscommon %{cmslib}/common
@@ -44,9 +61,6 @@ install -m 755 -d %{buildroot}%{smsfunccms}/
 install ct-tests/bos_api_functional_test.sh %{buildroot}%{smsfunccms}
 install ct-tests/bos_cli_functional_test.sh %{buildroot}%{smsfunccms}
 
-install -m 755 -d %{buildroot}%{smslongcms}/
-install ct-tests/bos_limit_api_test.sh %{buildroot}%{smslongcms}
-install ct-tests/bos_limit_cli_test.sh %{buildroot}%{smslongcms}
 
 # Install shared test libraries
 # The cmscommon directory should already exist, since we have
@@ -54,6 +68,7 @@ install ct-tests/bos_limit_cli_test.sh %{buildroot}%{smslongcms}
 # case...
 install -m 755 -d %{buildroot}%{cmscommon}/
 install -m 644 ct-tests/lib/common/bos.py %{buildroot}%{cmscommon}
+install -m 644 ct-tests/lib/common/bosutils.py %{buildroot}%{cmscommon}
 
 # Install BOS functional test
 install -m 755 ct-tests/lib/bos_functional_test.py %{buildroot}%{cmslib}
@@ -69,7 +84,6 @@ install -m 755 ct-tests/lib/bos_limit_test.py %{buildroot}%{cmslib}
 install -m 755 -d %{buildroot}%{boslimittestlib}/
 install -m 644 ct-tests/lib/bos_limit_test/__init__.py %{buildroot}%{boslimittestlib}
 install -m 644 ct-tests/lib/bos_limit_test/argparse.py %{buildroot}%{boslimittestlib}
-install -m 644 ct-tests/lib/bos_limit_test/bos.py %{buildroot}%{boslimittestlib}
 install -m 644 ct-tests/lib/bos_limit_test/hsm.py %{buildroot}%{boslimittestlib}
 install -m 644 ct-tests/lib/bos_limit_test/utils.py %{buildroot}%{boslimittestlib}
 
@@ -80,10 +94,9 @@ install -m 755 ct-tests/lib/bos_loop.py %{buildroot}%{cmslib}
 rm -f %{buildroot}%{smsfunccms}/bos_api_functional_test.sh
 rm -f %{buildroot}%{smsfunccms}/bos_cli_functional_test.sh
 
-rm -f %{buildroot}%{smslongcms}/bos_limit_api_test.sh
-rm -f %{buildroot}%{smslongcms}/bos_limit_cli_test.sh
 
 rm -f %{buildroot}%{cmscommon}/bos.py
+rm -f %{buildroot}%{cmscommon}/bosutils.py
 
 rm -f %{buildroot}%{cmslib}/bos_functional_test.py
 rm -f %{buildroot}%{bosfunctestdat}/bos_session_template.json
@@ -94,7 +107,6 @@ rm -f %{buildroot}%{bosfunctestlib}/helpers.py
 rm -f %{buildroot}%{cmslib}/bos_limit_test.py
 rm -f %{buildroot}%{boslimittestlib}/__init__.py
 rm -f %{buildroot}%{boslimittestlib}/argparse.py
-rm -f %{buildroot}%{boslimittestlib}/bos.py
 rm -f %{buildroot}%{boslimittestlib}/hsm.py
 rm -f %{buildroot}%{boslimittestlib}/utils.py
 
@@ -112,10 +124,9 @@ rmdir %{buildroot}%{bosfunctestlib}
 
 %attr(755, root, root) %{smsfunccms}/bos_api_functional_test.sh
 %attr(755, root, root) %{smsfunccms}/bos_cli_functional_test.sh
-%attr(755, root, root) %{smslongcms}/bos_limit_api_test.sh
-%attr(755, root, root) %{smslongcms}/bos_limit_cli_test.sh
 
 %attr(644, root, root) %{cmscommon}/bos.py
+%attr(644, root, root) %{cmscommon}/bosutils.py
 
 %attr(755, root, root) %{cmslib}/bos_functional_test.py
 %attr(644, root, root) %{bosfunctestdat}/bos_session_template.json
@@ -126,7 +137,6 @@ rmdir %{buildroot}%{bosfunctestlib}
 %attr(755, root, root) %{cmslib}/bos_limit_test.py
 %attr(644, root, root) %{boslimittestlib}/__init__.py
 %attr(644, root, root) %{boslimittestlib}/argparse.py
-%attr(644, root, root) %{boslimittestlib}/bos.py
 %attr(644, root, root) %{boslimittestlib}/hsm.py
 %attr(644, root, root) %{boslimittestlib}/utils.py
 
