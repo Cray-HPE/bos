@@ -92,14 +92,9 @@ cray-service:
         httpGet:
           path: /v1/healthz
           port: 80
-        periodSeconds: 20
+        periodSeconds: 60
         timeoutSeconds: 10
-        failureThreshold: 30
-        # Note: This allows for a maximum of 10 minutes
-        # for the service to become initially ready. This
-        # allows for the required etcd instance to be up
-        # before we report initial readiness. The /v1/healthz
-        # endpoint requires a healthy db connection.
+        failureThreshold: 20
   volumes:
     ca-vol:
       name: ca-vol

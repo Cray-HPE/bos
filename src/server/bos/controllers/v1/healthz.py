@@ -1,5 +1,5 @@
 # Cray-provided base controllers for the Boot Orchestration Service
-# Copyright 2019, Cray Inc. All Rights Reserved.
+# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 
 import etcd3
 import logging
@@ -17,12 +17,7 @@ def v1_get_healthz():
 
     :rtype: Healthz
     """
-
-    LOGGER.info('starting service healthz check')
-    LOGGER.debug('in v1_get_healthz')
-
     # check etcd connectivity
-    LOGGER.debug('checking etcd cluster access')
     with BosEtcdClient() as bec:
         bec.put('health', 'ok')
         value, _ = bec.get('health')
