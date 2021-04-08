@@ -1,10 +1,28 @@
-# Copyright 2020 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 HSM-related BOS limit test helper functions
 """
 
-from common.hsm import create_hsm_group, delete_hsm_group
+from common.hsm import create_hsm_group
 
 def create_hsm_groups(use_api, nid_to_xname, nid_to_hsm_group):
     """
@@ -16,12 +34,3 @@ def create_hsm_groups(use_api, nid_to_xname, nid_to_hsm_group):
     for nid, xname in nid_to_xname.items():
         nid_to_hsm_group[nid] = create_hsm_group(use_api, xname_list=[xname], 
                                                  test_name=test_name)
-
-def delete_hsm_groups(use_api, nid_to_hsm_group):
-    """
-    Delete all HSM groups, removing them from the map as they are deleted.
-    """
-    key_gname_pairs = list(nid_to_hsm_group.items())
-    for key, gname in key_gname_pairs:
-        delete_hsm_group(use_api, gname)
-        del nid_to_hsm_group[key]
