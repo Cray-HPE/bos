@@ -1,19 +1,212 @@
 # Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 BOS limit test helper functions that involve multiple services
 """
 
-from common.bos import perform_bos_session
-from common.bss import get_bss_host_by_nid, \
-                       list_bss_bootparameters, \
-                       list_bss_bootparameters_nidlist
+from common.bos import create_bos_session_template, describe_bos_session_template, \
+                       perform_bos_session
+from common.bosutils import clear_bootset_nodes, get_boot_verification_command, \
+                            get_retry_string_from_bootset, \
+                            get_unused_retry_values, set_new_template_cfs_config, \
+                            SHOW_KERNEL_CMD
+from common.bss import list_bss_bootparameters_nidlist
 from common.capmc import get_capmc_node_status
 from common.hsm import list_hsm_groups
-from common.helpers import any_dict_value, debug, error, info, \
+from common.helpers import any_dict_value, debug, debug_logvar, error, info, \
                            raise_test_error, sleep
 from common.utils import is_xname_pingable, ssh_command_passes_on_xname
+import copy
+import datetime
+import random
 import time
+
+def logvar(func, varname, varvalue):
+    debug_logvar(caller="bos_limit_test.utils.%s" % func, varname=varname, varvalue=varvalue)
+
+def get_bootset_node_types(howmany):
+    bootset_node_type_options = [ "node_list", "node_groups_single_all_group", "node_groups_all_single_groups", "node_groups_single_all_group_plus_extra" ]
+    num_options = len(bootset_node_type_options)
+    i = howmany // num_options
+    bootset_node_types = bootset_node_type_options*i
+    j = howmany % num_options
+    bootset_node_types.extend(random.sample(bootset_node_type_options, j))
+    return bootset_node_types
+
+def set_nodes_in_bootset(bootset_node_type, bootset, xnames, nid_to_hsm_group=None):
+    if bootset_node_type == "node_list":
+        xlist = list(xnames)
+        random.shuffle(xlist)
+        bootset["node_list"] = xlist
+        return
+
+    if nid_to_hsm_group == None:
+        error("bootset_node_type is %s but nid_to_hsm_group == None" % bootset_node_type)
+        raise_test_error("PROGRAMMING_LOGIC_ERROR: set_nodes_in_bootset: nid_to_hsm_group should not be None if bootset_node_type is %s" % bootset_node_type)
+
+    all_hsm_groups = list(nid_to_hsm_group.values())
+    hsm_all_group = nid_to_hsm_group["all"]
+    hsm_groups_except_all = [ nid_to_hsm_group[n] for n in nid_to_hsm_group.keys() if n != "all" ]
+
+    if bootset_node_type == "node_groups_single_all_group":
+        glist = [ hsm_all_group ]
+    elif bootset_node_type == "node_groups_all_single_groups":
+        glist = list(hsm_groups_except_all)
+    elif bootset_node_type == "node_groups_single_all_group_plus_extra":
+        num_extra = random.randint(1, len(xnames))
+        if num_extra == len(xnames):
+            glist = list(all_hsm_groups)
+        else:
+            glist = [ hsm_all_group ]
+            glist.extend(random.sample(hsm_groups_except_all, num_extra))
+    else:
+        raise_test_error("Programming error: Invalid bootset_node_type specified: %s" % str(bootset_node_type))
+
+    random.shuffle(glist)
+    bootset["node_groups"] = glist
+    return
+
+def set_new_template_bootset(new_test_template_object, retry_val, bootset_node_type, xnames, test_variables):
+    def _logvar(varname, varvalue):
+        logvar(func="set_new_template_bootset", varname=varname, varvalue=varvalue)
+
+    nid_to_hsm_group = test_variables["nid_to_hsm_group"]
+
+    # We have previously verified that base_template_object has just 1 boot set
+    bootset = any_dict_value(new_test_template_object["boot_sets"])
+
+    # Remove any previous node_list, node_groups, or node_roles_groups fields in this bootset
+    clear_bootset_nodes(bootset)
+
+    # At this point, the new_test_template_object will still have the same bootset parameters as the base template
+    base_template_retry_string = get_retry_string_from_bootset(bootset)
+    _logvar("base_template_retry_string", base_template_retry_string)
+    
+    new_retry_string = "rd.retry=%d" % retry_val
+        
+    if base_template_retry_string:
+        bootset["kernel_parameters"] = bootset["kernel_parameters"].replace(base_template_retry_string, new_retry_string)
+    else:
+        bootset["kernel_parameters"] = "%s %s" % (bootset["kernel_parameters"], new_retry_string)
+
+    set_nodes_in_bootset(bootset_node_type=bootset_node_type, bootset=bootset, xnames=xnames, nid_to_hsm_group=nid_to_hsm_group)
+
+def create_template(use_api, template_objects, retry_val, bootset_node_type, xnames, test_variables):
+    def _logvar(varname, varvalue):
+        logvar(func="create_template", varname=varname, varvalue=varvalue)
+
+    base_template_name = test_variables["template"]
+    test_template_names = test_variables["test_template_names"]
+
+    _logvar("retry_val", retry_val)
+    _logvar("bootset_node_type", bootset_node_type)
+    
+    base_template_object = template_objects[base_template_name]
+    new_test_template_object = copy.deepcopy(base_template_object)
+    new_test_template_object['description'] = "Template for bos-limit integration test, based on %s template" % base_template_name
+
+    new_tname = "bos-test-r%d-%s" % (retry_val, datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S.%f"))
+    _logvar("new_tname", new_tname)
+    new_test_template_object["name"] = new_tname
+
+    set_new_template_cfs_config(use_api=use_api, new_test_template_object=new_test_template_object, 
+                                new_tname=new_tname, test_variables=test_variables)
+
+    set_new_template_bootset(new_test_template_object=new_test_template_object, retry_val=retry_val, 
+                             bootset_node_type=bootset_node_type, xnames=xnames, test_variables=test_variables)
+
+    create_bos_session_template(use_api, new_test_template_object)
+    test_template_names.append(new_tname)
+
+    # retrieve our new template to verify it was created successfully
+    template_objects[new_tname] = describe_bos_session_template(use_api, new_tname)
+
+def create_base_template_for_test_nodes(use_api, template_objects, test_variables, xnames):
+    def _logvar(varname, varvalue):
+        logvar(func="create_base_template_for_test_nodes", varname=varname, varvalue=varvalue)
+
+    base_template_name = test_variables["template"]
+    
+    base_template_object = template_objects[base_template_name]
+    new_test_template_object = copy.deepcopy(base_template_object)
+    new_test_template_object['description'] = "Template for bos-limit integration test, copy of %s template but limited to test nodes" % base_template_name
+
+    new_tname = "bos-test-base-%s" % datetime.datetime.utcnow().strftime("%Y%m%d-%H%M%S.%f")
+    _logvar("new_tname", new_tname)
+    new_test_template_object["name"] = new_tname
+    
+    # We have previously verified that base_template_object has just 1 boot set
+    bootset = any_dict_value(new_test_template_object["boot_sets"])
+
+    # Remove any previous node_list, node_groups, or node_roles_groups fields in this bootset
+    clear_bootset_nodes(bootset)
+
+    set_nodes_in_bootset(bootset_node_type="node_list", bootset=bootset, xnames=xnames)
+
+    create_bos_session_template(use_api, new_test_template_object)
+    test_variables["test_nodes_base_template"] = new_tname
+
+    # retrieve our new template to verify it was created successfully
+    template_objects[new_tname] = describe_bos_session_template(use_api, new_tname)
+
+def create_bos_session_templates(use_api, template_objects, test_variables, num_to_create, xname_to_nid):
+    """
+    Creates one template which is identical to the base template, but whose bootset includes exactly the 
+    list of xnames used by the test. The name of this template will be stored in test_variables["test_nodes_base_template"]
+    
+    Then:
+    
+    Create the specified number of new bos session templates, which are clones of test_variables["template"]
+    with the following changes:
+    1) The kernel parameters are changed to have a different rd.retry value
+    2) The template name is based on that value
+    3) A new VCS branch is created with an ansible playbook that appends a line to /etc/motd with the new template name
+    4) A new CFS configuration is created which uses this playbook
+    5) The node_list, node_groups, or node_roles_groups fields in the bootset are replaced with
+       a node_groups field that specifies one or more hsm groups that, combined, encompass all of
+       our target nodes (and no others)
+    The test_template_names list is populated with the new template names.
+    The test_cfs_config_names list is populated with the new CFS configuration names.
+    The template_objects map is updated to include the new templates.
+    """
+
+    def _logvar(varname, varvalue):
+        logvar(func="create_bos_session_templates", varname=varname, varvalue=varvalue)
+
+    xnames = xname_to_nid.keys()
+    create_base_template_for_test_nodes(use_api, template_objects, test_variables, xnames)
+
+    info("Get list of BSS boot parameters for all enabled compute nodes")
+    bss_boot_parameters = list_bss_bootparameters_nidlist(use_api=use_api, xname_to_nid=xname_to_nid)
+
+    unused_rd_retry_values = get_unused_retry_values(start_value=10, howmany=num_to_create, template_objects=template_objects, 
+                                                     bss_boot_parameters=bss_boot_parameters)
+    _logvar("unused_rd_retry_values", unused_rd_retry_values)
+
+    bootset_node_types = get_bootset_node_types(num_to_create)
+    _logvar("bootset_node_types", bootset_node_types)
+
+    for retry_val, bootset_node_type in zip(unused_rd_retry_values, bootset_node_types):
+        create_template(use_api=use_api, template_objects=template_objects, retry_val=retry_val, 
+                                    bootset_node_type=bootset_node_type, xnames=xnames, test_variables=test_variables)
 
 def bootset_bss_match(bootset, manifest, params):
     """
@@ -44,85 +237,21 @@ def bootset_bss_match(bootset, manifest, params):
         return False
     return True
 
-def find_node_template(use_api, nid, xname, hsm_groups, template_objects, tnamelist):
+def init_node_states(nids, base_template):
     """
-    For the specified node, find a bos session template which has a bootset that:
-    1) includes the node in its node_groups/node_list/node_role_groups field
-    2) has kernel parameters and manifest that match the bss bootparameters for the node
-    Return the name of a matching template object.
+    Initializes and returns the node state structure to the state the test
+    nodes will be in after we reboot them into the base template
     """
-    my_hsm_groups = { g["label"] for g in hsm_groups if xname in g["members"]["ids"] }
-
-    bss_host = get_bss_host_by_nid(use_api, nid, xname)
-    role = bss_host["Role"]
-
-    bss_bootparams = list_bss_bootparameters(use_api, nid, xname)
-    params = bss_bootparams["params"]
-    manifest = bss_bootparams["kernel"].replace("/kernel","/manifest.json")
-
-    def template_matches_node(tobject):
-        for bootset in tobject["boot_sets"].values():
-            if not bootset_bss_match(bootset, manifest, params):
-                continue
-            # Okay, this one looks good, but we need to make sure that this node is
-            # specified in the 'node_list', 'node_groups', or 'node_roles_groups' field
-            try:
-                if role in bootset["node_roles_groups"]:
-                    return True
-                break
-            except KeyError:
-                pass
-            try:
-                if xname in bootset["node_list"]:
-                    return True
-                break
-            except KeyError:
-                pass
-            # We should not risk a KeyError for this last check, since we previously
-            # verified that every bootset in every bos session template had exactly 1
-            # of these 3 fields. So if this one lacks the previous two, it must have this one
-            for g in bootset["node_groups"]:
-                if g in my_hsm_groups:
-                    return True
-
-    for tname in tnamelist:
-        if template_matches_node(template_objects[tname]):
-            return tname
-
-    raise_test_error("Unable to find bos session template that matches current node state for nid %d" % nid)
-
-def record_node_states(use_api, nid_to_xname, template_objects, default_cle_template_name):
-    """
-    For every target node, record its current bos session template (or best guess) and power state.
-    For the template, we always check the slurm template first, then the cle template, since those
-    are the ones most commonly used (and so if a node matches one of those, we stop looking for further
-    matches).
-    """
-    tnamelist = list()
-    if "slurm" in template_objects:
-        tnamelist.append("slurm")
-    if default_cle_template_name != None and default_cle_template_name in template_objects:
-        tnamelist.append(default_cle_template_name)
-    tnamelist.extend([tname for tname in template_objects if tname not in { "slurm", default_cle_template_name }])
-
-    hsm_groups = list_hsm_groups(use_api)
-    orig_node_states = dict()
-    nid_to_power_status = get_capmc_node_status(use_api, list(nid_to_xname.keys()))
-    for nid, xname in nid_to_xname.items():
-        pow = nid_to_power_status[nid]
-        info("Current power state of nid %d: %s" % (nid, pow))
-        tmp = find_node_template(use_api, nid, xname, hsm_groups, template_objects, tnamelist)
-        info("Current bos session template of nid %d: %s" % (nid, tmp))
-        orig_node_states[nid] = { 
-            "motd_template_name": None,
-            "power": pow,
-            "boot_template_name": tmp }
-    return orig_node_states
+    return { nid: { 
+                    "motd_template_name": None,
+                    "power": "off",
+                    "boot_template_name": base_template } 
+             for nid in nids }
 
 def verify_node_states(use_api, current_node_states, template_objects, target_nids, xname_to_nid, template_name, test_template_names, operation):
     """
     Given the specified operation that was performed, the specified session template used in the operation, and the specified target nodes of the
-    operation, verify that all nodes are in the expected state. 
+    operation, verify that all test nodes are in the expected state. 
     For non-target nodes, nothing should be changed. 
     For target nodes:
     - If the operation was a boot or reboot, then we expect them to be powered on, we expect their kernel parameters to match the session template,
@@ -221,12 +350,11 @@ def verify_node_states(use_api, current_node_states, template_objects, target_ni
             kparams = bootset["kernel_parameters"]
             
             connection_cmd = "date"
-            boot_verification_cmd = "dmesg | grep -q '%s'" % kparams
-            show_kernel_cmd = "dmesg | grep 'Kernel command line:'"
+            boot_verification_cmd = get_boot_verification_command(bootset)
             if motd_tname in test_template_names:
-                config_verification_cmd = "tail -1 /etc/motd | grep -q 'branch=%s$'" % motd_tname
+                config_verification_cmd = "tail -1 /etc/motd | grep -q 'tname=%s$'" % motd_tname
             else:
-                config_verification_cmd = "tail -1 /etc/motd | grep -vq 'branch='"
+                config_verification_cmd = "tail -1 /etc/motd | grep -vq 'tname='"
             show_motd_cmd = "tail -1 /etc/motd"
             while True:
                 if is_xname_pingable(xname):
@@ -236,7 +364,7 @@ def verify_node_states(use_api, current_node_states, template_objects, target_ni
                                 debug("Node %d appears to be booted using the expected kernel parameters" % nid)
                             else:
                                 error("Node %d is booted but appears to have the wrong kernel parameters")
-                                ssh_command_passes_on_xname(xname, show_kernel_cmd)
+                                ssh_command_passes_on_xname(xname, SHOW_KERNEL_CMD)
                                 errors_found = True
                         if ssh_command_passes_on_xname(xname, config_verification_cmd):
                             debug("Node %d appears to be configured as we expect" % nid)

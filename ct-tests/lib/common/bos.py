@@ -1,4 +1,22 @@
 # Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
 
 """
 BOS-related CMS test helper functions
@@ -78,14 +96,12 @@ def bos_session_template_validate_cfs(bst):
     """
     Validates that the specified BOS session template:
     1) Has enable_cfs set to True
-    2) Has clone_url set to "https://api-gw-service-nmn.local/vcs/cray/config-management.git"
-    3) Has branch value set
+    2) Has cfs[configuration] set to a non-empty string
+    Returns cfs[configuration] string
     """
     get_bool_field_from_obj(bst, "enable_cfs", noun="session template", exact_value=True)
     cfs = get_dict_field_from_obj(bst, "cfs", noun="session template", key_type=str, null_okay=False)
-    get_str_field_from_obj(cfs, "clone_url", noun="session template cfs object", 
-                           exact_value="https://api-gw-service-nmn.local/vcs/cray/config-management.git")
-    get_str_field_from_obj(cfs, "branch", noun="session template cfs object", min_length=1)
+    return get_str_field_from_obj(cfs, "configuration", noun="session template cfs object", min_length=1)
 
 def describe_bos_session_template(use_api, template_name, expect_to_pass=True):
     """
@@ -429,16 +445,6 @@ def wait_until_bos_session_complete(use_api, session_uuid, timeout=45*60, sleept
     if errors_found:
         raise_test_error("BOS session did not complete successfully")
     info("BOS session completed with no errors")
-
-def delete_bos_session_templates(use_api, template_names):
-    """
-    Delete the specified list of bos session templates (and removes their
-    names from the list as they are successfully deleted)
-    """
-    while template_names:
-        tname = template_names[-1]
-        delete_bos_session_template(use_api, tname)
-        template_names.pop()
 
 def perform_bos_session(use_api, template_name, operation, limit_params=None):
     """
