@@ -1,4 +1,4 @@
-# Copyright 2019-2020 Hewlett Packard Enterprise Development LP
+# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 
 import logging
 import os
@@ -26,12 +26,6 @@ class BosEtcdClient(Etcd3Client):
         self.host = host
         self.port = port
         self.timeout = timeout
-        LOGGER.info("""
-        *******************************
-        Etcd datastore configuration
-        etcd_host={} etcd_port={}
-        *******************************
-        """.format(DB_HOST, DB_PORT))
         self.initialize_connection()
 
     def initialize_connection(self):
@@ -42,14 +36,6 @@ class BosEtcdClient(Etcd3Client):
         This function may need to be called multiple times if the connection
         is ever lost (like the etcd cluster being taken down temporarily).
         """
-        # The underlying base class creates a _url attribute after it has
-        # connected. We key off of this fact to contextualize the response
-        # to indicate if the connection is a reconnection or an initial
-        # connection.
-        if hasattr(self, '._url'):
-            LOGGER.info("Reinitializing connection to %s...", self.host)
-        else:
-            LOGGER.info("Initializing connection to %s...", self.host)
         while True:
             try:
                 super().__init__(self.host, self.port, timeout=self.timeout)

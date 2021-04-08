@@ -1,5 +1,5 @@
 # Cray-provided base controllers for the Boot Orchestration Service
-# Copyright 2019, Cray Inc. All Rights Reserved.
+# Copyright 2019-2021, Hewlett Packard Enterprise Development LP
 
 import os.path
 import logging
@@ -30,8 +30,6 @@ def calc_version(details):
             ),
         ])
 
-    LOGGER.debug('calc_version:links=%s' % links)
-
     # parse open API spec file from docker image or local repository
     openapispec_f = '/app/lib/server/bos/openapi/openapi.yaml'
     if not path.exists(openapispec_f):
@@ -39,9 +37,6 @@ def calc_version(details):
             ['git', 'rev-parse', '--show-toplevel'],
             stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
         openapispec_f = repo_root_dir + '/src/server/bos/openapi/openapi.yaml'
-
-    LOGGER.debug('parsing openapi spec file %s' % openapispec_f)
-
     f = None
     try:
         f = open(openapispec_f, 'r')
@@ -51,8 +46,6 @@ def calc_version(details):
     openapispec_map = yaml.safe_load(f)
     f.close()
     major, minor, patch = openapispec_map['info']['version'].split('.')
-    LOGGER.debug('major:%s, minor:%s, patch:%s' % (major, minor, patch))
-
     return Version(
         major=major,
         minor=minor,
