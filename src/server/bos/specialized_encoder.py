@@ -1,5 +1,5 @@
-# Copyright 2020, Cray Inc.
-import six 
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+import six
 
 from bos.models.base_model_ import Model
 from bos.models.generic_metadata import GenericMetadata
@@ -21,6 +21,8 @@ class MetadataEncoder(JSONEncoder):
             dikt['in_progress'] = metadata.in_progress
         if hasattr(metadata, 'error_count'):
             dikt['error_count'] = metadata.error_count
+        if hasattr(metadata, 'errors'):
+            dikt['errors'] = metadata.errors
         return GenericMetadata(**dikt)
 
     def default(self, o):
