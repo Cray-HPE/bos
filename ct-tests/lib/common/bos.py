@@ -331,7 +331,11 @@ def describe_bos_session_status(use_api, session_uuid, bootset=None):
         if bootset == None:
             cli_cmd_list = [ "bos", "v1", "session", "status", "list", session_uuid ]
         else:
-            cli_cmd_list = [ "bos", "v1", "session", "status", "describe", bootset, session_uuid ]
+            # This is a hacky way to work around the fact that there is no CLI equivalent to
+            # querying the bootset endpoint directly. In the CLI you can either query the
+            # session status itself, or you have to query a specific bootset/phase/category
+            # combination.
+            cli_cmd_list = [ "bos", "v1", "session", "describe", session_uuid+"/status/"+ bootset ]
         return run_cli_cmd(cli_cmd_list)
 
 def wait_until_bos_session_complete(use_api, session_uuid, timeout=45*60, sleeptime=30):
