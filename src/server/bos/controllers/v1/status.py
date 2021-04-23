@@ -120,6 +120,8 @@ class MetadataSession(Metadata):
         Loads all of the Boot Sets in the session from the database. 
         This will only get the Boot Sets one time and cache them.
         """
+        if not self.session.boot_sets:
+            return []
         if not self._boot_sets:
             for bs in self.session.boot_sets:
                 self._boot_sets.append(BootSet.load(self.session.id, bs))
@@ -535,7 +537,8 @@ class SessionStatus(SessionStatusModel):
         self_url = flask.helpers.url_for('.bos_controllers_v1_status_get_v1_session_status',
                                          session_id=self.id)
         self.links = [Link(rel='self', href=self_url)]
-
+        if not self.boot_sets:
+            return
         for bs in self.boot_sets:
             self.links.append(
                 Link(
@@ -627,13 +630,15 @@ def create_v1_session_status(session_id):
         session_status = SessionStatus.load(session_id)
         status = 409
     except SessionStatusDoesNotExist:
-        request_body = connexion.request.get_json()
-        request_body['id'] = session_id
-        session_status = SessionStatus.from_dict(request_body)
-        session_status.initialize()
-        session_status.start()
-        session_status.save()
-        status = 200
+        pass
+    request_body = connexion.request.get_json()
+    LOGGER.debug("Request body: {}".format(request_body))
+    request_body['id'] = session_id
+    session_status = SessionStatus.from_dict(request_body)
+    session_status.initialize()
+    session_status.start()
+    session_status.save()
+    status = 200
     return session_status, status
 
 
