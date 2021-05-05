@@ -254,7 +254,7 @@ class MetadataPhase(Metadata):
         """
         if (len(self.boot_set.get_category(self.phase.name, 'not_started').node_list) != 0
             or len(self.boot_set.get_category(self.phase.name,  # noqa: W503
-                                              'in_progress').node_list) != 0):  
+                                              'in_progress').node_list) != 0):
             return False
         return True
 
@@ -624,21 +624,21 @@ def create_v1_session_status(session_id):
         session (string): Session ID
     """
     LOGGER.debug("create_v1_session_status: %s/status/", session_id)
-    # Look up the Session. If it already exists, do not create a new one, but 
+    # Look up the Session. If it already exists, do not create a new one, but
     # return a 409.
     try:
-        session_status = SessionStatus.load(session_id)
+        session_status = None
         status = 409
+        session_status = SessionStatus.load(session_id)
     except SessionStatusDoesNotExist:
-        pass
-    request_body = connexion.request.get_json()
-    LOGGER.debug("Request body: {}".format(request_body))
-    request_body['id'] = session_id
-    session_status = SessionStatus.from_dict(request_body)
-    session_status.initialize()
-    session_status.start()
-    session_status.save()
-    status = 200
+        request_body = connexion.request.get_json()
+        LOGGER.debug("Request body: {}".format(request_body))
+        request_body['id'] = session_id
+        session_status = SessionStatus.from_dict(request_body)
+        session_status.initialize()
+        session_status.start()
+        session_status.save()
+        status = 200
     return session_status, status
 
 
