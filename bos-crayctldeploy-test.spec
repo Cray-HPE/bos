@@ -17,12 +17,14 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
+#
+# (MIT License)
 
 Name: bos-crayctldeploy-test
 License: MIT
 Summary: Cray post-install tests for Boot Orchestration Services (BOS)
 Group: System/Management
-Version: %(cat .rpm_version_bos-crayctldeploy-test)
+Version: %(cat .version)
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
