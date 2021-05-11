@@ -1,5 +1,25 @@
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+# (MIT License)
 '''
-Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 @author: Jason Sollom
 '''
 import connexion
@@ -254,7 +274,7 @@ class MetadataPhase(Metadata):
         """
         if (len(self.boot_set.get_category(self.phase.name, 'not_started').node_list) != 0
             or len(self.boot_set.get_category(self.phase.name,  # noqa: W503
-                                              'in_progress').node_list) != 0):  
+                                              'in_progress').node_list) != 0):
             return False
         return True
 
@@ -624,21 +644,21 @@ def create_v1_session_status(session_id):
         session (string): Session ID
     """
     LOGGER.debug("create_v1_session_status: %s/status/", session_id)
-    # Look up the Session. If it already exists, do not create a new one, but 
+    # Look up the Session. If it already exists, do not create a new one, but
     # return a 409.
     try:
-        session_status = SessionStatus.load(session_id)
+        session_status = None
         status = 409
+        session_status = SessionStatus.load(session_id)
     except SessionStatusDoesNotExist:
-        pass
-    request_body = connexion.request.get_json()
-    LOGGER.debug("Request body: {}".format(request_body))
-    request_body['id'] = session_id
-    session_status = SessionStatus.from_dict(request_body)
-    session_status.initialize()
-    session_status.start()
-    session_status.save()
-    status = 200
+        request_body = connexion.request.get_json()
+        LOGGER.debug("Request body: {}".format(request_body))
+        request_body['id'] = session_id
+        session_status = SessionStatus.from_dict(request_body)
+        session_status.initialize()
+        session_status.start()
+        session_status.save()
+        status = 200
     return session_status, status
 
 
