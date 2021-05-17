@@ -474,6 +474,13 @@ components:
           description: The name of the Session Template
           example: "my-session-template"
           format: string
+        job:
+          type: string
+          maxLength: 64
+          readOnly: true
+          description: >
+            The identity of the k8s job that is created to handle the session.
+          example: "boa-07877de1-09bb-4ca8-a4e5-943b1262dbf0"
         limit:
           type: string
           description: >

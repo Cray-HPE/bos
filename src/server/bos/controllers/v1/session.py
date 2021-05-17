@@ -167,13 +167,15 @@ def create_v1_session():  # noqa: E501
         bec.put(key=key, value=session.template_uuid)
         key = "{}/{}/operation".format(BASEKEY, session_id)
         bec.put(key=key, value=session.operation)
-        key = "{}/{}/boa_job_name".format(BASEKEY, session_id)
-        bec.put(key=key, value=boa_job_name)
         key = "{}/{}/status_link".format(BASEKEY, session_id)
         bec.put(key=key, value="/v1/session/{}/status".format(session_id))
+        key = "{}/{}/job".format(BASEKEY, session_id)
+        bec.put(key=key, value=boa_job_name)
     return_json_data = {
         "operation": session.operation,
         "templateUuid": session.template_uuid,
+        "job": boa_job_name,
+        "limit": session.limit,
         "links":
         [
             {
