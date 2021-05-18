@@ -55,7 +55,7 @@ WORKDIR /app/
 COPY src/server/bos/test lib/server/bos/test/
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
-RUN apk add --no-cache --repository http://car.dev.cray.com/artifactory/mirror-alpine/edge/testing etcd etcd-ctl
+RUN apk add --no-cache --repository https://arti.dev.cray.com/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
 RUN pip3 install --no-cache-dir -r test-requirements.txt
 CMD [ "./docker_test_entry.sh" ]
 
