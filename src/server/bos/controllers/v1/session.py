@@ -175,7 +175,6 @@ def create_v1_session():  # noqa: E501
         "operation": session.operation,
         "templateUuid": session.template_uuid,
         "job": boa_job_name,
-        "limit": session.limit,
         "links":
         [
             {
