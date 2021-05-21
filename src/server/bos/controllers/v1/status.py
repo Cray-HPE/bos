@@ -636,6 +636,13 @@ class SessionStatus(SessionStatusModel):
             return True
 
 
+class Session(SessionStatus):
+    # This is here for backwards compatibility with previous
+    # BOS statuses that used code where SessionStatus was named
+    # Session.
+    pass
+
+
 def create_v1_session_status(session_id):
     """
     Create a Status for the Session
