@@ -531,7 +531,7 @@ class TestAPIEndpoints(object):
         bs_comp.initialize()
         bs_comp.metadata.start_time = bs.metadata.start_time
         _compare_bootset(bs, bs_comp)
-        assert status == 201
+        assert status == 200
         BootSet.delete(session_id, boot_set_name)
 
     def testGetV1SessionStatusStatusByBootSetAndPhase(self, monkeypatch):

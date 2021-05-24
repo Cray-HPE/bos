@@ -769,7 +769,7 @@ def get_v1_session_status_by_bootset(session_id,
                                      boot_set_name):
     try:
         bs = BootSet.load(session_id, boot_set_name)
-        status = 201
+        status = 200
     except BootSetDoesNotExist:
         bs = None
         status = 404
