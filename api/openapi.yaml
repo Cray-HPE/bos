@@ -3,7 +3,7 @@ openapi: "3.0.2"
 
 info:
   title: "Boot Orchestration Service"
-  version: "1.5.1"
+  version: "1.6.0"
   description: |
     The Boot Orchestration Service (BOS) applies 1 of 4 possible
     actions (boot, reboot, reconfigure, shutdown) to a list of compute nodes
