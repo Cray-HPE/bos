@@ -597,6 +597,104 @@ components:
             type: string
           data:
             $ref: '#/components/schemas/GenericMetadata'
+    BootArtifacts:
+      description: |
+        A collection of boot artifacts.
+      type: object
+      properties:
+        kernel:
+          type: string
+          description: Kernel ID
+#        kernel_instance:
+#          type: string
+#          description: The component's id. e.g. xname for hardware components
+        kernel_parameters:
+          type: string
+          description: Kernel parameters
+        rootfs:
+          type: string
+          description: Rootfs
+        initrd:
+          type: string
+          description: Initrd ID
+      additionalProperties: false
+    ComponentDesiredState:
+      description: |
+        The desired boot artifacts and configuration for a component
+      type: object
+      properties:
+        bootArifacts:
+          $ref: '#/components/schemas/BootArtifacts'
+          description: The desired boot artifacts.
+        configuration:
+          type: string
+          description: A CFS configuration ID.
+        lastUpdated:
+          type: string
+          description: The date/time when the state was last updated in RFC 3339 format.
+          example: '2019-07-28T03:26:00Z'
+          format: date-time
+          readOnly: true
+      additionalProperties: false
+    ComponentLastAction:
+      description: |
+        Information on the most recent action taken against the node.
+      type: object
+      properties:
+        lastUpdated:
+          type: string
+          description: The date/time when the state was last updated in RFC 3339 format.
+          example: '2019-07-28T03:26:00Z'
+          format: date-time
+          readOnly: true
+        minWait:
+          type: string
+          description: No further action can be taken until this time has passed.
+          example: '2019-07-28T03:26:00Z'
+          format: date-time
+          readOnly: true
+        maxWait:
+          type: string
+          description: After this time, we think something has gone wrong, and we need to react, possibly taking corrective action.
+          example: '2019-07-28T03:26:00Z'
+          format: date-time
+          readOnly: true
+        action:
+          type: string
+          description: A description of the most recent error to impact the component.
+        numAttempts:
+          type: integer
+          description: How many attempts have been made for this action.
+      additionalProperties: false
+    ComponentState:
+      description: |
+        The current and desired artifacts state for a component.
+      type: object
+      properties:
+        id:
+          type: string
+          description: The component's id. e.g. xname for hardware components
+        actualState:
+          $ref: '#/components/schemas/BootArtifacts'
+          description: A single state that will be appended to the list of current states.
+        desiredState:
+          $ref: '#/components/schemas/ComponentDesiredState'
+          description: A single state that will be appended to the list of current states.
+        lastAction:
+          $ref: '#/components/schemas/ComponentLastAction'
+          description: Information on the last action taken by BOS against this component.
+        enabled:
+          type: boolean
+          description: A flag indicating if actions should be taken for this component.
+        error:
+          type: string
+          description: A description of the most recent error to impact the component.
+      additionalProperties: false
+    ComponentStateArray:
+      description: An array of component states.
+      type: array
+      items:
+        $ref: '#/components/schemas/ComponentState'
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
       type: object
@@ -629,20 +727,22 @@ components:
             debugging information.
           type: string
       additionalProperties: false
-
+  requestBodies:
+    componentUpdateRequest:
+      description: The state for a single component
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ComponentState'
+    componentsUpdateRequest:
+      description: The state for an array of components
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ComponentStateArray'
   responses:
-    badRequest:
-      description: Bad Request
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetails'
-    serviceUnavailable:
-      description: Service Unavailable
-      content:
-        application/problem+json:
-          schema:
-            $ref: '#/components/schemas/ProblemDetails'
     v1SessionDetails:
       description: Session details
       content:
@@ -660,15 +760,42 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SessionTemplate'
-    sessionTemplateNotFound:
-      description: The session template was not found
+            $ref: '#/components/schema:#/components/responses/'
+    componentDetails:
+      description: A single component state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ComponentState'
+    componentDetailsArray:
+      description: A collection of component states
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ComponentStateArray'
+    resourceDeleted:
+      description: The resource was deleted.
+    # Errors
+    badRequest:
+      description: Bad Request
       content:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
-    sessionNotFound:
-      description: The session was not found
+    resourceNotFound:
+      description: The resource was not found.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    serviceUnavailable:
+      description: Service Unavailable
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
+    internalError:
+      description: An Internal Server Error occurred handling the request.
       content:
         application/problem+json:
           schema:
@@ -726,11 +853,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Version'
         500:
-          description: An Internal Server Error occurred handling the request.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
+          $ref: '#/components/responses/badRequest'
 
   /v1/healthz:
     get:
@@ -749,11 +872,7 @@ paths:
              schema:
                $ref: '#/components/schemas/Healthz'
         500:
-          description: An Internal Server Error occurred handling the request.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
+          $ref: '#/components/responses/badRequest'
         503:
           $ref: '#/components/responses/serviceUnavailable'
 
@@ -820,7 +939,7 @@ paths:
         200:
           $ref: '#/components/responses/v1SessionTemplateDetails'
         404:
-          $ref: '#/components/responses/sessionTemplateNotFound'
+          $ref: '#/components/responses/resourceNotFound'
     delete:
       summary: Delete a session template
       description: Delete a session template.
@@ -830,9 +949,9 @@ paths:
       operationId: delete_v1_sessiontemplate
       responses:
         204:
-          description: The session template was deleted.
+          $ref: '#/components/responses/resourceDeleted'
         404:
-          $ref: '#/components/responses/sessionTemplateNotFound'
+          $ref: '#/components/responses/resourceNotFound'
 
   /v1/sessiontemplatetemplate:
     get:
@@ -904,7 +1023,7 @@ paths:
         200:
           $ref: '#/components/responses/v1SessionDetails'
         404:
-          $ref: '#/components/responses/sessionNotFound'
+          $ref: '#/components/responses/resourceNotFound'
     delete:
       summary: Delete session by id
       description: Delete session by session_id.
@@ -914,9 +1033,9 @@ paths:
       operationId: delete_v1_session
       responses:
         204:
-          description: The session was deleted.
+          $ref: '#/components/responses/resourceDeleted'
         404:
-          $ref: '#/components/responses/sessionNotFound'
+          $ref: '#/components/responses/resourceNotFound'
 
     parameters:
       - name: session_id
@@ -950,7 +1069,7 @@ paths:
             The boot set name can be used to query for the status.
           $ref: '#/components/responses/v1SessionStatus'
         404:
-          $ref: '#/components/responses/sessionNotFound'
+          $ref: '#/components/responses/resourceNotFound'
     post:
       summary: Create the initial session status
       description: |
@@ -1001,7 +1120,7 @@ paths:
       operationId: delete_v1_session_status
       responses:
         204:
-          description: The status was deleted successfully.
+          $ref: '#/components/responses/resourceDeleted'
         400:
           $ref: '#/components/responses/badRequest'
 
@@ -1034,7 +1153,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BootSetStatus'
         404:
-          $ref: '#/components/responses/sessionNotFound'
+          $ref: '#/components/responses/resourceNotFound'
     post:
       summary: Create a Boot Set Status
       description: |
@@ -1086,7 +1205,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/BootSetStatus'
         404:
-          $ref: '#/components/responses/sessionNotFound'
+          $ref: '#/components/responses/resourceNotFound'
     delete:
       summary: Delete the Boot Set status
       description: |
@@ -1097,7 +1216,7 @@ paths:
       operationId: delete_v1_boot_set_status
       responses:
         204:
-          description: The status was deleted successfully.
+          $ref: '#/components/responses/resourceDeleted'
         400:
           $ref: '#/components/responses/badRequest'
 
@@ -1136,7 +1255,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PhaseStatus'
         404:
-          $ref: '#/components/responses/sessionNotFound'
+          $ref: '#/components/responses/resourceNotFound'
 
   /v1/session/{session_id}/status/{boot_set_name}/{phase_name}/{category_name}:
     parameters:
@@ -1179,7 +1298,140 @@ paths:
               schema:
                 $ref: '#/components/schemas/PhaseCategoryStatus'
         404:
-          $ref: '#/components/responses/sessionNotFound'
+          $ref: '#/components/responses/resourceNotFound'
+
+  /v1/components:
+    get:
+      summary: Retrieve the state of a collection of components
+      tags:
+        - components
+      x-openapi-router-controller: cray.bos.api.controllers.components
+      description: >-
+        Retrieve the full collection of components in the form of a
+        ComponentArray. Full results can also be filtered by query
+        parameters. Only the first filter parameter of each type is
+        used and the parameters are applied in an AND fashion.
+        If the collection is empty or the filters have no match, an
+        empty array is returned.
+      operationId: get_components
+      parameters:
+        - name: ids
+          schema:
+            type: string
+          in: query
+          description: >-
+            Retrieve the components with the given id
+            (e.g. xname for hardward components). Can be chained
+            for selecting groups of components.
+        - name: enabled
+          schema:
+            type: boolean
+          in: query
+          description: >-
+            Retrieve the components with the "enabled" state.
+      responses:
+        200:
+          $ref: '#/components/responses/componentDetailsArray'
+        400:
+          $ref: '#/components/responses/badRequest'
+    put:
+      summary: Add or Replace a collection of components
+      tags:
+        - components
+        - cli_ignore
+      x-openapi-router-controller: cray.bos.api.controllers.components
+      description: Update the state for a collection of components in the bos database
+      operationId: put_components
+      requestBody:
+        $ref: '#/components/requestBodies/componentsUpdateRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/componentDetailsArray'
+        400:
+          $ref: '#/components/responses/badRequest'
+    patch:
+      summary: Update a collection of components
+      tags:
+        - components
+        - cli_ignore
+      x-openapi-router-controller: cray.bos.api.controllers.components
+      description: Update the state for a collection of components in the bos database
+      operationId: patch_components
+      requestBody:
+        $ref: '#/components/requestBodies/componentsUpdateRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/componentDetailsArray'
+        400:
+          $ref: '#/components/responses/badRequest'
+        404:
+          $ref: '#/components/responses/resourceNotFound'
+
+  /v1/components/{component_id}:
+    get:
+      summary: Retrieve the state of a single component
+      tags:
+        - components
+      x-openapi-router-controller: cray.bos.api.controllers.components
+      description: Retrieve the current and desired state of a single component
+      operationId: get_component
+      responses:
+        200:
+          $ref: '#/components/responses/componentDetails'
+        400:
+          $ref: '#/components/responses/badRequest'
+        404:
+          $ref: '#/components/responses/resourceNotFound'
+    put:
+      summary: Add or Replace a single component
+      tags:
+        - components
+      x-openapi-router-controller: cray.bos.api.controllers.components
+      description: Update the state for a given component in the bos database
+      operationId: put_component
+      requestBody:
+        $ref: '#/components/requestBodies/componentUpdateRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/componentDetails'
+        400:
+          $ref: '#/components/responses/badRequest'
+    patch:
+      summary: Update a single component
+      tags:
+        - components
+      x-openapi-router-controller: cray.bos.api.controllers.components
+      description: Update the state for a given component in the bos database
+      operationId: patch_component
+      requestBody:
+        $ref: '#/components/requestBodies/componentUpdateRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/componentDetails'
+        400:
+          $ref: '#/components/responses/badRequest'
+        404:
+          $ref: '#/components/responses/resourceNotFound'
+    delete:
+      tags:
+        - components
+        - cli_ignore
+      summary: Delete a single component
+      x-openapi-router-controller: cray.bos.api.controllers.components
+      description: Delete the given component
+      operationId: delete_component
+      responses:
+        204:
+          $ref: '#/components/responses/resourceDeleted'
+        404:
+          $ref: '#/components/responses/resourceNotFound'
+    parameters:
+      - name: component_id
+        in: path
+        description: Component id. e.g. xname for hardware components
+        required: true
+        schema:
+          type: string
 
   /v1/version:
     get:
@@ -1205,8 +1457,4 @@ paths:
               schema:
                 $ref: '#/components/schemas/Version'
         500:
-          description: An Internal Server Error occurred handling the request.
-          content:
-            application/problem+json:
-              schema:
-                $ref: '#/components/schemas/ProblemDetails'
+          $ref: '#/components/responses/badRequest'
