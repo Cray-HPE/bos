@@ -149,11 +149,12 @@ $ ./regenerate-server.sh
 ```
 
 ## Versioning
-Use [SemVer](http://semver.org/). The main version is located in the [.version](.version) file. The
-API version is in the [api/openapi.yaml](api/openapi.yaml) file.  Other files either
-read the version strings from these files or have this version string written to them at build time using the 
-[update_versions.sh](update_versions.sh) script, based on the information in the 
-[update_versions.conf](update_versions.conf) file.
+Use [SemVer](http://semver.org/). The version is located in the [.version](.version) file. 
+Other files either read the version strings from this file or have this version string written
+to them at build time based on the information in the [update_versions.conf](update_versions.conf) file.
+
+## Build Helpers
+This repo uses some build helper scripts from the cms-meta-tools repo. See that repo for more details.
 
 ## Copyright and License
 This project is copyrighted by Hewlett Packard Enterprise Development LP and is under the MIT

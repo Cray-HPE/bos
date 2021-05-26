@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env sh
 
-# Copyright 2019, 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,72 +22,9 @@
 #
 # (MIT License)
 
-# Very simple scanner for files missing copyrights & licenses
-
-# Extensions to check
-CODE_EXTENSIONS="py sh spec"
-
-# Additional files to check, uses exact match
-EXTRA_FILES="Dockerfile run_codestylecheck run_unittests"
-
-WHITELIST_FILES=""
-
-FAIL=0
-
-function scan_file {
-    echo -n "Scanning $1... "
-    # skip empty files
-    if [ -s $1 ]; then
-        grep -q "Copyright" $1
-        if [ $? -ne 0 ]; then
-            echo "missing copyright headers"
-            return 1
-        fi
-        grep -q "MIT License" $1
-        if [ $? -ne 0 ]; then
-            echo "missing MIT license"
-            return 1
-        fi
-    fi
-    echo "OK"
-    return 0
-}
-
-function list_include_item {
-  local list="$1"
-  local item="$2"
-  if [[ $list =~ (^|[[:space:]])"$item"($|[[:space:]]) ]] ; then
-    # yes, list include item
-    result=0
-  else
-    result=1
-  fi
-  return $result
-}
-
-# Scan extensions
-for CE in ${CODE_EXTENSIONS}
-do
-    for F in `git ls-files "*.${CE}"`
-    do
-        if ! list_include_item "$WHITELIST_FILES" "$F"; then
-            scan_file ${F} || FAIL=1
-        fi
-    done
-done
-
-# Do the listed extra files
-for F in ${EXTRA_FILES}
-do
-    if ! list_include_item "$WHITELIST_FILES" "$F"; then
-        scan_file ${F} || FAIL=1
-    fi
-done
-
-if [ ${FAIL} -eq 0 ]; then
-    echo "All scanned code passed"
-else
-    echo "Some code is missing copyright or license, see list above"
-fi
-
-exit ${FAIL}
+./install_cms_meta_tools.sh || exit 1
+RC=0
+./cms_meta_tools/copyright_license_check/copyright_license_check.sh || RC=1
+./cms_meta_tools/go_lint/go_lint.sh || RC=1
+rm -rf ./cms_meta_tools
+exit $RC
