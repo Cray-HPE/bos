@@ -150,8 +150,8 @@ $ ./regenerate-server.sh
 
 ## Versioning
 Use [SemVer](http://semver.org/). The version is located in the [.version](.version) file. 
-Other files either read the version strings from this file or have this version string written
-to them at build time based on the information in the [update_versions.conf](update_versions.conf) file.
+All other files have the version string written to them at build time based on the information
+in the [update_versions.conf](update_versions.conf) file.
 
 ## Build Helpers
 This repo uses some build helper scripts from the cms-meta-tools repo. See that repo for more details.
