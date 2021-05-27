@@ -695,6 +695,18 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/ComponentState'
+    Options:
+      description: |
+        Options for the boot orchestration service.
+      type: object
+      properties:
+        maxComponentWaitTime:
+          type: integer
+          description: How long BOS will wait for a node (in seconds)
+        pollingFrequency:
+          type: integer
+          description: How frequently the BOS operators check component state for needed actions. (in seconds)
+      additionalProperties: false
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
       type: object
@@ -742,6 +754,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ComponentStateArray'
+    optionsUpdateRequest:
+      description: Service-wide options
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Options'
   responses:
     v1SessionDetails:
       description: Session details
@@ -773,6 +792,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ComponentStateArray'
+    options:
+      description: A collection of service-wide options
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Options'
     resourceDeleted:
       description: The resource was deleted.
     # Errors
@@ -1432,6 +1457,33 @@ paths:
         required: true
         schema:
           type: string
+
+  /v1/options:
+    get:
+      summary: Retrieve the bos service options
+      tags:
+        - options
+      x-openapi-router-controller: cray.bos.api.controllers.options
+      description: Retrieve the list of bos service options.
+      operationId: get_options
+      responses:
+        200:
+          $ref: '#/components/responses/options'
+    patch:
+      summary: Update bos service options (DEPRECATED)
+      tags:
+        - options
+        - v1
+      x-openapi-router-controller: cray.bos.api.controllers.options
+      operationId: patch_options
+      description: Update one or more of the bos service options.
+      requestBody:
+        $ref: '#/components/requestBodies/optionsUpdateRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/options'
+        400:
+          $ref: '#/components/responses/badRequest'
 
   /v1/version:
     get:
