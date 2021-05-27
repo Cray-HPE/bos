@@ -26,6 +26,14 @@ from distutils.version import LooseVersion
 
 THIS_FILE = __file__
 THIS_PROJECT = os.path.dirname(THIS_FILE)
+BRANCH_PATTERN = re.compile("^\*\s(.*?)\s", re.M)
+
+def branch_name():
+    """
+    Obtains a copy of the name of the current branch; make it work with all DST build pipelines.
+    """
+    output = subprocess.check_output(['git', 'branch'], cwd=THIS_PROJECT).decode('UTF-8').strip()
+    return BRANCH_PATTERN.search(output).groups()[0]
 
 
 class VersionStrategy():
@@ -125,10 +133,7 @@ class GitBasedStrategy(VersionStrategy):
         """
         The name of the branch in the local checkout. Discovered exactly once per invocation.
         """
-        if hasattr(self, '_branch') and self._branch is not None:
-            return self._branch
-        self._branch = subprocess.check_output(['git', 'branch', '--no-color', '--show-current'], cwd=THIS_PROJECT).decode('UTF-8').strip()
-        return self._branch
+        return branch_name()
 
     @property
     def commits(self):
@@ -391,7 +396,7 @@ class DeveloperBranchVersion(BranchVersion):
 
 
 def version_factory():
-    branch = subprocess.check_output(['git', 'branch', '--no-color', '--show-current']).decode('UTF-8').strip()
+    branch = branch_name()
     if MasterBranchVersion.is_a(branch):
         return MasterBranchVersion()
     elif ReleaseBranchVersion.is_a(branch):
