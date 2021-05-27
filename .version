@@ -182,7 +182,10 @@ class CommitsFromParentBranch(GitBasedStrategy):
         return(subprocess.check_output(['git', 'rev-list', '--count', self.branch, '--not', 'origin/%s' %(self.parent_branch)], cwd=THIS_PROJECT).decode('UTF-8').strip())
 
     def __call__(self):
-        return self.commits_from_parent
+        try:
+            return self.commits_from_parent
+        except subprocess.CalledProcessError:
+            return None
 
 
 class CommitsSinceChangedStrategy(GitBasedStrategy):
@@ -374,6 +377,8 @@ class DeveloperBranchVersion(BranchVersion):
         self.x_strategies.append(ZeroStrategy('x')) # We don't release our stuff! Stay below 0.
         self.y_strategies.append(DeveloperBranchNameStrategy('y'))
         self.z_strategies.append(CommitsFromParentBranch('z'))
+        # Our build system can't handle a lookup against origin, so we just look at commit count
+        self.z_strategies.append(CommitCountStrategy('z'))
 
 
 def version_factory():
