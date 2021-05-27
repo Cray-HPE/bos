@@ -155,6 +155,15 @@ class DeveloperBranchNameStrategy(GitBasedStrategy):
         return str(self.branch)
 
 
+class DeveloperBranchOnlyDigitsStrategy(DeveloperBranchNameStrategy):
+    """
+    Like a DeveloperBranchNameStrategy, but the fields are stripped of alpha numeric characters.
+    """
+    def __call__(self):
+        value = super().__call__()
+        value = re.sub('[^0-9]', '', value)
+        return value
+
 class CommitCountStrategy(GitBasedStrategy):
     """
     Produces a version field based on the number of commits that have been made to a branch.
@@ -375,7 +384,7 @@ class DeveloperBranchVersion(BranchVersion):
     def __init__(self):
         super().__init__()
         self.x_strategies.append(ZeroStrategy('x')) # We don't release our stuff! Stay below 0.
-        self.y_strategies.append(DeveloperBranchNameStrategy('y'))
+        self.y_strategies.append(DeveloperBranchOnlyDigitsStrategy('y'))
         self.z_strategies.append(CommitsFromParentBranch('z'))
         # Our build system can't handle a lookup against origin, so we just look at commit count
         self.z_strategies.append(CommitCountStrategy('z'))
