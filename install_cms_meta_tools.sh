@@ -50,5 +50,6 @@ TRGDIR=$(pwd)/cms_meta_tools
 mkdir -pv "$TRGDIR" || exit 1
 
 # Install the rpm into this directory, do not check/update the rpm db, and (because of that) do not check dependencies
+rpm -ivh python3
 rpm -Uvh --relocate /opt/cray/cms-meta-tools="$TRGDIR" --nodeps --dbpath "$TRGDIR" $RPM_URL || exit 1
 exit 0
