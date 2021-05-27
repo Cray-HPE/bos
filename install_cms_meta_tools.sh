@@ -22,7 +22,7 @@
 #
 # (MIT License)
 
-CMT_RPMS_URL=http://car.dev.cray.com/artifactory/internal/SCMS/sle15_sp2/noarch/release/cmt-0.1/cms-team/
+CMT_RPMS_URL=http://car.dev.cray.com/artifactory/internal/SCMS/sle15_sp2/noarch/release/cmt-1.0/cms-team/
 
 # Find latest cms-meta-tools RPM in our chosen release (0.1)
 function cmt-rpm-url
