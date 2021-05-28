@@ -36,9 +36,9 @@ def branch_name():
     try:
         return BRANCH_PATTERN.search(output).groups()[0]
     except AttributeError:
-        print(os.environ)
-        return None
-
+        # DST Build pipelines don't allow us to query the name of the version all the time.
+        # So, we can find it in the environment.
+        return os.environ.get('GIT_BRANCH', None)
 
 class VersionStrategy():
     """
