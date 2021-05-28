@@ -32,16 +32,12 @@ def branch_name():
     """
     Obtains a copy of the name of the current branch; make it work with all DST build pipelines.
     """
-    # TEMP: Find out what the checkout project looks like in DST
-    directories = []
-    parent_dirs = os.path.abspath(THIS_PROJECT).split('/')
-    print(parent_dirs)
-    for count in range(len(parent_dirs)):
-        this_dir = '/%s' %('/'.join(parent_dirs[:count+1]))
-        print(this_dir)
-        print('\t', ', '.join(sorted(os.listdir(this_dir))))
     output = subprocess.check_output(['git', 'branch'], cwd=THIS_PROJECT).decode('UTF-8').strip()
-    return BRANCH_PATTERN.search(output).groups()[0]
+    try:
+        return BRANCH_PATTERN.search(output).groups()[0]
+    except AttributeError:
+        print(os.environ)
+        return None
 
 
 class VersionStrategy():
