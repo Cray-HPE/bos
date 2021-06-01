@@ -46,6 +46,7 @@ COPY src/server/bos/controllers lib/server/bos/controllers
 COPY src/server/bos/__main__.py \
      src/server/bos/utils.py \
      src/server/bos/dbclient.py \
+     src/server/bos/redis_db_utils.py \
      src/server/bos/specialized_encoder.py \
      lib/server/bos/
 

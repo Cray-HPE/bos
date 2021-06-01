@@ -604,10 +604,7 @@ components:
       properties:
         kernel:
           type: string
-          description: Kernel ID
-#        kernel_instance:
-#          type: string
-#          description: The component's id. e.g. xname for hardware components
+          description: A md5sum hash of the kernel ID
         kernel_parameters:
           type: string
           description: Kernel parameters
@@ -618,12 +615,26 @@ components:
           type: string
           description: Initrd ID
       additionalProperties: false
+    ComponentActualState:
+      description: |
+        The desired boot artifacts and configuration for a component
+      type: object
+      properties:
+        bootArtifacts:
+          $ref: '#/components/schemas/BootArtifacts'
+          description: The desired boot artifacts.
+        lastUpdated:
+          type: string
+          description: The date/time when the state was last updated in RFC 3339 format.
+          example: '2019-07-28T03:26:00Z'
+          format: date-time
+          readOnly: true
     ComponentDesiredState:
       description: |
         The desired boot artifacts and configuration for a component
       type: object
       properties:
-        bootArifacts:
+        bootArtifacts:
           $ref: '#/components/schemas/BootArtifacts'
           description: The desired boot artifacts.
         configuration:
@@ -675,7 +686,7 @@ components:
           type: string
           description: The component's id. e.g. xname for hardware components
         actualState:
-          $ref: '#/components/schemas/BootArtifacts'
+          $ref: '#/components/schemas/ComponentActualState'
           description: A single state that will be appended to the list of current states.
         desiredState:
           $ref: '#/components/schemas/ComponentDesiredState'
@@ -779,7 +790,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schema:#/components/responses/'
+            $ref: '#/components/schemas/SessionTemplate'
     componentDetails:
       description: A single component state
       content:
@@ -1330,7 +1341,7 @@ paths:
       summary: Retrieve the state of a collection of components
       tags:
         - components
-      x-openapi-router-controller: cray.bos.api.controllers.components
+      x-openapi-router-controller: bos.controllers.v1.components
       description: >-
         Retrieve the full collection of components in the form of a
         ComponentArray. Full results can also be filtered by query
@@ -1364,7 +1375,7 @@ paths:
       tags:
         - components
         - cli_ignore
-      x-openapi-router-controller: cray.bos.api.controllers.components
+      x-openapi-router-controller: bos.controllers.v1.components
       description: Update the state for a collection of components in the bos database
       operationId: put_components
       requestBody:
@@ -1379,7 +1390,7 @@ paths:
       tags:
         - components
         - cli_ignore
-      x-openapi-router-controller: cray.bos.api.controllers.components
+      x-openapi-router-controller: bos.controllers.v1.components
       description: Update the state for a collection of components in the bos database
       operationId: patch_components
       requestBody:
@@ -1397,7 +1408,7 @@ paths:
       summary: Retrieve the state of a single component
       tags:
         - components
-      x-openapi-router-controller: cray.bos.api.controllers.components
+      x-openapi-router-controller: bos.controllers.v1.components
       description: Retrieve the current and desired state of a single component
       operationId: get_component
       responses:
@@ -1411,7 +1422,7 @@ paths:
       summary: Add or Replace a single component
       tags:
         - components
-      x-openapi-router-controller: cray.bos.api.controllers.components
+      x-openapi-router-controller: bos.controllers.v1.components
       description: Update the state for a given component in the bos database
       operationId: put_component
       requestBody:
@@ -1425,7 +1436,7 @@ paths:
       summary: Update a single component
       tags:
         - components
-      x-openapi-router-controller: cray.bos.api.controllers.components
+      x-openapi-router-controller: bos.controllers.v1.components
       description: Update the state for a given component in the bos database
       operationId: patch_component
       requestBody:
@@ -1442,7 +1453,7 @@ paths:
         - components
         - cli_ignore
       summary: Delete a single component
-      x-openapi-router-controller: cray.bos.api.controllers.components
+      x-openapi-router-controller: bos.controllers.v1.components
       description: Delete the given component
       operationId: delete_component
       responses:
@@ -1463,18 +1474,18 @@ paths:
       summary: Retrieve the bos service options
       tags:
         - options
-      x-openapi-router-controller: cray.bos.api.controllers.options
+      x-openapi-router-controller: bos.controllers.v1.options
       description: Retrieve the list of bos service options.
       operationId: get_options
       responses:
         200:
           $ref: '#/components/responses/options'
     patch:
-      summary: Update bos service options (DEPRECATED)
+      summary: Update bos service options
       tags:
         - options
         - v1
-      x-openapi-router-controller: cray.bos.api.controllers.options
+      x-openapi-router-controller: bos.controllers.v1.options
       operationId: patch_options
       description: Update one or more of the bos service options.
       requestBody:
