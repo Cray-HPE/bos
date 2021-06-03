@@ -21,6 +21,7 @@
 #
 # (MIT License)
 
+./update_tags.sh || exit 1
 ./install_cms_meta_tools.sh || exit 1
 RC=0
 ./cms_meta_tools/update_versions/update_versions.sh || RC=1
