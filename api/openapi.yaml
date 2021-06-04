@@ -484,7 +484,7 @@ components:
         limit:
           type: string
           description: >
-            A comma seperated of nodes, groups or roles to which the session
+            A comma separated of nodes, groups or roles to which the session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         links:
