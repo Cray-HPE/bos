@@ -49,7 +49,7 @@ COPY src/server/bos/__main__.py \
      src/server/bos/specialized_encoder.py \
      lib/server/bos/
 
-# Testing Image
+# Testing image
 FROM base as testing
 WORKDIR /app/
 COPY src/server/bos/test lib/server/bos/test/
@@ -72,7 +72,7 @@ COPY docker_api_test_entry.sh run_apitests.py ./
 COPY api_tests/ api_tests/
 CMD [ "./docker_api_test_entry.sh" ]
 
-# Debug Image
+# Debug image
 FROM base as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
@@ -83,7 +83,7 @@ COPY config/uwsgi.ini ./
 ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 
 
-# Application Image
+# Application image
 FROM base as application
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/

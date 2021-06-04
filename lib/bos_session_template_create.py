@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # Copyright 2019, 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -45,7 +45,6 @@ ANSIBLE_METADATA = {
     'status': ['preview', 'stableinterface'],
     'supported_by': 'community'
 }
-
 
 
 DOCUMENTATION = '''

@@ -60,8 +60,8 @@ info:
     A new session is launched as a result of this call.
 
     A limit can also be specified to narrow the scope of the session. The limit
-    can consist of nodes, groups or roles in a comma-seperated list.
-    Multiple groups are treated as seperated by OR, unless "&" is added to
+    can consist of nodes, groups or roles in a comma-separated list.
+    Multiple groups are treated as separated by OR, unless "&" is added to
     the start of the component, in which case this becomes an AND.  Components
     can also be preceded by "!" to exclude them.
 
@@ -484,7 +484,7 @@ components:
         limit:
           type: string
           description: >
-            A comma seperated of nodes, groups or roles to which the session
+            A comma separated of nodes, groups or roles to which the session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         links:

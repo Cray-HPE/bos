@@ -1,7 +1,7 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 """
-The Sum of the whole is greater than its parts.
+The sum of the whole is greater than its parts.
 
 This script generates a version using a variety of predefined strategies with as little hand-holding
 as possible. The strategies are defined ahead of time, but can be influenced at specific points in
@@ -16,6 +16,27 @@ NOTE: This does NOT spit out a build version. That's the responsibility of a bui
 WARNING: You copy this file, you own it.
 
 # Copyright 2021 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+# (MIT License)
+
 original author: jsl
 """
 
@@ -108,9 +129,9 @@ class PinnedFileStrategy(VersionStrategy):
 
 class GitBasedStrategy(VersionStrategy):
     """
-    Git based strategies look at branch and commit history information in order to devise
+    Git-based strategies look at branch and commit history information in order to devise
     the value of a given field. Due to the nature of GitBasedStrategies, they can only
-    be created when the git project checkout is clean. Any uncommited file in your project
+    be created when the git project checkout is clean. Any uncommitted file in your project
     will cause a GitBasedStrategy to ultimately produce artifacts that are not representative
     of the project.
 
@@ -156,7 +177,7 @@ class DeveloperBranchNameStrategy(GitBasedStrategy):
     These version strings are unique as they contain alphanumeric characters to better assist in tracking
     an installed version back to a specific issue.
 
-    This strategy is used in conjunction with commit counting strategies to form a full version string..
+    This strategy is used in conjunction with commit-counting strategies to form a full version string..
     """
     def __call__(self):
         if self.field_index in (0, 2):
@@ -166,7 +187,7 @@ class DeveloperBranchNameStrategy(GitBasedStrategy):
 
 class DeveloperBranchOnlyDigitsStrategy(DeveloperBranchNameStrategy):
     """
-    Like a DeveloperBranchNameStrategy, but the fields are stripped of alpha numeric characters.
+    Like a DeveloperBranchNameStrategy, but the fields are stripped of alphanumeric characters.
     """
     def __call__(self):
         value = super().__call__()
@@ -187,7 +208,7 @@ class CommitsFromParentBranch(GitBasedStrategy):
     as a value. This is a rough estimate about the number of individual commits that have been made
     since you branched from the upstream origin branch.
     
-    NOTE: This value can change if you merge your code in to the upstream remote and then pull it back down!
+    NOTE: This value can change if you merge your code into the upstream remote and then pull it back down!
     Therefore, it may not be monotonically increasing.
     """
     @property
@@ -218,11 +239,11 @@ class CommitsSinceChangedStrategy(GitBasedStrategy):
     When a pinned y file changes as part of a commit, we count the number of commits to this branch
     in order to determine this value. Most importantly, this allows developers to commit code to
     the same branch without major consideration for manually incrementing ANY file. The benefit
-    of doing this, is it allows asychronous merges to happen without a merge conflict. Values
+    of doing this is that it allows asynchronous merges to happen without a merge conflict. Values
     are simply handed out somewhat monotonically, and follow the merge order for the given
     branch.
 
-    The beauty of this approach, is that the default behavior of bumping the minor version ('y')
+    The beauty of this approach is that the default behavior of bumping the minor version ('y')
     using a pinned approach automatically sets this value back to zero.
     """
     @property
@@ -263,7 +284,7 @@ class CommitsSinceChangedStrategy(GitBasedStrategy):
 class BranchVersion(LooseVersion):
     """
     Every branch has its own unique desired set of strategies that need
-    to work together to form a coheisive version, and the strategies are different
+    to work together to form a cohesive version, and the strategies are different
     based on what kind of branches there are.
 
     Today, we define three types of branches:
@@ -331,11 +352,11 @@ class BranchVersion(LooseVersion):
 class MasterBranchVersion(BranchVersion):
     """
     A master branch should never be released or installed (who does that?!). Although it is
-    almost always the bleeding edge of commits, its never the latest. We always want this
+    almost always the bleeding edge of commits, it's never the latest. We always want this
     version to be less than anything else.
 
     Same thing goes for 'main' branches as well; we treat these synonymously as far as versioning
-    goes, however, it not all builds from master or main are the same, and we want to show some kind
+    goes, however, not all builds from master or main are the same, and we want to show some kind
     of minor change mark on produced artifacts to suggest when something may have been built.
     """
     @staticmethod
@@ -356,7 +377,7 @@ class MasterBranchVersion(BranchVersion):
 class ReleaseBranchVersion(BranchVersion):
     """
     A Release branch version is intended to be externally shipped to customers; these branches
-    represent the focal point of developer integration and have the highest need for asychronous
+    represent the focal point of developer integration and have the highest need for asynchronous
     but consistent monotonically increasing versions.
     """
     @staticmethod
@@ -374,7 +395,7 @@ class DeveloperBranchVersion(BranchVersion):
     """
     Developer branches have a need to be built and installed in order to be tested,
     but developer branches shouldn't release to anyone other than originating authors.
-    For traceability purposes, the issue ticket (JIRA/Github), ideally has some influence
+    For traceability purposes, the issue ticket (JIRA/Github) ideally has some influence
     on the versioning, so that commits to the same issue can be tracked in a common
     location.
 
@@ -384,7 +405,7 @@ class DeveloperBranchVersion(BranchVersion):
     CASMCMS-1234 + 2 developer commits -> 0.CASMCMS-1234.2
     CASMINST-567 -> 0.CASMINST-567.0
 
-    Note: Its possible to overlap built issues based on two different ticket providers or identifiers.
+    Note: It's possible to overlap built issues based on two different ticket providers or identifiers.
     """
     @staticmethod
     def is_a(self):

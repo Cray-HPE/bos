@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -33,8 +33,8 @@ docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yap
     -c local/config/autogen-server.json \
     --generate-alias-as-model
 
-echo "Code has been generated within src/server for development purposes ONLY"
-echo "This project is setup to automatically generate server side code as a"
+echo "Code has been generated within src/server for development purposes ONLY."
+echo "This project is setup to automatically generate server-side code as a"
 echo "function of docker image build. Adjust .gitignore before checking in"
 echo "anything you did not author!"
 
