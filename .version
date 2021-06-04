@@ -243,7 +243,7 @@ class CommitsSinceChangedStrategy(GitBasedStrategy):
     are simply handed out somewhat monotonically, and follow the merge order for the given
     branch.
 
-    The beauty of this approach, is that the default behavior of bumping the minor version ('y')
+    The beauty of this approach is that the default behavior of bumping the minor version ('y')
     using a pinned approach automatically sets this value back to zero.
     """
     @property
