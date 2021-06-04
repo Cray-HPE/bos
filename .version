@@ -395,7 +395,7 @@ class DeveloperBranchVersion(BranchVersion):
     """
     Developer branches have a need to be built and installed in order to be tested,
     but developer branches shouldn't release to anyone other than originating authors.
-    For traceability purposes, the issue ticket (JIRA/Github), ideally has some influence
+    For traceability purposes, the issue ticket (JIRA/Github) ideally has some influence
     on the versioning, so that commits to the same issue can be tracked in a common
     location.
 
