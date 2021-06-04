@@ -208,7 +208,7 @@ class CommitsFromParentBranch(GitBasedStrategy):
     as a value. This is a rough estimate about the number of individual commits that have been made
     since you branched from the upstream origin branch.
     
-    NOTE: This value can change if you merge your code in to the upstream remote and then pull it back down!
+    NOTE: This value can change if you merge your code into the upstream remote and then pull it back down!
     Therefore, it may not be monotonically increasing.
     """
     @property
