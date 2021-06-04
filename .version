@@ -284,7 +284,7 @@ class CommitsSinceChangedStrategy(GitBasedStrategy):
 class BranchVersion(LooseVersion):
     """
     Every branch has its own unique desired set of strategies that need
-    to work together to form a coheisive version, and the strategies are different
+    to work together to form a cohesive version, and the strategies are different
     based on what kind of branches there are.
 
     Today, we define three types of branches:
