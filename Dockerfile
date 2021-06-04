@@ -72,7 +72,7 @@ COPY docker_api_test_entry.sh run_apitests.py ./
 COPY api_tests/ api_tests/
 CMD [ "./docker_api_test_entry.sh" ]
 
-# Debug Image
+# Debug image
 FROM base as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
