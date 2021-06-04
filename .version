@@ -352,7 +352,7 @@ class BranchVersion(LooseVersion):
 class MasterBranchVersion(BranchVersion):
     """
     A master branch should never be released or installed (who does that?!). Although it is
-    almost always the bleeding edge of commits, its never the latest. We always want this
+    almost always the bleeding edge of commits, it's never the latest. We always want this
     version to be less than anything else.
 
     Same thing goes for 'main' branches as well; we treat these synonymously as far as versioning
