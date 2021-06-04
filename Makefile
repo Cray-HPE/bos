@@ -1,6 +1,7 @@
 NAME ?= cray-bos
 CHART_PATH ?= kubernetes
 VERSION ?= $(shell cat .version)
+SPEC_VERSION ?= $(shell cat .version)
 CHART_VERSION ?= $(VERSION)
 
 HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
@@ -8,7 +9,7 @@ HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
 SPEC_NAME ?= bos-crayctldeploy-test
 SPEC_FILE ?= ${SPEC_NAME}.spec
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
-SOURCE_NAME ?= ${SPEC_NAME}-${VERSION}
+SOURCE_NAME ?= ${SPEC_NAME}-${SPEC_VERSION}
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 SOURCE_PATH := ${BUILD_DIR}/SOURCES/${SOURCE_NAME}.tar.bz2
 
