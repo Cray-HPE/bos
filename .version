@@ -187,7 +187,7 @@ class DeveloperBranchNameStrategy(GitBasedStrategy):
 
 class DeveloperBranchOnlyDigitsStrategy(DeveloperBranchNameStrategy):
     """
-    Like a DeveloperBranchNameStrategy, but the fields are stripped of alpha numeric characters.
+    Like a DeveloperBranchNameStrategy, but the fields are stripped of alphanumeric characters.
     """
     def __call__(self):
         value = super().__call__()
