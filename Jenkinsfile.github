@@ -41,7 +41,7 @@ pipeline {
 
                 stage('Rpm') {
                     steps {
-                        sh "make chart"
+                        sh "make rpm"
                     }
                 }
             }
