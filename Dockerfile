@@ -49,7 +49,7 @@ COPY src/server/bos/__main__.py \
      src/server/bos/specialized_encoder.py \
      lib/server/bos/
 
-# Testing Image
+# Testing image
 FROM base as testing
 WORKDIR /app/
 COPY src/server/bos/test lib/server/bos/test/
