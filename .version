@@ -131,7 +131,7 @@ class GitBasedStrategy(VersionStrategy):
     """
     Git-based strategies look at branch and commit history information in order to devise
     the value of a given field. Due to the nature of GitBasedStrategies, they can only
-    be created when the git project checkout is clean. Any uncommited file in your project
+    be created when the git project checkout is clean. Any uncommitted file in your project
     will cause a GitBasedStrategy to ultimately produce artifacts that are not representative
     of the project.
 
