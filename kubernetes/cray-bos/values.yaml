@@ -95,6 +95,13 @@ cray-service:
         periodSeconds: 60
         timeoutSeconds: 10
         failureThreshold: 20
+      resources:
+        requests:
+          memory: "200Mi"
+          cpu: "300m"
+        limits:
+          memory: "500Mi"
+          cpu: "1000m"
   volumes:
     ca-vol:
       name: ca-vol
