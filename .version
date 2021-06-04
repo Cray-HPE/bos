@@ -405,7 +405,7 @@ class DeveloperBranchVersion(BranchVersion):
     CASMCMS-1234 + 2 developer commits -> 0.CASMCMS-1234.2
     CASMINST-567 -> 0.CASMINST-567.0
 
-    Note: Its possible to overlap built issues based on two different ticket providers or identifiers.
+    Note: It's possible to overlap built issues based on two different ticket providers or identifiers.
     """
     @staticmethod
     def is_a(self):
