@@ -33,7 +33,7 @@ DB_PORT = int(os.getenv('ETCD_PORT', 2379))
 
 class BosEtcdClient(Etcd3Client):
     """
-    A BOS specific client to its' underlying etcd3 database. This class
+    A BOS-specific client to its' underlying etcd3 database. This class
     extends the opensource Etcd3Client implementation by making it resilient to
     initial database availability, as well, some nature of static read/get operations.
 
