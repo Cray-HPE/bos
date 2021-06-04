@@ -356,7 +356,7 @@ class MasterBranchVersion(BranchVersion):
     version to be less than anything else.
 
     Same thing goes for 'main' branches as well; we treat these synonymously as far as versioning
-    goes, however, it not all builds from master or main are the same, and we want to show some kind
+    goes, however, not all builds from master or main are the same, and we want to show some kind
     of minor change mark on produced artifacts to suggest when something may have been built.
     """
     @staticmethod
