@@ -22,6 +22,8 @@
 
 import logging
 import connexion
+import threading
+import time
 
 
 from bos import redis_db_utils as dbutils
@@ -35,23 +37,27 @@ DB = dbutils.get_wrapper(db='options')
 OPTIONS_KEY = 'options'
 DEFAULTS = {
     'maxComponentWaitTime': 3600,
-    'pollingFrequency': 60
+    'pollingFrequency': 60,
+    'loggingLevel': 'INFO'
 }
 
 
 def _init():
+    # Start log level updater
+    log_level_updater = threading.Thread(target=check_logging_level, args=())
+    log_level_updater.start()
+
     """ Cleanup old options """
-    data = DB.get(OPTIONS_KEY)
+    while True:
+        try:
+            data = DB.get(OPTIONS_KEY)
+            break
+        except Exception:
+            LOGGER.info('Database is not yet available')
+            time.sleep(1)
     if not data:
         return
-    # Cleanup
-    to_delete = []
-    all_options = set(Options().attribute_map.values())
-    for key in data:
-        if key not in all_options:
-            to_delete.append(key)
-    for key in to_delete:
-        del data[key]
+    data = _clean_options_data(data)
     DB.put(OPTIONS_KEY, data)
 
 
@@ -60,13 +66,20 @@ def get_options():
     """Used by the GET /options API operation"""
     LOGGER.debug("GET /options invoked get_options")
     data = get_options_data()
+    data = _clean_options_data(data)
+    return data, 200
+
+
+def _clean_options_data(data):
+    """Removes keys that are not in the options spec"""
     to_delete = []
+    all_options = set(Options().attribute_map.values())
     for key in data:
-        if key not in Options().attribute_map.values():
+        if key not in all_options:
             to_delete.append(key)
     for key in to_delete:
         del data[key]
-    return data, 200
+    return data
 
 
 def get_options_data():
@@ -101,3 +114,26 @@ def patch_options():
     if OPTIONS_KEY not in DB:
         DB.put(OPTIONS_KEY, {})
     return DB.patch(OPTIONS_KEY, data), 200
+
+
+def update_log_level(new_level_str):
+    new_level = logging.getLevelName(new_level_str.upper())
+    current_level = LOGGER.getEffectiveLevel()
+    if current_level != new_level:
+        LOGGER.log(current_level, 'Changing logging level from {} to {}'.format(
+            logging.getLevelName(current_level), logging.getLevelName(new_level)))
+        logger = logging.getLogger()
+        logger.setLevel(new_level)
+        LOGGER.log(new_level, 'Logging level changed from {} to {}'.format(
+            logging.getLevelName(current_level), logging.getLevelName(new_level)))
+
+
+def check_logging_level():
+    while True:
+        try:
+            data = get_options_data()
+            if 'loggingLevel' in data:
+                update_log_level(data['loggingLevel'])
+        except Exception as e:
+            LOGGER.debug(e)
+        time.sleep(5)

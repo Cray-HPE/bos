@@ -35,7 +35,7 @@ DB_PORT = 6379
 class DBWrapper():
     """A wrapper around a Redis database connection
 
-    The handles creating the Redis client and provides REST-like methods for
+    This handles creating the Redis client and provides REST-like methods for
     modifying json data in the database.
 
     Because the underlying Redis client is threadsafe, this class is as well,
@@ -107,7 +107,12 @@ class DBWrapper():
         return self.get(key)
 
     def _update(self, data, new_data):
-        """Recursively patches json to allow sub-fields to be patched."""
+        """Recursively patches json to allow sub-fields to be patched.
+
+        Keyword arguments:
+        data -- A dictionary of json data
+        new_data -- A dictionary of json data in the same format as "data"
+        """
         for k, v in new_data.items():
             if isinstance(v, dict):
                 data[k] = self._update(data.get(k, {}), v)

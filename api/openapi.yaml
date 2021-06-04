@@ -604,7 +604,7 @@ components:
       properties:
         kernel:
           type: string
-          description: A md5sum hash of the kernel ID
+          description: An md5sum hash of the kernel ID
         kernel_parameters:
           type: string
           description: Kernel parameters
@@ -672,12 +672,12 @@ components:
           readOnly: true
         action:
           type: string
-          description: A description of the most recent error to impact the component.
+          description: A description of the most recent operator/action to impact the component.
         numAttempts:
           type: integer
           description: How many attempts have been made for this action.
       additionalProperties: false
-    ComponentState:
+    Component:
       description: |
         The current and desired artifacts state for a component.
       type: object
@@ -687,10 +687,10 @@ components:
           description: The component's id. e.g. xname for hardware components
         actualState:
           $ref: '#/components/schemas/ComponentActualState'
-          description: A single state that will be appended to the list of current states.
+          description: The actual state of the component.
         desiredState:
           $ref: '#/components/schemas/ComponentDesiredState'
-          description: A single state that will be appended to the list of current states.
+          description: A desired state for the component.
         lastAction:
           $ref: '#/components/schemas/ComponentLastAction'
           description: Information on the last action taken by BOS against this component.
@@ -701,11 +701,11 @@ components:
           type: string
           description: A description of the most recent error to impact the component.
       additionalProperties: false
-    ComponentStateArray:
+    ComponentArray:
       description: An array of component states.
       type: array
       items:
-        $ref: '#/components/schemas/ComponentState'
+        $ref: '#/components/schemas/Component'
     Options:
       description: |
         Options for the boot orchestration service.
@@ -717,6 +717,9 @@ components:
         pollingFrequency:
           type: integer
           description: How frequently the BOS operators check component state for needed actions. (in seconds)
+        loggingLevel:
+          type: string
+          description: The logging level for all BOS services
       additionalProperties: false
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
@@ -757,14 +760,14 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ComponentState'
+            $ref: '#/components/schemas/Component'
     componentsUpdateRequest:
       description: The state for an array of components
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ComponentStateArray'
+            $ref: '#/components/schemas/ComponentArray'
     optionsUpdateRequest:
       description: Service-wide options
       required: true
@@ -796,13 +799,13 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ComponentState'
+            $ref: '#/components/schemas/Component'
     componentDetailsArray:
       description: A collection of component states
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ComponentStateArray'
+            $ref: '#/components/schemas/ComponentArray'
     options:
       description: A collection of service-wide options
       content:
@@ -1376,7 +1379,7 @@ paths:
         - components
         - cli_ignore
       x-openapi-router-controller: bos.controllers.v1.components
-      description: Update the state for a collection of components in the bos database
+      description: Update the state for a collection of components in the BOS database
       operationId: put_components
       requestBody:
         $ref: '#/components/requestBodies/componentsUpdateRequest'
@@ -1391,7 +1394,7 @@ paths:
         - components
         - cli_ignore
       x-openapi-router-controller: bos.controllers.v1.components
-      description: Update the state for a collection of components in the bos database
+      description: Update the state for a collection of components in the BOS database
       operationId: patch_components
       requestBody:
         $ref: '#/components/requestBodies/componentsUpdateRequest'
@@ -1423,7 +1426,7 @@ paths:
       tags:
         - components
       x-openapi-router-controller: bos.controllers.v1.components
-      description: Update the state for a given component in the bos database
+      description: Update the state for a given component in the BOS database
       operationId: put_component
       requestBody:
         $ref: '#/components/requestBodies/componentUpdateRequest'
@@ -1437,7 +1440,7 @@ paths:
       tags:
         - components
       x-openapi-router-controller: bos.controllers.v1.components
-      description: Update the state for a given component in the bos database
+      description: Update the state for a given component in the BOS database
       operationId: patch_component
       requestBody:
         $ref: '#/components/requestBodies/componentUpdateRequest'
@@ -1471,23 +1474,23 @@ paths:
 
   /v1/options:
     get:
-      summary: Retrieve the bos service options
+      summary: Retrieve the BOS service options
       tags:
         - options
       x-openapi-router-controller: bos.controllers.v1.options
-      description: Retrieve the list of bos service options.
+      description: Retrieve the list of BOS service options.
       operationId: get_options
       responses:
         200:
           $ref: '#/components/responses/options'
     patch:
-      summary: Update bos service options
+      summary: Update BOS service options
       tags:
         - options
         - v1
       x-openapi-router-controller: bos.controllers.v1.options
       operationId: patch_options
-      description: Update one or more of the bos service options.
+      description: Update one or more of the BOS service options.
       requestBody:
         $ref: '#/components/requestBodies/optionsUpdateRequest'
       responses:

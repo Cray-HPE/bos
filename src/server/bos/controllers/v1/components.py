@@ -51,7 +51,7 @@ def get_components(ids="", enabled=None):
 
 
 def get_components_data(id_list=None, enabled=None):
-    """Used by the GET /components API operation=
+    """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
     """
