@@ -377,7 +377,7 @@ class MasterBranchVersion(BranchVersion):
 class ReleaseBranchVersion(BranchVersion):
     """
     A Release branch version is intended to be externally shipped to customers; these branches
-    represent the focal point of developer integration and have the highest need for asychronous
+    represent the focal point of developer integration and have the highest need for asynchronous
     but consistent monotonically increasing versions.
     """
     @staticmethod
