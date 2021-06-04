@@ -57,7 +57,7 @@ cray-service:
         value: "https"
       - name: S3_GATEWAY
         value: "rgw-vip"
-      # Default confguration for the number of retries is
+      # Default configuration for the number of retries is
       # 30 minutes (5s x 360 ~ 1800s or 30 minutes).
       # This value is placed in the boa-job-template config map.
       - name: NODE_STATE_CHECK_NUMBER_OF_RETRIES
