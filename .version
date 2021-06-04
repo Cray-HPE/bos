@@ -239,7 +239,7 @@ class CommitsSinceChangedStrategy(GitBasedStrategy):
     When a pinned y file changes as part of a commit, we count the number of commits to this branch
     in order to determine this value. Most importantly, this allows developers to commit code to
     the same branch without major consideration for manually incrementing ANY file. The benefit
-    of doing this, is it allows asychronous merges to happen without a merge conflict. Values
+    of doing this, is it allows asynchronous merges to happen without a merge conflict. Values
     are simply handed out somewhat monotonically, and follow the merge order for the given
     branch.
 
