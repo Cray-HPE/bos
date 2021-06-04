@@ -13,6 +13,6 @@ pytest-cov
 
 # The purpose of this file is to contain python runtime requirements
 # for testing code, e.g., code authored by developers, as opposed to
-# automatically-generated code. Requirements from automatically generated
+# automatically-generated code. Requirements from automatically-generated
 # code are stored in lib/server/test-requirements.txt (within the associated
 # docker image), and are referenced above.
