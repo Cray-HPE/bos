@@ -83,7 +83,7 @@ COPY config/uwsgi.ini ./
 ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 
 
-# Application Image
+# Application image
 FROM base as application
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
