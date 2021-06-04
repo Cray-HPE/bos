@@ -177,7 +177,7 @@ class DeveloperBranchNameStrategy(GitBasedStrategy):
     These version strings are unique as they contain alphanumeric characters to better assist in tracking
     an installed version back to a specific issue.
 
-    This strategy is used in conjunction with commit counting strategies to form a full version string..
+    This strategy is used in conjunction with commit-counting strategies to form a full version string..
     """
     def __call__(self):
         if self.field_index in (0, 2):
