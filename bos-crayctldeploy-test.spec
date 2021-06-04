@@ -51,7 +51,7 @@ Requires: python3-requests
 %define boslimittestlib %{cmslib}/bos_limit_test
 
 %description
-This is a collection of post-install tests for Boot Orchestration Services (BOS).
+This is a collection of post-install tests for the Boot Orchestration Services (BOS).
 
 %prep
 %setup -q
