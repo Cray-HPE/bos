@@ -1,7 +1,7 @@
 # About
 This is the Boot Orchestration Service (BOS) API. It is responsible
 for stateful changes to boot orchestration sessions, and launching boot
-orchestration agents (BOA) which fulfill boot related requests.
+orchestration agents (BOA) which fulfill boot-related requests.
 
 ## Related Software
 *Boot Orchestration Agent* (BOA) handles boot requests submitted to the BOS API.
