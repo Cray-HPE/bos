@@ -33,7 +33,7 @@ docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yap
     -c local/config/autogen-server.json \
     --generate-alias-as-model
 
-echo "Code has been generated within src/server for development purposes ONLY"
+echo "Code has been generated within src/server for development purposes ONLY."
 echo "This project is setup to automatically generate server side code as a"
 echo "function of docker image build. Adjust .gitignore before checking in"
 echo "anything you did not author!"
