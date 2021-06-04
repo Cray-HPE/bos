@@ -7,5 +7,6 @@
 
 # We want to make sure to check these files as well
 also_include_files:
+    - ".version"
     - "run_codestylecheck"
     - "run_unittests"
