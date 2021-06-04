@@ -47,7 +47,6 @@ ANSIBLE_METADATA = {
 }
 
 
-
 DOCUMENTATION = '''
 ---
 module: bos_session_template_create
