@@ -16,9 +16,9 @@ files, including package repositories, root filesystems, kernels, and initrds.
 next. Nodes consult BSS for their target artifacts and boot parameters when nodes
 boot, reboot, or initially power on.
 
-*Configuration Framework Service* (CFS) Configuration Framework Service is a
-CRD-enabled API that launches and aggregates status from one or more ansible
-instances against nodes (Node Personalization) or Images (Image Customization).
+*Configuration Framework Service* (CFS) is a CRD-enabled API that launches and
+aggregates status from one or more ansible instances against 
+nodes (Node Personalization) or Images (Image Customization).
 
 ## Terminology
 * Operation -- an operation to perform on some nodes
