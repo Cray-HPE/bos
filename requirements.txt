@@ -3,6 +3,7 @@
 -r lib/server/requirements.txt
 
 kubernetes
+redis
 requests
 wget
 etcd3

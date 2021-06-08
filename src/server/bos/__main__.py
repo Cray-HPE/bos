@@ -23,17 +23,24 @@
 # (MIT License)
 
 import logging
+import os
 
 import connexion
 
 from bos import specialized_encoder
+from bos.controllers.v1 import options
 
 LOGGER = logging.getLogger('bos.__main__')
 
 
 def create_app():
-    logging.basicConfig(level=logging.DEBUG)
+    starting_log_level = os.environ.get('BOS_LOG_LEVEL', 'INFO')
+    log_level = logging.getLevelName(starting_log_level.upper())
+    logging.basicConfig(level=log_level)
     LOGGER.info("BOS server starting.")
+
+    options._init()
+
     app = connexion.App(__name__, specification_dir='./openapi/')
     app.app.json_encoder = specialized_encoder.MetadataEncoder
     app.add_api('openapi.yaml',
