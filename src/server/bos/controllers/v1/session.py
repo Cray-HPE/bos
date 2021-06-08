@@ -59,12 +59,19 @@ def create_v1_session():  # noqa: E501
         session = Session.from_dict(connexion.request.get_json())  # noqa: E501
     else:
         return "Post must be in JSON format", 400
-    LOGGER.debug("Template UUID: %s operation: %s", session.template_uuid,
+    template_name = session.template_name
+    if not template_name:
+        template_name = session.template_uuid
+    if not template_name:
+        msg = "templateName is a required parameter"
+        LOGGER.error(msg)
+        return msg, 400
+    LOGGER.debug("Template Name: %s operation: %s", template_name,
                  session.operation)
-    # Check that the sessionTemplate ID exists.
-    session_template_response = get_v1_sessiontemplate(session.template_uuid)
+    # Check that the templateName exists.
+    session_template_response = get_v1_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
-        msg = "Session Template ID invalid: {}".format(session.template_uuid)
+        msg = "Session Template ID invalid: {}".format(template_name)
         LOGGER.error(msg)
         return msg, 404
     else:
@@ -73,7 +80,7 @@ def create_v1_session():  # noqa: E501
     boot_sets = session_template['boot_sets']
     if not boot_sets:
         msg = "Session template '%s' must have one or more defined boot sets for " \
-            "creation of a session." % (session.template_uuid)
+            "creation of a session." % (template_name)
         return msg, 400
     hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
     for bs_name, bs in session_template['boot_sets'].items():
@@ -82,7 +89,7 @@ def create_v1_session():  # noqa: E501
         if not any(specified):
             msg = "Session template '%s' boot set '%s' must have at least one " \
                 "hardware specifier field provided (%s); None defined." \
-                % (session.template_uuid, bs_name,
+                % (template_name, bs_name,
                    ', '.join(sorted(hardware_specifier_fields)))
             return msg, 400
     # Handle empty limit so that the environment var is not set to "None"
@@ -138,7 +145,7 @@ def create_v1_session():  # noqa: E501
     rendered_template = template.render(boa_job_name=boa_job_name,
                                         boa_image=bos_boa_image,
                                         session_id=session_id,
-                                        session_template_id=str(session.template_uuid),
+                                        session_template_id=str(template_name),
                                         session_limit=session.limit,
                                         operation=session.operation,
                                         DATABASE_NAME=str(DB_HOST),
@@ -163,8 +170,8 @@ def create_v1_session():  # noqa: E501
         LOGGER.error("Failed to create BOA Job: %s", err)
         raise
     with BosEtcdClient() as bec:
-        key = "{}/{}/templateUuid".format(BASEKEY, session_id)
-        bec.put(key=key, value=session.template_uuid)
+        key = "{}/{}/templateName".format(BASEKEY, session_id)
+        bec.put(key=key, value=template_name)
         key = "{}/{}/operation".format(BASEKEY, session_id)
         bec.put(key=key, value=session.operation)
         key = "{}/{}/status_link".format(BASEKEY, session_id)
@@ -173,7 +180,7 @@ def create_v1_session():  # noqa: E501
         bec.put(key=key, value=boa_job_name)
     return_json_data = {
         "operation": session.operation,
-        "templateUuid": session.template_uuid,
+        "templateName": template_name,
         "job": boa_job_name,
         "links":
         [

@@ -233,12 +233,12 @@ def create_bos_session(use_api, template_name, operation, limit_params=None, val
     if limit_params != None:
         limit_arg = ','.join(limit_params)
     if use_api:
-        data = { 'templateUuid': template_name, 'operation': operation }
+        data = { 'templateName': template_name, 'operation': operation }
         if limit_params != None:
             data['limit'] = limit_arg
         response_object = requests_post(bos_session_url(), json=data)
     else:
-        cli_cmd_list = [ "bos", "v1", "session", "create", "--template-uuid", template_name, "--operation", operation ]
+        cli_cmd_list = [ "bos", "v1", "session", "create", "--template-name", template_name, "--operation", operation ]
         if limit_params != None:
             cli_cmd_list.extend(["--limit", limit_arg])
         response_object = run_cli_cmd(cli_cmd_list)

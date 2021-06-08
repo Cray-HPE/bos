@@ -66,7 +66,7 @@ def create_bos_session(template, operation, limit=[]):
     """
     Returns the session response and status.
     """
-    body = {"templateUuid": template,
+    body = {"templateName": template,
             "operation": operation}
     if limit:
         body["limit"] = ','.join(limit)
