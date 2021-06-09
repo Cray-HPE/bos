@@ -21,8 +21,46 @@
 #
 # (MIT License)
 
+function do_update_version
+{
+    if ! ./cms_meta_tools/latest_version/latest_version.sh \
+                --docker \
+                --major "${BOA_X}" \
+                --minor "${BOA_Y}" \
+                --outfile boa.version \
+                --overwrite \
+                cray-boa ; then
+        echo "ERROR: Unable to determine latest cray-boa version with major.minor of ${BOA_X}.${BOA_Y}" 1>&2
+        return 1
+    fi
+
+    if ! cat boa.version ; then
+        echo "ERROR: Unable to cat boa.version file" 1>&2
+        return 1
+    fi
+    
+    ./cms_meta_tools/update_versions/update_versions.sh && return 0
+    echo "ERROR: cms_meta_tools update_version.sh failed" 1>&2
+    return 1
+}
+
+# First we need to find the latest stable boa version with the
+# desired major/minor numbers (found in boa.x and boa.y)
+BOA_X=$(head -1 boa.x)
+if [ $? -ne 0 ]; then
+    echo "ERROR: failed reading boa.x" 1>&2
+    exit 1
+fi
+echo "boa.x = ${BOA_X}"
+BOA_Y=$(head -1 boa.y)
+if [ $? -ne 0 ]; then
+    echo "ERROR: failed reading boa.y" 1>&2
+    exit 1
+fi
+echo "boa.y = ${BOA_Y}"
+
 ./install_cms_meta_tools.sh || exit 1
 RC=0
-./cms_meta_tools/update_versions/update_versions.sh || RC=1
-rm -rf ./cms_meta_tools
+do_update_version || RC=1
+rm -rf ./cms_meta_tools boa.version
 exit $RC
