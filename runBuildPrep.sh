@@ -21,6 +21,5 @@
 #
 # (MIT License)
 
-./update_tags.sh || exit 1
-./update_versions.sh
-exit $?
+./update_versions.sh || exit 1
+exit 0
