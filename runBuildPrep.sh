@@ -22,4 +22,4 @@
 # (MIT License)
 
 ./update_versions.sh || exit 1
-exit $RC
+exit 0
