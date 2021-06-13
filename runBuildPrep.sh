@@ -21,5 +21,8 @@
 #
 # (MIT License)
 
-./update_versions.sh || exit 1
-exit 0
+./install_cms_meta_tools.sh || exit 1
+RC=0
+./cms_meta_tools/scripts/runBuildPrep.sh || RC=1
+rm -rf ./cms_meta_tools
+exit $RC

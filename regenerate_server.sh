@@ -21,7 +21,7 @@
 #
 # (MIT License)
 
-if ! ./update_versions.sh ; then
+if ! ./runBuildPrep.sh ; then
     echo "ERROR: Unable to update version tags"
     exit 1
 fi
