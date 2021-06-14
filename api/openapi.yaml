@@ -54,9 +54,9 @@ info:
 
     #### POST /session
 
-    Specify templateUuid and an
+    Specify templateName and an
     operation to create a new session.
-    The templateUuid corresponds to the session template *name*.
+    The templateName corresponds to the session template *name*.
     A new session is launched as a result of this call.
 
     A limit can also be specified to narrow the scope of the session. The limit
@@ -471,6 +471,11 @@ components:
           pattern: '^(?i)boot|configure|reboot|shutdown$'
         templateUuid:
           type: string
+          description: DEPRECATED - use templateName
+          example: "my-session-template"
+          format: string
+        templateName:
+          type: string
           description: The name of the Session Template
           example: "my-session-template"
           format: string
@@ -492,7 +497,7 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/Link'
-      required: [operation, templateUuid]
+      required: [operation]
       additionalProperties: false
     Version:
       description: Version data
