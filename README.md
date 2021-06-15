@@ -148,20 +148,15 @@ $ cd $REPO
 $ ./regenerate-server.sh
 ```
 
-## BOA Dependency
-BOS uses the BOA image built by the boa repository. Just like the bos repo, the boa repo has multiple
-release branches which contain different versions of BOA. When building BOS, we want to specify
-the latest stable version of BOA **from a particular boa repo release branch**. For example, when 
-building BOS from the bos repo release/csm-1.1 branch, we would like to use the latest stable BOA
-version built from the boa repo's release/csm-1.1 branch. Because it is possible these branch names
-will not always match, this is done with the [boa.x](boa.x) and [boa.y](boa.y) files in the root of
-the bos repo.  The `boa.x` file specifies the major number of the correct BOA version and the `boa.y`
-file specifies  the minor number of the correct BOA version. At build time the 
-[update_versions.sh](update_versions.sh) script will then find the latest BOA version which meets those
-criteria.
+## Dependency: cray-boa
+cray-bos uses the cray-boa image built by the boa repo.
+We specify which major and minor version of the image we want with the 
+[update_external_versions.conf](update_external_versions.conf) file.
+At build time the [runBuildPrep.sh](runBuildPrep.sh) script finds the
+latest version with that major and minor number.
 
-When creating a new BOS release branch, be sure to update the `boa.x` and `boa.y` files to the correct
-BOA version for the new release.
+When creating a new release branch, be sure to update this file to specify the
+desired major and minor number of the image for the new release.
 
 ## Versioning
 Use [SemVer](http://semver.org/). The version is located in the [.version](.version) file. 
