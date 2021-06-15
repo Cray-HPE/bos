@@ -21,10 +21,6 @@
 #
 # (MIT License)
 
-if ! ./runBuildPrep.sh ; then
-    echo "ERROR: Unable to update version tags"
-    exit 1
-fi
 docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i" openapitools/openapi-generator-cli:v4.1.2 \
   generate \
     -i local/api/openapi.yaml \
