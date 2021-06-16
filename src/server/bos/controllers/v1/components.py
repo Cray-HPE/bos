@@ -28,7 +28,6 @@ from bos import redis_db_utils as dbutils
 
 LOGGER = logging.getLogger('bos.controllers.v1.components')
 DB = dbutils.get_wrapper(db='components')
-LAST_UPDATED_TIME_FORMAT = "%Y-%m-%dT%H:%M:%SZ"
 
 
 @dbutils.redis_error_handler
@@ -184,7 +183,7 @@ def _set_auto_fields(data):
 
 
 def _set_last_updated(data):
-    timestamp = datetime.now().strftime(LAST_UPDATED_TIME_FORMAT)
+    timestamp = datetime.utcnow().isoformat()
     for section in ['actualState', 'desiredState', 'lastAction']:
         if section in data and type(data[section]) == dict:
             data[section]['lastUpdated'] = timestamp

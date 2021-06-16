@@ -1,4 +1,6 @@
 --index-url https://arti.dev.cray.com:443/artifactory/api/pypi/pypi-remote/simple
+--extra-index-url http://dst.us.cray.com/piprepo/simple
+--trusted-host dst.us.cray.com
 -c constraints.txt
 -r lib/server/requirements.txt
 
@@ -7,6 +9,7 @@ redis
 requests
 wget
 etcd3
+liveness
 
 
 # The purpose of this file is to contain python runtime requirements

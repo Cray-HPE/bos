@@ -16,6 +16,7 @@ itsdangerous==0.24
 Jinja2==2.10.1
 jsonschema==2.6.0
 kubernetes==11.0.0
+liveness==1.0.0
 MarkupSafe==1.1.1
 oauthlib==2.1.0
 openapi-spec-validator==0.2.4

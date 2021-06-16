@@ -658,18 +658,6 @@ components:
           example: '2019-07-28T03:26:00Z'
           format: date-time
           readOnly: true
-        minWait:
-          type: string
-          description: No further action can be taken until this time has passed.
-          example: '2019-07-28T03:26:00Z'
-          format: date-time
-          readOnly: true
-        maxWait:
-          type: string
-          description: After this time, we think something has gone wrong, and we need to react, possibly taking corrective action.
-          example: '2019-07-28T03:26:00Z'
-          format: date-time
-          readOnly: true
         action:
           type: string
           description: A description of the most recent operator/action to impact the component.

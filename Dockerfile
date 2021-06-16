@@ -42,13 +42,8 @@ COPY constraints.txt requirements.txt ./
 RUN apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -r requirements.txt
-COPY src/server/bos/controllers lib/server/bos/controllers
-COPY src/server/bos/__main__.py \
-     src/server/bos/utils.py \
-     src/server/bos/dbclient.py \
-     src/server/bos/redis_db_utils.py \
-     src/server/bos/specialized_encoder.py \
-     lib/server/bos/
+COPY src/ /app/lib
+RUN cd /app/lib && pip3 install --no-cache-dir .
 
 # Testing image
 FROM base as testing
@@ -86,7 +81,6 @@ ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 
 # Application image
 FROM base as application
-ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
 EXPOSE 80
 RUN apk add --no-cache uwsgi-python3 && \
