@@ -75,6 +75,8 @@ cray-service:
       # Time in seconds to wait before re-checking the power status.
       - name: POWER_STATUS_FREQUENCY
         value: "10"
+      - name: PYTHONPATH
+        value: "/app/lib/server"
       volumeMounts:
       - name: ca-vol
         mountPath: /mnt/ca-vol
