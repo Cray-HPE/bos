@@ -1,0 +1,14 @@
+
+[Unit]
+Description=bos-reporter reports BOS session ID that the node was booted with
+DefaultDependencies=no
+After=multi-user.target
+
+[Service]
+Environment="MODULEFLAG=-m"
+Environment="MODULENAME=bos.reporter.status_reporter"
+Type=simple
+ExecStart=/usr/bin/python3 ${MODULEFLAG} ${MODULENAME}
+
+[Install]
+WantedBy=multi-user.target

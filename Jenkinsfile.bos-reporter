@@ -1,0 +1,8 @@
+@Library('dst-shared') _
+rpmBuild(
+    specfile: "bos-reporter.spec",
+    product: "csm",
+    target_node: "cn",
+    channel: "casmcms-builds",
+    fanout_params: ["sle15sp2", "sle15sp3"]
+)

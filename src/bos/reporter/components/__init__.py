@@ -19,21 +19,15 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # (MIT License)
-from setuptools import setup, find_namespace_packages
 
-setup(
-    name="cray-bos",
-    version="@VERSION@",
-    author='HPE',
-    author_email='cray_sps@hpe.com',
-    url="https://github.com/Cray-HPE/bos",
-    description="Cray Boot Orchestration Service",
-    packages=find_namespace_packages(),
-    keywords="cray kubernetes boot orchestration",
-    classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "License :: Other/Proprietary License",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: System :: Systems Administration",
-    ],
-)
+from bos.reporter import BOSException
+from bos.reporter import ENDPOINT as BOS_ENDPOINT
+
+ENDPOINT = "%s/%s" % (BOS_ENDPOINT, __name__.split('.')[-1])
+
+
+class BOSComponentException(BOSException):
+    """
+    A custom base class for all exceptions specific to
+    interacting with BOS Component endpoints.
+    """
