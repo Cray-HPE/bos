@@ -1,4 +1,4 @@
-@Library('csm-shared-library') _
+@Library('csm-shared-library@CASMCMS-7371') _
 
 pipeline {
     agent {
@@ -14,7 +14,7 @@ pipeline {
         NAME = "cray-bos"
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
         IS_STABLE = getBuildIsStable()
-        VERSION = getDockerBuildVersion(isStable: env.IS_STABLE)
+        VERSION = getDockerBuildVersion(isStable: env.IS_STABLE, versionScript: ".version")
         DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION)
         CHART_VERSION = getChartVersion(version: env.VERSION)
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)

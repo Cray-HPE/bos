@@ -24,7 +24,7 @@ Name: bos-crayctldeploy-test
 License: MIT
 Summary: Cray post-install tests for Boot Orchestration Services (BOS)
 Group: System/Management
-# The version is substituted at built time by update_versions.sh
+# The version is substituted at build time by runBuildPrep.sh
 Version: @VERSION@
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
@@ -51,7 +51,7 @@ Requires: python3-requests
 %define boslimittestlib %{cmslib}/bos_limit_test
 
 %description
-This is a collection of post-install tests for Boot Orchestration Services (BOS).
+This is a collection of post-install tests for the Boot Orchestration Services (BOS).
 
 %prep
 %setup -q

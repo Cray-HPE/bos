@@ -700,7 +700,7 @@ def create_v1_boot_set_status(session_id, boot_set_name):
 
 def update_v1_session_status(session_id):
     """
-    Update an exsisting session's status
+    Update an existing session's status
     """
     request_body = connexion.request.get_json()
     try:

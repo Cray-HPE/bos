@@ -10,7 +10,7 @@ dockerBuildPipeline {
     product = "csm"
     enableSonar = true
     receiveEvent = ["BOA"]
-    
+    versionScript = '.version'
     githubPushRepo = "Cray-HPE/bos"
     /*
         By default all branches are pushed to GitHub

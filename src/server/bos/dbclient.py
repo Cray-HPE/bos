@@ -33,7 +33,7 @@ DB_PORT = int(os.getenv('ETCD_PORT', 2379))
 
 class BosEtcdClient(Etcd3Client):
     """
-    A BOS specific client to its' underlying etcd3 database. This class
+    A BOS-specific client to its underlying etcd3 database. This class
     extends the opensource Etcd3Client implementation by making it resilient to
     initial database availability, as well, some nature of static read/get operations.
 
@@ -42,6 +42,7 @@ class BosEtcdClient(Etcd3Client):
     code are not expected to be resilient to connection failures. We do not use these 
     in the BOS API, so it isn't an issue.
     """
+
     def __init__(self, host=DB_HOST, port=DB_PORT, timeout=2000):
         self.host = host
         self.port = port
@@ -79,8 +80,8 @@ class BosEtcdClient(Etcd3Client):
                 # Methods on the super class will throw an exception if the
                 # connection to etcd is not valid.
                 # Warn if the connection has failed, print the exception type
-                # with message (if any) and log out the host we are trying to 
-                # contact (this will usually be the cray-bos-etcd-client 
+                # with message (if any) and log out the host we are trying to
+                # contact (this will usually be the cray-bos-etcd-client
                 # k8s service).
                 LOGGER.warn("Connect failed to %s.  Caught %s", self.host, repr(e))
                 self.initialize_connection()
