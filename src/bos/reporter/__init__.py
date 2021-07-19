@@ -1,4 +1,4 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -19,21 +19,23 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # (MIT License)
-from setuptools import setup, find_namespace_packages
+import os
+import logging
 
-setup(
-    name="cray-bos",
-    version="@VERSION@",
-    author='HPE',
-    author_email='cray_sps@hpe.com',
-    url="https://github.com/Cray-HPE/bos",
-    description="Cray Boot Orchestration Service",
-    packages=find_namespace_packages(),
-    keywords="cray kubernetes boot orchestration",
-    classifiers=[
-        "Programming Language :: Python :: 3.6",
-        "License :: Other/Proprietary License",
-        "Topic :: Software Development :: Libraries :: Python Modules",
-        "Topic :: System :: Systems Administration",
-    ],
-)
+PROTOCOL = 'https'
+API_GATEWAY_DNS_NAME = os.environ.get('API_GATEWAY_HOST', 'api-gw-service-nmn.local')
+SERVICE = 'bos'
+API_VERSION = 'v1'
+ENDPOINT = '%s://%s/apis/%s/%s' % (PROTOCOL, API_GATEWAY_DNS_NAME,
+                                   SERVICE, API_VERSION)
+
+
+class BOSException(Exception):
+    """
+    A Base class that all custom Exceptions from this
+    project inherits from.
+    """
+
+
+# Setup project level loggging options
+LOGGER = logging.getLogger(__name__)
