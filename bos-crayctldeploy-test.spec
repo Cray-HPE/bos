@@ -25,7 +25,7 @@ License: MIT
 Summary: Cray post-install tests for Boot Orchestration Services (BOS)
 Group: System/Management
 # The version is substituted at build time by runBuildPrep.sh
-Version: @VERSION@
+Version: @RPM_VERSION@
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: Cray Inc.
