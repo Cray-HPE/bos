@@ -23,7 +23,7 @@ Name: bos-reporter
 License: MIT
 Summary: A program system service which reports BOS' Boot Artifact ID for a given node
 Group: System/Management
-Version: @VERSION@
+Version: @RPM_VERSION@
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: HPE

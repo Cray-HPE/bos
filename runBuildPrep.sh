@@ -21,6 +21,8 @@
 #
 # (MIT License)
 
+grep "^[0-9][0-9]*[.][0-9][[0-9]*[.][0-9][0-9]*" .version > openapi.version || exit 1
+
 ./install_cms_meta_tools.sh || exit 1
 RC=0
 ./cms_meta_tools/scripts/runBuildPrep.sh || RC=1

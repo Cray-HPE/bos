@@ -1,0 +1,130 @@
+@Library('csm-shared-library') _
+
+pipeline {
+    agent {
+        label "metal-gcp-builder"
+    }
+
+    options {
+        buildDiscarder(logRotator(numToKeepStr: "10"))
+        timestamps()
+    }
+
+    environment {
+        NAME = "cray-bos"
+        DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
+        RPTR_SPEC_FILE = "bos-crayctldeploy-test.spec"
+        TEST_SPEC_FILE = "bos-reporter.spec"
+        IS_STABLE = getBuildIsStable()
+    }
+
+    stages {
+        stage("Pre-Prepare") {
+            steps {
+                script {
+                    sh(script: """
+                            #!/usr/bin/env bash
+                            set -x
+                            set -e
+                            ./version.sh > .version
+                        """)
+                    def ver = sh(returnStdout: true, script: "head -1 .version").trim()
+                    echo "Base version is ${ver}"
+                    def dockerver = getDockerBuildVersion(isStable: env.IS_STABLE).trim()
+                    echo "Docker version is ${dockerver}"
+                    sh(script: """
+                            #!/usr/bin/env bash
+                            set -x
+                            set -e
+                            echo "${dockerver}" > .docker_version
+                        """)
+                    def chartver = getChartVersion(version: dockerver).trim()
+                    echo "Chart version is ${chartver}"
+                    sh(script: """
+                            #!/usr/bin/env bash
+                            set -x
+                            set -e
+                            echo "${chartver}" > .chart_version
+                            cat .chart_version
+                            ./runBuildPrep.sh
+                        """)
+                }
+            }
+        }
+        stage("Prepare") {
+            environment {
+                VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                CHART_VERSION = sh(returnStdout: true, script: "head -1 .chart_version").trim()
+                DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.VERSION).trim()
+                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE).trim()
+            }
+            
+            steps {
+                echo "RPM build metadata is ${env.BUILD_METADATA}"
+                runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
+                runLibraryScript("addRpmMetaData.sh", env.TEST_SPEC_FILE)
+                sh "make prepare"
+            }
+        }
+        stage("Build") {
+            environment {
+                VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                CHART_VERSION = sh(returnStdout: true, script: "head -1 .chart_version").trim()
+                DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.VERSION).trim()
+                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE).trim()
+            }
+
+            parallel {
+                stage('Image') {
+                    steps {
+                        echo "Docker args are ${env.DOCKER_ARGS}"
+                        sh "make image"
+                    }
+                }
+
+                stage('Reporter Rpm') {
+                    steps {
+                        sh "make rptr_rpm"
+                    }
+                }
+
+                stage('Test Rpm') {
+                    steps {
+                        sh "make test_rpm"
+                    }
+                }
+            }
+        }
+
+        stage("Build Chart") {
+            environment {
+                VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                CHART_VERSION = sh(returnStdout: true, script: "head -1 .chart_version").trim()
+                DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.VERSION).trim()
+                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE).trim()
+            }
+
+            steps {
+                sh "make chart"
+            }
+        }
+
+        stage('Publish ') {
+            environment {
+                VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                CHART_VERSION = sh(returnStdout: true, script: "head -1 .chart_version").trim()
+                DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.VERSION).trim()
+                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE).trim()
+            }
+
+            steps {
+                script {
+                    publishCsmDockerImage(image: env.NAME, tag: env.VERSION, isStable: env.IS_STABLE)
+                    publishCsmHelmCharts(component: env.NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: "bos", pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: "bos", pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
+                }
+            }
+        }
+    }
+}
