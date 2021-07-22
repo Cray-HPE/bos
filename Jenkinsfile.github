@@ -79,25 +79,18 @@ pipeline {
                     }
                 }
 
+                stage("Chart") {
+                    steps {
+                        sh "make chart"
+                    }
+                }
+
                 stage('Rpm') {
                     steps {
                         echo "RPM build metadata is ${env.BUILD_METADATA}"
                         sh "make rpm"
                     }
-                }
-            }
-        }
-
-        stage("Build Chart") {
-            environment {
-                VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
-                CHART_VERSION = sh(returnStdout: true, script: "head -1 .chart_version").trim()
-                DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.VERSION).trim()
-                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE).trim()
-            }
-
-            steps {
-                sh "make chart"
+                }                
             }
         }
 
