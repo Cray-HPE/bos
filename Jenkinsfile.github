@@ -13,8 +13,8 @@ pipeline {
     environment {
         NAME = "cray-bos"
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
-        RPTR_SPEC_FILE = "bos-crayctldeploy-test.spec"
-        TEST_SPEC_FILE = "bos-reporter.spec"
+        RPTR_SPEC_FILE = "bos-reporter.spec"
+        TEST_SPEC_FILE = "bos-crayctldeploy-test.spec"
         IS_STABLE = getBuildIsStable()
     }
 
