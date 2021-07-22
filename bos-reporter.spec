@@ -23,7 +23,7 @@ Name: bos-reporter
 License: MIT
 Summary: A program system service which reports BOS' Boot Artifact ID for a given node
 Group: System/Management
-Version: @VERSION@
+Version: @RPM_VERSION@
 Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: HPE
@@ -41,26 +41,27 @@ Requires: cray-auth-utils
 Provides a systemd service and associated library that reports
 BOS' Boot Artifact ID for a node throughout its booted life.
 
-%{!?python3_sitelib: %define python3_sitelib %(/usr/bin/python3 -c
-""import setuptools; print(setuptools.distutils.sysconfig.get_python_lib())")}
+%{!?python3_sitelib: %define python3_sitelib %(/usr/bin/python3 -c "from distutils.sysconfig import get_python_lib ; print(get_python_lib())")}
 
 %prep
 %setup -q
 
 %build
-cd ./src
+pushd ./src
 /usr/bin/python3 setup.py build
+popd
 
 %install
-rm -rf $RPM_BUILD_ROOT
-cd ./src
-/usr/bin/python3 setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
+rm -rf %{buildroot}
+pushd ./src
+/usr/bin/python3 setup.py install -O1 --skip-build --root %{buildroot}
 mkdir -p ${RPM_BUILD_ROOT}%{_systemdsvcdir}
-cp bos/reporter/etc/bos-reporter.service $RPM_BUILD_ROOT/%{_systemdsvcdir}/bos-reporter.service
-chmod +x $RPM_BUILD_ROOT/%{python3_sitelib}/bos/reporter/status_reporter/__main__.py
+cp bos/reporter/etc/bos-reporter.service %{buildroot}/%{_systemdsvcdir}/bos-reporter.service
+chmod +x %{buildroot}/%{python3_sitelib}/bos/reporter/status_reporter/__main__.py
+popd
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
