@@ -422,7 +422,11 @@ class DeveloperBranchVersion(BranchVersion):
 
 def version_factory():
     branch = branch_name()
-    if MasterBranchVersion.is_a(branch):
+    # If the TAG_NAME environment variable exists and is not blank, then we consider ourselves
+    # to be in a release branch
+    if os.environ.get('TAG_NAME', False):
+        return ReleaseBranchVersion()
+    elif MasterBranchVersion.is_a(branch):
         return MasterBranchVersion()
     elif ReleaseBranchVersion.is_a(branch):
         return ReleaseBranchVersion()

@@ -25,7 +25,7 @@ pipeline {
                             #!/usr/bin/env bash
                             set -x
                             set -e
-                            ./version.sh > .version
+                            ./version.py > .version
                         """)
                     def ver = sh(returnStdout: true, script: "head -1 .version").trim()
                     echo "Base version is ${ver}"
