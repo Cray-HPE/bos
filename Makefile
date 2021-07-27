@@ -22,39 +22,44 @@
 
 NAME ?= cray-bos
 CHART_PATH ?= kubernetes
-VERSION := @DOCKER_VERSION@
-SPEC_VERSION := @RPM_VERSION@
-CHART_VERSION := @CHART_VERSION@
+DOCKER_VERSION ?= $(shell head -1 .docker_version)
+RPM_VERSION ?= $(shell head -1 .version)
+CHART_VERSION ?= $(shell head -1 .chart_version)
 
 HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
 
 SPEC_NAME ?= bos-crayctldeploy-test
 SPEC_FILE ?= ${SPEC_NAME}.spec
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
-SOURCE_NAME ?= ${SPEC_NAME}-${SPEC_VERSION}
+SOURCE_NAME ?= ${SPEC_NAME}-${RPM_VERSION}
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 SOURCE_PATH := ${BUILD_DIR}/SOURCES/${SOURCE_NAME}.tar.bz2
 
-all : prepare image chart rpm
+all : runbuildprep lint prepare image chart rpm
 chart: chart_setup chart_package chart_test
 rpm: rpm_package_source rpm_build_source rpm_build
 
-prepare:
+runbuildprep:
+		./runBuildPrep.sh
+
+lint:
 		./runLint.sh
+
+prepare:
 		rm -rf $(BUILD_DIR)
 		mkdir -p $(BUILD_DIR)/SPECS $(BUILD_DIR)/SOURCES
 		cp $(SPEC_FILE) $(BUILD_DIR)/SPECS/
 
 image:
-		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' .
+		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
 
 chart_setup:
 		mkdir -p ${CHART_PATH}/.packaged
-		printf "\nglobal:\n  appVersion: ${VERSION}" >> ${CHART_PATH}/${NAME}/values.yaml
+		printf "\nglobal:\n  appVersion: ${DOCKER_VERSION}" >> ${CHART_PATH}/${NAME}/values.yaml
 
 chart_package:
 		helm dep up ${CHART_PATH}/${NAME}
-		helm package ${CHART_PATH}/${NAME} -d ${CHART_PATH}/.packaged --app-version ${VERSION} --version ${CHART_VERSION}
+		helm package ${CHART_PATH}/${NAME} -d ${CHART_PATH}/.packaged --app-version ${DOCKER_VERSION} --version ${CHART_VERSION}
 
 chart_test:
 		helm lint "${CHART_PATH}/${NAME}"
