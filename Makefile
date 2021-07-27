@@ -22,9 +22,9 @@
 
 NAME ?= cray-bos
 CHART_PATH ?= kubernetes
-VERSION := @DOCKER_VERSION@
-SPEC_VERSION := @RPM_VERSION@
-CHART_VERSION := @CHART_VERSION@
+DOCKER_VERSION ?= $(shell head -1 .docker_version)
+RPM_VERSION ?= $(shell head -1 .version)
+CHART_VERSION ?= $(shell head -1 .chart_version)
 
 HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
 
@@ -37,38 +37,43 @@ BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 RPTR_BUILD_DIR ?= $(PWD)/dist/bos-rptr-rpmbuild
 RPTR_SPEC_NAME ?= bos-reporter
 RPTR_SPEC_FILE ?= ${RPTR_SPEC_NAME}.spec
-RPTR_SOURCE_NAME ?= ${RPTR_SPEC_NAME}-${SPEC_VERSION}
+RPTR_SOURCE_NAME ?= ${RPTR_SPEC_NAME}-${RPM_VERSION}
 RPTR_SOURCE_PATH := ${RPTR_BUILD_DIR}/SOURCES/${RPTR_SOURCE_NAME}.tar.bz2
 
 # Test RPM variables
 TEST_BUILD_DIR ?= $(PWD)/dist/bos-test-rpmbuild
 TEST_SPEC_NAME ?= bos-crayctldeploy-test
 TEST_SPEC_FILE ?= ${TEST_SPEC_NAME}.spec
-TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${SPEC_VERSION}
+TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}
 TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
 
-all : prepare image chart rptr_rpm test_rpm
+all : runbuildprep lint prepare image chart rptr_rpm test_rpm
 chart: chart_setup chart_package chart_test
 rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
 test_rpm: test_rpm_package_source test_rpm_build_source test_rpm_build
 
-prepare:
+runbuildprep:
+		./runBuildPrep.sh
+
+lint:
 		./runLint.sh
+        
+prepare:
 		rm -rf $(RPTR_BUILD_DIR) $(TEST_BUILD_DIR)
 		mkdir -p $(RPTR_BUILD_DIR)/SPECS $(RPTR_BUILD_DIR)/SOURCES $(TEST_BUILD_DIR)/SPECS $(TEST_BUILD_DIR)/SOURCES 
 		cp $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/
 		cp $(TEST_SPEC_FILE) $(TEST_BUILD_DIR)/SPECS/
 
 image:
-		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${VERSION}' .
+		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
 
 chart_setup:
 		mkdir -p ${CHART_PATH}/.packaged
-		printf "\nglobal:\n  appVersion: ${VERSION}" >> ${CHART_PATH}/${NAME}/values.yaml
+		printf "\nglobal:\n  appVersion: ${DOCKER_VERSION}" >> ${CHART_PATH}/${NAME}/values.yaml
 
 chart_package:
 		helm dep up ${CHART_PATH}/${NAME}
-		helm package ${CHART_PATH}/${NAME} -d ${CHART_PATH}/.packaged --app-version ${VERSION} --version ${CHART_VERSION}
+		helm package ${CHART_PATH}/${NAME} -d ${CHART_PATH}/.packaged --app-version ${DOCKER_VERSION} --version ${CHART_VERSION}
 
 chart_test:
 		helm lint "${CHART_PATH}/${NAME}"
