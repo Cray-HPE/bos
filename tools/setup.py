@@ -45,7 +45,7 @@ setup(
     description="BOS Session Template creation script",
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://stash.us.cray.com/projects/SCMS/repos/bos',
+    url='https://github.com/Cray-HPE/bos',
     author='Cray, Inc.',
     license='Cray Proprietary',
     package_dir = {'': 'tools'},
