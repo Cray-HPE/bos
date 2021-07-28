@@ -8,7 +8,7 @@ keywords:
   - boa
   - cray-bos
 sources:
-  - "https://stash.us.cray.com/projects/SCMS/repos/bos/browse"
+  - "https://github.com/Cray-HPE/bos"
 maintainers:
   - name: Ryan
     email: ryan.bak@hpe.com
