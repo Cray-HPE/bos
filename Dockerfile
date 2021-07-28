@@ -35,7 +35,7 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     --generate-alias-as-model
 
 # Base image
-FROM artifactory.algol60.net/docker-remote/alpine:3.13.5 as base
+FROM artifactory.algol60.net/docker.io/alpine:3.13.5 as base
 WORKDIR /app
 COPY --from=codegen /app .
 COPY constraints.txt requirements.txt ./
