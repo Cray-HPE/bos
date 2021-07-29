@@ -47,16 +47,22 @@ TEST_SPEC_FILE ?= ${TEST_SPEC_NAME}.spec
 TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}
 TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
 
-all : runbuildprep lint collectBuildInfo prepare image chart rptr_rpm test_rpm
+all : clone_cms_meta_tools runbuildprep lint collectBuildInfo prepare image chart rptr_rpm test_rpm
 chart: chart_setup chart_package chart_test
 rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
 test_rpm: test_rpm_package_source test_rpm_build_source test_rpm_build
 
+# If you wish to perform a local build, you will need to clone or copy the contents of the
+# cms_meta_tools repo to ./cms_meta_tools
+clone_cms_meta_tools:
+		git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools
+
 runbuildprep:
-		./runBuildPrep.sh
+		grep "^[0-9][0-9]*[.][0-9][[0-9]*[.][0-9][0-9]*" .version > openapi.version
+		./cms_meta_tools/scripts/runBuildPrep.sh
 
 lint:
-		./runLint.sh
+		./cms_meta_tools/scripts/runLint.sh
 
 collectBuildInfo:
 		./gitInfo.sh
@@ -83,12 +89,11 @@ chart_test:
 		docker run --rm -v ${PWD}/${CHART_PATH}:/apps ${HELM_UNITTEST_IMAGE} -3 ${NAME}
 
 rptr_rpm_package_source:
-		tar --transform 'flags=r;s,^,/$(RPTR_SOURCE_NAME)/,' \
-			--exclude .git \
-			--exclude ./dist \
-			--exclude ./$(TEST_SPEC_FILE) \
-			--exclude ./ct-tests \
-			-cvjf $(RPTR_SOURCE_PATH) .
+		tar --transform 'flags=r;s,^,/$(RPTR_SOURCE_NAME)/,' -cvjf $(RPTR_SOURCE_PATH) \
+			./${RPTR_SPEC_FILE} \
+			./src \
+			./gitInfo.txt \
+			./LICENSE
 
 rptr_rpm_build_source:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(RPTR_SOURCE_PATH) --define "_topdir $(RPTR_BUILD_DIR)"
@@ -97,19 +102,11 @@ rptr_rpm_build:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(RPTR_SPEC_FILE) --define "_topdir $(RPTR_BUILD_DIR)"
 
 test_rpm_package_source:
-		tar --transform 'flags=r;s,^,/$(TEST_SOURCE_NAME)/,' \
-			--exclude .git \
-			--exclude ./dist \
-			--exclude ./$(RPTR_SPEC_FILE) \
-			--exclude ./api \
-			--exclude ./api_tests \
-			--exclude ./config \
-			--exclude ./Dockerfile \
-			--exclude ./kubernetes \
-			--exclude ./lib \
-			--exclude ./src \
-			--exclude ./tools \
-			-cvjf $(TEST_SOURCE_PATH) .
+		tar --transform 'flags=r;s,^,/$(TEST_SOURCE_NAME)/,' -cvjf $(TEST_SOURCE_PATH) \
+			./${TEST_SPEC_FILE} \
+			./ct-tests \
+			./gitInfo.txt \
+			./LICENSE
 
 test_rpm_build_source:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -vv -ts $(TEST_SOURCE_PATH) --define "_topdir $(TEST_BUILD_DIR)"
