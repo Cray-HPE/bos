@@ -152,8 +152,8 @@ $ ./regenerate-server.sh
 cray-bos uses the cray-boa image built by the boa repo.
 We specify which major and minor version of the image we want with the 
 [update_external_versions.conf](update_external_versions.conf) file.
-At build time the [runBuildPrep.sh](runBuildPrep.sh) script finds the
-latest version with that major and minor number.
+At build time the [runBuildPrep.sh](runBuildPrep.sh) script calls a utility
+which finds the latest version with that major and minor number.
 
 When creating a new release branch, be sure to update this file to specify the
 desired major and minor number of the image for the new release.
