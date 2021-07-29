@@ -36,6 +36,8 @@ Requires: cray-auth-utils
 # Death to Fascist build policies
 %define _unpackaged_files_terminate_build 0
 %define _systemdsvcdir /usr/lib/systemd/system
+%define craydir /opt/cray
+%define rpminfo %{craydir}/.rpm_info/%{name}/%{version}/%{release}
 
 %description
 Provides a systemd service and associated library that reports
@@ -53,6 +55,11 @@ popd
 
 %install
 rm -rf %{buildroot}
+
+# Install RPM git build info file
+install -m 755 -d %{buildroot}%{rpminfo}/
+install gitInfo.txt %{buildroot}%{rpminfo}
+
 pushd ./src
 /usr/bin/python3 setup.py install -O1 --skip-build --root %{buildroot}
 mkdir -p ${RPM_BUILD_ROOT}%{_systemdsvcdir}
@@ -65,6 +72,9 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
+%dir %{rpminfo}
+%attr(644, root, root) %{rpminfo}/gitInfo.txt
+
 %dir %{python3_sitelib}/bos
 %{python3_sitelib}/bos/reporter
 %dir %{_systemdsvcdir}

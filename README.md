@@ -164,6 +164,13 @@ All other files have the version string written to them at build time based on t
 in the [update_versions.conf](update_versions.conf) file. Since the migration to github, there is also
 some additional version massaging that takes place in [Jenkinsfile.github](Jenkinsfile.github).
 
+In order to make it easier to go from a version number back to the source code that produced that version,
+a text file named gitInfo.txt is added to Docker images and RPMs build from this repo. For Docker images,
+it can be found in the /app folder. For RPMs, it is installed on the system under the 
+/opt/cray/.rpm_info/*rpm_name*/*version*/*release* directory. This file contains the branch from which
+it was built and the most recent commits to that branch. In addition, a few annotation metadata fields
+containing similar information are added to the k8s chart.
+
 ## Build Helpers
 This repo uses some build helper scripts from the cms-meta-tools repo. See that repo for more details.
 

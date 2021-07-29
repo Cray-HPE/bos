@@ -47,7 +47,7 @@ TEST_SPEC_FILE ?= ${TEST_SPEC_NAME}.spec
 TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}
 TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
 
-all : runbuildprep lint prepare image chart rptr_rpm test_rpm
+all : runbuildprep lint collectBuildInfo prepare image chart rptr_rpm test_rpm
 chart: chart_setup chart_package chart_test
 rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
 test_rpm: test_rpm_package_source test_rpm_build_source test_rpm_build
@@ -57,7 +57,10 @@ runbuildprep:
 
 lint:
 		./runLint.sh
-        
+
+collectBuildInfo:
+		./gitInfo.sh
+
 prepare:
 		rm -rf $(RPTR_BUILD_DIR) $(TEST_BUILD_DIR)
 		mkdir -p $(RPTR_BUILD_DIR)/SPECS $(RPTR_BUILD_DIR)/SOURCES $(TEST_BUILD_DIR)/SPECS $(TEST_BUILD_DIR)/SOURCES 
