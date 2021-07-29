@@ -24,6 +24,7 @@
 # Generate API
 FROM openapitools/openapi-generator-cli:v4.1.2 as codegen
 WORKDIR /app
+COPY gitInfo.txt gitInfo.txt
 COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
 COPY src/server/.openapi-generator-ignore lib/server/.openapi-generator-ignore
@@ -37,6 +38,7 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
 # Base image
 FROM artifactory.algol60.net/docker.io/alpine:3.12.4 as base
 WORKDIR /app
+COPY gitInfo.txt gitInfo.txt
 COPY --from=codegen /app .
 COPY constraints.txt requirements.txt ./
 RUN apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
@@ -52,6 +54,7 @@ COPY src/server/bos/__main__.py \
 # Testing image
 FROM base as testing
 WORKDIR /app/
+COPY gitInfo.txt gitInfo.txt
 COPY src/server/bos/test lib/server/bos/test/
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
@@ -62,12 +65,14 @@ CMD [ "./docker_test_entry.sh" ]
 # Codestyle reporting
 FROM testing as codestyle
 WORKDIR /app/
+COPY gitInfo.txt gitInfo.txt
 COPY docker_codestyle_entry.sh setup.cfg ./
 CMD [ "./docker_codestyle_entry.sh" ]
 
 # API Testing image
 FROM testing as api-testing
 WORKDIR /app/
+COPY gitInfo.txt gitInfo.txt
 COPY docker_api_test_entry.sh run_apitests.py ./
 COPY api_tests/ api_tests/
 CMD [ "./docker_api_test_entry.sh" ]
@@ -76,6 +81,7 @@ CMD [ "./docker_api_test_entry.sh" ]
 FROM base as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
+COPY gitInfo.txt gitInfo.txt
 EXPOSE 80
 RUN apk add --no-cache uwsgi-python3 busybox-extras && \
     pip3 install rpdb
@@ -87,6 +93,7 @@ ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 FROM base as application
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
+COPY gitInfo.txt gitInfo.txt
 EXPOSE 80
 RUN apk add --no-cache uwsgi-python3 && \
     rm -rf /usr/lib/python3.8/site-packages/swagger_ui_bundle/vendor/swagger-ui-2.2.10

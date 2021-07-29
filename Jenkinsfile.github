@@ -56,6 +56,12 @@ pipeline {
                 sh "make lint"
             }
         }
+
+        stage("Collect Build Info") {
+            steps {
+                sh "make collectBuildInfo"
+            }
+        }
         
         stage("Add RPM Metadata") {
             environment {

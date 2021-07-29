@@ -35,7 +35,7 @@ SOURCE_NAME ?= ${SPEC_NAME}-${RPM_VERSION}
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 SOURCE_PATH := ${BUILD_DIR}/SOURCES/${SOURCE_NAME}.tar.bz2
 
-all : runbuildprep lint prepare image chart rpm
+all : runbuildprep lint collectBuildInfo prepare image chart rpm
 chart: chart_setup chart_package chart_test
 rpm: rpm_package_source rpm_build_source rpm_build
 
@@ -44,6 +44,9 @@ runbuildprep:
 
 lint:
 		./runLint.sh
+
+collectBuildInfo:
+		./gitInfo.sh
 
 prepare:
 		rm -rf $(BUILD_DIR)
