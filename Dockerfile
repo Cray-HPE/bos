@@ -41,7 +41,9 @@ WORKDIR /app
 COPY gitInfo.txt gitInfo.txt
 COPY --from=codegen /app .
 COPY constraints.txt requirements.txt ./
-RUN apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
+# Upgrade apk-tools due to avoid security issue
+RUN apk add --upgrade --no-cache apk-tools && \
+    apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -r requirements.txt
 COPY src/ /app/lib
