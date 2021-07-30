@@ -41,7 +41,9 @@ WORKDIR /app
 COPY gitInfo.txt gitInfo.txt
 COPY --from=codegen /app .
 COPY constraints.txt requirements.txt ./
-RUN apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
+# Upgrade apk-tools due to avoid security issue
+RUN apk add --upgrade --no-cache apk-tools && \
+    apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -r requirements.txt
 COPY src/ /app/lib
@@ -50,7 +52,6 @@ RUN cd /app/lib && pip3 install --no-cache-dir .
 # Testing image
 FROM base as testing
 WORKDIR /app/
-COPY gitInfo.txt gitInfo.txt
 COPY src/server/bos/test lib/server/bos/test/
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
@@ -61,14 +62,12 @@ CMD [ "./docker_test_entry.sh" ]
 # Codestyle reporting
 FROM testing as codestyle
 WORKDIR /app/
-COPY gitInfo.txt gitInfo.txt
 COPY docker_codestyle_entry.sh setup.cfg ./
 CMD [ "./docker_codestyle_entry.sh" ]
 
 # API Testing image
 FROM testing as api-testing
 WORKDIR /app/
-COPY gitInfo.txt gitInfo.txt
 COPY docker_api_test_entry.sh run_apitests.py ./
 COPY api_tests/ api_tests/
 CMD [ "./docker_api_test_entry.sh" ]
@@ -77,7 +76,6 @@ CMD [ "./docker_api_test_entry.sh" ]
 FROM base as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
-COPY gitInfo.txt gitInfo.txt
 EXPOSE 80
 RUN apk add --no-cache uwsgi-python3 busybox-extras && \
     pip3 install rpdb
@@ -88,7 +86,6 @@ ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 # Application image
 FROM base as application
 WORKDIR /app/
-COPY gitInfo.txt gitInfo.txt
 EXPOSE 80
 RUN apk add --no-cache uwsgi-python3 && \
     rm -rf /usr/lib/python3.8/site-packages/swagger_ui_bundle/vendor/swagger-ui-2.2.10
