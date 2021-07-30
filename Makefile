@@ -31,6 +31,10 @@ HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
 # Common RPM variables
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 
+# We copy the built RPMs to these directories to simplify publishing them
+RPM_IMAGE_DIR ?= dist/rpmbuild/RPMS/x86_64
+SRC_RPM_IMAGE_DIR ?= dist/rpmbuild/SRPMS
+
 # See note at the end of the file about why the RPMs use separate build directories
 
 # bos-reporter RPM variables
@@ -67,9 +71,14 @@ lint:
 collectBuildInfo:
 		./gitInfo.sh
 
-prepare:
+rpm_prepare:
 		rm -rf $(RPTR_BUILD_DIR) $(TEST_BUILD_DIR)
-		mkdir -p $(RPTR_BUILD_DIR)/SPECS $(RPTR_BUILD_DIR)/SOURCES $(TEST_BUILD_DIR)/SPECS $(TEST_BUILD_DIR)/SOURCES 
+		mkdir -p $(RPTR_BUILD_DIR)/SPECS \
+				 $(RPTR_BUILD_DIR)/SOURCES \
+				 $(TEST_BUILD_DIR)/SPECS \
+				 $(TEST_BUILD_DIR)/SOURCES \
+				 $(RPM_IMAGE_DIR) \
+				 $(SRC_RPM_IMAGE_DIR)
 		cp $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/
 		cp $(TEST_SPEC_FILE) $(TEST_BUILD_DIR)/SPECS/
 
@@ -97,9 +106,11 @@ rptr_rpm_package_source:
 
 rptr_rpm_build_source:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(RPTR_SOURCE_PATH) --define "_topdir $(RPTR_BUILD_DIR)"
+		cp $(RPTR_BUILD_DIR)/SRPMS/*.rpm $(SRC_RPM_IMAGE_DIR)
 
 rptr_rpm_build:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(RPTR_SPEC_FILE) --define "_topdir $(RPTR_BUILD_DIR)"
+		cp $(RPTR_BUILD_DIR)/RPMS/x86_64/*.rpm $(RPM_IMAGE_DIR)
 
 test_rpm_package_source:
 		tar --transform 'flags=r;s,^,/$(TEST_SOURCE_NAME)/,' -cvjf $(TEST_SOURCE_PATH) \
@@ -110,9 +121,11 @@ test_rpm_package_source:
 
 test_rpm_build_source:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -vv -ts $(TEST_SOURCE_PATH) --define "_topdir $(TEST_BUILD_DIR)"
+		cp $(TEST_BUILD_DIR)/SRPMS/*.rpm $(SRC_RPM_IMAGE_DIR)
 
 test_rpm_build:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -vv -ba $(TEST_SPEC_FILE) --define "_topdir $(TEST_BUILD_DIR)"
+		cp $(TEST_BUILD_DIR)/RPMS/x86_64/*.rpm $(RPM_IMAGE_DIR)
 
 # Note from Mitch Harding regarding the use of separate BUILD_DIRs for the two RPMs in this repo.
 # 

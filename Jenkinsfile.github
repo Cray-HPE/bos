@@ -92,13 +92,13 @@ pipeline {
             }
         }
 
-        stage("Prepare") {
+        stage("Prepare RPM Build") {
             environment {
                 RPM_VERSION = sh(returnStdout: true, script: "head -1 .version").trim()
             }
             
             steps {
-                sh "make prepare"
+                sh "make rpm_prepare"
             }
         }
 
@@ -150,15 +150,26 @@ pipeline {
         }
 
         stage('Publish ') {
-            environment {
-                DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
-            }
-
-            steps {
-                publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
-                publishCsmHelmCharts(component: env.NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
-                publishCsmRpms(component: "bos", pattern: "dist/bos-*-rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
-                publishCsmRpms(component: "bos", pattern: "dist/bos-*-rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
+            parallel {
+                // I combine these two steps because if the image publish fails, we do not want to publish the chart
+                // referencing that image
+                stage('Image and Chart') {
+                    environment {
+                        DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                    }
+                    steps {
+                        publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
+                        publishCsmHelmCharts(component: env.NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
+                    }
+                }
+                
+                // Similar to the chart/image logic, if the main RPM publish fails, no reason to publish the source RPMs
+                stage('RPMs') {
+                    steps {
+                        publishCsmRpms(component: "bos", pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
+                        publishCsmRpms(component: "bos", pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
+                    }
+                }
             }
         }
     }
