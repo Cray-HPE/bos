@@ -20,6 +20,9 @@
 #
 # (MIT License)
 
+# If you wish to perform a local build, you will need to clone or copy the contents of the
+# cms_meta_tools repo to ./cms_meta_tools
+
 NAME ?= cray-bos
 CHART_PATH ?= kubernetes
 DOCKER_VERSION ?= $(shell head -1 .docker_version)
@@ -35,14 +38,9 @@ SOURCE_NAME ?= ${SPEC_NAME}-${RPM_VERSION}
 BUILD_DIR ?= $(PWD)/dist/rpmbuild
 SOURCE_PATH := ${BUILD_DIR}/SOURCES/${SOURCE_NAME}.tar.bz2
 
-all : clone_cms_meta_tools runbuildprep lint collectBuildInfo prepare image chart rpm
+all : runbuildprep lint prepare image chart rpm
 chart: chart_setup chart_package chart_test
 rpm: rpm_package_source rpm_build_source rpm_build
-
-# If you wish to perform a local build, you will need to clone or copy the contents of the
-# cms_meta_tools repo to ./cms_meta_tools
-clone_cms_meta_tools:
-		git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools
 
 runbuildprep:
 		grep "^[0-9][0-9]*[.][0-9][[0-9]*[.][0-9][0-9]*" .version > openapi.version
@@ -50,9 +48,6 @@ runbuildprep:
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
-
-collectBuildInfo:
-		./gitInfo.sh
 
 prepare:
 		rm -rf $(BUILD_DIR)
