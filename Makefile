@@ -111,7 +111,6 @@ test_rpm_package_source:
 		tar --transform 'flags=r;s,^,/$(TEST_SOURCE_NAME)/,' -cvjf $(TEST_SOURCE_PATH) \
 			./${TEST_SPEC_FILE} \
 			./ct-tests \
-			./gitInfo.txt \
 			./LICENSE
 
 test_rpm_build_source:
