@@ -73,7 +73,6 @@ rpm_package_source:
 		tar --transform 'flags=r;s,^,/$(SOURCE_NAME)/,' -cvjf $(SOURCE_PATH) \
 			./${SPEC_FILE} \
 			./ct-tests \
-			./gitInfo.txt \
 			./LICENSE
 
 rpm_build_source:
