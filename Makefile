@@ -96,7 +96,6 @@ rptr_rpm_package_source:
 		tar --transform 'flags=r;s,^,/$(RPTR_SOURCE_NAME)/,' -cvjf $(RPTR_SOURCE_PATH) \
 			./${RPTR_SPEC_FILE} \
 			./src \
-			./gitInfo.txt \
 			./LICENSE
 
 rptr_rpm_build_source:
