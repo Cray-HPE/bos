@@ -24,7 +24,6 @@
 # Generate API
 FROM openapitools/openapi-generator-cli:v4.1.2 as codegen
 WORKDIR /app
-COPY gitInfo.txt gitInfo.txt
 COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
 COPY src/server/.openapi-generator-ignore lib/server/.openapi-generator-ignore
@@ -38,7 +37,6 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
 # Base image
 FROM artifactory.algol60.net/docker.io/alpine:3.12.4 as base
 WORKDIR /app
-COPY gitInfo.txt gitInfo.txt
 COPY --from=codegen /app .
 COPY constraints.txt requirements.txt ./
 # Update packages to avoid security problems

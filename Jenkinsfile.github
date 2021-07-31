@@ -21,7 +21,7 @@ pipeline {
         stage("Clone cms_meta_tools repo") {
             steps {
                 withCredentials([gitUsernamePassword(credentialsId: 'jenkins-algol60-cray-hpe-github-integration')]) {
-                    sh "git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools"
+                    sh 'git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools'
                 }
             }
         }
@@ -62,12 +62,6 @@ pipeline {
         stage("Lint") {
             steps {
                 sh "make lint"
-            }
-        }
-
-        stage("Collect Build Info") {
-            steps {
-                sh "make collectBuildInfo"
             }
         }
         

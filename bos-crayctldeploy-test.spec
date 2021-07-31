@@ -35,7 +35,6 @@ Requires: python3-requests
 
 # Test defines. These may make sense to put in a central location
 %define craydir /opt/cray
-%define rpminfo %{craydir}/.rpm_info/%{name}/%{version}/%{release}
 %define tests %{craydir}/tests
 %define smsfunc %{tests}/sms-functional
 %define testdat %{tests}/dat
@@ -61,9 +60,6 @@ This is a collection of post-install tests for the Boot Orchestration Services (
 %build
 
 %install
-# Install RPM git build info file
-install -m 755 -d %{buildroot}%{rpminfo}/
-install gitInfo.txt %{buildroot}%{rpminfo}
 
 # Install test wrapper scripts
 install -m 755 -d %{buildroot}%{smsfunccms}/
@@ -99,8 +95,6 @@ install -m 644 ct-tests/lib/bos_limit_test/utils.py %{buildroot}%{boslimittestli
 install -m 755 ct-tests/lib/bos_loop.py %{buildroot}%{cmslib}
 
 %clean
-rm -f %{buildroot}%{rpminfo}/gitInfo.txt
-
 rm -f %{buildroot}%{smsfunccms}/bos_api_functional_test.sh
 rm -f %{buildroot}%{smsfunccms}/bos_cli_functional_test.sh
 
@@ -121,19 +115,15 @@ rm -f %{buildroot}%{boslimittestlib}/utils.py
 
 rm -f %{buildroot}%{cmslib}/bos_loop.py
 
-rmdir %{buildroot}%{rpminfo}
 rmdir %{buildroot}%{boslimittestlib}
 rmdir %{buildroot}%{bosfunctestdat}
 rmdir %{buildroot}%{bosfunctestlib}
 
 %files
 %defattr(755, root, root)
-%dir %{rpminfo}
 %dir %{bosfunctestdat}
 %dir %{bosfunctestlib}
 %dir %{boslimittestlib}
-
-%attr(644, root, root) %{rpminfo}/gitInfo.txt
 
 %attr(755, root, root) %{smsfunccms}/bos_api_functional_test.sh
 %attr(755, root, root) %{smsfunccms}/bos_cli_functional_test.sh
