@@ -20,6 +20,9 @@
 #
 # (MIT License)
 
+# If you wish to perform a local build, you will need to clone or copy the contents of the
+# cms_meta_tools repo to ./cms_meta_tools
+
 NAME ?= cray-bos
 CHART_PATH ?= kubernetes
 DOCKER_VERSION ?= $(shell head -1 .docker_version)
@@ -51,15 +54,10 @@ TEST_SPEC_FILE ?= ${TEST_SPEC_NAME}.spec
 TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}
 TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
 
-all : clone_cms_meta_tools runbuildprep lint collectBuildInfo prepare image chart rptr_rpm test_rpm
+all : runbuildprep lint prepare image chart rptr_rpm test_rpm
 chart: chart_setup chart_package chart_test
 rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
 test_rpm: test_rpm_package_source test_rpm_build_source test_rpm_build
-
-# If you wish to perform a local build, you will need to clone or copy the contents of the
-# cms_meta_tools repo to ./cms_meta_tools
-clone_cms_meta_tools:
-		git clone --depth 1 --no-single-branch https://github.com/Cray-HPE/cms-meta-tools.git ./cms_meta_tools
 
 runbuildprep:
 		grep "^[0-9][0-9]*[.][0-9][[0-9]*[.][0-9][0-9]*" .version > openapi.version
@@ -67,9 +65,6 @@ runbuildprep:
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
-
-collectBuildInfo:
-		./gitInfo.sh
 
 rpm_prepare:
 		rm -rf $(RPTR_BUILD_DIR) $(TEST_BUILD_DIR)
@@ -101,7 +96,6 @@ rptr_rpm_package_source:
 		tar --transform 'flags=r;s,^,/$(RPTR_SOURCE_NAME)/,' -cvjf $(RPTR_SOURCE_PATH) \
 			./${RPTR_SPEC_FILE} \
 			./src \
-			./gitInfo.txt \
 			./LICENSE
 
 rptr_rpm_build_source:
@@ -116,7 +110,6 @@ test_rpm_package_source:
 		tar --transform 'flags=r;s,^,/$(TEST_SOURCE_NAME)/,' -cvjf $(TEST_SOURCE_PATH) \
 			./${TEST_SPEC_FILE} \
 			./ct-tests \
-			./gitInfo.txt \
 			./LICENSE
 
 test_rpm_build_source:
