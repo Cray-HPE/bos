@@ -167,7 +167,8 @@ some additional version massaging that takes place in [Jenkinsfile.github](Jenki
 In order to make it easier to go from a version number back to the source code that produced that version,
 some information about the most recent git commit is added at build time to build artifacts.
 For RPMs, it is added to the changelog. For Helm charts, it is added as annotations metadata. And for
-Docker images, it is written to gitInfo.txt in the root of the container.
+Docker images, it is written to gitInfo.txt in the root of the container. This is done using the
+git_info tool in cms-meta-tools, which is called automatically by the runBuildPrep script.
 
 ## Build Helpers
 This repo uses some build helper scripts from the cms-meta-tools repo. See that repo for more details.
