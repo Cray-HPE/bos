@@ -77,10 +77,6 @@ pipeline {
         }
 
         stage("Prepare") {
-            environment {
-                RPM_VERSION = sh(returnStdout: true, script: "head -1 .version").trim()
-            }
-            
             steps {
                 sh "make prepare"
             }
@@ -103,19 +99,15 @@ pipeline {
                 stage('Chart') {
                     environment {
                         DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
-                        CHART_VERSION = sh(returnStdout: true, script: "head -1 .chart_version").trim()
                     }
 
                     steps {
+                        updateCsmHelmChartAppVersion(chartPath: "${WORKSPACE}/kubernetes/${NAME}", appVersion: env.DOCKER_VERSION)
                         sh "make chart"
                     }
                 }
 
                 stage('Rpm') {
-                    environment {
-                        RPM_VERSION = sh(returnStdout: true, script: "head -1 .version").trim()
-                    }
-
                     steps {
                         sh "make rpm"
                     }
