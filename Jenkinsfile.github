@@ -16,6 +16,7 @@ pipeline {
         RPTR_SPEC_FILE = "bos-reporter.spec"
         TEST_SPEC_FILE = "bos-crayctldeploy-test.spec"
         IS_STABLE = getBuildIsStable()
+        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
     }
 
     stages {
@@ -33,21 +34,21 @@ pipeline {
                     // Get version from version.py
                     def ver = sh(returnStdout: true, script: "./cms_meta_tools/version.py").trim()
                     echo "Base version is ${ver}"
-                    
+
                     // Write base version to .version
                     writeFile(file: ".version", text: ver)
-                
+
                     // Generate docker version string
                     def dockerver = getDockerBuildVersion(isStable: env.IS_STABLE)
                     echo "Docker version is ${dockerver}"
-                
+
                     // Write docker version string to .docker_version
                     writeFile(file: ".docker_version", text: dockerver)
-                
+
                     // Generate chart version string
                     def chartver = dockerver.replaceAll("_", "+")
                     echo "Chart version is ${chartver}"
-                
+
                     // Write chart version to .chart_version
                     writeFile(file: ".chart_version", text: chartver)
                 }
@@ -65,15 +66,12 @@ pipeline {
                 sh "make lint"
             }
         }
-        
-        stage("Add RPM Metadata") {
-            environment {
-                BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
-            }
 
+        stage("Add RPM Metadata") {
             parallel {
                 stage('bos-reporter') {
                     steps {
+                        echo "RPM build metadata is ${env.BUILD_METADATA}"
                         runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
                     }
                 }
@@ -92,7 +90,7 @@ pipeline {
             }
         }
 
-        stage("Build") {            
+        stage("Build") {
             parallel {
                 stage('Image') {
                     environment {
