@@ -23,45 +23,43 @@
 
 import logging
 
+import bos.operators.utils.clients.capmc as capmc
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMEnabled, PowerState, TimeSinceLastAction, OR, LastActionIs
+from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs, StatesMatch, NOT
 
-LOGGER = logging.getLogger('bos.operators.sample')
+LOGGER = logging.getLogger('bos.operators.graceful_power_off')
 
 
-class SampleOperator(BaseOperator):
+class GracefulPowerOffOperator(BaseOperator):
     """
-    This sample operator logs components that meet the following conditions once every 5 minutes:
+    The Graceful Power-Off Operator tells capmc to power-off nodes if:
     - Enabled in the BOS database.
-    - At least one of the following is true
-        - lastAction was at least 5 minutes ago and the last action was Sample or was blank
-        - lastAction was at least 10 minutes ago and the last action was Boot or was Configure
+    - DesiredState != CurrentState
+    - LastAction = Complete, Recovery or not set
     - Enabled in HSM
     - Powered on.
     """
 
     @property
     def name(self):
-        return 'Sample'
+        return 'Graceful-Power-Off'
 
     # Filters
     @property
     def filters(self):
         return [
             BOSQuery(enabled=True),
-            OR(
-                [LastActionIs('Sample,'), TimeSinceLastAction(minutes=5)],
-                [LastActionIs('Boot,Configure'), TimeSinceLastAction(minutes=10)]
-            ),
-            HSMEnabled(),
+            NOT(StatesMatch()),
+            LastActionIs('Complete,Recovery,'),
+            HSMState(enabled=True),
             PowerState(state='on')
         ]
 
     def _act(self, components):
-        for component in components:
-            LOGGER.info('Sample action for {}'.format(component['id']))
+        component_ids = [component['id'] for component in components]
+        capmc.power(component_ids, state='off', force=False)
         return components
 
 
 if __name__ == '__main__':
-    main(SampleOperator)
+    main(GracefulPowerOffOperator)

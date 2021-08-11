@@ -72,14 +72,18 @@ class BOSQuery(DetailsFilter):
         return get_components(**self.kwargs)
 
 
-class HSMEnabled(IDFilter):
+class HSMState(IDFilter):
     """ Returns all components that are in desired enabled state """
-    def __init__(self, enabled: bool = True) -> None:
+    def __init__(self, enabled: bool = None, ready: bool = None) -> None:
         super().__init__()
         self.enabled = enabled
+        self.ready = ready
 
     def _filter(self, components: List[str]) -> List[str]:
         components = get_hsm_components(components, enabled=self.enabled)
+        if self.ready is not None:
+            return [component['ID'] for component in components['Components']
+                    if (component['State'] == 'Ready') is self.ready]
         return [component['ID'] for component in components['Components']]
 
 
@@ -92,6 +96,13 @@ class PowerState(IDFilter):
     def _filter(self, components: List[str]) -> List[str]:
         response, _, _ = get_power_state(components, filtertype='show_{}'.format(self.state))
         return response[self.state]
+
+
+class NOT(LocalFilter):
+    """ Returns the opposite of the given filter.  Use on local filters only."""
+    def __init__(self, filter: Type[LocalFilter]) -> None:
+        self.filter = filter
+        self._match = lambda x: not self.filter._match(x)
 
 
 class TimeSinceLastAction(LocalFilter):
@@ -121,5 +132,37 @@ class LastActionIs(LocalFilter):
     def _match(self, component: dict) -> bool:
         last_action = component.get('lastAction', {}).get('action', '')
         if last_action in self.actions:
+            return True
+        return False
+
+
+class StatesMatch(LocalFilter):
+    """ Returns when current and desired state match """
+    def __init__(self, actions: str) -> None:
+        super().__init__()
+        self.actions = actions.split(',')
+
+    def _match(self, component: dict) -> bool:
+        desired_state = component.get('desiredState', {})
+        current_state = component.get('currentState', {})
+        if current_state == desired_state:
+            return True
+        return False
+
+
+class DesiredStateIsNone(LocalFilter):
+    """ Returns when the desired state is None """
+    def _match(self, component: dict) -> bool:
+        desired_state = component.get('desiredState', {})
+        if not desired_state or not any([bool(v) for v in desired_state.values()]):
+            return True
+        return False
+
+
+class HSMReady(LocalFilter):
+    """ Returns with the specified last action(s) """
+    def _match(self, component: dict) -> bool:
+        desired_state = component.get('desiredState', {})
+        if not desired_state or not any([bool(v) for v in desired_state.values()]):
             return True
         return False
