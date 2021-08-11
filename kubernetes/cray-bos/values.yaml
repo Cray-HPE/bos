@@ -135,3 +135,93 @@ cray-service:
       requests:
         cpu: 10m
         memory: 64Mi
+
+deploymentDefaults:
+  service:
+    enabled: False
+  etcdCluster:
+    enabled: False
+  sqlCluster:
+    enabled: False
+  global:
+    chart:
+      name: cray-bos
+  initContainers: []
+  kafkaCluster:
+    enabled: False
+  volumes: []
+
+operatorDefaults:
+  containers:
+    operator:
+      name: operator
+      image:
+        repository: cray/cray-bos
+      resources:
+        requests:
+          memory: "150Mi"
+          cpu: "200m"
+        limits:
+          memory: "250Mi"
+          cpu: "500m"
+      livenessProbe:
+        exec:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.utils.liveness"
+        initialDelaySeconds: 10
+        periodSeconds: 30
+        timeoutSeconds: 3
+
+operators:
+  gracefulPoweroff:
+    Values:
+      nameOverride: cray-bos-operator-power-off-graceful
+      fullnameOverride: cray-bos-operator-power-off-graceful
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.utils.power_off_graceful"
+  forcefulPoweroff:
+    Values:
+      nameOverride: cray-bos-operator-power-off-forceful
+      fullnameOverride: cray-bos-operator-power-off-forceful
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.utils.power_off_forceful"
+  poweron:
+    Values:
+      nameOverride: cray-bos-operator-power-on
+      fullnameOverride: cray-bos-operator-power-on
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.utils.power_on"
+  readyRecovery:
+    Values:
+      nameOverride: cray-bos-operator-ready-recovery
+      fullnameOverride: cray-bos-operator-ready-recovery
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.utils.ready_recovery"
+  disable:
+    Values:
+      nameOverride: cray-bos-operator-disable
+      fullnameOverride: cray-bos-operator-disable
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.utils.disable"

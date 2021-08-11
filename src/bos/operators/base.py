@@ -25,7 +25,6 @@ BOS Operator - A Python operator for the Boot Orchestration Service.
 """
 
 from abc import ABC, abstractmethod
-import datetime
 import logging
 import threading
 import os
@@ -109,7 +108,7 @@ class BaseOperator(ABC):
         """ The action taken by the operator on target components """
         raise NotImplementedError()
 
-    def _update_database(self, components: List[dict]) -> None:
+    def _update_database(self, components: List[dict], additional_fields: dict = None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
         Includes updating min_wait/max_wait, the last action, attempt count and error
@@ -128,6 +127,8 @@ class BaseOperator(ABC):
                 },
                 'error': component['error']  # New error, or clearing out old error
             }
+            if additional_fields:
+                patch.update(additional_fields)
             data.append(patch)
         update_components(data)
 
