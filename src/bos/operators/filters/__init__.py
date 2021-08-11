@@ -21,6 +21,8 @@
 #
 # (MIT License)
 
-from .filters import BOSQuery, HSMEnabled, PowerState, TimeSinceLastAction, LastActionIs, OR
+from .filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs,\
+    StatesMatch, DesiredStateIsNone, OR, NOT
 
-__all__ = [BOSQuery, HSMEnabled, PowerState, TimeSinceLastAction, LastActionIs, OR]
+__all__ = [BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, StatesMatch,
+           DesiredStateIsNone, OR, NOT]

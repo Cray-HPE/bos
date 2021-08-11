@@ -1,0 +1,11 @@
+{{- $base := . -}}
+{{- $baseChartValues := index .Values "cray-service" -}}
+{{- $operatorDefaults := deepCopy $base.Values.deploymentDefaults | merge $base.Values.operatorDefaults -}}
+{{ range $key, $operator := .Values.operators }}
+---
+{{ $_ := set $operator "Chart" $base.Chart }}
+{{- $_ := set $operator "Release" $base.Release }}
+{{- $_ := deepCopy $operatorDefaults | merge $operator.Values }}
+{{- include "cray-bos.deployment" $operator -}}
+
+{{- end }}
