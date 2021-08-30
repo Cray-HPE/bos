@@ -88,4 +88,5 @@ EXPOSE 80
 RUN apk add --no-cache uwsgi-python3 && \
     rm -rf /usr/lib/python3.8/site-packages/swagger_ui_bundle/vendor/swagger-ui-2.2.10
 COPY config/uwsgi.ini ./
+USER 65534:65534
 ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
