@@ -35,13 +35,15 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     --generate-alias-as-model
 
 # Base image
-FROM artifactory.algol60.net/docker.io/alpine:3.12.4 as base
+FROM artifactory.algol60.net/docker.io/alpine:3.12 as base
 WORKDIR /app
 COPY --from=codegen /app .
 COPY constraints.txt requirements.txt ./
 # Update packages to avoid security problems
 RUN apk add --upgrade --no-cache apk-tools busybox && \
+	apk update && \
     apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
+    apk -U upgrade --no-cache && \
     pip3 install --no-cache-dir -U pip && \
     pip3 install --no-cache-dir -r requirements.txt
 COPY src/server/bos/controllers lib/server/bos/controllers
