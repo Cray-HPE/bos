@@ -76,7 +76,7 @@ CMD [ "./docker_api_test_entry.sh" ]
 FROM base as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
-EXPOSE 80
+EXPOSE 9000
 RUN apk add --no-cache uwsgi-python3 busybox-extras && \
     pip3 install rpdb
 COPY config/uwsgi.ini ./
@@ -86,7 +86,7 @@ ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 # Application image
 FROM base as application
 WORKDIR /app/
-EXPOSE 80
+EXPOSE 9000
 RUN apk add --no-cache uwsgi-python3 && \
     rm -rf /usr/lib/python3.8/site-packages/swagger_ui_bundle/vendor/swagger-ui-2.2.10
 COPY config/uwsgi.ini ./
