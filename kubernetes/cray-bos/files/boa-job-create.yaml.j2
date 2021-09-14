@@ -78,4 +78,8 @@ spec:
             path: certificate_authority.crt
           name: cray-configmap-ca-public-key
       restartPolicy: Never
+      security_context:
+        run_as_non_root: true
+        run_as_user: 65534
+        run_as_group: 65534 
   backoffLimit: 4
