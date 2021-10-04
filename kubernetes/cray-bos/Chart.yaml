@@ -2,7 +2,7 @@ apiVersion: v2
 name: "cray-bos"
 version: @CHART_VERSION@
 description: "Kubernetes resources for BOS"
-type: 
+type: application
 keywords:
   - bos
   - boa
