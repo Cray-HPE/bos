@@ -6,4 +6,4 @@ metadata:
   name: boa-config
   namespace: services
 data:
-  boa_image: "{{ $baseChartValues.imagesHost }}/{{ .Values.boa_image.repository }}:{{ .Values.boa_image.tag }}"
+  boa_image: "{{ .Values.boa_image.repository }}:{{ .Values.boa_image.tag }}"

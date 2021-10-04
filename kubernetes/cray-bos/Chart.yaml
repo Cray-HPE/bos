@@ -1,18 +1,30 @@
-apiVersion: v1
-description: "Kubernetes resources for BOS"
+apiVersion: v2
 name: "cray-bos"
-home: "scms/bos"
 version: @CHART_VERSION@
+description: "Kubernetes resources for BOS"
+type: 
 keywords:
   - bos
   - boa
   - cray-bos
+home: https://github.com/Cray-HPE/bos
 sources:
-  - "https://github.com/Cray-HPE/bos"
+  - https://github.com/Cray-HPE/bos
+dependencies:
+- name: cray-service
+  version: "^6.0.0"
+  repository: "@cray-algol60"
 maintainers:
-  - name: Ryan
-    email: ryan.bak@hpe.com
-  - name: Rob
-    email: robert.noska@hpe.com
-  - name: Jason
-    email: jason.sollom@hpe.com
+  - name: Ryan Bak
+    url: https://github.com/rbak-hpe
+  - name: Joel Landsteiner
+    url: https://github.com/jsl-hpe
+  - name: Jason Sollom
+    url: https://github.com/jsollom-hpe
+appVersion: "TBD"
+deprecated: false
+annotations:
+#  artifacthub.io/images: |
+#  - name: cray-bos 
+#    image: artifactory.algol60.net/csm-docker/stable/cray-bos:X.Y.Z
+  artifacthub.io/license: MIT
