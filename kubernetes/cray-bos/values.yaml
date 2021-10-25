@@ -37,7 +37,7 @@ cray-service:
         repository: cray/cray-bos
       ports:
       - name: http
-        containerPort: 8000
+        containerPort: 9000
         protocol: TCP
       env:
       - name: CA_CERT
@@ -85,7 +85,7 @@ cray-service:
       livenessProbe:
         httpGet:
           path: /v1/version
-          port: 8000
+          port: 9000
         initialDelaySeconds: 10
         periodSeconds: 60
         timeoutSeconds: 10
@@ -93,7 +93,7 @@ cray-service:
       readinessProbe:
         httpGet:
           path: /v1/healthz
-          port: 8000
+          port: 9000
         periodSeconds: 60
         timeoutSeconds: 10
         failureThreshold: 20
