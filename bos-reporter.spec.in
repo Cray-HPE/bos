@@ -79,7 +79,7 @@ rm -rf %{buildroot}
 %endif
 
 %post
-ln -f /usr/bin/spire-agent /usr/bin/bos-reporter-spire-agent
+ln -f /usr/bin/spire-agent /usr/bin/bos-state-reporter-spire-agent
 %if 0%{?suse_version}
 %service_add_post bos-reporter.service
 %else
