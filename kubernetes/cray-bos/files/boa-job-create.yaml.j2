@@ -8,7 +8,7 @@ spec:
     spec:
       containers:
       - name: boa
-        image: {{ boa_image }}
+        image: "{{ boa_image.repository }}:{{ boa_image.tag }}"
         volumeMounts:
         - name: boot-session
           mountPath: /mnt/boot_session

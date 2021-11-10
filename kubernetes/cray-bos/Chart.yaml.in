@@ -1,0 +1,33 @@
+annotations:
+  artifacthub.io/images: |
+    - name: cray-boa
+      image: artifactory.algol60.net/csm-docker/stable/cray-boa:0.0.0-boa
+    - name: cray-bos
+      image: artifactory.algol60.net/csm-docker/stable/cray-bos:0.0.0-bos
+    - name: redis
+      image: docker.io/library/redis:5.0-alpine3.14
+  artifacthub.io/license: MIT
+apiVersion: v2
+appVersion: 0.0.0
+dependencies:
+- name: cray-service
+  version: ^7.0.0
+  repository: https://artifactory.algol60.net/artifactory/csm-helm-charts/
+description: "Kubernetes resources for BOS"
+home: scms/bos
+keywords:
+  - boa
+  - bos
+  - cray-bos
+maintainers:
+  - name: Jason
+    email: jason.sollom@hpe.com
+  - name: Joel
+    email: joel.landsteiner@hpe.com
+  - name: Ryan
+    email: ryan.bak@hpe.com
+name: cray-bos
+sources:
+  - "https://github.com/Cray-HPE/bos"
+version: 0.0.0-chart
+
