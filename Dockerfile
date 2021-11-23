@@ -22,7 +22,7 @@
 # (MIT License)
 
 # Upstream Build Args
-ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v5.1.0
+ARG OPENAPI_IMAGE=openapitools/openapi-generator-cli:v4.1.2
 ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/docker.io/alpine:3.13
 
 # Generate API
