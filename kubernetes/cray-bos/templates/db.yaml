@@ -34,7 +34,7 @@ spec:
     spec:
       containers:
       - name: "{{ include "cray-service.name" . }}-db"
-        image: "{{ $baseChartValues.imagesHost }}/library/redis:5.0-alpine3.12"
+        image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
         command: ["/bin/sh"]
         args: ["-c", "echo 'save 10 1' >> /etc/redis.conf && sleep 1 && redis-server /etc/redis.conf"]
         volumeMounts:

@@ -8,9 +8,12 @@
 #   pullPolicy: "" (default = "IfNotPresent")
 
 boa_image:
-  repository: cray/cray-boa
-  tag: IMAGE_CRAY_BOA_TAG
-
+  repository: artifactory.algol60.net/csm-docker/stable/cray-boa
+  tag: 0.0.0-boa 
+database:
+  image:
+    repository: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis
+    tag: 5.0-alpine3.1
 cray-service:
   type: Deployment
   nameOverride: cray-bos
@@ -34,7 +37,8 @@ cray-service:
     cray-bos:
       name: cray-bos
       image:
-        repository: cray/cray-bos
+        repository: artifactory.algol60.net/csm-docker/stable/cray-bos
+        # tag defaults to chart appVersion
       ports:
       - name: http
         containerPort: 9000
@@ -135,3 +139,4 @@ cray-service:
       requests:
         cpu: 10m
         memory: 64Mi
+
