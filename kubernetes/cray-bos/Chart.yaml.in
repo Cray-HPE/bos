@@ -20,11 +20,11 @@ keywords:
   - bos
   - cray-bos
 maintainers:
-  - name: Jason
+  - name: jsollom-hpe
     email: jason.sollom@hpe.com
-  - name: Joel
+  - name: jsl-hpe
     email: joel.landsteiner@hpe.com
-  - name: Ryan
+  - name: rbak-hpe 
     email: ryan.bak@hpe.com
 name: cray-bos
 sources:
