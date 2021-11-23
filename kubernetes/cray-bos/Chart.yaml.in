@@ -5,7 +5,7 @@ annotations:
     - name: cray-bos
       image: artifactory.algol60.net/csm-docker/stable/cray-bos:0.0.0-bos
     - name: redis
-      image: docker.io/library/redis:5.0-alpine3.14
+      image: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis:5.0-alpine3.12
   artifacthub.io/license: MIT
 apiVersion: v2
 appVersion: 0.0.0
