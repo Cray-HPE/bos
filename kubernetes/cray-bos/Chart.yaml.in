@@ -24,10 +24,9 @@ maintainers:
     email: jason.sollom@hpe.com
   - name: jsl-hpe
     email: joel.landsteiner@hpe.com
-  - name: rbak-hpe 
+  - name: rbak-hpe
     email: ryan.bak@hpe.com
 name: cray-bos
 sources:
   - "https://github.com/Cray-HPE/bos"
 version: 0.0.0-chart
-
