@@ -70,7 +70,6 @@ rm -rf %{buildroot}
 
 %dir %{python3_sitelib}/bos
 %{python3_sitelib}/bos/reporter
-%dir %{_systemdsvcdir}
 %{_systemdsvcdir}/bos-reporter.service
 
 %pre
