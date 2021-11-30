@@ -24,6 +24,7 @@
 import logging
 
 import bos.operators.utils.clients.capmc as capmc
+from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, DesiredStateIsNone, NOT
 
@@ -52,7 +53,7 @@ class ReadyRecoveryOperator(BaseOperator):
             BOSQuery(enabled=True),
             NOT(DesiredStateIsNone()),
             LastActionIs('Power-On'),
-            TimeSinceLastAction(minutes=5),  # TODO: Use configurable option
+            TimeSinceLastAction(minutes=options.max_component_wait_time),
             HSMState(enabled=True, ready=False),
             PowerState(state='on')
         ]

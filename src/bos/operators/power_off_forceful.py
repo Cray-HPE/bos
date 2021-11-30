@@ -24,6 +24,7 @@
 import logging
 
 import bos.operators.utils.clients.capmc as capmc
+from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, StatesMatch, NOT
 
@@ -52,7 +53,7 @@ class ForcefulPowerOffOperator(BaseOperator):
             BOSQuery(enabled=True),
             NOT(StatesMatch()),
             LastActionIs('Graceful-Power-Off,Forceful-Power-Off'),
-            TimeSinceLastAction(minutes=5),  # TODO: Use configurable option
+            TimeSinceLastAction(seconds=options.max_component_wait_time),
             HSMState(enabled=True),
             PowerState(state='on')
         ]
