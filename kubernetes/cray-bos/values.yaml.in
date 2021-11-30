@@ -160,7 +160,7 @@ operatorDefaults:
     operator:
       name: operator
       image:
-        repository: cray/cray-bos
+        repository: artifactory.algol60.net/csm-docker/stable/cray-bos
       resources:
         requests:
           memory: "150Mi"

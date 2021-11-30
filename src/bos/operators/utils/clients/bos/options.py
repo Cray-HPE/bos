@@ -61,20 +61,25 @@ class Options:
             LOGGER.error("Non-JSON response from BOS: {}".format(e))
         return {}
 
-    def get_option(self, key, value_type):
-        return value_type(self.options[key])
+    def get_option(self, key, value_type, default):
+        if key in self.options:
+            return value_type(self.options[key])
+        elif default:
+            return value_type(default)
+        else:
+            raise KeyError('Option {} not found and no default exists'.format(key))
 
     @property
     def logging_level(self):
-        return self.get_option('loggingLevel', str)
+        return self.get_option('loggingLevel', str, 'INFO')
 
     @property
     def polling_frequency(self):
-        return self.get_option('pollingFrequency', int)
+        return self.get_option('pollingFrequency', int, 60)
 
     @property
     def max_component_wait_time(self):
-        return self.get_option('maxComponentWaitTime', int)
+        return self.get_option('maxComponentWaitTime', int, 300)
 
 
 options = Options()
