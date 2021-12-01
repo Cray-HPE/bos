@@ -27,6 +27,7 @@ NAME ?= cray-bos
 CHART_PATH ?= kubernetes
 DOCKER_VERSION ?= $(shell head -1 .docker_version)
 RPM_VERSION ?= $(shell head -1 .version)
+API_VERSION ?= $(shell head -1 .api_version)
 CHART_VERSION ?= $(shell head -1 .chart_version)
 
 HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
@@ -54,14 +55,31 @@ TEST_SPEC_FILE ?= ${TEST_SPEC_NAME}.spec
 TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}
 TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
 
-all : runbuildprep lint prepare image chart rptr_rpm test_rpm
+all : runbuildprep lint image chart rptr_rpm test_rpm
+local: cms_meta_tools runbuildprep image chart_setup chart_package
 chart: chart_setup chart_package chart_test
 rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
 test_rpm: test_rpm_package_source test_rpm_build_source test_rpm_build
 
-runbuildprep:
+clone_input_files:
+		cp ${CHART_PATH}/${NAME}/Chart.yaml.in ${CHART_PATH}/${NAME}/Chart.yaml
+		cp ${CHART_PATH}/${NAME}/values.yaml.in ${CHART_PATH}/${NAME}/values.yaml
+		cp bos-reporter.spec.in bos-reporter.spec
+		cp bos-crayctldeploy-test.spec.in bos-crayctldeploy-test.spec
+		cp src/setup.py.in src/setup.py
+		cp api/openapi.yaml.in api/openapi.yaml
+
+cms_meta_tools:
+		rm -rf cms-meta-tools
+		git clone --depth 1 --no-single-branch git@github.com:Cray-HPE/cms-meta-tools.git ./cms_meta_tools
+
+runbuildprep:   clone_input_files
 		grep "^[0-9][0-9]*[.][0-9][[0-9]*[.][0-9][0-9]*" .version > openapi.version
 		./cms_meta_tools/scripts/runBuildPrep.sh
+		mkdir -p ${CHART_PATH}/.packaged
+
+chart_setup:
+		printf "\nglobal:\n  appVersion: ${DOCKER_VERSION}" >> ${CHART_PATH}/${NAME}/values.yaml
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
@@ -79,10 +97,6 @@ rpm_prepare:
 
 image:
 		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
-
-chart_setup:
-		mkdir -p ${CHART_PATH}/.packaged
-		printf "\nglobal:\n  appVersion: ${DOCKER_VERSION}" >> ${CHART_PATH}/${NAME}/values.yaml
 
 chart_package:
 		helm dep up ${CHART_PATH}/${NAME}
