@@ -30,15 +30,15 @@ from bos.operators.utils.clients.bos.sessions import get_sessions, update_sessio
 LOGGER = logging.getLogger('bos.operators.session_complete')
 
 
-class SessionCompleteOperator(BaseOperator):
+class SessionCompletionOperator(BaseOperator):
     """
-    The Session Complete Operator marks sessions complete when all components
+    The Session Completion Operator marks sessions complete when all components
     that are part of the session have been disabled.
     """
 
     @property
     def name(self):
-        return 'SessionComplete'
+        return 'SessionCompletion'
 
     def _run(self) -> None:
         """ A single pass of complete sessions """
@@ -63,4 +63,4 @@ class SessionCompleteOperator(BaseOperator):
 
 
 if __name__ == '__main__':
-    main(SessionCompleteOperator)
+    main(SessionCompletionOperator)

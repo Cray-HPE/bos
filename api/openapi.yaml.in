@@ -689,6 +689,9 @@ components:
         error:
           type: string
           description: A description of the most recent error to impact the component.
+        session:
+          type: string
+          description: The session responsible for the component's current state
       additionalProperties: false
     ComponentArray:
       description: An array of component states.
@@ -1351,6 +1354,12 @@ paths:
             Retrieve the components with the given id
             (e.g. xname for hardward components). Can be chained
             for selecting groups of components.
+        - name: session
+          schema:
+            type: string
+          in: query
+          description: >-
+            Retrieve the components with the given session id.
         - name: enabled
           schema:
             type: boolean
