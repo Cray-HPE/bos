@@ -28,11 +28,11 @@ import wget
 import os
 from connexion.lifecycle import ConnexionResponse
 
-from bos.models.session_template import SessionTemplate  # noqa: E501
+from bos.models.v1_session_template import V1SessionTemplate as SessionTemplate # noqa: E501
 from bos.dbclient import BosEtcdClient
 from bos.utils import _canonize_xname
 
-LOGGER = logging.getLogger('bos.controllers.sessiontemplate')
+LOGGER = logging.getLogger('bos.controllers.v1.sessiontemplate')
 BASEKEY = "/sessionTemplate"
 
 EXAMPLE_BOOT_SET = {

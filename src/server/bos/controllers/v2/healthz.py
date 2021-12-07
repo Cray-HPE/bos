@@ -1,5 +1,4 @@
-# Cray-provided base controllers for the Boot Orchestration Service
-# Copyright 2019, 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,19 +20,37 @@
 #
 # (MIT License)
 
-
-from bos.controllers.v1 import base as v1_base
-from bos.controllers.v2 import base as v2_base
-
 import logging
-LOGGER = logging.getLogger('bos.controllers.base')
+
+from bos.models.v2_healthz import V2Healthz as Healthz
+from bos import redis_db_utils
+
+DB = redis_db_utils.get_wrapper(db='options')
+
+LOGGER = logging.getLogger('bos.controllers.healthz')
 
 
-def root_get():
-    """ Get a list of supported versions """
-    LOGGER.info('in get_versions')
-    versions = [
-        v1_base.calc_version(details=False),
-        v2_base.calc_version(details=False),
-    ]
-    return versions, 200
+def _get_db_status():
+    available = False
+    try:
+        if DB.info():
+            available = True
+    except Exception as e:
+        LOGGER.error(e)
+
+    if available:
+        return 'ok'
+    return 'not_available'
+
+
+def get_healthz():
+    """GET /v2/healthz
+
+    Query BOS etcd for health status
+
+    :rtype: Healthz
+    """
+    return Healthz(
+        redis_status=_get_db_status,
+        api_status='ok',
+    ), 200

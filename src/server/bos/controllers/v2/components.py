@@ -26,15 +26,15 @@ import logging
 
 from bos import redis_db_utils as dbutils
 
-LOGGER = logging.getLogger('bos.controllers.v1.components')
+LOGGER = logging.getLogger('bos.controllers.v2.components')
 DB = dbutils.get_wrapper(db='components')
 
 
 @dbutils.redis_error_handler
-def get_components(ids="", enabled=None):
+def get_components(ids="", enabled=None, session=None):
     """Used by the GET /components API operation
 
-    Allows filtering using a comma seperated list of ids.
+    Allows filtering using a comma separated list of ids.
     """
     LOGGER.debug("GET /components invoked get_components")
     id_list = []
@@ -45,11 +45,11 @@ def get_components(ids="", enabled=None):
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
-    response = get_components_data(id_list=id_list, enabled=enabled)
+    response = get_components_data(id_list=id_list, enabled=enabled, session=session)
     return response, 200
 
 
-def get_components_data(id_list=None, enabled=None):
+def get_components_data(id_list=None, enabled=None, session=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -65,12 +65,14 @@ def get_components_data(id_list=None, enabled=None):
         # and require paging to be implemented
         response = DB.get_all()
     if enabled is not None:
-        response = [r for r in response if _matches_filter(r, enabled)]
+        response = [r for r in response if _matches_filter(r, enabled, session)]
     return response
 
 
-def _matches_filter(data, enabled):
+def _matches_filter(data, enabled, session):
     if enabled is not None and data.get('enabled', None) != enabled:
+        return False
+    if session is not None and data.get('session', None) != session:
         return False
     return True
 
@@ -122,7 +124,7 @@ def patch_components():
 
 
 @dbutils.redis_error_handler
-def get_component(component_id, config_details=False, v2=False):
+def get_component(component_id):
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /components/id invoked get_component")
     if component_id not in DB:

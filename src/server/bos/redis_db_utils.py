@@ -26,7 +26,7 @@ import logging
 import redis
 
 LOGGER = logging.getLogger(__name__)
-DATABASES = ["options", "components"]  # Index is the db id.
+DATABASES = ["options", "components", "session_templates", "sessions"]  # Index is the db id.
 
 DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
