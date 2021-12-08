@@ -64,7 +64,7 @@ def post_session():  # noqa: E501
     if isinstance(session_template_response, ConnexionResponse):
         msg = "Session Template Name invalid: {}".format(template_name)
         LOGGER.error(msg)
-        return msg, 404
+        return msg, 400
     else:
         session_template, _ = session_template_response
     # Validate health/validity of the sessiontemplate before creating a session
@@ -94,7 +94,7 @@ def post_session():  # noqa: E501
     session = session.to_dict()
     data = dbutils.snake_to_camel_json(session)
     response = DB.put(session.name, data)
-    return response, 200
+    return response, 201
 
 
 @dbutils.redis_error_handler

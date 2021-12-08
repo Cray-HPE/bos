@@ -1670,7 +1670,7 @@ paths:
       requestBody:
          $ref: '#/components/responses/V2SessionCreate'
       responses:
-        200:
+        201:
           $ref: '#/components/responses/V2SessionDetails'
         400:
           $ref: '#/components/responses/BadRequest'
