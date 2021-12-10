@@ -81,7 +81,7 @@ def put_sessiontemplate(session_template_id):  # noqa: E501
 
     Creates a new session template. # noqa: E501
     """
-    LOGGER.debug("POST /v2/sessiontemplate invoked put_sessiontemplate")
+    LOGGER.debug("PUT /v2/sessiontemplate invoked put_sessiontemplate")
     if connexion.request.is_json:
         LOGGER.debug("connexion.request.is_json")
         LOGGER.debug("type=%s", type(connexion.request.get_json()))
@@ -96,35 +96,7 @@ def put_sessiontemplate(session_template_id):  # noqa: E501
             status=400, title="Error parsing the data provided.",
             detail=str(err))
 
-    if data.get('templateUrl'):
-        """If a template URL was provided in the body treat this as a reference
-           to a JSON session template structure which needs to be read and
-           stored.
-        """
-        template_url = data.get('templateUrl')
-        LOGGER.debug("create_sessiontemplate template_url: %s", template_url)
-
-        """Downloads the content locally into a file named after the uri.
-           An optional 'out' parameter can be specified as the base dir
-           for the file
-        """
-        try:
-            template_file = wget.download(template_url)
-            LOGGER.debug("Downloaded: %s", template_file)
-        except Exception as err:
-            return connexion.problem(
-                status=400,
-                title="Error while getting content from '{}'".format(
-                    template_url),
-                detail=str(err))
-
-        # Read in the session template file
-        with open(template_file, 'r') as f:
-            template_data = json.load(f)
-        LOGGER.debug("Removing temporary local file: '%s'", template_file)
-        os.remove(template_file)
-    else:
-        template_data = data
+    template_data = data
 
     try:
         """Convert the JSON request data into a SessionTemplate object.
@@ -196,3 +168,53 @@ def delete_sessiontemplate(session_template_id):
             status=404, title="Sessiontemplate could not found.",
             detail="Sessiontemplate {} could not be found".format(session_template_id))
     return DB.delete(session_template_id), 204
+
+
+@dbutils.redis_error_handler
+def patch_sessiontemplate(session_template_id, data):
+    """
+    PATCH /v2/sessiontemplate
+
+    Patch the session template by session template ID
+    """
+    LOGGER.debug("PATCH /v2/sessiontemplate invoked patch_sessiontemplate with ID: %s", session_template_id)
+
+    if session_template_id not in DB:
+        return connexion.problem(
+            status=404, title="Sessiontemplate could not found.",
+            detail="Sessiontemplate {} could not be found".format(session_template_id))
+
+    if connexion.request.is_json:
+        LOGGER.debug("connexion.request.is_json")
+        LOGGER.debug("type=%s", type(connexion.request.get_json()))
+        LOGGER.debug("Received: %s", connexion.request.get_json())
+    else:
+        return "Patch must be in JSON format", 400
+
+    try:
+        data = connexion.request.get_json()
+    except Exception as err:
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
+
+    template_data = data
+
+    try:
+        """Convert the JSON request data into a SessionTemplate object.
+           Any exceptions caught here would be generated from the model
+           (i.e. bos.models.session_template).
+           An example is an exception for a session template name that
+           does not confirm to Kubernetes naming convention.
+           In this case return 400 with a description of the specific error.
+        """
+        SessionTemplate.from_dict(template_data)
+    except Exception as err:
+        return connexion.problem(
+            status=400, title="The session template could not be created.",
+            detail=str(err))
+
+    template_data = _sanitize_xnames(template_data)
+    template_data['name'] = session_template_id
+
+    return DB.patch(session_template_id, template_data), 200
