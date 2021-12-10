@@ -26,7 +26,7 @@ import json
 import wget
 import os
 
-from bos.models.v2session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
+from bos.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
 from bos import redis_db_utils as dbutils
 from bos.utils import _canonize_xname
 
