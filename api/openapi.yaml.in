@@ -747,7 +747,7 @@ components:
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         force:
-          type: bool
+          type: boolean
           description: >
             Set to force nodes to reboot even if they are already in the desired
             state.
@@ -809,7 +809,7 @@ components:
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         force:
-          type: bool
+          type: boolean
           description: >
             Set to force nodes to reboot even if they are already in the desired
             state.
@@ -961,6 +961,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Options'
+    V2sessionUpdateRequest:
+      description: The state for a single session
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2Session'
+
   responses:
     ServiceHealth:
       description: Service Health information
@@ -1150,7 +1158,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SessionTemplate'
+                  $ref: '#/components/schemas/V1SessionTemplate'
   /v1/sessiontemplate/{session_template_id}:
     parameters:
       - name: session_template_id
@@ -1240,7 +1248,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Session'
+                  $ref: '#/components/schemas/V1Session'
   /v1/session/{session_id}:
     get:
       summary: Get session details by id
@@ -1627,6 +1635,25 @@ paths:
           $ref: '#/components/responses/V2SessionTemplateDetails'
         400:
           $ref: '#/components/responses/BadRequest'
+    patch:
+      summary: Update a session template
+      tags:
+        - v2
+        - sessiontemplates
+      x-openapi-router-controller: bos.controllers.v2.sessiontemplates
+      operationId: patch_sessiontemplate
+      requestBody:
+        description: A JSON object for updating a session template
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/V2SessionTemplate'
+      responses:
+        200:
+          $ref: '#/components/responses/V2SessionTemplateDetails'
+        400:
+          $ref: '#/components/responses/BadRequest'        
     delete:
       summary: Delete a session template
       description: Delete a session template.
@@ -1668,7 +1695,7 @@ paths:
       x-openapi-router-controller: bos.controllers.v2.sessions
       operationId: post_session
       requestBody:
-         $ref: '#/components/responses/V2SessionCreate'
+         $ref: '#/components/requestBodies/V2sessionCreateRequest'
       responses:
         201:
           $ref: '#/components/responses/V2SessionDetails'
@@ -1683,7 +1710,7 @@ paths:
         - sessions
       x-openapi-router-controller: bos.controllers.v2.sessions
       operationId: get_sessions
-          parameters:
+      parameters:
         - name: min_age
           schema:
             type: string
@@ -1767,7 +1794,7 @@ paths:
         $ref: '#/components/requestBodies/V2sessionUpdateRequest'
       responses:
         200:
-          $ref: '#/components/responses/V2sessionDetails'
+          $ref: '#/components/responses/V2SessionDetails'
         400:
           $ref: '#/components/responses/BadRequest'
         404:
