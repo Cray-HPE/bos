@@ -427,6 +427,88 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Link'
+    V1BootSet:
+      description: |
+        A boot set defines a collection of nodes and the information about the
+        boot artifacts and parameters to be sent to each node over the specified
+        network to enable these nodes to boot. When multiple boot sets are used
+        in a session template, the boot_ordinal and shtudown_ordinal indicate
+        the order in which boot sets need to be acted upon. Boot sets sharing
+        the same ordinal number will be addressed at the same time.
+      type: object
+      properties:
+        name:
+          type: string
+          description: |
+            The Boot Set name.
+        boot_ordinal:
+          type: integer
+          minimum: 0
+          description: |
+            The boot ordinal. This will establish the order for boot set operations.
+            Boot sets boot in order from the lowest to highest boot_ordinal.
+        shutdown_ordinal:
+          type: integer
+          minimum: 0
+          description: |
+            The shutdown ordinal. This will establish the order for boot set
+            shutdown operations. Sets shutdown from low to high shutdown_ordinal.
+        path:
+          type: string
+          description: |
+            A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
+            It will be processed based on the type attribute.
+        type:
+          type: string
+          description: |
+            The mime type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
+        etag:
+          type: string
+          description: |
+            This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
+        kernel_parameters:
+          type: string
+          description: |
+            The kernel parameters to use to boot the nodes.
+        network:
+          type: string
+          description: |
+            The network over which the node will boot from.
+            Choices:  NMN -- Node Management Network
+            pattern: '^(?i)nmn$'
+        node_list:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: |
+            The node list. This is an explicit mapping against hardware xnames.
+        node_roles_groups:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: |
+            The node roles list. Allows actions against nodes with associated roles. Roles are defined in SMD.
+        node_groups:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: |
+            The node groups list. Allows actions against associated nodes by logical groupings. Logical groups are user defined groups in SMD.
+        rootfs_provider:
+          type: string
+          description: |
+            The root file system provider.
+        rootfs_provider_passthrough:
+          type: string
+          description: |
+            The root file system provider passthrough.
+            These are additional kernel parameters that will be appended to
+            the 'rootfs=<protocol>' kernel parameter
+      additionalProperties: false
+      required: [path, type]
     V1SessionTemplate:
       type: object
       description: |
@@ -485,7 +567,7 @@ components:
         boot_sets:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/BootSet'
+            $ref: '#/components/schemas/V1BootSet'
         links:
           type: array
           readOnly: true
@@ -653,6 +735,7 @@ components:
           description: |
             The name of configuration to be applied.
       additionalProperties: false
+
     V2SessionTemplate:
       type: object
       description: |
@@ -701,7 +784,7 @@ components:
         boot_sets:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/BootSet'
+            $ref: '#/components/schemas/V2BootSet'
         links:
           type: array
           readOnly: true
@@ -768,6 +851,76 @@ components:
           description: |
             The status of a session.
       additionalProperties: false
+    V2BootSet:
+      description: |
+        A boot set defines a collection of nodes and the information about the
+        boot artifacts and parameters to be sent to each node over the specified
+        network to enable these nodes to boot. When multiple boot sets are used
+        in a session template, the boot_ordinal and shtudown_ordinal indicate
+        the order in which boot sets need to be acted upon. Boot sets sharing
+        the same ordinal number will be addressed at the same time.
+      type: object
+      properties:
+        name:
+          type: string
+          description: |
+            The Boot Set name.
+        path:
+          type: string
+          description: |
+            A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
+            It will be processed based on the type attribute.
+        type:
+          type: string
+          description: |
+            The mime type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
+        etag:
+          type: string
+          description: |
+            This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
+        kernel_parameters:
+          type: string
+          description: |
+            The kernel parameters to use to boot the nodes.
+        network:
+          type: string
+          description: |
+            The network over which the node will boot from.
+            Choices:  NMN -- Node Management Network
+            pattern: '^(?i)nmn$'
+        node_list:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: |
+            The node list. This is an explicit mapping against hardware xnames.
+        node_roles_groups:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: |
+            The node roles list. Allows actions against nodes with associated roles. Roles are defined in SMD.
+        node_groups:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          description: |
+            The node groups list. Allows actions against associated nodes by logical groupings. Logical groups are user defined groups in SMD.
+        rootfs_provider:
+          type: string
+          description: |
+            The root file system provider.
+        rootfs_provider_passthrough:
+          type: string
+          description: |
+            The root file system provider passthrough.
+            These are additional kernel parameters that will be appended to
+            the 'rootfs=<protocol>' kernel parameter
+      additionalProperties: false
+      required: [path, type]
     V2Session:
       description: |
         A Session object

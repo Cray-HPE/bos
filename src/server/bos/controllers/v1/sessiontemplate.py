@@ -53,8 +53,7 @@ EXAMPLE_SESSION_TEMPLATE = {
         "name_your_boot_set": EXAMPLE_BOOT_SET},
     "cfs": {
         "configuration": "desired-cfs-config"},
-    "enable_cfs": True,
-    "name": "name-your-template"}
+    "enable_cfs": True}
 
 
 def sanitize_xnames(st_json):
