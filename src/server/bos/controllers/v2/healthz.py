@@ -22,7 +22,7 @@
 
 import logging
 
-from bos.models.v2_healthz import V2Healthz as Healthz
+from bos.models.healthz import Healthz as Healthz
 from bos import redis_db_utils
 
 DB = redis_db_utils.get_wrapper(db='options')

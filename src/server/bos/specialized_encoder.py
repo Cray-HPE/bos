@@ -22,7 +22,7 @@
 import six
 
 from bos.models.base_model_ import Model
-from bos.models.generic_metadata import GenericMetadata
+from bos.models.v1_generic_metadata import V1GenericMetadata as GenericMetadata
 from bos.encoder import JSONEncoder
 
 

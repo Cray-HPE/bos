@@ -19,93 +19,27 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # (MIT License)
-
-import json
 import logging
-from requests.exceptions import HTTPError, ConnectionError
-from urllib3.exceptions import MaxRetryError
 
-from bos.operators.utils import requests_retry_session
 from bos.operators.utils.clients.bos import ENDPOINT as BASE_ENDPOINT
+from .generic_http import BosEndpoint
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions')
-ENDPOINT = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
 
 
-def get_session(session_id):
-    """Get information for a single BOS session"""
-    url = ENDPOINT + '/' + session_id
-    session = requests_retry_session()
-    try:
-        response = session.get(url)
-        response.raise_for_status()
-        session = json.loads(response.text)
-    except (ConnectionError, MaxRetryError) as e:
-        LOGGER.error("Unable to connect to BOS: {}".format(e))
-        raise e
-    except HTTPError as e:
-        LOGGER.error("Unexpected response from BOS: {}".format(e))
-        raise e
-    except json.JSONDecodeError as e:
-        LOGGER.error("Non-JSON response from BOS: {}".format(e))
-        raise e
-    return session
+class SessionEndpoint(BosEndpoint):
 
+    def __init__(self):
+        self.base_url = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
 
-def get_sessions(**kwargs):
-    """Get information for all BOS sessions"""
-    url = ENDPOINT
-    session = requests_retry_session()
-    try:
-        response = session.get(url, params=kwargs)
-        response.raise_for_status()
-        sessions = json.loads(response.text)
-    except (ConnectionError, MaxRetryError) as e:
-        LOGGER.error("Unable to connect to BOS: {}".format(e))
-        raise e
-    except HTTPError as e:
-        LOGGER.error("Unexpected response from BOS: {}".format(e))
-        raise e
-    except json.JSONDecodeError as e:
-        LOGGER.error("Non-JSON response from BOS: {}".format(e))
-        raise e
-    return sessions
+    def get_session(self, session_id):
+        return self.get_endpoint_single_item(session_id)
 
+    def get_sessions(self, **kwargs):
+        return self.get_endpoint_all_items(kwargs)
 
-def update_session(session_id, data):
-    """Update information for a single BOS session"""
-    url = ENDPOINT + '/' + session_id
-    session = requests_retry_session()
-    try:
-        response = session.patch(url, json=data)
-        response.raise_for_status()
-        session = json.loads(response.text)
-    except (ConnectionError, MaxRetryError) as e:
-        LOGGER.error("Unable to connect to BOS: {}".format(e))
-        raise e
-    except HTTPError as e:
-        LOGGER.error("Unexpected response from BOS: {}".format(e))
-        raise e
-    except json.JSONDecodeError as e:
-        LOGGER.error("Non-JSON response from BOS: {}".format(e))
-        raise e
-    return session
+    def update_session(self, session_id, data):
+        return self.update_session(session_id, data)
 
-
-def update_sessions(data):
-    """Update information for a multiple BOS sessions"""
-    session = requests_retry_session()
-    try:
-        response = session.patch(ENDPOINT, json=data)
-        response.raise_for_status()
-        session = json.loads(response.text)
-    except (ConnectionError, MaxRetryError) as e:
-        LOGGER.error("Unable to connect to BOS: {}".format(e))
-        raise e
-    except HTTPError as e:
-        LOGGER.error("Unexpected response from BOS: {}".format(e))
-        raise e
-    except json.JSONDecodeError as e:
-        LOGGER.error("Non-JSON response from BOS: {}".format(e))
-        raise e
-    return session
+    def update_sessions(self, data):
+        return self.update_sessions(data)
