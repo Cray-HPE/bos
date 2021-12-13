@@ -29,7 +29,6 @@ from bos.controllers.utils import url_for
 from bos.models import Version, Link
 from os import path
 
-
 LOGGER = logging.getLogger('bos.controllers.v2.base')
 
 
@@ -73,6 +72,6 @@ def calc_version(details):
     )
 
 
-def get_version():
+def get_version_v2():
     LOGGER.debug('in get_version')
     return calc_version(details=True), 200
