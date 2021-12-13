@@ -1553,7 +1553,7 @@ paths:
         - v2
         - version
       x-openapi-router-controller: bos.controllers.v2.base
-      operationId: get_version_v2
+      operationId: get_v2
       responses:
         200:
           $ref: '#/components/responses/Version'

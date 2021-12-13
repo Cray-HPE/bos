@@ -72,6 +72,11 @@ def calc_version(details):
     )
 
 
+def get_v2():
+    LOGGER.debug('in get_version')
+    return calc_version(details=True), 200
+
+
 def get_version_v2():
     LOGGER.debug('in get_version')
     return calc_version(details=True), 200
