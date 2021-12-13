@@ -98,6 +98,27 @@ def post_session():  # noqa: E501
 
 
 @dbutils.redis_error_handler
+def patch_session(session_id):
+    """PATCH /v2/session
+    Patch the session identified by session_id
+    Args:
+      session_id (str): Session ID
+    Returns:
+      Session Dictionary, Status Code
+    """
+    if session_id not in DB:
+        return connexion.problem(
+            status=404, title="Session could not found.",
+            detail="Session {} could not be found".format(session_id))
+
+    if not connexion.request.is_json:
+        return "Post must be in JSON format", 400
+    data = dbutils.snake_to_camel_json(connexion.request.get_json())
+    component = DB.patch(session_id, data)
+    return component, 200
+
+
+@dbutils.redis_error_handler
 def get_session(session_id):  # noqa: E501
     """GET /v2/session
     Get the session by session ID
