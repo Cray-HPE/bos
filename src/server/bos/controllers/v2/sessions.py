@@ -29,7 +29,7 @@ import uuid
 from connexion.lifecycle import ConnexionResponse
 
 from bos import redis_db_utils as dbutils
-from bos.controllers.v2.sessiontemplate import get_sessiontemplate
+from bos.controllers.v2.sessiontemplates import get_sessiontemplate
 from bos.models.v2_session import V2Session as Session  # noqa: E501
 
 LOGGER = logging.getLogger('bos.controllers.v2.session')
