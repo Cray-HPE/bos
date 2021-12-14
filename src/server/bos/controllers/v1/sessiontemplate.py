@@ -174,7 +174,7 @@ def get_v1_sessiontemplates():  # noqa: E501
     List all sessiontemplates
     """
     LOGGER.debug("get_v1_sessiontemplates: Fetching sessions.")
-    get_v2_sessiontemplates()
+    return get_v2_sessiontemplates()
 
 
 def get_v1_sessiontemplate(session_template_id):

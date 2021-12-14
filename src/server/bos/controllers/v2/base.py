@@ -44,7 +44,7 @@ def calc_version(details):
         links.extend([
             Link(
                 rel='versions',
-                href=url_for('.bos_controllers_v2_base_v2_get'),
+                href=url_for('.bos_controllers_v2_base_get_v2'),
             ),
         ])
 
