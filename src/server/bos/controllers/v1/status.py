@@ -29,12 +29,12 @@ import pickle
 import flask
 
 from bos.dbclient import BosEtcdClient
-from bos.models.session_status import SessionStatus as SessionStatusModel
-from bos.models.boot_set_status import BootSetStatus
-from bos.models.node_change_list import NodeChangeList
-from bos.models.node_errors_list import NodeErrorsList
+from bos.models.v1_session_status import V1SessionStatus as SessionStatusModel
+from bos.models.v1_boot_set_status import V1BootSetStatus as BootSetStatus
+from bos.models.v1_node_change_list import V1NodeChangeList as NodeChangeList
+from bos.models.v1_node_errors_list import V1NodeErrorsList as NodeErrorsList
 from bos.models import Link
-from bos.models.generic_metadata import GenericMetadata
+from bos.models.v1_generic_metadata import V1GenericMetadata as GenericMetadata
 
 LOGGER = logging.getLogger(__name__)
 BASEKEY = "/session"

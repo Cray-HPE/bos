@@ -38,9 +38,9 @@ from kubernetes.client.rest import ApiException
 from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplate
 from bos.controllers.v1.status import BootSetDoesNotExist, create_v1_session_status
 from bos.dbclient import BosEtcdClient, DB_HOST, DB_PORT
-from bos.models.session import Session  # noqa: E501
+from bos.models.v1_session import V1Session as Session # noqa: E501
 
-LOGGER = logging.getLogger('bos.controllers.session')
+LOGGER = logging.getLogger('bos.controllers.v1.session')
 BASEKEY = "/session"
 
 

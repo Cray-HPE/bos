@@ -23,46 +23,44 @@
 
 import logging
 
-import bos.operators.utils.clients.capmc as capmc
-from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, StatesMatch, NOT
+from bos.operators.utils.clients.bos.components import get_components
+from bos.operators.utils.clients.bos.sessions import get_sessions, update_session
 
-LOGGER = logging.getLogger('bos.operators.forceful_power_off')
+LOGGER = logging.getLogger('bos.operators.session_complete')
 
 
-class ForcefulPowerOffOperator(BaseOperator):
+class SessionCompletionOperator(BaseOperator):
     """
-    The Forceful Power-Off Operator tells capmc to power-off nodes if:
-    - Enabled in the BOS database.
-    - DesiredState != CurrentState
-    - LastAction = Graceful-Power-Off or Forceful-Power-Off
-    - TimeSinceLastAction > wait time (default 5 minutes)
-    - Enabled in HSM
-    - Powered on.
+    The Session Completion Operator marks sessions complete when all components
+    that are part of the session have been disabled.
     """
 
     @property
     def name(self):
-        return 'Forceful-Power-Off'
+        return 'SessionCompletion'
 
-    # Filters
-    @property
-    def filters(self):
-        return [
-            BOSQuery(enabled=True),
-            NOT(StatesMatch()),
-            LastActionIs('Graceful-Power-Off,Forceful-Power-Off'),
-            TimeSinceLastAction(seconds=options.max_component_wait_time),
-            HSMState(enabled=True),
-            PowerState(state='on')
-        ]
+    def _run(self) -> None:
+        """ A single pass of complete sessions """
+        sessions = self._get_incomplete_sessions()
+        for session in sessions:
+            components = self._get_incomplete_components(session)
+            if not components:
+                self._mark_session_complete(session)
 
-    def _act(self, components):
-        component_ids = [component['id'] for component in components]
-        capmc.power(component_ids, state='off', force=True)
-        return components
+    @staticmethod
+    def _get_incomplete_sessions():
+        return get_sessions(complete=False)
+
+    @staticmethod
+    def _get_incomplete_components(session_id):
+        return get_components(session=session_id, enabled=True)
+
+    @staticmethod
+    def _mark_session_complete(session_id):
+        update_session(session_id, {'complete': True})
+        LOGGER.info('Session {} is complete'.format(session_id))
 
 
 if __name__ == '__main__':
-    main(ForcefulPowerOffOperator)
+    main(SessionCompletionOperator)

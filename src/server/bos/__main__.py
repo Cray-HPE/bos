@@ -28,7 +28,7 @@ import os
 import connexion
 
 from bos import specialized_encoder
-from bos.controllers.v1 import options
+from bos.controllers.v2 import options
 
 LOGGER = logging.getLogger('bos.__main__')
 
@@ -51,7 +51,6 @@ def create_app():
 
 
 app = create_app()
-
 
 if __name__ == '__main__':
     app.run()

@@ -19,28 +19,27 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # (MIT License)
-
 import logging
 
 from bos.operators.utils.clients.bos import ENDPOINT as BASE_ENDPOINT
 from .generic_http import BosEndpoint
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
+LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions')
 
 
-class ComponentEndpoint(BosEndpoint):
+class SessionEndpoint(BosEndpoint):
 
     def __init__(self):
         self.base_url = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
 
-    def get_component(self, component_id):
-        return self.get_endpoint_single_item(component_id)
+    def get_session(self, session_id):
+        return self.get_endpoint_single_item(session_id)
 
-    def get_components(self, **kwargs):
+    def get_sessions(self, **kwargs):
         return self.get_endpoint_all_items(kwargs)
 
-    def update_component(self, component_id, data):
-        return self.update_component(component_id, data)
+    def update_session(self, session_id, data):
+        return self.update_session(session_id, data)
 
-    def update_components(self, data):
-        return self.update_components(data)
+    def update_sessions(self, data):
+        return self.update_sessions(data)

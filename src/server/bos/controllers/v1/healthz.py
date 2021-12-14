@@ -24,10 +24,10 @@
 import etcd3
 import logging
 
-from bos.models.healthz import Healthz
+from bos.models.healthz import Healthz as Healthz
 from bos.dbclient import BosEtcdClient
 
-LOGGER = logging.getLogger('bos.controllers.healthz')
+LOGGER = logging.getLogger('bos.controllers.v1.healthz')
 
 
 def v1_get_healthz():

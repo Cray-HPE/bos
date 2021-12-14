@@ -23,6 +23,7 @@
 
 
 from bos.controllers.v1 import base as v1_base
+from bos.controllers.v2 import base as v2_base
 
 import logging
 LOGGER = logging.getLogger('bos.controllers.base')
@@ -33,5 +34,6 @@ def root_get():
     LOGGER.info('in get_versions')
     versions = [
         v1_base.calc_version(details=False),
+        v2_base.calc_version(details=False),
     ]
     return versions, 200

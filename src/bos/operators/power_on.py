@@ -25,6 +25,8 @@ from collections import defaultdict
 import logging
 
 import bos.operators.utils.clients.capmc as capmc
+import bos.operators.utils.clients.cfs as cfs
+from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, DesiredStateIsNone, NOT, OR
 
@@ -54,7 +56,7 @@ class PowerOnOperator(BaseOperator):
             OR(
                 # If the last action was power-on, wait before retrying
                 [NOT(LastActionIs('Power-On'))],
-                [TimeSinceLastAction(minutes=5)]  # TODO: Use configurable option
+                [TimeSinceLastAction(seconds=options.max_component_wait_time)]
             ),
             HSMState(enabled=True),
             PowerState(state='off')
@@ -66,10 +68,13 @@ class PowerOnOperator(BaseOperator):
             config_name = component.get('desiredState', {}).get('configuration', '')
             if not config_name:
                 continue
-            configurations[config_name].append(components['id'])
-        for config_name, ids in configurations.items():
-            cfs.set_configuration(ids, config_name)
-            # TODO: Add BOS session id
+            bos_session = component.get('session')
+            key = (config_name, bos_session)
+            configurations[key].append(components['id'])
+        for key, ids in configurations.items():
+            config_name, bos_session = key
+            cfs.patch_desired_config(ids, config_name,
+                                     tags={'bos_session': bos_session})
         component_ids = [component['id'] for component in components]
         capmc.power(component_ids, state='on')
         return components

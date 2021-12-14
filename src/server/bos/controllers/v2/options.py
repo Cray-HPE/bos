@@ -27,9 +27,9 @@ import time
 
 
 from bos import redis_db_utils as dbutils
-from bos.models.options import Options
+from bos.models.v2_options import V2Options as Options
 
-LOGGER = logging.getLogger('cray.cfs.api.controllers.options')
+LOGGER = logging.getLogger('bos.controllers.v2.options')
 DB = dbutils.get_wrapper(db='options')
 # We store all options as json under this key so that the data format is
 # similar to other data stored in the database, and to make retrieval of all

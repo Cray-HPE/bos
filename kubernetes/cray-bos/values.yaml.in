@@ -13,7 +13,7 @@ boa_image:
 database:
   image:
     repository: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis
-    tag: 5.0-alpine3.1
+    tag: 5.0-alpine3.12
 cray-service:
   type: Deployment
   nameOverride: cray-bos
@@ -140,7 +140,6 @@ cray-service:
         cpu: 10m
         memory: 64Mi
 
-
 deploymentDefaults:
   service:
     enabled: False
@@ -161,7 +160,7 @@ operatorDefaults:
     operator:
       name: operator
       image:
-        repository: cray/cray-bos
+        repository: artifactory.algol60.net/csm-docker/stable/cray-bos
       resources:
         requests:
           memory: "150Mi"
@@ -189,7 +188,7 @@ operators:
           command:
           - python3
           - "-m"
-          - "bos.operators.utils.power_off_graceful"
+          - "bos.operators.power_off_graceful"
   forcefulPoweroff:
     Values:
       nameOverride: cray-bos-operator-power-off-forceful
@@ -199,7 +198,7 @@ operators:
           command:
           - python3
           - "-m"
-          - "bos.operators.utils.power_off_forceful"
+          - "bos.operators.power_off_forceful"
   poweron:
     Values:
       nameOverride: cray-bos-operator-power-on
@@ -209,7 +208,7 @@ operators:
           command:
           - python3
           - "-m"
-          - "bos.operators.utils.power_on"
+          - "bos.operators.power_on"
   readyRecovery:
     Values:
       nameOverride: cray-bos-operator-ready-recovery
@@ -219,7 +218,7 @@ operators:
           command:
           - python3
           - "-m"
-          - "bos.operators.utils.ready_recovery"
+          - "bos.operators.ready_recovery"
   disable:
     Values:
       nameOverride: cray-bos-operator-disable
@@ -229,5 +228,14 @@ operators:
           command:
           - python3
           - "-m"
-          - "bos.operators.utils.disable"
-
+          - "bos.operators.disable"
+  sessionCompletion:
+    Values:
+      nameOverride: cray-bos-operator-session-completion
+      fullnameOverride: cray-bos-operator-session-completion
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.session_completion"

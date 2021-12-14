@@ -28,11 +28,14 @@ import wget
 import os
 from connexion.lifecycle import ConnexionResponse
 
-from bos.models.session_template import SessionTemplate  # noqa: E501
+from bos.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
 from bos.dbclient import BosEtcdClient
 from bos.utils import _canonize_xname
+from ..v2.sessiontemplates import put_sessiontemplate
+from ..v2.sessiontemplates import get_sessiontemplate as get_v2_sessiontemplate
+from ..v2.sessiontemplates import get_sessiontemplates as get_v2_sessiontemplates
 
-LOGGER = logging.getLogger('bos.controllers.sessiontemplate')
+LOGGER = logging.getLogger('bos.controllers.v1.sessiontemplate')
 BASEKEY = "/sessionTemplate"
 
 EXAMPLE_BOOT_SET = {
@@ -160,12 +163,8 @@ def create_v1_sessiontemplate():  # noqa: E501
            This could also be changed to result in an HTTP 409 Conflict. TBD.
         """
         LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
-        st_json = connexion.request.get_json()
-        json_st_str = json.dumps(sanitize_xnames(st_json))
-        with BosEtcdClient() as bec:
-            key = "/sessionTemplate/{}".format(sessiontemplate.name)
-            bec.put(key, value=json_st_str)
-        return key, 201
+        put_sessiontemplate(sessiontemplate.name)
+        return sessiontemplate.name, 201
 
 
 def get_v1_sessiontemplates():  # noqa: E501
@@ -175,12 +174,7 @@ def get_v1_sessiontemplates():  # noqa: E501
     List all sessiontemplates
     """
     LOGGER.debug("get_v1_sessiontemplates: Fetching sessions.")
-    with BosEtcdClient() as bec:
-        results = []
-        for st, _meta in bec.get_prefix('{}/'.format(BASEKEY)):
-            json_st = json.loads(st.decode('utf-8'))
-            results.append(json_st)
-        return results, 200
+    get_v2_sessiontemplates()
 
 
 def get_v1_sessiontemplate(session_template_id):
@@ -190,16 +184,7 @@ def get_v1_sessiontemplate(session_template_id):
     Get the session template by session template ID
     """
     LOGGER.debug("get_v1_sessiontemplate by ID: %s", session_template_id)  # noqa: E501
-    with BosEtcdClient() as bec:
-        key = "{}/{}".format(BASEKEY, session_template_id)
-        st, _meta = bec.get(key)
-        if st:
-            json_st = json.loads(st.decode('utf-8'))
-            return json_st, 200
-        else:
-            return connexion.problem(status=404,
-                                     title="The Session Template was not found",
-                                     detail="The Session Template '{}' was not found.".format(session_template_id))  # noqa: E501
+    return get_v2_sessiontemplate(session_template_id)
 
 
 def get_v1_sessiontemplatetemplate():

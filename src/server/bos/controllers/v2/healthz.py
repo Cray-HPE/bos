@@ -22,25 +22,35 @@
 
 import logging
 
-from bos.operators.utils.clients.bos import ENDPOINT as BASE_ENDPOINT
-from .generic_http import BosEndpoint
+from bos.models.healthz import Healthz as Healthz
+from bos import redis_db_utils
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
+DB = redis_db_utils.get_wrapper(db='options')
+
+LOGGER = logging.getLogger('bos.controllers.healthz')
 
 
-class ComponentEndpoint(BosEndpoint):
+def _get_db_status():
+    available = False
+    try:
+        if DB.info():
+            available = True
+    except Exception as e:
+        LOGGER.error(e)
 
-    def __init__(self):
-        self.base_url = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
+    if available:
+        return 'ok'
+    return 'not_available'
 
-    def get_component(self, component_id):
-        return self.get_endpoint_single_item(component_id)
 
-    def get_components(self, **kwargs):
-        return self.get_endpoint_all_items(kwargs)
+def get_healthz():
+    """GET /v2/healthz
 
-    def update_component(self, component_id, data):
-        return self.update_component(component_id, data)
+    Query BOS etcd for health status
 
-    def update_components(self, data):
-        return self.update_components(data)
+    :rtype: Healthz
+    """
+    return Healthz(
+        redis_status=_get_db_status,
+        api_status='ok',
+    ), 200

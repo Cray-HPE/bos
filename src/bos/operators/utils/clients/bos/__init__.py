@@ -21,6 +21,6 @@
 # (MIT License)
 from bos.operators.utils import PROTOCOL
 
-API_VERSION = 'v1'
+API_VERSION = 'v2'
 SERVICE_NAME = 'cray-bos'
 ENDPOINT = "%s://%s/%s" % (PROTOCOL, SERVICE_NAME, API_VERSION)
