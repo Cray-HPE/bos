@@ -70,21 +70,12 @@ rm -rf %{buildroot}
 
 %dir %{python3_sitelib}/bos
 %{python3_sitelib}/bos/reporter
-%dir %{_systemdsvcdir}
 %{_systemdsvcdir}/bos-reporter.service
 
 %pre
-%if 0%{?suse_version}
-%service_add_pre bos-reporter.service
-%endif
 
 %post
-ln -f /usr/bin/spire-agent /usr/bin/bos-state-reporter-spire-agent
-%if 0%{?suse_version}
-%service_add_post bos-reporter.service
-%else
-%systemd_post bos-reporter.service
-%endif
+ln -f /usr/bin/spire-agent /usr/bin/bos-reporter-spire-agent
 
 %preun
 %if 0%{?suse_version}
