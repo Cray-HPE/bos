@@ -171,7 +171,7 @@ def delete_sessiontemplate(session_template_id):
 
 
 @dbutils.redis_error_handler
-def patch_sessiontemplate(session_template_id, data):
+def patch_sessiontemplate(session_template_id):
     """
     PATCH /v2/sessiontemplate
 
