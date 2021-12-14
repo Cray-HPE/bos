@@ -31,7 +31,7 @@ DB = dbutils.get_wrapper(db='components')
 
 
 @dbutils.redis_error_handler
-def get_components(ids="", enabled=None, session=None):
+def get_v2_components(ids="", enabled=None, session=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -49,7 +49,7 @@ def get_components(ids="", enabled=None, session=None):
     return response, 200
 
 
-def get_components_data(id_list=None, enabled=None, session=None):
+def get_v2_components_data(id_list=None, enabled=None, session=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -78,7 +78,7 @@ def _matches_filter(data, enabled, session):
 
 
 @dbutils.redis_error_handler
-def put_components():
+def put_v2_components():
     """Used by the PUT /components API operation"""
     LOGGER.debug("PUT /components invoked put_components")
     try:
@@ -99,7 +99,7 @@ def put_components():
 
 
 @dbutils.redis_error_handler
-def patch_components():
+def patch_v2_components():
     """Used by the PATCH /components API operation"""
     LOGGER.debug("PATCH /components invoked patch_components")
     try:
@@ -124,7 +124,7 @@ def patch_components():
 
 
 @dbutils.redis_error_handler
-def get_component(component_id):
+def get_v2_component(component_id):
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /components/id invoked get_component")
     if component_id not in DB:
@@ -136,7 +136,7 @@ def get_component(component_id):
 
 
 @dbutils.redis_error_handler
-def put_component(component_id):
+def put_v2_component(component_id):
     """Used by the PUT /components/{component_id} API operation"""
     LOGGER.debug("PUT /components/id invoked put_component")
     try:
@@ -151,7 +151,7 @@ def put_component(component_id):
 
 
 @dbutils.redis_error_handler
-def patch_component(component_id):
+def patch_v2_component(component_id):
     """Used by the PATCH /components/{component_id} API operation"""
     LOGGER.debug("PATCH /components/id invoked patch_component")
     if component_id not in DB:
@@ -169,7 +169,7 @@ def patch_component(component_id):
 
 
 @dbutils.redis_error_handler
-def delete_component(component_id):
+def delete_v2_component(component_id):
     """Used by the DELETE /components/{component_id} API operation"""
     LOGGER.debug("DELETE /components/id invoked delete_component")
     if component_id not in DB:

@@ -1566,7 +1566,7 @@ paths:
         - v2
         - healthz
       x-openapi-router-controller: bos.controllers.v2.healthz
-      operationId: get_healthz
+      operationId: get_v2_healthz
       description:
         Get bos health details.
       responses:
@@ -1586,7 +1586,7 @@ paths:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.controllers.v2.sessiontemplates
-      operationId: get_sessiontemplates
+      operationId: get_v2_sessiontemplates
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetailsArray'
@@ -1608,7 +1608,7 @@ paths:
         - v2
         - sessiontemplatess
       x-openapi-router-controller: bos.controllers.v2.sessiontemplates
-      operationId: get_sessiontemplate
+      operationId: get_v2_sessiontemplate
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
@@ -1620,7 +1620,7 @@ paths:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.controllers.v2.sessiontemplates
-      operationId: put_sessiontemplate
+      operationId: put_v2_sessiontemplate
       description:
         Create a new session template.
       requestBody:
@@ -1641,7 +1641,7 @@ paths:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.controllers.v2.sessiontemplates
-      operationId: patch_sessiontemplate
+      operationId: patch_v2_sessiontemplate
       requestBody:
         description: A JSON object for updating a session template
         required: true
@@ -1661,7 +1661,7 @@ paths:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.controllers.v2.sessiontemplates
-      operationId: delete_sessiontemplate
+      operationId: delete_v2_sessiontemplate
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
@@ -1678,7 +1678,7 @@ paths:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.controllers.v2.sessiontemplates
-      operationId: get_sessiontemplatetemplate
+      operationId: get_v2_sessiontemplatetemplate
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
@@ -1693,7 +1693,7 @@ paths:
         - v2
         - sessions
       x-openapi-router-controller: bos.controllers.v2.sessions
-      operationId: post_session
+      operationId: post_v2_session
       requestBody:
          $ref: '#/components/requestBodies/V2sessionCreateRequest'
       responses:
@@ -1709,7 +1709,7 @@ paths:
         - v2
         - sessions
       x-openapi-router-controller: bos.controllers.v2.sessions
-      operationId: get_sessions
+      operationId: get_v2_sessions
       parameters:
         - name: min_age
           schema:
@@ -1739,7 +1739,7 @@ paths:
         - v2
         - sessions
       x-openapi-router-controller: bos.controllers.v2.sessions
-      operationId: delete_sessions
+      operationId: delete_v2_sessions
       parameters:
         - name: min_age
           schema:
@@ -1776,7 +1776,7 @@ paths:
         - v2
         - sessions
       x-openapi-router-controller: bos.controllers.v2.sessions
-      operationId: get_session
+      operationId: get_v2_session
       responses:
         200:
           $ref: '#/components/responses/V2SessionDetails'
@@ -1789,7 +1789,7 @@ paths:
         - sessions
       x-openapi-router-controller: bos.controllers.v2.sessions
       description: Update the state for a given session in the BOS database
-      operationId: patch_session
+      operationId: patch_v2_session
       requestBody:
         $ref: '#/components/requestBodies/V2sessionUpdateRequest'
       responses:
@@ -1806,7 +1806,7 @@ paths:
         - v2
         - sessions
       x-openapi-router-controller: bos.controllers.v2.sessions
-      operationId: delete_session
+      operationId: delete_v2_session
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
@@ -1833,7 +1833,7 @@ paths:
         used and the parameters are applied in an AND fashion.
         If the collection is empty or the filters have no match, an
         empty array is returned.
-      operationId: get_components
+      operationId: get_v2_components
       parameters:
         - name: ids
           schema:
@@ -1868,7 +1868,7 @@ paths:
         - cli_ignore
       x-openapi-router-controller: bos.controllers.v2.components
       description: Update the state for a collection of components in the BOS database
-      operationId: put_components
+      operationId: put_v2_components
       requestBody:
         $ref: '#/components/requestBodies/V2componentsUpdateRequest'
       responses:
@@ -1884,7 +1884,7 @@ paths:
         - cli_ignore
       x-openapi-router-controller: bos.controllers.v2.components
       description: Update the state for a collection of components in the BOS database
-      operationId: patch_components
+      operationId: patch_v2_components
       requestBody:
         $ref: '#/components/requestBodies/V2componentsUpdateRequest'
       responses:
@@ -1902,7 +1902,7 @@ paths:
         - components
       x-openapi-router-controller: bos.controllers.v2.components
       description: Retrieve the current and desired state of a single component
-      operationId: get_component
+      operationId: get_v2_component
       responses:
         200:
           $ref: '#/components/responses/V2componentDetails'
@@ -1917,7 +1917,7 @@ paths:
         - components
       x-openapi-router-controller: bos.controllers.v2.components
       description: Update the state for a given component in the BOS database
-      operationId: put_component
+      operationId: put_v2_component
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
       responses:
@@ -1932,7 +1932,7 @@ paths:
         - components
       x-openapi-router-controller: bos.controllers.v2.components
       description: Update the state for a given component in the BOS database
-      operationId: patch_component
+      operationId: patch_v2_component
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
       responses:
@@ -1950,7 +1950,7 @@ paths:
       summary: Delete a single component
       x-openapi-router-controller: bos.controllers.v2.components
       description: Delete the given component
-      operationId: delete_component
+      operationId: delete_v2_component
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
@@ -1970,7 +1970,7 @@ paths:
         - options
       x-openapi-router-controller: bos.controllers.v2.options
       description: Retrieve the list of BOS service options.
-      operationId: get_options
+      operationId: get_v2_options
       responses:
         200:
           $ref: '#/components/responses/V2options'
@@ -1980,7 +1980,7 @@ paths:
         - v2
         - options
       x-openapi-router-controller: bos.controllers.v2.options
-      operationId: patch_options
+      operationId: patch_v2_options
       description: Update one or more of the BOS service options.
       requestBody:
         $ref: '#/components/requestBodies/V2optionsUpdateRequest'

@@ -29,7 +29,7 @@ import uuid
 from connexion.lifecycle import ConnexionResponse
 
 from bos import redis_db_utils as dbutils
-from bos.controllers.v2.sessiontemplates import get_sessiontemplate
+from bos.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.models.v2_session import V2Session as Session  # noqa: E501
 
 LOGGER = logging.getLogger('bos.controllers.v2.session')
@@ -39,7 +39,7 @@ BASEKEY = "/sessions"
 
 
 @dbutils.redis_error_handler
-def post_session():  # noqa: E501
+def post_v2_session():  # noqa: E501
     """POST /v2/session
     Creates a new boot session. # noqa: E501
     :param session: A JSON object for creating sessions
@@ -98,7 +98,7 @@ def post_session():  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def patch_session(session_id):
+def patch_v2_session(session_id):
     """PATCH /v2/session
     Patch the session identified by session_id
     Args:
@@ -119,7 +119,7 @@ def patch_session(session_id):
 
 
 @dbutils.redis_error_handler
-def get_session(session_id):  # noqa: E501
+def get_v2_session(session_id):  # noqa: E501
     """GET /v2/session
     Get the session by session ID
     Args:
@@ -136,7 +136,7 @@ def get_session(session_id):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def get_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
+def get_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
     """GET /v2/session
 
     List all sessions
@@ -147,7 +147,7 @@ def get_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def delete_session(session_id):  # noqa: E501
+def delete_v2_session(session_id):  # noqa: E501
     """DELETE /v2/session
 
     Delete the session by session id
@@ -160,7 +160,7 @@ def delete_session(session_id):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def delete_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
+def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
     try:
         sessions = _get_filtered_sessions(min_age=min_age, max_age=max_age,
                                           status=status)
