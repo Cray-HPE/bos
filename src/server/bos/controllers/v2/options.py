@@ -25,7 +25,6 @@ import connexion
 import threading
 import time
 
-
 from bos import redis_db_utils as dbutils
 from bos.models.v2_options import V2Options as Options
 
@@ -44,7 +43,7 @@ DEFAULTS = {
 
 def _init():
     # Start log level updater
-    log_level_updater = threading.Thread(target=check_logging_level, args=())
+    log_level_updater = threading.Thread(target=check_v2_logging_level, args=())
     log_level_updater.start()
 
     """ Cleanup old options """
@@ -62,7 +61,7 @@ def _init():
 
 
 @dbutils.redis_error_handler
-def get_options():
+def get_v2_options():
     """Used by the GET /options API operation"""
     LOGGER.debug("GET /options invoked get_options")
     data = get_options_data()
@@ -82,7 +81,7 @@ def _clean_options_data(data):
     return data
 
 
-def get_options_data():
+def get_v2_options_data():
     return _check_defaults(DB.get(OPTIONS_KEY))
 
 
@@ -102,7 +101,7 @@ def _check_defaults(data):
 
 
 @dbutils.redis_error_handler
-def patch_options():
+def patch_v2_options():
     """Used by the PATCH /options API operation"""
     LOGGER.debug("PATCH /options invoked patch_options")
     try:
@@ -116,7 +115,7 @@ def patch_options():
     return DB.patch(OPTIONS_KEY, data), 200
 
 
-def update_log_level(new_level_str):
+def update_v2_log_level(new_level_str):
     new_level = logging.getLevelName(new_level_str.upper())
     current_level = LOGGER.getEffectiveLevel()
     if current_level != new_level:
@@ -128,7 +127,7 @@ def update_log_level(new_level_str):
             logging.getLevelName(current_level), logging.getLevelName(new_level)))
 
 
-def check_logging_level():
+def check_v2_logging_level():
     while True:
         try:
             data = get_options_data()

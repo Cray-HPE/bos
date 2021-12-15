@@ -31,9 +31,7 @@ from connexion.lifecycle import ConnexionResponse
 from bos.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
 from bos.dbclient import BosEtcdClient
 from bos.utils import _canonize_xname
-from ..v2.sessiontemplates import put_sessiontemplate
-from ..v2.sessiontemplates import get_sessiontemplate as get_v2_sessiontemplate
-from ..v2.sessiontemplates import get_sessiontemplates as get_v2_sessiontemplates
+from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, put_v2_sessiontemplate, delete_v2_sessiontemplate
 
 LOGGER = logging.getLogger('bos.controllers.v1.sessiontemplate')
 BASEKEY = "/sessionTemplate"
@@ -150,6 +148,10 @@ def create_v1_sessiontemplate():  # noqa: E501
            support patching operations. This could also be changed to
            result in an HTTP 409 Conflict. TBD.
         """
+        sessiontemplate_name = st_json['name']
+        put_v2_sessiontemplate(sessiontemplate_name)
+        return sessiontemplate_name, 201
+
         with BosEtcdClient() as bec:
             key = "{}/{}".format(BASEKEY, st_json['name'])
             bec.put(key, value=json_st_str)
@@ -163,7 +165,7 @@ def create_v1_sessiontemplate():  # noqa: E501
            This could also be changed to result in an HTTP 409 Conflict. TBD.
         """
         LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
-        put_sessiontemplate(sessiontemplate.name)
+        put_v2_sessiontemplate(sessiontemplate.name)
         return sessiontemplate.name, 201
 
 
@@ -203,10 +205,4 @@ def delete_v1_sessiontemplate(session_template_id):
     Delete the session template by session template ID
     """
     LOGGER.debug("delete_v1_sessiontemplate by ID: %s", session_template_id)
-    result = get_v1_sessiontemplate(session_template_id)
-    if isinstance(result, ConnexionResponse):
-        return result
-    with BosEtcdClient() as bec:
-        key = "/sessionTemplate/{}".format(session_template_id)
-        bec.delete(key)
-        return '', 204
+    delete_v2_sessiontemplate(session_template_id)

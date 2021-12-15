@@ -76,7 +76,7 @@ def _sanitize_xnames(st_json):
 
 
 @dbutils.redis_error_handler
-def put_sessiontemplate(session_template_id):  # noqa: E501
+def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     """POST /v2/sessiontemplate
 
     Creates a new session template. # noqa: E501
@@ -118,7 +118,7 @@ def put_sessiontemplate(session_template_id):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def get_sessiontemplates():  # noqa: E501
+def get_v2_sessiontemplates():  # noqa: E501
     """
     GET /v2/sessiontemplates
 
@@ -130,7 +130,7 @@ def get_sessiontemplates():  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def get_sessiontemplate(session_template_id):
+def get_v2_sessiontemplate(session_template_id):
     """
     GET /v2/sessiontemplate
 
@@ -146,7 +146,7 @@ def get_sessiontemplate(session_template_id):
 
 
 @dbutils.redis_error_handler
-def get_sessiontemplatetemplate():
+def get_v2_sessiontemplatetemplate():
     """
     GET /v2/sessiontemplatetemplate
 
@@ -156,7 +156,7 @@ def get_sessiontemplatetemplate():
 
 
 @dbutils.redis_error_handler
-def delete_sessiontemplate(session_template_id):
+def delete_v2_sessiontemplate(session_template_id):
     """
     DELETE /v2/sessiontemplate
 
@@ -171,7 +171,7 @@ def delete_sessiontemplate(session_template_id):
 
 
 @dbutils.redis_error_handler
-def patch_sessiontemplate(session_template_id):
+def patch_v2_sessiontemplate(session_template_id):
     """
     PATCH /v2/sessiontemplate
 

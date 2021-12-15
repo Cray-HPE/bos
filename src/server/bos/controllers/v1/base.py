@@ -21,7 +21,6 @@
 #
 # (MIT License)
 
-import os.path
 import logging
 import subprocess
 import yaml
@@ -29,7 +28,6 @@ import yaml
 from bos.controllers.utils import url_for
 from bos.models import Version, Link
 from os import path
-
 
 LOGGER = logging.getLogger('bos.controllers.v1.base')
 

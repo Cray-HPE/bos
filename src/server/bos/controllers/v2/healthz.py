@@ -43,7 +43,7 @@ def _get_db_status():
     return 'not_available'
 
 
-def get_healthz():
+def get_v2_healthz():
     """GET /v2/healthz
 
     Query BOS etcd for health status
