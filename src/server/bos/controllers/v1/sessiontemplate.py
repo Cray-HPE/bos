@@ -152,11 +152,6 @@ def create_v1_sessiontemplate():  # noqa: E501
         put_v2_sessiontemplate(sessiontemplate_name)
         return sessiontemplate_name, 201
 
-        with BosEtcdClient() as bec:
-            key = "{}/{}".format(BASEKEY, st_json['name'])
-            bec.put(key, value=json_st_str)
-            return key, 201
-
     if sessiontemplate.name:
         """If a template name has been provided in the body, treat this as
            a complete JSON session template record and store it.
