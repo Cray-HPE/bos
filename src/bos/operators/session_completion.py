@@ -24,8 +24,8 @@
 import logging
 
 from bos.operators.base import BaseOperator, main
-from bos.operators.utils.clients.bos.components import get_components
-from bos.operators.utils.clients.bos.sessions import get_sessions, update_session
+from bos.operators.utils.clients.bos.sessions import SessionEndpoint
+from bos.operators.utils.clients.bos.components import ComponentEndpoint
 
 LOGGER = logging.getLogger('bos.operators.session_complete')
 
@@ -35,6 +35,9 @@ class SessionCompletionOperator(BaseOperator):
     The Session Completion Operator marks sessions complete when all components
     that are part of the session have been disabled.
     """
+
+    def __init__(self):
+        self.session_endpoint = SessionEndpoint()
 
     @property
     def name(self):
@@ -48,17 +51,14 @@ class SessionCompletionOperator(BaseOperator):
             if not components:
                 self._mark_session_complete(session)
 
-    @staticmethod
-    def _get_incomplete_sessions():
-        return get_sessions(complete=False)
+    def _get_incomplete_sessions(self):
+        return self.session_endpoint.get_sessions(complete=False)
 
-    @staticmethod
-    def _get_incomplete_components(session_id):
-        return get_components(session=session_id, enabled=True)
+    def _get_incomplete_components(self, session_id):
+        return self.component_endpoint.get_components(session=session_id, enabled=True)
 
-    @staticmethod
-    def _mark_session_complete(session_id):
-        update_session(session_id, {'complete': True})
+    def _mark_session_complete(self, session_id):
+        self.session_endpoint.update_session(session_id, {'complete': True})
         LOGGER.info('Session {} is complete'.format(session_id))
 
 
