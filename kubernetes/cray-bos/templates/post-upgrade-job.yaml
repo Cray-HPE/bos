@@ -1,5 +1,6 @@
 apiVersion: batch/v1
 kind: Job
+namespace: services
 metadata:
   name:  "{{ include "cray-service.name" . }}-session-template-migration-jobs"
   labels:
@@ -24,7 +25,7 @@ spec:
       restartPolicy: Never
       containers:
       - name: v1-v2-session-template-migration  
-        image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}
+        image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}:{{ .Chart.AppVersion}}
         command:
           - python3
           - "-m"
