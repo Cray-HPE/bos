@@ -23,8 +23,8 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - name: v1-v2-session-template-migration 
-        image: index .Values "cray-service" "containers" "cray-bos" "image" "respository" 
+      - name: v1-v2-session-template-migration  
+        image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}
         command:
           - python3
           - "-m"
