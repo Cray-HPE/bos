@@ -1,6 +1,5 @@
 apiVersion: batch/v1
 kind: Job
-namespace: services
 metadata:
   name:  "{{ include "cray-service.name" . }}-session-template-migration-jobs"
   labels:
