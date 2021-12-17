@@ -11,6 +11,7 @@ metadata:
     "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "-1"
     "helm.sh/hook-delete-policy": hook-succeeded
+
 spec:
   template:
     metadata:
@@ -22,8 +23,8 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - name: v1-v2-Session-Template-Migration
-        image: "{{ .Values.cray_service.containers.cray_bos.image.repository }}"
+      - name: v1-v2-Session-Template-Migration 
+        image: index .Values "cray-service" "containers" "cray-bos" "image" "respository" 
         command:
           - python3
           - "-m"
