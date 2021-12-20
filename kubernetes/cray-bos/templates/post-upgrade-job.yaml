@@ -29,6 +29,6 @@ spec:
           - python3
           - "-m"
           - "v1_v2_migration"
-      env:
-      - name: PYTHONPATH
-        value: "/app/lib/server/bos:/app/lib/server"
+        env:
+        - name: PYTHONPATH
+          value: "/app/lib/server/bos:/app/lib/server"
