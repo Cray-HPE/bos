@@ -1,4 +1,3 @@
-{{- $baseChartValues := index .Values "cray-service" -}}
 ---
 apiVersion: batch/v1
 kind: Job

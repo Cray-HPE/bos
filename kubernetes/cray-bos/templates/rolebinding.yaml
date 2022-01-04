@@ -24,3 +24,16 @@ subjects:
   - kind: ServiceAccount
     name: bos-service-launch-job
     namespace: services
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+subjects:
+  - kind: ServiceAccount
+    name: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+    namespace: services
