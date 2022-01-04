@@ -32,7 +32,7 @@ spec:
           - /bin/sh
           - -c
           - |
-	    while true; do
+            while true; do
               JOB_CONDITION="$(kubectl get jobs -n services -l app.kubernetes.io/name=cray-bos-wait-for-etcd -o jsonpath='{.items[0].status.conditions[0].type}')"
               JOB_CONDITION_RC=$?
               if [ $JOB_CONDITION_RC -eq 0 ]; then
