@@ -22,7 +22,8 @@ spec:
         app.kubernetes.io/instance:  "{{ include "cray-service.name" . }}"
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
     spec:
-      serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+      #serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+      serviceAccountName: bos-service-launch-job
       restartPolicy: Never
       securityContext:
         runAsUser: 0
