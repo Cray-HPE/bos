@@ -894,9 +894,6 @@ components:
         kernel_parameters:
           type: string
           description: Kernel parameters
-        rootfs:
-          type: string
-          description: Rootfs
         initrd:
           type: string
           description: Initrd ID

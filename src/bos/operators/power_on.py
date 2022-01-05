@@ -79,6 +79,22 @@ class PowerOnOperator(BaseOperator):
         capmc.power(component_ids, state='on')
         return components
 
+    @staticmethod
+    def _set_bss(components):
+        parameters = defaultdict(set)
+        for component in components:
+            boot_artifacts = component.get('desiredState', {}).get('bootArtifacts', {})
+            kernel = boot_artifacts.get('kernel')
+            kernel_parameters = boot_artifacts.get('kernel_parameters')
+            initrd = boot_artifacts.get('initrd')
+            if not any([kernel, kernel_parameters, initrd]):
+                continue
+            key = (kernel, kernel_parameters, initrd)
+            parameters[key].add(components['id'])
+        for key, nodes in parameters.items():
+            kernel, kernel_parameters, initrd = key
+            bss.set_bss(node_set=nodes, kernel_params=kernel_parameters,
+                        kernel=kernel, initrd=initrd)
 
 if __name__ == '__main__':
     main(PowerOnOperator)
