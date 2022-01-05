@@ -24,6 +24,7 @@
 from collections import defaultdict
 import logging
 
+import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.capmc as capmc
 import bos.operators.utils.clients.cfs as cfs
 from bos.operators.utils.clients.bos.options import options
@@ -63,6 +64,14 @@ class PowerOnOperator(BaseOperator):
         ]
 
     def _act(self, components):
+        self._set_cfs(components)
+        self._set_bss(components)
+        component_ids = [component['id'] for component in components]
+        capmc.power(component_ids, state='on')
+        return components
+
+    @staticmethod
+    def _set_cfs(components):
         configurations = defaultdict(list)
         for component in components:
             config_name = component.get('desiredState', {}).get('configuration', '')
@@ -75,9 +84,23 @@ class PowerOnOperator(BaseOperator):
             config_name, bos_session = key
             cfs.patch_desired_config(ids, config_name,
                                      tags={'bos_session': bos_session})
-        component_ids = [component['id'] for component in components]
-        capmc.power(component_ids, state='on')
-        return components
+
+    @staticmethod
+    def _set_bss(components):
+        parameters = defaultdict(set)
+        for component in components:
+            boot_artifacts = component.get('desiredState', {}).get('bootArtifacts', {})
+            kernel = boot_artifacts.get('kernel')
+            kernel_parameters = boot_artifacts.get('kernel_parameters')
+            initrd = boot_artifacts.get('initrd')
+            if not any([kernel, kernel_parameters, initrd]):
+                continue
+            key = (kernel, kernel_parameters, initrd)
+            parameters[key].add(components['id'])
+        for key, nodes in parameters.items():
+            kernel, kernel_parameters, initrd = key
+            bss.set_bss(node_set=nodes, kernel_params=kernel,
+                        kernel=kernel_parameters, initrd=initrd)
 
     @staticmethod
     def _set_bss(components):
