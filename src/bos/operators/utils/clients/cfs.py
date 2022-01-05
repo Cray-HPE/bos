@@ -19,11 +19,8 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # (MIT License)
-import json
 import logging
-import os
 from requests.exceptions import HTTPError, ConnectionError
-from urllib3.exceptions import MaxRetryError
 
 from bos.operators.utils import requests_retry_session, PROTOCOL
 

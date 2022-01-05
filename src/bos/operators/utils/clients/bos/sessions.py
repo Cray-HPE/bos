@@ -36,7 +36,7 @@ class SessionEndpoint(BosEndpoint):
         return self.get_endpoint_single_item(session_id)
 
     def get_sessions(self, **kwargs):
-        return self.get_endpoint_all_items(kwargs)
+        return self.get_endpoint_all_items(**kwargs)
 
     def update_session(self, session_id, data):
         return self.update_session(session_id, data)

@@ -37,7 +37,7 @@ class SessionTemplateEndpoint(BosEndpoint):
         return self.get_endpoint_single_item(session_template_id)
 
     def get_session_templates(self, **kwargs):
-        return self.get_endpoint_all_items(kwargs)
+        return self.get_endpoint_all_items(**kwargs)
 
     def update_session_template(self, session_template_id, data):
         return self.update_session_template(session_template_id, data)

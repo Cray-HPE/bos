@@ -37,7 +37,7 @@ class ComponentEndpoint(BosEndpoint):
         return self.get_endpoint_single_item(component_id)
 
     def get_components(self, **kwargs):
-        return self.get_endpoint_all_items(kwargs)
+        return self.get_endpoint_all_items(**kwargs)
 
     def update_component(self, component_id, data):
         return self.update_component(component_id, data)

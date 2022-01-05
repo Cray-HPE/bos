@@ -50,7 +50,7 @@ class SessionCompletionOperator(BaseOperator):
 
     @staticmethod
     def _get_incomplete_sessions():
-        return get_sessions(complete=False)
+        return get_sessions(status='running')
 
     @staticmethod
     def _get_incomplete_components(session_id):
@@ -58,7 +58,7 @@ class SessionCompletionOperator(BaseOperator):
 
     @staticmethod
     def _mark_session_complete(session_id):
-        update_session(session_id, {'complete': True})
+        update_session(session_id, {'status': {'status': 'complete'}})
         LOGGER.info('Session {} is complete'.format(session_id))
 
 
