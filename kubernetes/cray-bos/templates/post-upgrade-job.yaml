@@ -57,9 +57,13 @@ spec:
       - name: v1-v2-session-template-migration  
         image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}:{{ .Chart.AppVersion}}
         command:
-          - python3
-          - "-m"
-          - "v1_v2_migration"
+          - /bin/sh
+          - -c
+          - sleep
+          - "360000"
+          #- python3
+          #- "-m"
+          #- "v1_v2_migration"
         env:
         - name: PYTHONPATH
           value: "/app/lib/server/bos:/app/lib/server"
