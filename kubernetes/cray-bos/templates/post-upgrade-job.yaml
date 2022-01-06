@@ -59,8 +59,7 @@ spec:
         command:
           - /bin/sh
           - -c
-          - sleep
-          - "360000"
+          - "sleep 360000s"
           #- python3
           #- "-m"
           #- "v1_v2_migration"
