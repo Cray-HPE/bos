@@ -780,12 +780,6 @@ components:
           type: string
           description: |
             The kernel parameters to use to boot the nodes.
-        network:
-          type: string
-          description: |
-            The network over which the node will boot from.
-            Choices:  NMN -- Node Management Network
-            pattern: '^(?i)nmn$'
         node_list:
           type: array
           items:
