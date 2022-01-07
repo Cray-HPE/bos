@@ -25,8 +25,8 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeOutboundPorts: "2379,2380,6379"
     spec:
-      #serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
-      serviceAccountName: bos-service-launch-job
+      serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+      #serviceAccountName: bos-service-launch-job
       restartPolicy: Never
       securityContext:
         runAsUser: 0
