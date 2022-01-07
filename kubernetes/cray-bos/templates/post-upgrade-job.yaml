@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name:  "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+  name:  "{{ include "cray-service.name" . }}-session-template-migration"
   labels:
     app.kubernetes.io/managed-by: "{{ include "cray-service.name" . }}"
     app.kubernetes.io/instance: "{{ include "cray-service.name" . }}"
@@ -25,7 +25,7 @@ spec:
       annotations:
         traffic.sidecar.istio.io/excludeOutboundPorts: "2379,2380,6379"
     spec:
-      serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration-jobs"
+      serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration"
       #serviceAccountName: bos-service-launch-job
       restartPolicy: Never
       securityContext:
