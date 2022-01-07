@@ -12,6 +12,7 @@ metadata:
     "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "-1"
     "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation 
+    traffic.sidecar.istio.io/excludeOutboundPorts: 2379,2380
 
 spec:
   template:
