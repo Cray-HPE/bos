@@ -30,4 +30,4 @@ metadata:
 rules:
 - apiGroups: ["batch"]
   resources: ["jobs"]
-  verbs: ["list"]
+  verbs: ["get","list"]
