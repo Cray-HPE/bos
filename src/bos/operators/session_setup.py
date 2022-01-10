@@ -26,7 +26,7 @@ from botocore.exceptions import ClientError
 
 from bos.operators.base import BaseOperator, main
 from bos.operators.utils.clients.hsm import Inventory
-from bos.operator.utils.clients.s3 import S3Object
+from bos.operators.utils.clients.s3 import S3Object
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.rootfs.factory import ProviderFactory
 
@@ -163,7 +163,7 @@ class Session:
         return data
 
     @staticmethod
-    def shutdown(component, _, _):
+    def shutdown(component, _):
         return {
             'id': component['id'],
             'desiredState': {
@@ -256,7 +256,6 @@ class Session:
                 LOGGER.error("Unable to read file {}. Thus, no kernel boot parameters obtained "
                              "from image".format(artifact_info['boot_parameters']))
                 LOGGER.debug(error)
-                pass
 
         # Parameters from the BOS Session template if the parameters exist.
         if boot_set.get('kernel_parameters'):

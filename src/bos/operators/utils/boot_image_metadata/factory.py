@@ -22,7 +22,7 @@
 
 import logging
 
-from bos.operators.utils.bootimagemetadata.s3_boot_image_metadata import S3BootImageMetaData
+from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.factory')
 
