@@ -1,4 +1,4 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@ from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.operators.utils import requests_retry_session
-from bos.operators.utils.clients.bos import ENDPOINT as BASE_ENDPOINT
+from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
 ENDPOINT = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])

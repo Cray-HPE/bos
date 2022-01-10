@@ -25,9 +25,6 @@ import logging
 from botocore.exceptions import ClientError
 
 from bos.operators.base import BaseOperator, main
-from bos.operators.utils.clients.bos.components import update_components
-from bos.operators.utils.clients.bos.sessions import get_sessions, update_session
-from bos.operators.utils.clients.bos.sessiontemplates import get_session_template
 from bos.operators.utils.clients.hsm import Inventory
 from bos.operator.utils.clients.s3 import S3Object
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
@@ -56,9 +53,8 @@ class SessionSetupOperator(BaseOperator):
             session = Session(data, inventory_cache)
             session.setup()
 
-    @staticmethod
-    def _get_pending_sessions():
-        return get_sessions(status='pending')
+    def _get_pending_sessions(self):
+        return self.bos_client.sessions.get_sessions(status='pending')
 
 
 class Session:
@@ -83,7 +79,7 @@ class Session:
     def template(self):
         if not self._template:
             template_name = self.session_data.get('templateName')
-            self._template = get_session_template(template_name)
+            self._template = self.bos_client.session_templates.get_session_template(template_name)
         return self._template
 
     def setup(self):
@@ -96,7 +92,7 @@ class Session:
             data = []
             for component in components:
                 data.append(self.operation(boot_set, component))
-            update_components(data)
+            self.bos_client.components.update_components(data)
 
     def _get_boot_set_component_list(self, boot_set):
         nodes = set()
@@ -148,7 +144,7 @@ class Session:
         return nodes
 
     def _mark_running(self):
-        update_session(self.name, {'status': {'status': 'running'}})
+        self.bos_client.session.update_session(self.name, {'status': {'status': 'running'}})
         self._log(LOGGER.info, 'Session is running')
 
     def _log(self, logger, message):

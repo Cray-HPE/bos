@@ -33,7 +33,7 @@ from typing import List, NoReturn, Type
 
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
-from bos.operators.utils.clients.bos.components import update_components
+from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 
@@ -53,6 +53,8 @@ class BaseOperator(ABC):
 
     Any other method may also be overridden, but functionality such as error handling may be lost.
     """
+    def __init__(self) -> NoReturn:
+        self.bos_client = BOSClient()
 
     @property
     @abstractmethod
@@ -130,7 +132,7 @@ class BaseOperator(ABC):
             if additional_fields:
                 patch.update(additional_fields)
             data.append(patch)
-        update_components(data)
+        self.bos_client.components.update_components(data)
 
 
 def _update_log_level() -> None:

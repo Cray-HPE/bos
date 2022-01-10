@@ -28,7 +28,7 @@ import logging
 from typing import List, Type
 
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
-from bos.operators.utils.clients.bos.components import get_components
+from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.clients.capmc import status as get_power_state
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
@@ -67,9 +67,10 @@ class BOSQuery(DetailsFilter):
         """
         super().__init__()
         self.kwargs = kwargs
+        self.bos_client = BOSClient()
 
     def _filter(self, components=None) -> List[dict]:
-        return get_components(**self.kwargs)
+        return self.bos_client.components.get_components(**self.kwargs)
 
 
 class HSMState(IDFilter):

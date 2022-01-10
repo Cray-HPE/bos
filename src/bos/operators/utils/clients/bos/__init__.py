@@ -1,4 +1,4 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -19,8 +19,13 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # (MIT License)
-from bos.operators.utils import PROTOCOL
 
-API_VERSION = 'v2'
-SERVICE_NAME = 'cray-bos'
-ENDPOINT = "%s://%s/%s" % (PROTOCOL, SERVICE_NAME, API_VERSION)
+from .components import ComponentEndpoint
+from .sessions import SessionEndpoint
+from .session_templates import SessionTemplateEndpoint
+
+class BOSClient:
+    def __init__(self):
+        self.components = ComponentEndpoint()
+        self.sessions = SessionEndpoint()
+        self.session_templates = SessionTemplateEndpoint()
