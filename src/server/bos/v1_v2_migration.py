@@ -44,9 +44,7 @@ EXEMPLAR_V2_TEMPLATE = {}
 def convert_v1_to_v2(v1_st):
     """
     Convert a v1 session template to a v2 session template.
-    Read the example session template from the V2 API and use it to
-    prune extraneous v1 attributes. Cache this template to prevent
-    fetching it redundantly.
+    Prune extraneous v1 attributes. 
     
     Input:
       v1_st: A v1 session template
@@ -54,19 +52,16 @@ def convert_v1_to_v2(v1_st):
     Returns:
       v2_st: A v2 session template
     """
-    global EXEMPLAR_V2_TEMPLATE
-    if not EXEMPLAR_V2_TEMPLATE:
-        response = requests.get("{}/sessiontemplatetemplate".format(ENDPOINT))
-        if response.ok:
-            EXEMPLAR_V2_TEMPLATE = response.json()
-        else:
-            LOGGER.error("Session template: {} conversion error: {} ({})".format(v1_st['name'], response.reason, response.status_code))
-            LOGGER.error("Error specifics: {}".format(response.text))
-            response.raise_for_status()
-    boot_set_attributes = EXEMPLAR_V2_TEMPLATE["boot_sets"]["name_your_boot_set"]
+    session_template_keys = ['templateUrl', 'name', 'description',
+                             'enable_cfs', 'cfs', 'partition',
+                             'boot_sets', 'links']
+    boot_set_keys = ['name', 'path', 'type', 'etag', 'kernel_parameters',
+                     'node_list', 'node_roles_groups', 'node_groups',
+                     'rootfs_provider', 'rootfs_provider_passthrough']
+
     v2_st = {'boot_sets': {}}
     for k, v in v1_st.items():
-        if k in EXEMPLAR_V2_TEMPLATE:
+        if k in session_template_keys:
             if k != "boot_sets":
                 v2_st[k] = v
         else:
@@ -75,7 +70,7 @@ def convert_v1_to_v2(v1_st):
     for boot_set, bs_values in v1_st['boot_sets'].items():
         v2_st['boot_sets'][boot_set] = {}
         for k, v in bs_values.items():
-            if k in boot_set_attributes:
+            if k in boot_set_keys:
                 v2_st['boot_sets'][boot_set][k] = v
             else:
                 LOGGER.warning("Discarding attribute: '{}' from boot set: '{}' from session template: '{}'".format(k,
