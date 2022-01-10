@@ -31,7 +31,7 @@ BASEKEY = "/sessionTemplate"
 
 PROTOCOL = 'http'
 SERVICE_NAME = 'cray-bos'
-ENDPOINT = "%s://%s/v2/" % (PROTOCOL, SERVICE_NAME)
+ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)
 # https://cray-bos/v1/sessiontemplate/{session_template_id}
 # https://cray-bos/v1/sessiontemplatetemplate
 
@@ -51,27 +51,33 @@ def convert_v1_to_v2(v1_st):
     Returns:
       v2_st: A v2 session template
     """
+    global EXEMPLAR_V2_TEMPLATE
     if not EXEMPLAR_V2_TEMPLATE:
         response = requests.get("{}/sessiontemplatetemplate".format(ENDPOINT))
         if response.ok:
             EXEMPLAR_V2_TEMPLATE = response.json()
+        else:
+            LOGGER.error("Session template: {} conversion error: {} ({})".format(v1_st['name'], response.reason, response.status_code))
+            LOGGER.error("Error specifics: {}".format(response.text))
+            response.raise_for_status()
     boot_set_attributes = EXEMPLAR_V2_TEMPLATE["boot_sets"]["name_your_boot_set"]
-    v2_st = {}
+    v2_st = {'boot_sets': {}}
     for k, v in v1_st.items():
         if k in EXEMPLAR_V2_TEMPLATE:
             if k != "boot_sets":
                 v2_st[k] = v
         else:
-            LOGGER.warning("Discarding attribute: {} from session template: {}".format(k, v1_st))
+            LOGGER.warning("Discarding attribute: '{}' from session template: '{}'".format(k, v1_st['name']))
 
-    for boot_set in v1_st['boot_sets']:
-        for k, v in boot_set.items():
+    for boot_set, bs_values in v1_st['boot_sets'].items():
+        v2_st['boot_sets'][boot_set] = {}
+        for k, v in bs_values.items():
             if k in boot_set_attributes:
                 v2_st['boot_sets'][boot_set][k] = v
             else:
-                LOGGER.warning("Discarding attribute: {} from boot set: {} from session template: {}".format(k,
-                                                                                                             boot_set,
-                                                                                                             v1_st))
+                LOGGER.warning("Discarding attribute: '{}' from boot set: '{}' from session template: '{}'".format(k,
+                                                                                                                  boot_set,
+                                                                                                                  v1_st['name']))
     return v2_st
 
 
@@ -93,9 +99,10 @@ def migrate_v1_to_v2_session_templates():
             if response.status_code == 404:
                 LOGGER.info("Migrating v1 session template: {} to v2 database".format(v1_st['name']))
                 v2_st = convert_v1_to_v2(v1_st)
-                response = requests.post("{}/{}".format(ENDPOINT, "sessiontemplate"), data=v2_st)
+                response = requests.put("{}/{}/{}".format(ENDPOINT, "sessiontemplates", v2_st['name']), json=v2_st)
                 if not response.ok:
-                    LOGGER.error("Session template: {} was not migrated due to error:".format(v1_st['name'],))
+                    LOGGER.error("Session template: '{}' was not migrated due to error: {}".format(v1_st['name'], response.reason))
+                    LOGGER.error("Error specifics: {}".format(response.text))
 
 
 if __name__ == "__main__":
