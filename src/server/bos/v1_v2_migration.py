@@ -24,23 +24,78 @@ import json
 import logging
 from bos.dbclient import BosEtcdClient
 import bos.redis_db_utils as dbutils
+import requests
 LOGGER = logging.getLogger('bos.v1_v2_migration')
 DB = dbutils.get_wrapper(db='session_templates')
 BASEKEY = "/sessionTemplate"
+
+PROTOCOL = 'http'
+SERVICE_NAME = 'cray-bos'
+ENDPOINT = "%s://%s/v2/" % (PROTOCOL, SERVICE_NAME)
+# https://cray-bos/v1/sessiontemplate/{session_template_id}
+# https://cray-bos/v1/sessiontemplatetemplate
+
+EXEMPLAR_V2_TEMPLATE = {}
+
+
+def convert_v1_to_v2(v1_st):
+    """
+    Convert a v1 session template to a v2 session template.
+    Read the example session template from the V2 API and use it to
+    prune extraneous v1 attributes. Cache this template to prevent
+    fetching it redundantly.
+    
+    Input:
+      v1_st: A v1 session template
+    
+    Returns:
+      v2_st: A v2 session template
+    """
+    if not EXEMPLAR_V2_TEMPLATE:
+        response = requests.get("{}/sessiontemplatetemplate".format(ENDPOINT))
+        if response.ok:
+            EXEMPLAR_V2_TEMPLATE = response.json()
+    boot_set_attributes = EXEMPLAR_V2_TEMPLATE["boot_sets"]["name_your_boot_set"]
+    v2_st = {}
+    for k, v in v1_st.items():
+        if k in EXEMPLAR_V2_TEMPLATE:
+            if k != "boot_sets":
+                v2_st[k] = v
+        else:
+            LOGGER.warning("Discarding attribute: {} from session template: {}".format(k, v1_st))
+
+    for boot_set in v1_st['boot_sets']:
+        for k, v in boot_set.items():
+            if k in boot_set_attributes:
+                v2_st['boot_sets'][boot_set][k] = v
+            else:
+                LOGGER.warning("Discarding attribute: {} from boot set: {} from session template: {}".format(k,
+                                                                                                             boot_set,
+                                                                                                             v1_st))
+    return v2_st
 
 
 def migrate_v1_to_v2_session_templates():
     """
     Read the session templates out of the V1 etcd key/value store and
     write them into the v2 Redis database.
-    Delete them from etcd once they have been successfully migrated, so
-    they are not migrated more than once. 
+    Do not overwrite existing session templates.
+    Sanitize the V1 session templates so they conform to the V2 session
+    template standards.
     """
     with BosEtcdClient() as bec:
         for session_template_byte_str, _meta in bec.get_prefix('{}/'.format(BASEKEY)):
-            st = json.loads(session_template_byte_str.decode("utf-8"))
-            _ = DB.put(st['name'], st)
-            # bec.delete('{}/{}'.format(BASEKEY, st['name']))
+            v1_st = json.loads(session_template_byte_str.decode("utf-8"))
+            response = requests.get("{}/{}".format(ENDPOINT, v1_st['name']))
+            if response.status_code == 200:
+                LOGGER.warning("Session template: {} already exists. Not overwriting.".format(v1_st['name']))
+                continue
+            if response.status_code == 404:
+                LOGGER.info("Migrating v1 session template: {} to v2 database".format(v1_st['name']))
+                v2_st = convert_v1_to_v2(v1_st)
+                response = requests.post("{}/{}".format(ENDPOINT, "sessiontemplate"), data=v2_st)
+                if not response.ok:
+                    LOGGER.error("Session template: {} was not migrated due to error:".format(v1_st['name'],))
 
 
 if __name__ == "__main__":
