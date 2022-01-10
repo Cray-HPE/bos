@@ -1,4 +1,4 @@
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,22 +22,30 @@
 
 import logging
 
-from .base import BaseBosEndpoint
+from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
+LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.factory')
 
 
-class ComponentEndpoint(BaseBosEndpoint):
-    ENDPOINT = __name__.lower().split('.')[-1]
+class BootImageMetaDataUnknown(Exception):
+    """
+    Raised when a user requests a Provider provisioning mechanism that is not known
+    by BOA.
+    """
 
-    def get_component(self, component_id):
-        return self.get_item(component_id)
+class BootImageMetaDataFactory(object):
+    """
+    Conditionally create new instances of the BootImageMetadata based on
+    the type of the BootImageMetaData specified
+    """
+    def __init__(self, boot_set):
+        self.boot_set = boot_set
 
-    def get_components(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def update_component(self, component_id, data):
-        return self.update_item(component_id, data)
-
-    def update_components(self, data):
-        return self.update_items(data)
+    def __call__(self):
+        path_type = self.boot_set.get('type', None)
+        if path_type:
+            if path_type == 's3':
+                return S3BootImageMetaData(self.boot_set)
+            else:
+                raise BootImageMetaDataUnknown("No BootImageMetaData class for "
+                                                      "type %s", path_type)

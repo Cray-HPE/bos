@@ -1,4 +1,4 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,25 +22,22 @@
 
 import logging
 
-from bos.operators.utils.clients.bos import ENDPOINT as BASE_ENDPOINT
-from .generic_http import BosEndpoint
+from .base import BaseBosEndpoint
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.session_templates')
 
 
-class SessionTemplateEndpoint(BosEndpoint):
-
-    def __init__(self):
-        self.base_url = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
+class SessionTemplateEndpoint(BaseBosEndpoint):
+    ENDPOINT = __name__.lower().split('.')[-1]
 
     def get_session_template(self, session_template_id):
-        return self.get_endpoint_single_item(session_template_id)
+        return self.get_item(session_template_id)
 
     def get_session_templates(self, **kwargs):
-        return self.get_endpoint_all_items(kwargs)
+        return self.get_items(**kwargs)
 
     def update_session_template(self, session_template_id, data):
-        return self.update_session_template(session_template_id, data)
+        return self.update_item(session_template_id, data)
 
     def update_session_templates(self, data):
-        return self.update_session_templates(data)
+        return self.update_items(data)

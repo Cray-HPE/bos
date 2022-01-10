@@ -22,9 +22,6 @@
 
 import logging
 import connexion
-import json
-import wget
-import os
 
 from bos.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
 from bos import redis_db_utils as dbutils
@@ -36,7 +33,6 @@ BASEKEY = "/sessionTemplates"
 
 EXAMPLE_BOOT_SET = {
     "type": "your-boot-type",
-    "boot_ordinal": 1,
     "etag": "your_boot_image_etag",
     "kernel_parameters": "your-kernel-parameters",
     "network": "nmn",

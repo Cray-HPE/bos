@@ -10,6 +10,7 @@ redis
 requests
 wget
 etcd3
+boto3
 liveness
 
 
