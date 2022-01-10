@@ -22,9 +22,12 @@
 
 import json
 import logging
+import requests
+
 from bos.dbclient import BosEtcdClient
 import bos.redis_db_utils as dbutils
-import requests
+from bos.models.v2_session_template import V2SessionTemplate
+
 LOGGER = logging.getLogger('bos.v1_v2_migration')
 DB = dbutils.get_wrapper(db='session_templates')
 BASEKEY = "/sessionTemplate"
@@ -98,7 +101,8 @@ def migrate_v1_to_v2_session_templates():
                 continue
             if response.status_code == 404:
                 LOGGER.info("Migrating v1 session template: {} to v2 database".format(v1_st['name']))
-                v2_st = convert_v1_to_v2(v1_st)
+                # v2_st = convert_v1_to_v2(v1_st)
+                v2_st = V2SessionTemplate.from_dict(v1_st)
                 response = requests.put("{}/{}/{}".format(ENDPOINT, "sessiontemplates", v2_st['name']), json=v2_st)
                 if not response.ok:
                     LOGGER.error("Session template: '{}' was not migrated due to error: {}".format(v1_st['name'], response.reason))
