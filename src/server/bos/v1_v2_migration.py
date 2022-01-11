@@ -95,7 +95,6 @@ def migrate_v1_to_v2_session_templates():
                             "database".format(v1_st['name']))
                 v2_st = convert_v1_to_v2(v1_st)
                 response = requests.put("{}/{}".format(st_endpoint,
-                                                       "sessiontemplates",
                                                        v2_st['name']),
                                                        json=v2_st)
                 if not response.ok:
