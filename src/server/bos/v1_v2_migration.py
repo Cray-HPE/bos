@@ -88,17 +88,18 @@ def migrate_v1_to_v2_session_templates():
     template standards.
     """
     with BosEtcdClient() as bec:
+        st_endpoint = "{}/sessiontemplates".format(ENDPOINT)
         for session_template_byte_str, _meta in bec.get_prefix('{}/'.format(BASEKEY)):
             v1_st = json.loads(session_template_byte_str.decode("utf-8"))
-            response = requests.get("{}/{}".format(ENDPOINT, v1_st['name']))
+            response = requests.get("{}/{}".format(st_endpoint, v1_st['name']))
             if response.status_code == 200:
-                LOGGER.warning("Session template: {} already exists. Not overwriting.".format(v1_st['name']))
+                LOGGER.warning("Session template: '{}' already exists. Not overwriting.".format(v1_st['name']))
                 continue
             if response.status_code == 404:
-                LOGGER.info("Migrating v1 session template: {} to v2 database".format(v1_st['name']))
-                # v2_st = convert_v1_to_v2(v1_st)
-                v2_st = V2SessionTemplate.from_dict(v1_st)
-                response = requests.put("{}/{}/{}".format(ENDPOINT, "sessiontemplates", v2_st['name']), json=v2_st)
+                LOGGER.info("Migrating v1 session template: '{}' to v2 database".format(v1_st['name']))
+                v2_st = convert_v1_to_v2(v1_st)
+                # v2_st = V2SessionTemplate.from_dict(v1_st)
+                response = requests.put("{}/{}".format(st_endpoint, "sessiontemplates", v2_st['name']), json=v2_st)
                 if not response.ok:
                     LOGGER.error("Session template: '{}' was not migrated due to error: {}".format(v1_st['name'], response.reason))
                     LOGGER.error("Error specifics: {}".format(response.text))
