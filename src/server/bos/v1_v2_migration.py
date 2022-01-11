@@ -90,8 +90,7 @@ def migrate_v1_to_v2_session_templates():
             if response.status_code == 200:
                 LOGGER.warning("Session template: '{}' already exists. Not "
                                "overwriting.".format(v1_st['name']))
-                continue
-            if response.status_code == 404:
+            elif response.status_code == 404:
                 LOGGER.info("Migrating v1 session template: '{}' to v2 "
                             "database".format(v1_st['name']))
                 v2_st = convert_v1_to_v2(v1_st)
@@ -104,6 +103,11 @@ def migrate_v1_to_v2_session_templates():
                                  "to error: {}".format(v1_st['name'],
                                                        response.reason))
                     LOGGER.error("Error specifics: {}".format(response.text))
+            else:
+                LOGGER.error("Session template: '{}' was not migrated due "
+                                 "to error: {}".format(v1_st['name'],
+                                                       response.reason))
+                LOGGER.error("Error specifics: {}".format(response.text))
 
 
 if __name__ == "__main__":
