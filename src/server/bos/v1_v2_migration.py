@@ -26,7 +26,6 @@ import requests
 
 from bos.dbclient import BosEtcdClient
 import bos.redis_db_utils as dbutils
-from bos.models.v2_session_template import V2SessionTemplate
 
 LOGGER = logging.getLogger('bos.v1_v2_migration')
 DB = dbutils.get_wrapper(db='session_templates')
@@ -35,10 +34,6 @@ BASEKEY = "/sessionTemplate"
 PROTOCOL = 'http'
 SERVICE_NAME = 'cray-bos'
 ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)
-# https://cray-bos/v1/sessiontemplate/{session_template_id}
-# https://cray-bos/v1/sessiontemplatetemplate
-
-EXEMPLAR_V2_TEMPLATE = {}
 
 
 def convert_v1_to_v2(v1_st):
@@ -93,15 +88,21 @@ def migrate_v1_to_v2_session_templates():
             v1_st = json.loads(session_template_byte_str.decode("utf-8"))
             response = requests.get("{}/{}".format(st_endpoint, v1_st['name']))
             if response.status_code == 200:
-                LOGGER.warning("Session template: '{}' already exists. Not overwriting.".format(v1_st['name']))
+                LOGGER.warning("Session template: '{}' already exists. Not "
+                               "overwriting.".format(v1_st['name']))
                 continue
             if response.status_code == 404:
-                LOGGER.info("Migrating v1 session template: '{}' to v2 database".format(v1_st['name']))
+                LOGGER.info("Migrating v1 session template: '{}' to v2 "
+                            "database".format(v1_st['name']))
                 v2_st = convert_v1_to_v2(v1_st)
-                # v2_st = V2SessionTemplate.from_dict(v1_st)
-                response = requests.put("{}/{}".format(st_endpoint, "sessiontemplates", v2_st['name']), json=v2_st)
+                response = requests.put("{}/{}".format(st_endpoint,
+                                                       "sessiontemplates",
+                                                       v2_st['name']),
+                                                       json=v2_st)
                 if not response.ok:
-                    LOGGER.error("Session template: '{}' was not migrated due to error: {}".format(v1_st['name'], response.reason))
+                    LOGGER.error("Session template: '{}' was not migrated due "
+                                 "to error: {}".format(v1_st['name'],
+                                                       response.reason))
                     LOGGER.error("Error specifics: {}".format(response.text))
 
 
