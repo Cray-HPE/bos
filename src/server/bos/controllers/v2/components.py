@@ -45,7 +45,7 @@ def get_v2_components(ids="", enabled=None, session=None):
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
-    response = get_components_data(id_list=id_list, enabled=enabled, session=session)
+    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session)
     return response, 200
 
 
