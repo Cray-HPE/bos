@@ -982,6 +982,9 @@ components:
         pollingFrequency:
           type: integer
           description: How frequently the BOS operators check component state for needed actions. (in seconds)
+        discoveryFrequency:
+          type: integer
+          description: How frequently the BOS discovery agent syncs new components from HSM. (ins seconds)
         loggingLevel:
           type: string
           description: The logging level for all BOS services
@@ -1194,7 +1197,6 @@ paths:
           $ref: '#/components/responses/V1SessionTemplateDetails'
         400:
           $ref: '#/components/responses/BadRequest'
-
     get:
       summary: List session templates
       description: |
@@ -1285,7 +1287,6 @@ paths:
           $ref: '#/components/responses/V1SessionDetails'
         400:
           $ref: '#/components/responses/BadRequest'
-
     get:
       summary: List sessions
       description: |
@@ -1328,7 +1329,6 @@ paths:
           $ref: '#/components/responses/ResourceDeleted'
         404:
           $ref: '#/components/responses/ResourceNotFound'
-
     parameters:
       - name: session_id
         in: path

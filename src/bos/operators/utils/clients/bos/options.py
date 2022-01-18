@@ -78,6 +78,10 @@ class Options:
         return self.get_option('pollingFrequency', int, 60)
 
     @property
+    def discovery_frequency(self):
+        return self.get_option('discoveryFrequency', int, 5*60)
+
+    @property
     def max_component_wait_time(self):
         return self.get_option('maxComponentWaitTime', int, 300)
 

@@ -41,3 +41,6 @@ class ComponentEndpoint(BaseBosEndpoint):
 
     def update_components(self, data):
         return self.update_items(data)
+
+    def put_components(self, data):
+        return self.put_items(data)

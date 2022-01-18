@@ -199,6 +199,16 @@ operators:
           - python3
           - "-m"
           - "bos.operators.disable"
+  discovery:
+    Values:
+      nameOverride: cray-bos-operator-discovery
+      fullnameOverride: cray-bos-operator-discovery
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.discovery"
   forcefulPoweroff:
     Values:
       nameOverride: cray-bos-operator-power-off-forceful

@@ -36,6 +36,46 @@ VERIFY = True
 LOGGER = logging.getLogger('bos.operators.utils.clients.hsm')
 
 
+class HWStateManagerException(Exception):
+    """
+    An error unique to interacting with the HWStateManager service;
+    should the service be unable to fulfill a given request (timeout,
+    no components, service 503s, etc.); this exception is raised. It is
+    intended to be further subclassed for more specific kinds of errors
+    in the future should they arise.
+    """
+
+
+def read_all_node_xnames():
+    """
+    Queries HSM for the full set of xname components that
+    have been discovered; return these as a set.
+    """
+    session = requests_retry_session()
+    endpoint = '%s/State/Components/' % (BASE_ENDPOINT)
+    try:
+        response = session.get(endpoint)
+    except ConnectionError as ce:
+        LOGGER.error("Unable to contact HSM service: %s", ce)
+        raise HWStateManagerException(ce) from ce
+    try:
+        response.raise_for_status()
+    except (HTTPError, MaxRetryError) as hpe:
+        LOGGER.error("Unexpected response from HSM: %s", response)
+        raise HWStateManagerException(hpe) from hpe
+    try:
+        json_body = json.loads(response.text)
+    except json.JSONDecodeError as jde:
+        LOGGER.error("Non-JSON response from HSM: %s", response.text)
+        raise HWStateManagerException(jde) from jde
+    try:
+        return set([component['ID'] for component in json_body['Components']
+                    if component.get('Type', None) == 'Node'])
+    except KeyError as ke:
+        LOGGER.error("Unexpected API response from HSM")
+        raise HWStateManagerException(ke) from ke
+
+
 def get_components(node_list, enabled=None):
     """Get information for all list components HSM"""
     session = requests_retry_session()
