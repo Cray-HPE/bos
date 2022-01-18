@@ -37,6 +37,15 @@ class SessionCompletionOperator(BaseOperator):
     def name(self):
         return 'SessionCompletion'
 
+    # This operator overrides _run and does not use "filters" or "_act", but they are defined here
+    # because they are abstract methods in the base class and must be implemented.
+    @property
+    def filters(self):
+        return []
+
+    def _act(self, components):
+        return components
+
     def _run(self) -> None:
         """ A single pass of complete sessions """
         sessions = self._get_incomplete_sessions()
