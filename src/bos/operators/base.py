@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -117,18 +117,21 @@ class BaseOperator(ABC):
         """
         data = []
         for component in components:
-            attempts = 1
-            last_action = component.get('lastAction', {})
-            if last_action.get('action') == self.name:
-                attempts = last_action.get('numAttempts', 1) + 1
             patch = {
                 'id': component['id'],
-                'lastAction': {
-                    'action': self.name,
-                    'numAttempts': attempts,
-                },
                 'error': component['error']  # New error, or clearing out old error
             }
+            if self.name:
+                attempts = 1
+                last_action = component.get('lastAction', {})
+                if last_action.get('action') == self.name:
+                    attempts = last_action.get('numAttempts', 1) + 1
+                last_action_data = {
+                    'action': self.name,
+                    'numAttempts': attempts,
+                }
+                patch['lastAction'] = last_action_data
+
             if additional_fields:
                 patch.update(additional_fields)
             data.append(patch)

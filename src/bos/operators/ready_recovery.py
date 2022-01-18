@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,7 @@ import logging
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, DesiredStateIsNone, NOT
+from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, DesiredBootStateIsNone, NOT
 
 LOGGER = logging.getLogger('bos.operators.ready_recovery')
 
@@ -51,7 +51,7 @@ class ReadyRecoveryOperator(BaseOperator):
     def filters(self):
         return [
             BOSQuery(enabled=True),
-            NOT(DesiredStateIsNone()),
+            NOT(DesiredBootStateIsNone()),
             LastActionIs('Power-On'),
             TimeSinceLastAction(minutes=options.max_component_wait_time),
             HSMState(enabled=True, ready=False),

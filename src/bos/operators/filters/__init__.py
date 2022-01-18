@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,8 +21,10 @@
 #
 # (MIT License)
 
-from .filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs,\
-    StatesMatch, DesiredStateIsNone, OR, NOT
+from .filters import BOSQuery, HSMState, PowerState, ConfigurationStatus, TimeSinceLastAction,\
+    LastActionIs, BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,\
+    DesiredConfigurationIsNone, OR, NOT
 
-__all__ = [BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, StatesMatch,
-           DesiredStateIsNone, OR, NOT]
+__all__ = [BOSQuery, HSMState, PowerState, ConfigurationStatus, TimeSinceLastAction, LastActionIs,
+           BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,
+           DesiredConfigurationIsNone, OR, NOT]

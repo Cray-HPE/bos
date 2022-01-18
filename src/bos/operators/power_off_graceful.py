@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,8 @@ import logging
 
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs, StatesMatch, NOT
+from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs,\
+    BootArtifactStatesMatch, NOT
 
 LOGGER = logging.getLogger('bos.operators.graceful_power_off')
 
@@ -49,7 +50,7 @@ class GracefulPowerOffOperator(BaseOperator):
     def filters(self):
         return [
             BOSQuery(enabled=True),
-            NOT(StatesMatch()),
+            NOT(BootArtifactStatesMatch()),
             LastActionIs('Complete,Recovery,'),
             HSMState(enabled=True),
             PowerState(state='on')

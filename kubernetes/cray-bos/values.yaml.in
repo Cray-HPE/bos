@@ -179,6 +179,16 @@ operatorDefaults:
         timeoutSeconds: 3
 
 operators:
+  configuration:
+    Values:
+      nameOverride: cray-bos-operator-configuration
+      fullnameOverride: cray-bos-operator-configuration
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.configuration"
   disable:
     Values:
       nameOverride: cray-bos-operator-disable
