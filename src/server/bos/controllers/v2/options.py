@@ -64,7 +64,7 @@ def _init():
 def get_v2_options():
     """Used by the GET /options API operation"""
     LOGGER.debug("GET /options invoked get_options")
-    data = get_options_data()
+    data = get_v2_options_data()
     data = _clean_options_data(data)
     return data, 200
 
