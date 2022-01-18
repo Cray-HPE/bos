@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,7 +24,8 @@
 import logging
 
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, PowerState, StatesMatch, DesiredStateIsNone, OR
+from bos.operators.filters import BOSQuery, PowerState, BootArtifactStatesMatch,\
+    DesiredBootStateIsNone, ConfigurationStatus, OR
 
 LOGGER = logging.getLogger('bos.operators.disable')
 
@@ -51,15 +52,19 @@ class DisableOperator(BaseOperator):
         return [
             BOSQuery(enabled=True),
             OR(
-                [StatesMatch(), PowerState(state='on')],
-                [DesiredStateIsNone(), PowerState(state='off')],
+                # Either
+                [BootArtifactStatesMatch(),
+                 PowerState(state='on'),
+                 ConfigurationStatus(status='configured')],
+                # Or
+                [DesiredBootStateIsNone(), PowerState(state='off')],
             )
         ]
 
     def _act(self, components):
         # This operator takes no actions external to BOS
         # This override must still exist to avoid the NotImplemented error
-        pass
+        return components
 
     def _update_database(self, components) -> None:
         # Override of the base method to add enabled=False

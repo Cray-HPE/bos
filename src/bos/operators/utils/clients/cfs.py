@@ -1,4 +1,4 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,6 +31,17 @@ COMPONENTS_ENDPOINT = "%s/components" % BASE_ENDPOINT
 LOGGER = logging.getLogger('bos.operators.utils.clients.cfs')
 
 PATCH_BATCH_SIZE = 1000
+
+
+def get_components(session=None, **kwargs):
+    if not session:
+        session = requests_retry_session()
+    response = session.get(COMPONENTS_ENDPOINT, params=kwargs)
+    try:
+        response.raise_for_status()
+    except HTTPError as err:
+        LOGGER.error("Failed getting nodes from cfs: %s", err)
+        raise
 
 
 def patch_components(data, session=None):

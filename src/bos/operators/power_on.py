@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,10 +26,10 @@ import logging
 
 import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.capmc as capmc
-import bos.operators.utils.clients.cfs as cfs
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, DesiredStateIsNone, NOT, OR
+from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs,\
+    DesiredBootStateIsNone, DesiredConfigurationSetInCFS, DesiredConfigurationIsNone, NOT, OR
 
 LOGGER = logging.getLogger('bos.operators.power_on')
 
@@ -39,6 +39,7 @@ class PowerOnOperator(BaseOperator):
     The Power-On Operator tells capmc to power-on nodes if:
     - Enabled in the BOS database.
     - DesiredState != None
+    - DesiredConfiguration == SetConfiguration OR DesiredConfiguration == None
     - LastAction != Power-On OR TimeSinceLastAction > wait time (default 5 minutes)
     - Enabled in HSM
     - Powered off.
@@ -53,37 +54,25 @@ class PowerOnOperator(BaseOperator):
     def filters(self):
         return [
             BOSQuery(enabled=True),
-            NOT(DesiredStateIsNone()),
+            NOT(DesiredBootStateIsNone()),
             OR(
                 # If the last action was power-on, wait before retrying
                 [NOT(LastActionIs('Power-On'))],
                 [TimeSinceLastAction(seconds=options.max_component_wait_time)]
+            ),
+            OR(
+                [DesiredConfigurationSetInCFS()],
+                [DesiredConfigurationIsNone()]
             ),
             HSMState(enabled=True),
             PowerState(state='off')
         ]
 
     def _act(self, components):
-        self._set_cfs(components)
         self._set_bss(components)
         component_ids = [component['id'] for component in components]
         capmc.power(component_ids, state='on')
         return components
-
-    @staticmethod
-    def _set_cfs(components):
-        configurations = defaultdict(list)
-        for component in components:
-            config_name = component.get('desiredState', {}).get('configuration', '')
-            if not config_name:
-                continue
-            bos_session = component.get('session')
-            key = (config_name, bos_session)
-            configurations[key].append(components['id'])
-        for key, ids in configurations.items():
-            config_name, bos_session = key
-            cfs.patch_desired_config(ids, config_name,
-                                     tags={'bos_session': bos_session})
 
     @staticmethod
     def _set_bss(components):
