@@ -139,10 +139,6 @@ class LastActionIs(LocalFilter):
 
 class StatesMatch(LocalFilter):
     """ Returns when current and desired state match """
-    def __init__(self, actions: str) -> None:
-        super().__init__()
-        self.actions = actions.split(',')
-
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desiredState', {})
         current_state = component.get('currentState', {})
