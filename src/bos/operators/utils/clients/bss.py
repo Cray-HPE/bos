@@ -46,7 +46,7 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
         session (requests Session instance): An existing session to use
 
     Returns:
-        Nothing
+        The response from BSS.
 
     Raises:
         KeyError -- If the boot_artifacts does not find either the initrd
@@ -72,6 +72,7 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
     try:
         resp = session.put(url, data=json.dumps(payload), verify=False)
         resp.raise_for_status()
+        return resp
     except HTTPError as err:
         LOGGER.error("%s" % err)
         raise

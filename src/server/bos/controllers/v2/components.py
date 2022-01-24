@@ -25,6 +25,7 @@ from datetime import datetime
 import logging
 
 from bos import redis_db_utils as dbutils
+from bos.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
 LOGGER = logging.getLogger('bos.controllers.v2.components')
 DB = dbutils.get_wrapper(db='components')
@@ -180,7 +181,37 @@ def delete_v2_component(component_id):
 
 
 def _set_auto_fields(data):
+    data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
+    return data
+
+
+def _populate_boot_artifacts(data):
+    """
+    If there is a BSS Token present in the actualState, 
+    then look up the boot artifacts and add them to the
+    actualState data.
+    
+    If the data contains any boot artifacts and the BSS
+    token, then those boot artifacts will be overwritten.
+    If there are boot artifacts and no BSS token, then
+    they will not be overwritten. Further, if the boot
+    artifacts are provided and the BSS token is unknown, 
+    the boot artifacts will not be overwritten.
+    """
+    try:
+        token = data['actualState']['bssToken']
+    except KeyError:
+        # Either actualState or bssToken was not present.
+        pass
+    else:
+        # Populate the boot artifacts using the bssToken
+        try:
+            boot_artifacts = get_boot_artifacts(token)
+        except BssTokenUnknown:
+            LOGGER.error(f"Reported BSS Token: {token} is unknown.")
+        else:
+            data['actualState']['bootArtifacts'] = boot_artifacts
     return data
 
 

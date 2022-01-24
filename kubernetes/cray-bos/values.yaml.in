@@ -245,6 +245,8 @@ operators:
     Values:
       nameOverride: cray-bos-operator-power-on
       fullnameOverride: cray-bos-operator-power-on
+      podAnnotations:
+        traffic.sidecar.istio.io/excludeOutboundPorts: "6379"
       containers:
         operator:
           command:

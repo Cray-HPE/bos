@@ -899,6 +899,11 @@ components:
       properties:
         bootArtifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
+        bssToken:
+          type: string
+          description: >
+            A token received from the node identifying the boot artifacts. 
+            For BOS use-only, users should not set this field. It will be overwritten.
         lastUpdated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
@@ -915,6 +920,11 @@ components:
         configuration:
           type: string
           description: A CFS configuration ID.
+        bssToken:
+          type: string
+          description: >
+            A token received from BSS identifying the boot artifacts. 
+            For BOS use-only, users should not set this field. It will be overwritten.
         lastUpdated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
@@ -1891,7 +1901,7 @@ paths:
           in: query
           description: >-
             Retrieve the components with the given id
-            (e.g. xname for hardward components). Can be chained
+            (e.g. xname for hardware components). Can be chained
             for selecting groups of components.
         - name: session
           schema:

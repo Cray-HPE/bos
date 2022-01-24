@@ -60,7 +60,7 @@ def post_v2_session():  # noqa: E501
     LOGGER.debug("Template Name: %s operation: %s", template_name,
                  session.operation)
     # Check that the templateName exists.
-    session_template_response = get_sessiontemplate(template_name)
+    session_template_response = get_v2_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
         msg = "Session Template Name invalid: {}".format(template_name)
         LOGGER.error(msg)
@@ -89,11 +89,13 @@ def post_v2_session():  # noqa: E501
     if not session.limit:
         session.limit = ''
     session.name = uuid.uuid4()
-    session.status.status = 'pending'
-    session.status.startTime = datetime.datetime.now().isoformat(timespec='seconds')
+    # The automatic generation doesn't seem to be initializing the status object correctly
+    # Commenting it out for now.
+    # session.status.status = 'pending'
+    # session.status.startTime = datetime.datetime.now().isoformat(timespec='seconds')
     session = session.to_dict()
     data = dbutils.snake_to_camel_json(session)
-    response = DB.put(session.name, data)
+    response = DB.put(session['name'], data)
     return response, 201
 
 

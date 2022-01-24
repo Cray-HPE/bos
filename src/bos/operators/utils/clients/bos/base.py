@@ -35,6 +35,7 @@ BASE_ENDPOINT = "%s://%s/%s" % (PROTOCOL, SERVICE_NAME, API_VERSION)
 
 
 def log_call_errors(func):
+
     def wrap(*args, **kwargs):
         try:
             result = func(*args, **kwargs)
@@ -48,6 +49,7 @@ def log_call_errors(func):
         except json.JSONDecodeError as e:
             LOGGER.error("Non-JSON response from BOS: {}".format(e))
             raise e
+
     return wrap
 
 
@@ -92,7 +94,7 @@ class BaseBosEndpoint(object):
 
     @log_call_errors
     def update_items(self, data):
-        """Update information for a multiple BOS items"""
+        """Update information for multiple BOS items"""
         session = requests_retry_session()
         response = session.patch(self.base_url, json=data)
         response.raise_for_status()

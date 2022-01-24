@@ -26,7 +26,7 @@ import logging
 import redis
 
 LOGGER = logging.getLogger(__name__)
-DATABASES = ["options", "components", "session_templates", "sessions"]  # Index is the db id.
+DATABASES = ["options", "components", "session_templates", "sessions", "bss_tokens_boot_artifacts"]  # Index is the db id.
 
 DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
@@ -131,6 +131,7 @@ class DBWrapper():
 
 def redis_error_handler(func):
     """Decorator for returning better errors if Redis is unreachable"""
+
     def wrapper(*args, **kwargs):
         try:
             if 'body' in kwargs:
@@ -143,6 +144,7 @@ def redis_error_handler(func):
             return connexion.problem(
                 status=503, title='Unable to connect to the Redis database',
                 detail=str(e))
+
     return wrapper
 
 

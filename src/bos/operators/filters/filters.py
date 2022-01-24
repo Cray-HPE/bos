@@ -33,12 +33,12 @@ from bos.operators.utils.clients.capmc import status as get_power_state
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
-
 LOGGER = logging.getLogger('bos.operators.filters.filters')
 
 
 # Usable filters
 class OR(DetailsFilter):
+
     def __init__(self, filters_a, filters_b) -> None:
         super().__init__()
         self.filters_a: List[Type[BaseFilter]] = filters_a
@@ -58,7 +58,7 @@ class OR(DetailsFilter):
 
 
 class BOSQuery(DetailsFilter):
-    """git Gets all components from BOS that match the kwargs """
+    """Gets all components from BOS that match the kwargs """
     INITIAL: bool = True
 
     def __init__(self, **kwargs) -> None:
@@ -76,7 +76,8 @@ class BOSQuery(DetailsFilter):
 
 class HSMState(IDFilter):
     """ Returns all components that are in desired enabled state """
-    def __init__(self, enabled: bool = None, ready: bool = None) -> None:
+
+    def __init__(self, enabled: bool=None, ready: bool=None) -> None:
         super().__init__()
         self.enabled = enabled
         self.ready = ready
@@ -91,7 +92,8 @@ class HSMState(IDFilter):
 
 class PowerState(IDFilter):
     """ Returns all components that are in desired power state """
-    def __init__(self, state: str = 'on') -> None:
+
+    def __init__(self, state: str='on') -> None:
         super().__init__()
         self.state = state
 
@@ -105,7 +107,8 @@ class PowerState(IDFilter):
 
 class ConfigurationStatus(IDFilter):
     """ Returns all components that are in desired configuration status """
-    def __init__(self, status: str = 'configured') -> None:
+
+    def __init__(self, status: str='configured') -> None:
         super().__init__()
         self.status = status
 
@@ -116,6 +119,7 @@ class ConfigurationStatus(IDFilter):
 
 class NOT(LocalFilter):
     """ Returns the opposite of the given filter.  Use on local filters only."""
+
     def __init__(self, filter: Type[LocalFilter]) -> None:
         self.negated_filter = filter
 
@@ -125,6 +129,7 @@ class NOT(LocalFilter):
 
 class TimeSinceLastAction(LocalFilter):
     """ Returns all components whose last actions was over some time ago """
+
     def __init__(self, **kwargs) -> None:
         """
         Init for the TimeSinceLastAction filter
@@ -143,6 +148,7 @@ class TimeSinceLastAction(LocalFilter):
 
 class LastActionIs(LocalFilter):
     """ Returns with the specified last action(s) """
+
     def __init__(self, actions: str) -> None:
         super().__init__()
         self.actions = actions.split(',')
@@ -156,7 +162,7 @@ class LastActionIs(LocalFilter):
 
 class BootArtifactStatesMatch(LocalFilter):
     """ Returns when current and desired kernel and image states match """
-    # TODO: Use the bss token to make this comparison
+
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desiredState', {})
         current_state = component.get('currentState', {})
@@ -170,10 +176,11 @@ class BootArtifactStatesMatch(LocalFilter):
 
 class DesiredConfigurationSetInCFS(DetailsFilter):
     """ Returns when desired configuration is set in CFS """
-    def _filter(self, components: List[dict]) -> List[dict]:
-        cfs_components = get_cfs_components(ids=components)
-        cfs_components_dict = {component['id']: component for component in cfs_components}
 
+    def _filter(self, components: List[dict]) -> List[dict]:
+        component_ids = ','.join([component['id'] for component in components])
+        cfs_components = get_cfs_components(ids=component_ids)
+        cfs_components_dict = {component['id']: component for component in cfs_components}
         matching_components = []
         for component in components:
             if self._match(component, cfs_components_dict[component['id']]):
@@ -188,6 +195,7 @@ class DesiredConfigurationSetInCFS(DetailsFilter):
 
 class DesiredBootStateIsNone(LocalFilter):
     """ Returns when the desired state is None """
+
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desiredState', {})
         desired_boot_state = desired_state.get('bootArtifacts', {})
@@ -198,6 +206,7 @@ class DesiredBootStateIsNone(LocalFilter):
 
 class DesiredConfigurationIsNone(LocalFilter):
     """ Returns when the desired configuration is None """
+
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desiredState', {})
         if not desired_state or not desired_state.get('configuration', ''):
