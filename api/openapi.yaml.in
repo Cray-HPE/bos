@@ -915,6 +915,11 @@ components:
         configuration:
           type: string
           description: A CFS configuration ID.
+        bssToken:
+          type: string
+          description: >
+            A token received from BSS identifying the boot artifacts. 
+            For BOS use-only, users should not set this field. It will be overwritten.
         lastUpdated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
