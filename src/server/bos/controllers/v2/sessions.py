@@ -60,7 +60,7 @@ def post_v2_session():  # noqa: E501
     LOGGER.debug("Template Name: %s operation: %s", template_name,
                  session.operation)
     # Check that the templateName exists.
-    session_template_response = get_sessiontemplate(template_name)
+    session_template_response = get_v2_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
         msg = "Session Template Name invalid: {}".format(template_name)
         LOGGER.error(msg)
