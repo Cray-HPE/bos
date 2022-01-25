@@ -38,6 +38,10 @@ def record_boot_artifacts(token, kernel, kernel_parameters, initrd):
     Raises:
       HTTPError, if one occurs 
     """
+    LOGGER.info(f"Logging BSS token: {token} and boot artifacts: "
+                f"kernel: {kernel}"
+                f"kernel_parameters: {kernel_parameters}"
+                f"initrd: {initrd}")
     resp = TOKENS_DB.put(token, {"kernel": kernel,
                                  "kernel_parameters": kernel_parameters,
                                  "initrd": initrd,
@@ -46,7 +50,7 @@ def record_boot_artifacts(token, kernel, kernel_parameters, initrd):
     try:
         resp.raise_for_status()
     except HTTPError as err:
-        LOGGER.error("Database write to capture BSS token '{}' failed: {}".format(token, err))
+        LOGGER.error(f"Database write to capture BSS token '{token}' failed: {err}")
         raise
 
 
