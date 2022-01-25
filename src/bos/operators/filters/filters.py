@@ -174,7 +174,8 @@ class DesiredConfigurationSetInCFS(DetailsFilter):
     """ Returns when desired configuration is set in CFS """
 
     def _filter(self, components: List[dict]) -> List[dict]:
-        cfs_components = get_cfs_components(ids=components)
+        component_ids = ','.join([component['id'] for component in components])
+        cfs_components = get_cfs_components(ids=component_ids)
         cfs_components_dict = {component['id']: component for component in cfs_components}
         matching_components = []
         for component in components:
