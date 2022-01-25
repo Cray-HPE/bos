@@ -89,8 +89,10 @@ def post_v2_session():  # noqa: E501
     if not session.limit:
         session.limit = ''
     session.name = uuid.uuid4()
-    session.status.status = 'pending'
-    session.status.startTime = datetime.datetime.now().isoformat(timespec='seconds')
+    # The automatic generation doesn't seem to be initializing the status object correctly
+    # Commenting it out for now.
+    # session.status.status = 'pending'
+    # session.status.startTime = datetime.datetime.now().isoformat(timespec='seconds')
     session = session.to_dict()
     data = dbutils.snake_to_camel_json(session)
     response = DB.put(session.name, data)
