@@ -41,7 +41,7 @@ def record_boot_artifacts(token, kernel, kernel_parameters, initrd):
     resp = TOKENS_DB.put(token, {"kernel": kernel,
                                  "kernel_parameters": kernel_parameters,
                                  "initrd": initrd,
-                                 "timestamp": datetime.now()
+                                 "timestamp": datetime.utcnow().isoformat()
                                  })
     try:
         resp.raise_for_status()
