@@ -42,6 +42,7 @@ def get_components(session=None, **kwargs):
     except HTTPError as err:
         LOGGER.error("Failed getting nodes from cfs: %s", err)
         raise
+    return response.json()
 
 
 def patch_components(data, session=None):
