@@ -95,7 +95,7 @@ def post_v2_session():  # noqa: E501
     # session.status.startTime = datetime.datetime.now().isoformat(timespec='seconds')
     session = session.to_dict()
     data = dbutils.snake_to_camel_json(session)
-    response = DB.put(session.name, data)
+    response = DB.put(session['name'], data)
     return response, 201
 
 
