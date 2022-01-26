@@ -39,9 +39,9 @@ def record_boot_artifacts(token, kernel, kernel_parameters, initrd):
       HTTPError, if one occurs 
     """
     LOGGER.info(f"Logging BSS token: {token} and boot artifacts: "
-                f"kernel: {kernel}"
-                f"kernel_parameters: {kernel_parameters}"
-                f"initrd: {initrd}")
+                f"\tkernel: {kernel}"
+                f"\tkernel_parameters: {kernel_parameters}"
+                f"\tinitrd: {initrd}")
     resp = TOKENS_DB.put(token, {"kernel": kernel,
                                  "kernel_parameters": kernel_parameters,
                                  "initrd": initrd,
