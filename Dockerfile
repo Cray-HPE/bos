@@ -23,7 +23,7 @@
 
 # Upstream Build Args
 ARG OPENAPI_IMAGE=openapitools/openapi-generator-cli:v4.1.2
-ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/docker.io/alpine:3.13
+ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/docker.io/alpine:3.15
 
 # Generate API
 FROM $OPENAPI_IMAGE as codegen
