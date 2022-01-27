@@ -56,7 +56,7 @@ popd
 rm -rf %{buildroot}
 
 pushd ./src
-/usr/bin/python3 setup.py install -O1 --skip-build --root %{buildroot} --prefix=/usr
+/usr/bin/python3 setup.py install -O1 --skip-build --root %{buildroot} --prefix=/usr --install-lib=%{python3_sitelib}
 mkdir -p ${RPM_BUILD_ROOT}%{_systemdsvcdir}
 cp bos/reporter/etc/bos-reporter.service %{buildroot}/%{_systemdsvcdir}/bos-reporter.service
 chmod +x %{buildroot}/%{python3_sitelib}/bos/reporter/status_reporter/__main__.py
