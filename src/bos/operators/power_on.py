@@ -101,7 +101,7 @@ class PowerOnOperator(BaseOperator):
                                kernel=kernel, initrd=initrd)
             try:
                 token = resp.headers['bss-referral-token']
-                record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                # record_boot_artifacts(token, kernel, kernel_parameters, initrd)
             except HTTPError as err:
                 pass
 
