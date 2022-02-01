@@ -42,16 +42,11 @@ def record_boot_artifacts(token, kernel, kernel_parameters, initrd):
                 f"\tkernel: {kernel}"
                 f"\tkernel_parameters: {kernel_parameters}"
                 f"\tinitrd: {initrd}")
-    resp = TOKENS_DB.put(token, {"kernel": kernel,
+    TOKENS_DB.put(token, {"kernel": kernel,
                                  "kernel_parameters": kernel_parameters,
                                  "initrd": initrd,
                                  "timestamp": datetime.utcnow().isoformat()
                                  })
-    try:
-        resp.raise_for_status()
-    except HTTPError as err:
-        LOGGER.error(f"Database write to capture BSS token '{token}' failed: {err}")
-        raise
 
 
 def get_boot_artifacts(token):
