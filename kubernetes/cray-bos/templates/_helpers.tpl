@@ -8,8 +8,6 @@ metadata:
     {{- include "cray-service.common-labels" . | nindent 4 }}
   annotations:
     {{- include "cray-service.common-annotations" . | nindent 4 }}
-    traffic.sidecar.istio.io/excludeOutboundPorts: "6379"
-    
 spec:
   replicas: {{ .Values.replicaCount }}
 {{- if .Values.strategy }}
