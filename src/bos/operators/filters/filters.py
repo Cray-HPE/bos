@@ -96,7 +96,10 @@ class PowerState(IDFilter):
         self.state = state
 
     def _filter(self, components: List[str]) -> List[str]:
-        response, _, _ = get_power_state(components, filtertype='show_{}'.format(self.state))
+        # Address CASMCMS-7804: Once that Jira is resolved, uncomment this line
+        # and delete the one below it.
+        # response, _, _ = get_power_state(components, filtertype='show_{}'.format(self.state))
+        response, _, _ = get_power_state(components)
         return response[self.state]
 
 
