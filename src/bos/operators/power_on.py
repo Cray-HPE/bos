@@ -76,8 +76,7 @@ class PowerOnOperator(BaseOperator):
         capmc.power(component_ids, state='on')
         return components
 
-    @staticmethod
-    def _set_bss(components):
+    def _set_bss(self, components):
         """
         Set the boot artifacts (kernel, kernel parameters, and initrd) in BSS.
         Receive a BSS_REFERRAL_TOKEN from BSS.
@@ -108,7 +107,7 @@ class PowerOnOperator(BaseOperator):
             for node in nodes:
                 bss_tokens.append({"id": node,
                                    "desiredState": {"bssToken": token}})
-        components.update_components(bss_tokens)
+        self.bos_client.components.update_components(bss_tokens)
 
 
 if __name__ == '__main__':
