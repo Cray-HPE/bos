@@ -117,6 +117,18 @@ cray-service:
       name: job-template
       configMap:
         name: boa-job-template
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - cray-bos
   ingress:
     ui: false
     enabled: true
