@@ -64,8 +64,8 @@ def report_state_until_success(component):
         LOGGER.info("Attempt %s of contacting BOS..." % (attempt))
         session = requests_retry_session()
         try:
-            bss_referral_token = get_value_from_proc_cmdline('BSS_REFERRAL_TOKEN')
-            state = {'actualState': {'bootArtifacts': {'bssReferralToken': bss_referral_token}}}
+            bss_referral_token = get_value_from_proc_cmdline('bss_referral_token')
+            state = {'actualState': {'bootArtifacts': {'bssToken': bss_referral_token}}}
             report_state(component, state, session)
         except UnknownComponent:
             LOGGER.warning("BOS has no record of component '%s'; nothing to report." % (component))

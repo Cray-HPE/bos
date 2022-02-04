@@ -25,7 +25,7 @@ import logging
 PROTOCOL = 'https'
 API_GATEWAY_DNS_NAME = os.environ.get('API_GATEWAY_HOST', 'api-gw-service-nmn.local')
 SERVICE = 'bos'
-API_VERSION = 'v1'
+API_VERSION = 'v2'
 ENDPOINT = '%s://%s/apis/%s/%s' % (PROTOCOL, API_GATEWAY_DNS_NAME,
                                    SERVICE, API_VERSION)
 
