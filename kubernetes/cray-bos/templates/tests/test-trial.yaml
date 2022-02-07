@@ -18,8 +18,7 @@ spec:
       command:
         - curl http://cray-bos/v1/version
   volumes:
-    ca-vol:
-      name: ca-vol
-      configMap:
-        name: cray-configmap-ca-public-key
+  - name: ca-vol
+    configMap:
+      name: cray-configmap-ca-public-key
   restartPolicy: Never
