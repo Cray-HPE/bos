@@ -1,0 +1,41 @@
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-test"
+  annotations:
+    "helm.sh/hook": test
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}-test"
+
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}-test"
+      labels:
+        app.kubernetes.io/managed-by:  "{{ include "cray-service.name" . }}"
+        app.kubernetes.io/instance:  "{{ .Release.Name }}-test"
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+      containers:
+        - name: "{{ .Release.Name }}-test"
+          image: {{ .Values.tests.image | quote }}
+          command:
+            - /usr/bin/curl 
+            - -v
+            - --connect-timeout 
+            - "5"
+            - --max-time 
+            - "10"
+            - --retry 
+            - "5"
+            - --retry-delay 
+            - "1"
+            - --retry-connrefused
+            - http://cray-bos/v1/version
