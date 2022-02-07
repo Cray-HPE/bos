@@ -16,7 +16,8 @@ spec:
       - name: ca-vol
         mountPath: /mnt/ca-vol
       command:
-        - /usr/bin/curl http://cray-bos/v1/version
+        - /usr/bin/curl 
+        - "http://cray-bos/v1/version"
   volumes:
   - name: ca-vol
     configMap:
