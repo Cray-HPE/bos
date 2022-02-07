@@ -283,3 +283,6 @@ operators:
           - python3
           - "-m"
           - "bos.operators.session_setup"
+
+tests:
+  image: artifactory.algol60.net/csm-docker/stable/docker.io/curlimages/curl/7.80.0

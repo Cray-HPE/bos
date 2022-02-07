@@ -1,0 +1,25 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ .Release.Name }}-test"
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: "{{ .Release.Name }}-test"
+      image: {{ .Values.tests.image | quote }}
+      env:
+      - name: CA_CERT
+        value: /mnt/ca-vol/certificate_authority.crt
+      volumeMounts:
+      - name: ca-vol
+        mountPath: /mnt/ca-vol
+      command:
+        - curl http://cray-bos/v1/version
+  volumes:
+    ca-vol:
+      name: ca-vol
+      configMap:
+        name: cray-configmap-ca-public-key
+  restartPolicy: Never
