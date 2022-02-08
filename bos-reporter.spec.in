@@ -42,6 +42,7 @@ Requires: cray-auth-utils
 Provides a systemd service and associated library that reports
 BOS' Boot Artifact ID for a node throughout its booted life.
 
+
 %{!?python3_sitelib: %define python3_sitelib %(/usr/bin/python3 -c "from distutils.sysconfig import get_python_lib ; print(get_python_lib())")}
 
 %prep

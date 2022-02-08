@@ -85,15 +85,19 @@ lint:
 		./cms_meta_tools/scripts/runLint.sh
 
 rpm_prepare:
-		rm -rf $(RPTR_BUILD_DIR) $(TEST_BUILD_DIR)
-		mkdir -p $(RPTR_BUILD_DIR)/SPECS \
-				 $(RPTR_BUILD_DIR)/SOURCES \
-				 $(TEST_BUILD_DIR)/SPECS \
-				 $(TEST_BUILD_DIR)/SOURCES \
-				 $(RPM_IMAGE_DIR) \
+		mkdir -p $(RPM_IMAGE_DIR) \
 				 $(SRC_RPM_IMAGE_DIR)
-		cp $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/
+test_rpm_prepare:
+		rm -rf $(TEST_BUILD_DIR)
+		mkdir -p $(TEST_BUILD_DIR)/SPECS \
+				 $(TEST_BUILD_DIR)/SOURCES
 		cp $(TEST_SPEC_FILE) $(TEST_BUILD_DIR)/SPECS/
+
+rptr_rpm_prepare:
+		rm -rf $(RPTR_BUILD_DIR)
+		mkdir -p $(RPTR_BUILD_DIR)/SPECS \
+				 $(RPTR_BUILD_DIR)/SOURCES
+		cp $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/
 
 image:
 		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
@@ -125,6 +129,12 @@ test_rpm_package_source:
 			./${TEST_SPEC_FILE} \
 			./ct-tests \
 			./LICENSE
+
+rpm_build_clean:
+		rm -rf $(RPM_IMAGE_DIR)/*
+
+rpm_build_source_clean:
+		rm -rf $(SRC_RPM_IMAGE_DIR)/*
 
 test_rpm_build_source:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -vv -ts $(TEST_SOURCE_PATH) --define "_topdir $(TEST_BUILD_DIR)"
