@@ -20,26 +20,19 @@ spec:
         mountPath: /mnt/ca-vol
       command:
         - /usr/bin/curl 
-        - "-v"
-        - "http://cray-bos/v1/version"
+        - -v
+        - --connect-timeout 
+        - "5"
+        - --max-time 
+        - "10"
+        - --retry 
+        - "5"
+        - --retry-delay 
+        - "1"
+        - --retry-connrefused
+        - http://cray-bos/v1/version
   volumes:
   - name: ca-vol
     configMap:
       name: cray-configmap-ca-public-key
   restartPolicy: Never
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: "{{ .Release.Name }}-test"
-  labels:
-    app.kubernetes.io/name: "{{ .Release.Name }}-test"
-spec:
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: "{{ .Release.Name }}-test"
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/name: "{{ .Release.Name }}-test"
