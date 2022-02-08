@@ -50,4 +50,4 @@ spec:
       - name: ca-vol
         configMap:
           name: cray-configmap-ca-public-key
-      restartPolicy: Neverr
+      restartPolicy: Never
