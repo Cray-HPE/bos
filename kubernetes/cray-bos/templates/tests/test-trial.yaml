@@ -5,12 +5,13 @@ metadata:
   name: "{{ .Release.Name }}-test"
   annotations:
     "helm.sh/hook": test
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}-test"
+
 spec:
   containers:
     - name: "{{ .Release.Name }}-test"
       image: {{ .Values.tests.image | quote }}
-      ports:
-      - containerPort: 80
       env:
       - name: CA_CERT
         value: /mnt/ca-vol/certificate_authority.crt
@@ -25,3 +26,19 @@ spec:
     configMap:
       name: cray-configmap-ca-public-key
   restartPolicy: Never
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: "{{ .Release.Name }}-test"
+  labels:
+    app.kubernetes.io/name: "{{ .Release.Name }}-test"
+spec:
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: "{{ .Release.Name }}-test"
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: "{{ .Release.Name }}-test"
