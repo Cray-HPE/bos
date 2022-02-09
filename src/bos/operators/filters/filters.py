@@ -70,7 +70,7 @@ class BOSQuery(DetailsFilter):
         self.kwargs = kwargs
         self.bos_client = BOSClient()
 
-    def _filter(self, components=None) -> List[dict]:
+    def _filter(self, _) -> List[dict]:
         return self.bos_client.components.get_components(**self.kwargs)
 
 
@@ -165,11 +165,11 @@ class BootArtifactStatesMatch(LocalFilter):
 
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desiredState', {})
-        current_state = component.get('currentState', {})
+        actual_state = component.get('actualState', {})
         desired_boot_state = desired_state.get('bootArtifacts', {})
-        current_boot_state = current_state.get('bootArtifacts', {})
+        actual_boot_state = actual_state.get('bootArtifacts', {})
         for key in ['kernel', 'kernel_parameters', 'initrd']:
-            if desired_boot_state.get(key, None) != current_boot_state.get(key, None):
+            if desired_boot_state.get(key, None) != actual_boot_state.get(key, None):
                 return False
         return True
 
