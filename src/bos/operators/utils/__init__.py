@@ -42,3 +42,8 @@ def requests_retry_session(retries=10, backoff_factor=0.5,
     # Mounting to only http will not work!
     session.mount("%s://" % protocol, adapter)
     return session
+
+class ServiceNotReady(Exception):
+    """
+    Raised when a service is not ready for interaction.
+    """

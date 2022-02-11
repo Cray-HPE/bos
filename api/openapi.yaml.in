@@ -732,6 +732,7 @@ components:
           description: >
             Set to force nodes to reboot even if they are already in the desired
             state.
+          default: false
       required: [operation, templateName]
       additionalProperties: false
     V2SessionStatus:
@@ -858,11 +859,6 @@ components:
           description: >
             Set to force nodes to reboot even if they are already in the desired
             state.
-        links:
-          type: array
-          readOnly: true
-          items:
-            $ref: '#/components/schemas/Link'
         components:
           type: string
           description: >

@@ -1,4 +1,4 @@
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# Copyright 2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -20,24 +20,18 @@
 #
 # (MIT License)
 
-import logging
-
-from .base import BaseBosEndpoint
-
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.session_templates')
+import datetime
+from dateutil.parser import parse
 
 
-class SessionTemplateEndpoint(BaseBosEndpoint):
-    ENDPOINT = 'sessiontemplates'
+# Common date and timestamps functions so that timezones and formats are handled consistently.
+def get_current_time() -> datetime.datetime:
+    return datetime.datetime.now()
 
-    def get_session_template(self, session_template_id):
-        return self.get_item(session_template_id)
 
-    def get_session_templates(self, **kwargs):
-        return self.get_items(**kwargs)
+def get_current_timestamp() -> str:
+    return get_current_time().now().isoformat(timespec='seconds')
 
-    def update_session_template(self, session_template_id, data):
-        return self.update_item(session_template_id, data)
 
-    def update_session_templates(self, data):
-        return self.update_items(data)
+def load_timestamp(timestamp: str) -> datetime.datetime:
+    return parse(timestamp).replace(tzinfo=None)

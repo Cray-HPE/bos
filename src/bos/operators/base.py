@@ -94,13 +94,12 @@ class BaseOperator(ABC):
         components = self._get_components()
         for component in components:  # Unset old errors components
             component['error'] = ''
-        if components:
-            LOGGER.info('Found {} components that require action'.format(len(components)))
-        else:
+        if not components:
             LOGGER.debug('Found 0 components that require action')
-        if components:
-            components = self._act(components)
-            self._update_database(components)
+            return
+        LOGGER.info('Found {} components that require action'.format(len(components)))
+        components = self._act(components)
+        self._update_database(components)
 
     def _get_components(self) -> List[dict]:
         """ Gets the list of all components that require actions  """

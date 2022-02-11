@@ -283,6 +283,21 @@ operators:
           - python3
           - "-m"
           - "bos.operators.session_setup"
+          env:
+          - name: S3_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "bos-s3-credentials"
+                key: access_key
+          - name: S3_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "bos-s3-credentials"
+                key: secret_key
+          - name: S3_PROTOCOL
+            value: "https"
+          - name: S3_GATEWAY
+            value: "rgw-vip"
 
 tests:
   image: artifactory.algol60.net/csm-docker/stable/docker.io/curlimages/curl:7.80.0

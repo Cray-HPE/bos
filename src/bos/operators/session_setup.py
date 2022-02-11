@@ -57,9 +57,10 @@ class SessionSetupOperator(BaseOperator):
         sessions = self._get_pending_sessions()
         if not sessions:
             return
+        LOGGER.info('Found {} sessions that require action'.format(len(sessions)))
         inventory_cache = Inventory()
         for data in sessions:
-            session = Session(data, inventory_cache)
+            session = Session(data, inventory_cache, self.bos_client)
             session.setup()
 
     def _get_pending_sessions(self):
@@ -67,9 +68,10 @@ class SessionSetupOperator(BaseOperator):
 
 
 class Session:
-    def __init__(self, data, inventory_cache):
+    def __init__(self, data, inventory_cache, bos_client):
         self.session_data = data
         self.inventory = inventory_cache
+        self.bos_client = bos_client
         self._template = None
 
     @property
@@ -82,7 +84,13 @@ class Session:
 
     @property
     def operation(self):
-        return self.OPERATIONS[self.operation_type]
+        operations = {
+            'boot': self.boot,
+            'shutdown': self.shutdown,
+            'stage': self.stage,
+            'boot_from_staged': self.boot_from_staged
+        }
+        return operations[self.operation_type]
 
     @property
     def template(self):
@@ -100,7 +108,7 @@ class Session:
             components = self._get_boot_set_component_list(boot_set)
             data = []
             for component in components:
-                data.append(self.operation(boot_set, component))
+                data.append(self.operation(component, boot_set, self.session_data.get('force')))
             self.bos_client.components.update_components(data)
 
     def _get_boot_set_component_list(self, boot_set):
@@ -124,7 +132,7 @@ class Session:
         nodes = self._apply_limit(nodes)
         if not nodes:
             self._log(LOGGER.warning, "No nodes were found to act on.")
-            return nodes
+        return nodes
 
     def _apply_limit(self, nodes):
         session_limit = self.session_data.get('limit')
@@ -153,28 +161,27 @@ class Session:
         return nodes
 
     def _mark_running(self):
-        self.bos_client.session.update_session(self.name, {'status': {'status': 'running'}})
+        self.bos_client.sessions.update_session(self.name, {'status': {'status': 'running'}})
         self._log(LOGGER.info, 'Session is running')
 
     def _log(self, logger, message):
         logger('Session {}: {}'.format(self.name, message))
 
     # Operations
-    def boot(self, component, boot_set, force):
+    def boot(self, component_id, boot_set, force):
         state = self._get_state_from_boot_set(boot_set)
         data = {
-            'id': component['id'],
+            'id': component_id,
             'desiredState': state
         }
         if force:
-            pass
-            # data['currentState'] = {'appliedToken': ''}
+            data['actualState'] = {'bootArtifacts': {}, 'bssToken': ''}
         return data
 
     @staticmethod
-    def shutdown(component, _):
+    def shutdown(component_id, _):
         return {
-            'id': component['id'],
+            'id': component_id,
             'desiredState': {
                 'configuration': '',
                 'bootArtifacts': {
@@ -185,22 +192,21 @@ class Session:
             }
         }
 
-    def stage(self, component, boot_set, _):
+    def stage(self, component_id, boot_set, _):
         state = self._get_state_from_boot_set(boot_set)
         return {
-            'id': component['id'],
+            'id': component_id,
             'stagedState': state
         }
 
     @staticmethod
-    def boot_from_staged(component, _, force):
+    def boot_from_staged(component_id, _, force):
         data = {
-            'id': component['id'],
-            'desiredState': component.get('stagedState', {})
+            'id': component_id,
+            # 'desiredState': component.get('stagedState', {}) # Temporarily commented out pending new boot_from_staged endpoint
         }
         if force:
-            pass
-            # data['currentState'] = {'appliedToken': ''}
+            data['actualState'] = {'bootArtifacts': {}, 'bssToken': ''}
         return data
 
     def _get_state_from_boot_set(self, boot_set):
@@ -209,9 +215,9 @@ class Session:
         image_metadata = BootImageMetaDataFactory(boot_set)()
         artifact_info = image_metadata.artifact_summary
         boot_artifacts['kernel'] = artifact_info['kernel']
-        boot_artifacts['initrd'] = image_metadata['initrd']
+        boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")
         boot_artifacts['kernel_parameters'] = self.assemble_kernel_boot_parameters(boot_set, artifact_info)
-        state['boot_artifacts'] = boot_artifacts
+        state['bootArtifacts'] = boot_artifacts
 
         if self.session_data.get('enable_cfs', False):
             configuration = {
@@ -271,7 +277,7 @@ class Session:
             boot_param_pieces.append(boot_set.get('kernel_parameters'))
 
         # Append special parameters for the rootfs and Node Memory Dump
-        pf = ProviderFactory(self)
+        pf = ProviderFactory(boot_set, artifact_info)
         provider = pf()
         rootfs_parameters = str(provider)
         if rootfs_parameters:
@@ -284,13 +290,6 @@ class Session:
         boot_param_pieces.append("bos_session_id={}".format(self.name))
 
         return ' '.join(boot_param_pieces)
-
-    OPERATIONS = {
-        'boot': boot,
-        'shutdown': shutdown,
-        'stage': stage,
-        'boot_from_staged': boot_from_staged
-    }
 
 
 if __name__ == '__main__':
