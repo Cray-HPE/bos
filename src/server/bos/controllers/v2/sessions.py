@@ -1,4 +1,4 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,7 +22,7 @@
 
 import connexion
 import datetime
-import dateutil
+from dateutil.parser import parse
 import re
 import logging
 import uuid
@@ -31,6 +31,7 @@ from connexion.lifecycle import ConnexionResponse
 from bos import redis_db_utils as dbutils
 from bos.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.models.v2_session import V2Session as Session  # noqa: E501
+from bos.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
 
 LOGGER = logging.getLogger('bos.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
@@ -53,12 +54,12 @@ def post_v2_session():  # noqa: E501
         LOGGER.debug("connexion.request.is_json")
         LOGGER.debug("type=%s", type(connexion.request.get_json()))
         LOGGER.debug("Received: %s", connexion.request.get_json())
-        session = Session.from_dict(connexion.request.get_json())  # noqa: E501
+        session_create = SessionCreate.from_dict(connexion.request.get_json())  # noqa: E501
     else:
         return "Post must be in JSON format", 400
-    template_name = session.template_name
+    template_name = session_create.template_name
     LOGGER.debug("Template Name: %s operation: %s", template_name,
-                 session.operation)
+                 session_create.operation)
     # Check that the templateName exists.
     session_template_response = get_v2_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
@@ -85,18 +86,28 @@ def post_v2_session():  # noqa: E501
             return msg, 400
 
     # -- Setup Record --
-    # Handle empty limit so that the environment var is not set to "None"
-    if not session.limit:
-        session.limit = ''
-    session.name = uuid.uuid4()
-    # The automatic generation doesn't seem to be initializing the status object correctly
-    # Commenting it out for now.
-    # session.status.status = 'pending'
-    # session.status.startTime = datetime.datetime.now().isoformat(timespec='seconds')
+    session = _create_session(session_create)
     session = session.to_dict()
     data = dbutils.snake_to_camel_json(session)
     response = DB.put(session['name'], data)
     return response, 201
+
+
+def _create_session(session_create):
+    initial_status = {
+        'status': 'pending',
+        'startTime': datetime.datetime.now().isoformat(timespec='seconds'),
+    }
+    body = {
+        'name': str(uuid.uuid4()),
+        'operation': session_create.operation,
+        'templateName': session_create.template_name or '',
+        'limit': session_create.limit or '',
+        'force': session_create.force,
+        'components': '',
+        'status': initial_status,
+    }
+    return Session.from_dict(body)
 
 
 @dbutils.redis_error_handler
@@ -206,7 +217,7 @@ def _matches_filter(data, min_start, max_start, status):
     start_time = session_status['startTime']
     session_start = None
     if start_time:
-        session_start = dateutil.parser.parse(start_time).replace(tzinfo=None)
+        session_start = parse(start_time).replace(tzinfo=None)
     if min_start and (not session_start or session_start < min_start):
         return False
     if max_start and (not session_start or session_start > max_start):
