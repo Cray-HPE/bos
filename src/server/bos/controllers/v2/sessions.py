@@ -103,7 +103,7 @@ def _create_session(session_create):
         'operation': session_create.operation,
         'templateName': session_create.template_name or '',
         'limit': session_create.limit or '',
-        'force': session_create.force,
+        'stage': session_create.stage,
         'components': '',
         'status': initial_status,
     }

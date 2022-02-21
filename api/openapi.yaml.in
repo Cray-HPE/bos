@@ -702,20 +702,17 @@ components:
       properties:
         operation:
           type: string
+          enum: ['boot', 'reboot', 'shutdown']
           description: >
             A Session represents a desired state that is being applied to a group
-            of components.  Sessions exist until all components it manages have
+            of components.  Sessions run until all components it manages have
             either been disabled due to completion, or until all components are
             managed by other newer sessions.
 
             Operation -- An operation to perform on nodes in this session.
-                Boot                 Applies the template to the components and boots/reboots as necessary.
+                Boot                 Applies the template to the components and boots/reboots if necessary.
+                Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
-                Stage                Stores template information for later use by components.
-                Boot_from_staged     Applies staged content to components and boots/reboots as necessary.
-
-
-          pattern: '^(?i)boot|shutdown|stage|boot_from_staged$'
         templateName:
           type: string
           description: The name of the Session Template
@@ -727,7 +724,7 @@ components:
             A comma separated of nodes, groups or roles to which the session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
-        force:
+        stage:
           type: boolean
           description: >
             Set to force nodes to reboot even if they are already in the desired
@@ -829,20 +826,17 @@ components:
             Name of the session.
         operation:
           type: string
+          enum: ['boot', 'reboot', 'shutdown']
           description: >
             A Session represents a desired state that is being applied to a group
-            of components.  Sessions exist until all components it manages have
+            of components.  Sessions run until all components it manages have
             either been disabled due to completion, or until all components are
             managed by other newer sessions.
 
             Operation -- An operation to perform on nodes in this session.
-                Boot                 Applies the template to the components and boots/reboots as necessary.
+                Boot                 Applies the template to the components and boots/reboots if necessary.
+                Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
-                Stage                Stores template information for later use by components.
-                Boot_from_staged     Applies staged content to components and boots/reboots as necessary.
-
-
-          pattern: '^(?i)boot|shutdown|stage|boot_from_staged$'
         templateName:
           type: string
           description: The name of the Session Template
@@ -854,15 +848,15 @@ components:
             A comma separated of nodes, groups or roles to which the session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
-        force:
+        stage:
           type: boolean
           description: >
-            Set to force nodes to reboot even if they are already in the desired
-            state.
+            Set to stage a session which will not immediately change the state of any components.
+            The "applystaged" endpoint can be called at a later time to trigger the start of this session.
         components:
           type: string
           description: >
-            A comma separated of nodes, representing the initial list of nodes
+            A comma separated list of nodes, representing the initial list of nodes
             the session should operate against.  The list will remain even if
             other sessions have taken over management of the nodes.
         status:
@@ -928,6 +922,26 @@ components:
           format: date-time
           readOnly: true
       additionalProperties: false
+    V2ComponentStagedState:
+      description: |
+        The desired boot artifacts and configuration for a component
+      type: object
+      properties:
+        bootArtifacts:
+          $ref: '#/components/schemas/V2BootArtifacts'
+        configuration:
+          type: string
+          description: A CFS configuration ID.
+        session:
+          type: string
+          description: A session which can be triggered at a later time against this component.
+        lastUpdated:
+          type: string
+          description: The date/time when the state was last updated in RFC 3339 format.
+          example: '2019-07-28T03:26:00Z'
+          format: date-time
+          readOnly: true
+      additionalProperties: false
     V2ComponentLastAction:
       description: |
         Information on the most recent action taken against the node.
@@ -959,7 +973,7 @@ components:
         desiredState:
           $ref: '#/components/schemas/V2ComponentDesiredState'
         stagedState:
-          $ref: '#/components/schemas/V2ComponentDesiredState'
+          $ref: '#/components/schemas/V2ComponentStagedState'
         lastAction:
           $ref: '#/components/schemas/V2ComponentLastAction'
         enabled:
@@ -977,6 +991,38 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
+    V2ApplyStagedComponents:
+      description: |
+        A list of components that should have their staged session applied.
+      type: object
+      properties:
+        xnames:
+          description: The list of component xnames
+          type: array
+          items:
+            type: string
+      additionalProperties: false
+    V2ApplyStagedStatus:
+      description: |
+        A list of components that should have their staged session applied.
+      type: object
+      properties:
+        succeeded:
+          description: The list of component xnames
+          type: array
+          items:
+            type: string
+        failed:
+          description: The list of component xnames
+          type: array
+          items:
+            type: string
+        ignored:
+          description: The list of component xnames
+          type: array
+          items:
+            type: string
+      additionalProperties: false
     V2Options:
       description: |
         Options for the boot orchestration service.
@@ -1031,6 +1077,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Session'
+    V2applyStagedRequest:
+      description: A list of xnames that should have their staged session applied.
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2ApplyStagedComponents'
 
   responses:
     ServiceHealth:
@@ -1108,6 +1161,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2ComponentArray'
+    V2applyStagedResponse:
+      description: A list of xnames that should have their staged session applied.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2ApplyStagedStatus'
     V2options:
       description: A collection of service-wide options
       content:
@@ -1905,6 +1964,12 @@ paths:
           in: query
           description: >-
             Retrieve the components with the given session id.
+        - name: staged_session
+          schema:
+            type: string
+          in: query
+          description: >-
+            Retrieve the components with the given staged session id.
         - name: enabled
           schema:
             type: boolean
@@ -2019,6 +2084,26 @@ paths:
         required: true
         schema:
           type: string
+  /v2/applystaged:
+    post:
+      summary: Start a staged session for the specified components
+      description: |
+        Given a list of xnames, this will trigger the start of any sessions
+        staged for those components.  Components without a staged session
+        will be ignored, and a list all components that are acted on will
+        be returned in the response.
+      tags:
+        - v2
+        - applystaged
+      x-openapi-router-controller: bos.controllers.v2.components
+      operationId: post_v2_apply_staged
+      requestBody:
+         $ref: '#/components/requestBodies/V2applyStagedRequest'
+      responses:
+        200:
+          $ref: '#/components/responses/V2applyStagedResponse'
+        400:
+          $ref: '#/components/responses/BadRequest'
   /v2/options:
     get:
       summary: Retrieve the BOS service options
