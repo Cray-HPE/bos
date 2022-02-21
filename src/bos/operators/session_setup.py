@@ -31,6 +31,11 @@ from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFac
 from bos.operators.utils.rootfs.factory import ProviderFactory
 
 LOGGER = logging.getLogger('bos.operators.session_setup')
+EMPTY_BOOT_ARTIFACTS = {
+    "kernel": "",
+    "kernel_parameters": "",
+    "initrd": ""
+}
 
 
 class SessionSetupOperator(BaseOperator):
@@ -83,16 +88,6 @@ class Session:
         return self.session_data.get('operation')
 
     @property
-    def operation(self):
-        operations = {
-            'boot': self.boot,
-            'shutdown': self.shutdown,
-            'stage': self.stage,
-            'boot_from_staged': self.boot_from_staged
-        }
-        return operations[self.operation_type]
-
-    @property
     def template(self):
         if not self._template:
             template_name = self.session_data.get('templateName')
@@ -100,16 +95,20 @@ class Session:
         return self._template
 
     def setup(self):
-        self._setup_components()
-        self._mark_running()
+        component_ids = self._setup_components()
+        self._mark_running(component_ids)
 
     def _setup_components(self):
+        all_component_ids = []
         for name, boot_set in self.template.get('boot_sets', {}).items():
             components = self._get_boot_set_component_list(boot_set)
             data = []
-            for component in components:
-                data.append(self.operation(component, boot_set, self.session_data.get('force')))
+            for component_id in components:
+                data.append(self._operate(component_id, boot_set))
+            all_component_ids += components
             self.bos_client.components.update_components(data)
+        return list(set(all_component_ids))
+
 
     def _get_boot_set_component_list(self, boot_set):
         nodes = set()
@@ -160,54 +159,41 @@ class Session:
         nodes = nodes.intersection(limit_node_set)
         return nodes
 
-    def _mark_running(self):
-        self.bos_client.sessions.update_session(self.name, {'status': {'status': 'running'}})
+    def _mark_running(self, component_ids):
+        self.bos_client.sessions.update_session(
+            self.name, {'status': {'status': 'running'}, "components": ",".join(component_ids)})
         self._log(LOGGER.info, 'Session is running')
 
     def _log(self, logger, message):
         logger('Session {}: {}'.format(self.name, message))
 
     # Operations
-    def boot(self, component_id, boot_set, force):
-        state = self._get_state_from_boot_set(boot_set)
-        data = {
-            'id': component_id,
-            'desiredState': state
-        }
-        if force:
-            data['actualState'] = {'bootArtifacts': {}, 'bssToken': ''}
-        return data
-
-    @staticmethod
-    def shutdown(component_id, _):
-        return {
-            'id': component_id,
-            'desiredState': {
-                'configuration': '',
-                'bootArtifacts': {
-                    'kernel': '',
-                    'kernelParameters': '',
-                    'initrd': ''
+    def _operate(self, component_id, boot_set):
+        stage = self.session_data.get("stage", False)
+        data = {"id": component_id}
+        if stage:
+            data["stagedState"] = self._generate_desired_state(boot_set)
+            data["stagedState"]["session"] = self.name
+        else:
+            data["desiredState"] = self._generate_desired_state(boot_set)
+            if self.operation_type == "reboot" :
+                data["actualState"] = {
+                    "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
+                    "bssToken": ""
                 }
-            }
-        }
-
-    def stage(self, component_id, boot_set, _):
-        state = self._get_state_from_boot_set(boot_set)
-        return {
-            'id': component_id,
-            'stagedState': state
-        }
-
-    @staticmethod
-    def boot_from_staged(component_id, _, force):
-        data = {
-            'id': component_id,
-            # 'desiredState': component.get('stagedState', {}) # Temporarily commented out pending new boot_from_staged endpoint
-        }
-        if force:
-            data['actualState'] = {'bootArtifacts': {}, 'bssToken': ''}
+            data["enabled"] = True
         return data
+
+    def _generate_desired_state(self, boot_set):
+        if self.operation_type == "shutdown":
+            state = {
+                "configuration": "",
+                "bootArtifacts": EMPTY_BOOT_ARTIFACTS
+            }
+            return state
+        else:
+            state = self._get_state_from_boot_set(boot_set)
+            return state
 
     def _get_state_from_boot_set(self, boot_set):
         state = {}
@@ -220,10 +206,9 @@ class Session:
         state['bootArtifacts'] = boot_artifacts
 
         if self.session_data.get('enable_cfs', False):
-            configuration = {
-                'configuration': self.session_data.get('cfs', {}).get('configuration', '')}
+            configuration = self.session_data.get('cfs', {}).get('configuration', '')
             if configuration:
-                state['cfs'] = configuration
+                state['configuration'] = configuration
 
         return state
 

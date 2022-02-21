@@ -50,15 +50,17 @@ class SessionCompletionOperator(BaseOperator):
         """ A single pass of complete sessions """
         sessions = self._get_incomplete_sessions()
         for session in sessions:
-            components = self._get_incomplete_components(session)
+            components = self._get_incomplete_components(session["name"])
             if not components:
-                self._mark_session_complete(session)
+                self._mark_session_complete(session["name"])
 
     def _get_incomplete_sessions(self):
         return self.bos_client.sessions.get_sessions(status='running')
 
     def _get_incomplete_components(self, session_id):
-        return self.bos_client.components.get_components(session=session_id, enabled=True)
+        components = self.bos_client.components.get_components(session=session_id, enabled=True)
+        components += self.bos_client.components.get_components(staged_session=session_id)
+        return components
 
     def _mark_session_complete(self, session_id):
         self.bos_client.sessions.update_session(session_id, {'status': {'status': 'complete'}})
