@@ -63,7 +63,7 @@ spec:
         command:
           - python3
           - "-m"
-          - "server.bos.v1_v2_migration"
+          - "bos.api.v1_v2_migration"
         env:
         - name: PYTHONPATH
           value: "/app/lib"

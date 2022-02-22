@@ -32,7 +32,7 @@ etcd &
 # Nosetests
 python3 -m pip freeze 2>&1 | tee /results/pip_freeze.out
 nosetests -v \
- -w /app/lib/server/bos/test \
+ -w /app/lib/bos/api/test \
  --with-xunit \
  --xunit-file=/results/nosetests.xml \
  --with-coverage \
@@ -49,10 +49,10 @@ nosetests -v \
 # pytest equivalent of the above
 # The above nosetests can be removed once pytest duplicates
 # all of the needed functionality.
-pytest --cov=/app/lib/server/bos -k "not Status" \
+pytest --cov=/app/lib/bos/api -k "not Status" \
  2>&1 | tee /results/pytests.out
  
 # Running this test suite separately because it hangs when run with the other tests
 # Apparently it is antisocial.
-pytest --cov=/app/lib/server/bos /app/lib/server/bos/test/test_status_controller.py \
+pytest --cov=/app/lib/bos/api /app/lib/bos/api/test/test_status_controller.py \
  2>&1 | tee -a /results/pytests.out

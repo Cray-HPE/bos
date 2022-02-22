@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+# Cray-provided base controllers for the Boot Orchestration Service
 # Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,19 +21,30 @@
 #
 # (MIT License)
 
-CLI_VERSION="v5.3.0"
-cp src/bos/api/openapi/openapi.yaml.in src/bos/api/openapi/openapi.yaml
-docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i" openapitools/openapi-generator-cli:${CLI_VERSION} \
-  generate \
-    -i src/bos/api/openapi/openapi.yaml \
-    -g python-flask \
-    -o src/bos/api \
-    -c src/bos/api/config/autogen-server.json \
-    --generate-alias-as-model
-rm src/bos/api/openapi/openapi.yaml
-echo "Code has been generated within src/server for development purposes ONLY."
-echo "Code was generated using openapi-generator-cli version: $CLI_VERSION."
-echo "This project is setup to automatically generate server-side code as a"
-echo "function of Docker image build. Adjust .gitignore before checking in"
-echo "anything you did not author!"
+import etcd3
+import logging
 
+from bos.api.models.healthz import Healthz as Healthz
+from bos.api.dbclient import BosEtcdClient
+
+LOGGER = logging.getLogger('bos.controllers.v1.healthz')
+
+
+def v1_get_healthz():
+    """GET /v1/healthz
+
+    Query BOS etcd for health status
+
+    :rtype: Healthz
+    """
+    # check etcd connectivity
+    with BosEtcdClient() as bec:
+        bec.put('health', 'ok')
+        value, _ = bec.get('health')
+        if value.decode('utf-8') != 'ok':
+            return Healthz(etcd_status='Failed to read from cluster',
+                           api_status='Not Ready'), 503
+    return Healthz(
+        etcd_status='ok',
+        api_status='ok',
+    ), 200

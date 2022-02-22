@@ -67,7 +67,7 @@ clone_input_files:
 		cp bos-reporter.spec.in bos-reporter.spec
 		cp bos-crayctldeploy-test.spec.in bos-crayctldeploy-test.spec
 		cp src/setup.py.in src/setup.py
-		cp api/openapi.yaml.in api/openapi.yaml
+		cp src/bos/api/openapi/openapi.yaml.in src/bos/api/openapi/openapi.yaml
 
 cms_meta_tools:
 		rm -rf cms-meta-tools

@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# Cray-provided base controllers for the Boot Orchestration Service
+# Copyright 2019, 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,19 +21,19 @@
 #
 # (MIT License)
 
-CLI_VERSION="v5.3.0"
-cp src/bos/api/openapi/openapi.yaml.in src/bos/api/openapi/openapi.yaml
-docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i" openapitools/openapi-generator-cli:${CLI_VERSION} \
-  generate \
-    -i src/bos/api/openapi/openapi.yaml \
-    -g python-flask \
-    -o src/bos/api \
-    -c src/bos/api/config/autogen-server.json \
-    --generate-alias-as-model
-rm src/bos/api/openapi/openapi.yaml
-echo "Code has been generated within src/server for development purposes ONLY."
-echo "Code was generated using openapi-generator-cli version: $CLI_VERSION."
-echo "This project is setup to automatically generate server-side code as a"
-echo "function of Docker image build. Adjust .gitignore before checking in"
-echo "anything you did not author!"
 
+from bos.api.controllers.v1 import base as v1_base
+from bos.api.controllers.v2 import base as v2_base
+
+import logging
+LOGGER = logging.getLogger('bos.controllers.base')
+
+
+def root_get():
+    """ Get a list of supported versions """
+    LOGGER.info('in get_versions')
+    versions = [
+        v1_base.calc_version(details=False),
+        v2_base.calc_version(details=False),
+    ]
+    return versions, 200

@@ -1,5 +1,5 @@
-#!/usr/bin/env bash
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# coding: utf-8
+# Copyright 2019, 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,19 +21,41 @@
 #
 # (MIT License)
 
-CLI_VERSION="v5.3.0"
-cp src/bos/api/openapi/openapi.yaml.in src/bos/api/openapi/openapi.yaml
-docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i" openapitools/openapi-generator-cli:${CLI_VERSION} \
-  generate \
-    -i src/bos/api/openapi/openapi.yaml \
-    -g python-flask \
-    -o src/bos/api \
-    -c src/bos/api/config/autogen-server.json \
-    --generate-alias-as-model
-rm src/bos/api/openapi/openapi.yaml
-echo "Code has been generated within src/server for development purposes ONLY."
-echo "Code was generated using openapi-generator-cli version: $CLI_VERSION."
-echo "This project is setup to automatically generate server-side code as a"
-echo "function of Docker image build. Adjust .gitignore before checking in"
-echo "anything you did not author!"
+from __future__ import absolute_import
 
+from bos.api.test import BaseTestCase
+
+from nose.tools import nottest
+
+
+class TestVersionController(BaseTestCase):
+    """VersionController integration test stubs"""
+
+    @nottest
+    def test_get_version(self):
+        """Test case for get_version
+
+        API version
+        """
+        response = self.client.open(
+            '/apis/bos/v1',
+            method='GET')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+    @nottest
+    def test_get_versions(self):
+        """Test case for get_versions
+
+        API versions
+        """
+        response = self.client.open(
+            '/apis/bos/',
+            method='GET')
+        self.assert200(response,
+                       'Response body is : ' + response.data.decode('utf-8'))
+
+
+if __name__ == '__main__':
+    import unittest
+    unittest.main()

@@ -1,0 +1,5 @@
+{
+  "packageVersion": "0.0.1",
+  "packageName": "bos.api",
+  "serverPort": 80
+}
