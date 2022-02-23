@@ -51,7 +51,7 @@ COPY --from=codegen /app/lib/ /app/lib
 # project-wide requirements.txt
 RUN mv lib/requirements.txt lib/bos/server/requirements.txt
 # Then copy all src into the base image
-COPY src/bos/ /app/lib/bos
+COPY src/bos/ /app/lib/bos/
 COPY constraints.txt requirements.txt .
 # Update packages to avoid security problems
 RUN apk add --upgrade --no-cache apk-tools busybox && \
