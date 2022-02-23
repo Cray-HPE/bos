@@ -30,6 +30,7 @@ FROM $OPENAPI_IMAGE as codegen
 WORKDIR /app
 COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
+COPY config/autogen-client.json config/autogen-client.json
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python-flask \
@@ -87,7 +88,6 @@ CMD [ "./docker_api_test_entry.sh" ]
 
 # Debug image
 FROM base as debug
-ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app/
 EXPOSE 9000
 RUN apk add --no-cache uwsgi-python3 busybox-extras && \
