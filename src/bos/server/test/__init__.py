@@ -1,5 +1,4 @@
-# Cray-provided base controllers for the Boot Orchestration Service
-# Copyright 2019, 2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,19 +20,19 @@
 #
 # (MIT License)
 
-
-from bos.controllers.v1 import base as v1_base
-from bos.controllers.v2 import base as v2_base
-
 import logging
-LOGGER = logging.getLogger('bos.controllers.base')
+
+import connexion
+from flask_testing import TestCase
+
+from bos.server.encoder import JSONEncoder
 
 
-def root_get():
-    """ Get a list of supported versions """
-    LOGGER.info('in get_versions')
-    versions = [
-        v1_base.calc_version(details=False),
-        v2_base.calc_version(details=False),
-    ]
-    return versions, 200
+class BaseTestCase(TestCase):
+
+    def create_app(self):
+        logging.getLogger('connexion.operation').setLevel('ERROR')
+        app = connexion.App(__name__, specification_dir='../openapi/')
+        app.app.json_encoder = JSONEncoder
+        app.add_api('openapi.yaml', pythonic_params=True)
+        return app.app

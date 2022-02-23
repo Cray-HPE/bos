@@ -1,4 +1,5 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+# Cray-provided base controllers for the Boot Orchestration Service
+# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -20,19 +21,30 @@
 #
 # (MIT License)
 
+import etcd3
 import logging
 
-import connexion
-from flask_testing import TestCase
+from bos.server.models.healthz import Healthz as Healthz
+from bos.server.dbclient import BosEtcdClient
 
-from bos.encoder import JSONEncoder
+LOGGER = logging.getLogger('bos.server.controllers.v1.healthz')
 
 
-class BaseTestCase(TestCase):
+def v1_get_healthz():
+    """GET /v1/healthz
 
-    def create_app(self):
-        logging.getLogger('connexion.operation').setLevel('ERROR')
-        app = connexion.App(__name__, specification_dir='../openapi/')
-        app.app.json_encoder = JSONEncoder
-        app.add_api('openapi.yaml', pythonic_params=True)
-        return app.app
+    Query BOS etcd for health status
+
+    :rtype: Healthz
+    """
+    # check etcd connectivity
+    with BosEtcdClient() as bec:
+        bec.put('health', 'ok')
+        value, _ = bec.get('health')
+        if value.decode('utf-8') != 'ok':
+            return Healthz(etcd_status='Failed to read from cluster',
+                           api_status='Not Ready'), 503
+    return Healthz(
+        etcd_status='ok',
+        api_status='ok',
+    ), 200

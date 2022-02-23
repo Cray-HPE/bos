@@ -21,9 +21,9 @@
 # (MIT License)
 import six
 
-from bos.models.base_model_ import Model
-from bos.models.v1_generic_metadata import V1GenericMetadata as GenericMetadata
-from bos.encoder import JSONEncoder
+from bos.server.models.base_model_ import Model
+from bos.server.models.v1_generic_metadata import V1GenericMetadata as GenericMetadata
+from bos.server.encoder import JSONEncoder
 
 
 class MetadataEncoder(JSONEncoder):

@@ -28,9 +28,9 @@ import wget
 import os
 from connexion.lifecycle import ConnexionResponse
 
-from bos.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
-from bos.dbclient import BosEtcdClient
-from bos.utils import _canonize_xname
+from bos.server.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
+from bos.server.dbclient import BosEtcdClient
+from bos.server.utils import _canonize_xname
 from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, put_v2_sessiontemplate, delete_v2_sessiontemplate
 
 LOGGER = logging.getLogger('bos.controllers.v1.sessiontemplate')

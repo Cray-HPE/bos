@@ -28,12 +28,12 @@ import logging
 import uuid
 from connexion.lifecycle import ConnexionResponse
 
-from bos import redis_db_utils as dbutils
-from bos.controllers.v2.sessiontemplates import get_v2_sessiontemplate
-from bos.models.v2_session import V2Session as Session  # noqa: E501
-from bos.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
+from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
+from bos.server.models.v2_session import V2Session as Session  # noqa: E501
+from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
 
-LOGGER = logging.getLogger('bos.controllers.v2.session')
+LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
 COMPONENTS_DB = dbutils.get_wrapper(db='components')
 BASEKEY = "/sessions"

@@ -22,8 +22,8 @@
 # (MIT License)
 
 from __future__ import absolute_import
-from bos.controllers.v1.session import get_v1_session, get_v1_sessions, delete_v1_session
-from bos.controllers.v1.session import _get_boa_naming_for_session
+from bos.server.controllers.v1.session import get_v1_session, get_v1_sessions, delete_v1_session
+from bos.server.controllers.v1.session import _get_boa_naming_for_session
 
 from unittest import mock
 import testtools

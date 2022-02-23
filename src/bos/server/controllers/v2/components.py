@@ -24,10 +24,10 @@ import connexion
 from datetime import datetime
 import logging
 
-from bos import redis_db_utils as dbutils
-from bos.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
+from bos.server import redis_db_utils as dbutils
+from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
-LOGGER = logging.getLogger('bos.controllers.v2.components')
+LOGGER = logging.getLogger('bos.server.controllers.v2.components')
 DB = dbutils.get_wrapper(db='components')
 
 

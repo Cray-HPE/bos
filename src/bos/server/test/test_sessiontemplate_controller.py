@@ -23,11 +23,11 @@
 
 from __future__ import absolute_import
 
-from bos.controllers.v1.sessiontemplate import create_v1_sessiontemplate
-from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplate
-from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplates
-from bos.controllers.v1.sessiontemplate import get_v1_sessiontemplatetemplate
-from bos.controllers.v1.sessiontemplate import delete_v1_sessiontemplate
+from bos.server.controllers.v1.sessiontemplate import create_v1_sessiontemplate
+from bos.server.controllers.v1.sessiontemplate import get_v1_sessiontemplate
+from bos.server.controllers.v1.sessiontemplate import get_v1_sessiontemplates
+from bos.server.controllers.v1.sessiontemplate import get_v1_sessiontemplatetemplate
+from bos.server.controllers.v1.sessiontemplate import delete_v1_sessiontemplate
 
 import connexion
 import testtools

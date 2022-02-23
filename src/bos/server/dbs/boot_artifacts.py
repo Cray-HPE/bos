@@ -23,9 +23,9 @@
 from datetime import datetime
 import logging
 
-from server.bos import redis_db_utils as dbutils
+from bos.server import redis_db_utils as dbutils
 
-LOGGER = logging.getLogger('bos.dbs.boot_artifacts')
+LOGGER = logging.getLogger('bos.server.dbs.boot_artifacts')
 TOKENS_DB = dbutils.get_wrapper(db='bss_tokens_boot_artifacts')
 
 

@@ -26,9 +26,9 @@ from __future__ import absolute_import
 import unittest
 from unittest import mock
 
-from bos.models.healthz import Healthz  # noqa: E501
-from bos.models.problem_details import ProblemDetails  # noqa: E501
-from bos.controllers.v1.healthz import v1_get_healthz
+from bos.server.models.healthz import Healthz  # noqa: E501
+from bos.server.models.problem_details import ProblemDetails  # noqa: E501
+from bos.server.controllers.v1.healthz import v1_get_healthz
 
 
 class TestHealthzController(unittest.TestCase):

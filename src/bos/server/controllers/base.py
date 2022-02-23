@@ -1,4 +1,4 @@
-# coding: utf-8
+# Cray-provided base controllers for the Boot Orchestration Service
 # Copyright 2019, 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
@@ -21,47 +21,19 @@
 #
 # (MIT License)
 
-from __future__ import absolute_import
 
-from flask import json
-from six import BytesIO
+from bos.server.controllers.v1 import base as v1_base
+from bos.server.controllers.v2 import base as v2_base
 
-from bos.models.problem_details import ProblemDetails  # noqa: E501
-from bos.models.version import Version  # noqa: E501
-from bos.test import BaseTestCase
-from bos.controllers.base import root_get
-
-from nose.tools import nottest
+import logging
+LOGGER = logging.getLogger('bos.server.controllers.base')
 
 
-class TestVersionController(BaseTestCase):
-    """VersionController integration test stubs"""
-
-    @nottest
-    def test_get_version(self):
-        """Test case for get_version
-
-        API version
-        """
-        response = self.client.open(
-            '/apis/bos/v1',
-            method='GET')
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
-
-    @nottest
-    def test_get_versions(self):
-        """Test case for get_versions
-
-        API versions
-        """
-        response = self.client.open(
-            '/apis/bos/',
-            method='GET')
-        self.assert200(response,
-                       'Response body is : ' + response.data.decode('utf-8'))
-
-
-if __name__ == '__main__':
-    import unittest
-    unittest.main()
+def root_get():
+    """ Get a list of supported versions """
+    LOGGER.info('in get_versions')
+    versions = [
+        v1_base.calc_version(details=False),
+        v2_base.calc_version(details=False),
+    ]
+    return versions, 200

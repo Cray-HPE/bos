@@ -38,16 +38,16 @@ from builtins import staticmethod
 os.environ["ETCD_HOST"] = 'localhost'
 os.environ["ETCD_PORT"] = '2379'
 
-from bos.controllers.v1.status import InvalidCategory, BadPhase, BootSetDoesNotExist  # noqa: E402
-from bos.controllers.v1.status import SessionStatus, BootSet, Metadata, get_v1_session_status  # noqa: E402
-from bos.controllers.v1.status import update_v1_session_status_by_bootset  # noqa: E402
-from bos.controllers.v1.status import create_v1_boot_set_status  # noqa: E402
-from bos.controllers.v1.status import get_v1_session_status_by_bootset  # noqa: E402
-from bos.controllers.v1.status import get_v1_session_status_by_bootset_and_phase_and_category  # noqa: E402
-from bos.controllers.v1.status import MetadataPhase, get_v1_session_status_by_bootset_and_phase  # noqa: E402
-from bos.controllers.v1.status import create_v1_session_status, update_v1_session_status  # noqa: E402
-from bos.dbclient import BosEtcdClient  # noqa: E402
-from bos.models.generic_metadata import GenericMetadata  # noqa: E402
+from bos.server.controllers.v1.status import InvalidCategory, BadPhase, BootSetDoesNotExist  # noqa: E402
+from bos.server.controllers.v1.status import SessionStatus, BootSet, Metadata, get_v1_session_status  # noqa: E402
+from bos.server.controllers.v1.status import update_v1_session_status_by_bootset  # noqa: E402
+from bos.server.controllers.v1.status import create_v1_boot_set_status  # noqa: E402
+from bos.server.controllers.v1.status import get_v1_session_status_by_bootset  # noqa: E402
+from bos.server.controllers.v1.status import get_v1_session_status_by_bootset_and_phase_and_category  # noqa: E402
+from bos.server.controllers.v1.status import MetadataPhase, get_v1_session_status_by_bootset_and_phase  # noqa: E402
+from bos.server.controllers.v1.status import create_v1_session_status, update_v1_session_status  # noqa: E402
+from bos.server.dbclient import BosEtcdClient  # noqa: E402
+from bos.server.models.generic_metadata import GenericMetadata  # noqa: E402
 
 LOGGER = logging.getLogger(__name__)
 

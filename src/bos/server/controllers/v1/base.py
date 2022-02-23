@@ -25,11 +25,11 @@ import logging
 import subprocess
 import yaml
 
-from bos.controllers.utils import url_for
-from bos.models import Version, Link
+from bos.server.controllers.utils import url_for
+from bos.server.models import Version, Link
 from os import path
 
-LOGGER = logging.getLogger('bos.controllers.v1.base')
+LOGGER = logging.getLogger('bos.server.controllers.v1.base')
 
 
 def calc_version(details):

@@ -27,8 +27,8 @@ import os
 
 import connexion
 
-from bos import specialized_encoder
-from bos.controllers.v2 import options
+from bos.server import specialized_encoder
+from bos.server.controllers.v2 import options
 
 LOGGER = logging.getLogger('bos.__main__')
 

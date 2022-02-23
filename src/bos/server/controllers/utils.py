@@ -27,7 +27,7 @@ import connexion
 import flask
 
 import logging
-LOGGER = logging.getLogger('bos.controllers.utils')
+LOGGER = logging.getLogger('bos.server.controllers.utils')
 
 
 def url_for(endpoint, **values):

@@ -1,5 +1,4 @@
-# Cray-provided base controllers for the Boot Orchestration Service
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,30 +20,37 @@
 #
 # (MIT License)
 
-import etcd3
 import logging
 
-from bos.models.healthz import Healthz as Healthz
-from bos.dbclient import BosEtcdClient
+from bos.server.models.healthz import Healthz as Healthz
+from bos.server import redis_db_utils
 
-LOGGER = logging.getLogger('bos.controllers.v1.healthz')
+DB = redis_db_utils.get_wrapper(db='options')
+
+LOGGER = logging.getLogger('bos.server.controllers.v2.healthz')
 
 
-def v1_get_healthz():
-    """GET /v1/healthz
+def _get_db_status():
+    available = False
+    try:
+        if DB.info():
+            available = True
+    except Exception as e:
+        LOGGER.error(e)
+
+    if available:
+        return 'ok'
+    return 'not_available'
+
+
+def get_v2_healthz():
+    """GET /v2/healthz
 
     Query BOS etcd for health status
 
     :rtype: Healthz
     """
-    # check etcd connectivity
-    with BosEtcdClient() as bec:
-        bec.put('health', 'ok')
-        value, _ = bec.get('health')
-        if value.decode('utf-8') != 'ok':
-            return Healthz(etcd_status='Failed to read from cluster',
-                           api_status='Not Ready'), 503
     return Healthz(
-        etcd_status='ok',
+        redis_status=_get_db_status,
         api_status='ok',
     ), 200

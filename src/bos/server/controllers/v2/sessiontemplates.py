@@ -23,11 +23,11 @@
 import logging
 import connexion
 
-from bos.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
-from bos import redis_db_utils as dbutils
-from bos.utils import _canonize_xname
+from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
+from bos.server import redis_db_utils as dbutils
+from bos.server.utils import _canonize_xname
 
-LOGGER = logging.getLogger('bos.controllers.v2.sessiontemplates')
+LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
 DB = dbutils.get_wrapper(db='session_templates')
 BASEKEY = "/sessionTemplates"
 
