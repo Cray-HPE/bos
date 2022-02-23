@@ -25,7 +25,7 @@ import logging
 
 from bos.operators.base import BaseOperator, main
 
-LOGGER = logging.getLogger('bos.operators.session_complete')
+LOGGER = logging.getLogger('bos.operators.session_completion')
 
 
 class SessionCompletionOperator(BaseOperator):

@@ -28,7 +28,7 @@ from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs,\
     BootArtifactStatesMatch, NOT
 
-LOGGER = logging.getLogger('bos.operators.graceful_power_off')
+LOGGER = logging.getLogger('bos.operators.power_off_graceful')
 
 
 class GracefulPowerOffOperator(BaseOperator):
