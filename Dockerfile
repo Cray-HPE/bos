@@ -65,12 +65,11 @@ RUN cd lib && pip3 install --no-cache-dir .
 
 # Testing image
 FROM base as testing
-WORKDIR /app/
-COPY src/server/bos/test lib/server/bos/test/
+WORKDIR /app
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
 RUN apk add --no-cache --repository https://arti.dev.cray.com/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
-RUN pip3 install --no-cache-dir -r test-requirements.txt
+RUN cd /app && pip3 install --no-cache-dir -r test-requirements.txt
 CMD [ "./docker_test_entry.sh" ]
 
 # Codestyle reporting

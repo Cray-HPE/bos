@@ -1,5 +1,6 @@
 -c constraints.txt
--r lib/server/test-requirements.txt
+-r lib/bos/client/requirements.txt
+-r lib/bos/server/requirements.txt
 
 testtools
 fixtures
@@ -14,5 +15,5 @@ pytest-cov
 # The purpose of this file is to contain python runtime requirements
 # for testing code, e.g., code authored by developers, as opposed to
 # automatically-generated code. Requirements from automatically-generated
-# code are stored in lib/server/test-requirements.txt (within the associated
+# code are built into lib/server/test-requirements.txt (within the associated
 # docker image), and are referenced above.
