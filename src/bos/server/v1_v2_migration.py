@@ -111,4 +111,4 @@ def migrate_v1_to_v2_session_templates():
 
 
 if __name__ == "__main__":
-  migrate_v1_to_v2_session_templates()
+    migrate_v1_to_v2_session_templates()
