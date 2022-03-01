@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# Copyright 2021 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,19 +20,37 @@
 #
 # (MIT License)
 
-CLI_VERSION="v5.3.0"
-cp ./api/openapi.yaml.in ./api/openapi.yaml
-docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i" openapitools/openapi-generator-cli:${CLI_VERSION} \
-  generate \
-    -i api/openapi.yaml \
-    -g python-flask \
-    -o src/ \
-    -c config/autogen-server.json \
-    --generate-alias-as-model
-rm ./api/openapi.yaml
-echo "Code has been generated within src for development purposes ONLY."
-echo "Code was generated using openapi-generator-cli version: $CLI_VERSION."
-echo "This project is setup to automatically generate server-side code as a"
-echo "function of Docker image build. Adjust .gitignore before checking in"
-echo "anything you did not author!"
+import logging
 
+from bos.server.models.healthz import Healthz as Healthz
+from bos.server import redis_db_utils
+
+DB = redis_db_utils.get_wrapper(db='options')
+
+LOGGER = logging.getLogger('bos.server.controllers.v2.healthz')
+
+
+def _get_db_status():
+    available = False
+    try:
+        if DB.info():
+            available = True
+    except Exception as e:
+        LOGGER.error(e)
+
+    if available:
+        return 'ok'
+    return 'not_available'
+
+
+def get_v2_healthz():
+    """GET /v2/healthz
+
+    Query BOS etcd for health status
+
+    :rtype: Healthz
+    """
+    return Healthz(
+        redis_status=_get_db_status,
+        api_status='ok',
+    ), 200

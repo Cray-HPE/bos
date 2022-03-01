@@ -29,7 +29,7 @@ from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction,\
     LastActionIs, BootArtifactStatesMatch, NOT
 
-LOGGER = logging.getLogger('bos.operators.forceful_power_off')
+LOGGER = logging.getLogger('bos.operators.power_off_forceful')
 
 
 class ForcefulPowerOffOperator(BaseOperator):

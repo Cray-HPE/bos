@@ -1,5 +1,5 @@
 {
   "packageVersion": "0.0.1",
-  "packageName": "bos.server",
+  "packageName": "bos.client",
   "serverPort": 80
 }

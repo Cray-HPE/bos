@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# Copyright 2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -20,20 +19,3 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 # (MIT License)
-
-CLI_VERSION="v5.3.0"
-cp ./api/openapi.yaml.in ./api/openapi.yaml
-docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i" openapitools/openapi-generator-cli:${CLI_VERSION} \
-  generate \
-    -i api/openapi.yaml \
-    -g python-flask \
-    -o src/ \
-    -c config/autogen-server.json \
-    --generate-alias-as-model
-rm ./api/openapi.yaml
-echo "Code has been generated within src for development purposes ONLY."
-echo "Code was generated using openapi-generator-cli version: $CLI_VERSION."
-echo "This project is setup to automatically generate server-side code as a"
-echo "function of Docker image build. Adjust .gitignore before checking in"
-echo "anything you did not author!"
-
