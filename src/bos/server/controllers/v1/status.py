@@ -28,7 +28,7 @@ import logging
 import pickle
 import flask
 
-from bos.dbclient import BosEtcdClient
+from bos.server.dbclient import BosEtcdClient
 from bos.models.v1_session_status import V1SessionStatus as SessionStatusModel
 from bos.models.v1_boot_set_status import V1BootSetStatus as BootSetStatus
 from bos.models.v1_node_change_list import V1NodeChangeList as NodeChangeList

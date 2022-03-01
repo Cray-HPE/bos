@@ -22,7 +22,6 @@
 
 import json
 import logging
-import requests
 
 from bos.server.dbclient import BosEtcdClient
 from bos.operators.utils import requests_retry_session
