@@ -25,7 +25,7 @@ import logging
 import requests
 
 from bos.server.dbclient import BosEtcdClient
-from bos.server.operators.utils import requests_retry_session
+from bos.operators.utils import requests_retry_session
 import bos.server.redis_db_utils as dbutils
 
 LOGGER = logging.getLogger('bos.server.v1_v2_migration')
