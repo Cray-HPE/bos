@@ -21,9 +21,9 @@
 # (MIT License)
 
 import connexion
-from datetime import datetime
 import logging
 
+from bos.common.utils import get_current_timestamp
 from bos.server import redis_db_utils as dbutils
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
@@ -312,7 +312,7 @@ def _populate_boot_artifacts(data):
 
 
 def _set_last_updated(data):
-    timestamp = datetime.utcnow().isoformat()
+    timestamp = get_current_timestamp()
     for section in ['actualState', 'desiredState', 'stagedState', 'lastAction']:
         if section in data and type(data[section]) == dict and data[section].keys() != {"bssToken"}:
             data[section]['lastUpdated'] = timestamp
