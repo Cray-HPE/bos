@@ -39,7 +39,7 @@ class TestHealthzController(unittest.TestCase):
 
         Get API health
         """
-        with mock.patch('bos.controllers.v1.healthz.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.healthz.BosEtcdClient') as mocked_class:
             mocked_class.return_value.__enter__.return_value.get.return_value = ('ok'.encode('utf-8'), 'metadata')  # noqa: E501
             healthz, response_code = v1_get_healthz()
             self.assertEqual(response_code, 200, "Response code tests as healthy")
@@ -50,7 +50,7 @@ class TestHealthzController(unittest.TestCase):
 
         Get API health
         """
-        with mock.patch('bos.controllers.v1.healthz.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.healthz.BosEtcdClient') as mocked_class:
             mocked_class.return_value.__enter__.return_value.get.return_value = ('so_sick'.encode('utf-8'), 'metadata')  # noqa: E501
             healthz, response_code = v1_get_healthz()
             self.assertEqual(response_code, 503, "Response code tests as unhealthy")

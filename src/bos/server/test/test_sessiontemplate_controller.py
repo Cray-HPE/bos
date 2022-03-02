@@ -43,7 +43,7 @@ class TestSessiontemplateController(testtools.TestCase):
 
         Create a Session Template
         """
-        with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
             # with Flask(__name__).test_request_context():
             # Generate mocked request data that would normally come from
             # the http request.
@@ -62,7 +62,7 @@ class TestSessiontemplateController(testtools.TestCase):
         Create a Session Template with actual data
         Verify that the data returned is accurate
         """
-        with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
             # Generate mocked request data that would normally come from
             # the http request.
             sample_template_create_req_data = {
@@ -102,7 +102,7 @@ class TestSessiontemplateController(testtools.TestCase):
 
         Get details for an existing session template
         """
-        with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
             db_response = '{"name": "test"}'.encode('utf-8'), None
             mocked_class.return_value.__enter__.return_value.get.return_value = db_response
             result, status = get_v1_sessiontemplate('test')
@@ -114,7 +114,7 @@ class TestSessiontemplateController(testtools.TestCase):
 
         Attempt to get details for a session template that does not exist
         """
-        with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
             db_response = ''.encode('utf-8'), None
             mocked_class.return_value.__enter__.return_value.get.return_value = db_response
             result = get_v1_sessiontemplate('test')
@@ -126,7 +126,7 @@ class TestSessiontemplateController(testtools.TestCase):
 
         List Session Templates
         """
-        with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
             db_response = []
             for st in 'abcd':
                 json_string = '{"name": "st_%s", "boot_sets": {"set1": []}}' % (st)
@@ -142,7 +142,7 @@ class TestSessiontemplateController(testtools.TestCase):
 
         List Session Templates
         """
-        with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
             db_response = []
             for st in '':
                 json_string = '{"name": "st_%s", "boot_sets": {"set1": []}}' % (st)
@@ -159,9 +159,9 @@ class TestSessiontemplateController(testtools.TestCase):
         Delete Session Template
         """
         template_to_delete = 'foo'
-        with mock.patch('bos.controllers.v1.sessiontemplate.get_v1_sessiontemplate') as mocked_st_func:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.get_v1_sessiontemplate') as mocked_st_func:
             mocked_st_func.return_value = ({"name": template_to_delete, "boot_sets": {"set1": []}}, 200)
-            with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+            with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
                 mocked_class.return_value.__enter__.return_value.delete.return_value = None
                 _, status = delete_v1_sessiontemplate(template_to_delete)
                 mocked_class.return_value.__enter__.return_value.delete.assert_called_once()
@@ -173,9 +173,9 @@ class TestSessiontemplateController(testtools.TestCase):
         Delete Session Template
         """
         template_to_delete = 'foo'
-        with mock.patch('bos.controllers.v1.sessiontemplate.get_v1_sessiontemplate') as mocked_st_func:
+        with mock.patch('bos.server.controllers.v1.sessiontemplate.get_v1_sessiontemplate') as mocked_st_func:
             mocked_st_func.return_value = problem(404, 'oops', 'more oops')
-            with mock.patch('bos.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
+            with mock.patch('bos.server.controllers.v1.sessiontemplate.BosEtcdClient') as mocked_class:
                 status = delete_v1_sessiontemplate(template_to_delete)
                 mocked_class.return_value.__enter__.return_value.delete.assert_not_called()
                 self.assertEqual(status.status_code, 404)

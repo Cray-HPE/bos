@@ -34,7 +34,7 @@ class TestSessionController(testtools.TestCase):
     """SessionController integration test stubs"""
 
     def test_get_v1_session(self):
-        with mock.patch('bos.controllers.v1.session.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.session.BosEtcdClient') as mocked_class:
             session_name = 'foo'
             db_response = [(session_name.encode('utf-8'), mock.MagicMock())]
             db_response[0][1].key.return_value = '//%s' % (session_name).encode('utf-8')
@@ -51,7 +51,7 @@ class TestSessionController(testtools.TestCase):
 
         Check for the expected handling when the session is not found.
         """
-        with mock.patch('bos.controllers.v1.session.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.session.BosEtcdClient') as mocked_class:
             session_name = 'foo'
             db_response = []
             mocked_class.return_value.__enter__.return_value.get_prefix.return_value = db_response
@@ -66,7 +66,7 @@ class TestSessionController(testtools.TestCase):
 
         List Sessions
         """
-        with mock.patch('bos.controllers.v1.session.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.session.BosEtcdClient') as mocked_class:
             db_responses = []
             for session_name in 'abcdefg':
                 db_responses.append((session_name.encode('utf-8'), mock.MagicMock()))
@@ -82,7 +82,7 @@ class TestSessionController(testtools.TestCase):
 
         List Sessions
         """
-        with mock.patch('bos.controllers.v1.session.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.session.BosEtcdClient') as mocked_class:
             db_responses = []
             for session_name in '':
                 db_responses.append((session_name.encode('utf-8'), mock.MagicMock()))
@@ -98,7 +98,7 @@ class TestSessionController(testtools.TestCase):
 
         Delete Session
         """
-        with mock.patch('bos.controllers.v1.session.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.session.BosEtcdClient') as mocked_class:
             mocked_class.return_value.__enter__.return_value.delete_prefix.return_value.deleted = 1
             result, status = delete_v1_session('test')
             self.assertEqual('', result)
@@ -109,7 +109,7 @@ class TestSessionController(testtools.TestCase):
 
         Delete a Session that does not exist
         """
-        with mock.patch('bos.controllers.v1.session.BosEtcdClient') as mocked_class:
+        with mock.patch('bos.server.controllers.v1.session.BosEtcdClient') as mocked_class:
             mocked_class.return_value.__enter__.return_value.delete_prefix.return_value.deleted = 0
             result, status = delete_v1_session('test')
             self.assertEqual(status, 404)

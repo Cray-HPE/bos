@@ -33,7 +33,7 @@ from bos.server.dbclient import BosEtcdClient
 from bos.server.utils import _canonize_xname
 from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, put_v2_sessiontemplate, delete_v2_sessiontemplate
 
-LOGGER = logging.getLogger('bos.controllers.v1.sessiontemplate')
+LOGGER = logging.getLogger('bos.server.controllers.v1.sessiontemplate')
 BASEKEY = "/sessionTemplate"
 
 EXAMPLE_BOOT_SET = {
