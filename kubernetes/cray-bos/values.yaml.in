@@ -61,6 +61,16 @@ cray-service:
         value: "https"
       - name: S3_GATEWAY
         value: "rgw-vip"
+      - name: S3_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "bos-s3-credentials"
+            key: access_key
+      - name: S3_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "bos-s3-credentials"
+            key: secret_key      
       # Default configuration for the number of retries is
       # 30 minutes (5s x 360 ~ 1800s or 30 minutes).
       # This value is placed in the boa-job-template config map.
