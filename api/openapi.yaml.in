@@ -960,6 +960,21 @@ components:
           type: integer
           description: How many attempts have been made for this action.
       additionalProperties: false
+    V2ComponentStatus:
+      description: Status information for the component
+      type: object
+      properties:
+        phase:
+          type: string
+          description: The current phase of the component in the boot process.
+        status:
+          type: string
+          description: The current status of the component.  More detailed than phase.
+          readOnly: true
+        onHold:
+          type: boolean
+          description: If true, BOS is waiting to confirm the current state of the component before taking actions
+      additionalProperties: false
     V2Component:
       description: |
         The current and desired artifacts state for a component.
@@ -976,6 +991,8 @@ components:
           $ref: '#/components/schemas/V2ComponentStagedState'
         lastAction:
           $ref: '#/components/schemas/V2ComponentLastAction'
+        status:
+          $ref: '#/components/schemas/V2ComponentStatus'
         enabled:
           type: boolean
           description: A flag indicating if actions should be taken for this component.
@@ -1976,6 +1993,26 @@ paths:
           in: query
           description: >-
             Retrieve the components with the "enabled" state.
+        - name: phase
+          schema:
+            type: string
+          in: query
+          description: >-
+            Retrieve the components in the given phase.
+          enum: ['powering-on', 'powering-off', 'configuring', '']
+        - name: status
+          schema:
+            type: string
+          in: query
+          description: >-
+            Retrieve the components with the given status.
+          enum: ['power-on-pending', 'power-on-called', 'power-off-pending', 'power-off-gracefully-called', 'power-off-forcefully-called', 'configuring', 'stable', 'failed', 'on-hold']
+        - name: on_hold
+          schema:
+            type: boolean
+          in: query
+          description: >-
+            Retrieve the components with the given "onHold" state.
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'

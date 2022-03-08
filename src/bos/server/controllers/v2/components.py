@@ -38,7 +38,7 @@ EMPTY_BOOT_ARTIFACTS = {
 
 
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None):
+def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None, on_hold=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -52,11 +52,13 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None):
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
-    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session)
+    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
+                                      phase=phase, status=status, on_hold=on_hold)
     return response, 200
 
 
-def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None):
+def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
+                           phase=None, status=None, on_hold=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -72,16 +74,23 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # and require paging to be implemented
         response = DB.get_all()
     if enabled is not None or session is not None or staged_session is not None:
-        response = [r for r in response if _matches_filter(r, enabled, session, staged_session)]
+        response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status, on_hold)]
     return response
 
 
-def _matches_filter(data, enabled, session, staged_session):
+def _matches_filter(data, enabled, session, staged_session, phase, status, on_hold):
     if enabled is not None and data.get('enabled', None) != enabled:
         return False
     if session is not None and data.get('session', None) != session:
         return False
     if staged_session is not None and data.get('stagedState', {}).get('session', None) != staged_session:
+        return False
+    status_data = data.get('status')
+    if phase is not None and status_data.get('phase') != phase:
+        return False
+    if status is not None and status_data.get('status') != status:
+        return False
+    if on_hold is not None and status_data.get('onHold') != on_hold:
         return False
     return True
 
