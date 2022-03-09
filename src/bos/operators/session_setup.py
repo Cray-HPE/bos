@@ -30,6 +30,7 @@ from bos.operators.utils.clients.hsm import Inventory
 from bos.operators.utils.clients.s3 import S3Object
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.rootfs.factory import ProviderFactory
+from bos.common.values import Action
 
 LOGGER = logging.getLogger('bos.operators.session_setup')
 EMPTY_BOOT_ARTIFACTS = {
@@ -74,6 +75,7 @@ class SessionSetupOperator(BaseOperator):
 
 
 class Session:
+
     def __init__(self, data, inventory_cache, bos_client):
         self.session_data = data
         self.inventory = inventory_cache
@@ -110,7 +112,6 @@ class Session:
             self.bos_client.components.update_components(data)
         return list(set(all_component_ids))
 
-
     def _get_boot_set_component_list(self, boot_set):
         nodes = set()
         # Populate from nodelist
@@ -119,13 +120,13 @@ class Session:
         # Populate from node_groups
         for group_name in boot_set.get('node_groups', []):
             if group_name not in self.inventory.groups:
-                self._log(LOGGER.warning, "No hardware matching label {}".format(group_name))
+                self._log(LOGGER.warning, f"No hardware matching label {group_name}")
                 continue
             nodes |= self.inventory.groups[group_name]
         # Populate from node_roles_groups
         for role_name in boot_set.get('node_roles_groups', []):
             if role_name not in self.inventory.roles:
-                self._log(LOGGER.warning, "No hardware matching role {}".format(role_name))
+                self._log(LOGGER.warning, f"No hardware matching role {role_name}")
                 continue
             nodes |= self.inventory.roles[role_name]
         # Filter to nodes defined by limit
@@ -139,7 +140,7 @@ class Session:
         if not session_limit:
             # No limit is defined, so all nodes are allowed
             return nodes
-        self._log(LOGGER.info, 'Applying limit to session: {}'.format(session_limit))
+        self._log(LOGGER.info, f'Applying limit to session: {session_limit}')
         limit_node_set = set()
         for limit in session_limit.split(','):
             if limit[0] == '&':
@@ -183,6 +184,9 @@ class Session:
                     "bssToken": ""
                 }
             data["enabled"] = True
+            # Set node's lastAction
+            data["lastAction"] = {"action": Action.session_setup,
+                                  "numAttempts": 1}
         return data
 
     def _generate_desired_state(self, boot_set):
