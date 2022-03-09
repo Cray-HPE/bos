@@ -51,7 +51,7 @@ MAX_COMPONENTS_IN_ERROR_DETAILS = 10
 @dbutils.redis_error_handler
 def post_v2_session():  # noqa: E501
     """POST /v2/session
-    Creates a new boot session. # noqa: E501
+    Creates a new session. # noqa: E501
     :param session: A JSON object for creating sessions
     :type session: dict | bytes
 
@@ -65,10 +65,11 @@ def post_v2_session():  # noqa: E501
         LOGGER.debug("Received: %s", connexion.request.get_json())
         session_create = SessionCreate.from_dict(connexion.request.get_json())  # noqa: E501
     else:
-        return "Post must be in JSON format", 400
+        msg = "Post must be in JSON format"
+        LOGGER.error(msg)
+        return msg, 400
     template_name = session_create.template_name
-    LOGGER.debug("Template Name: %s operation: %s", template_name,
-                 session_create.operation)
+    LOGGER.debug(f"Template Name: {template_name} operation: {session_create.operation}")
     # Check that the templateName exists.
     session_template_response = get_v2_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
@@ -139,9 +140,11 @@ def _validate_boot_sets(session_template: dict, operation: str) -> tuple[str, in
 
             # Check boot artifacts' S3 headers
             for boot_artifact in ["kernel", "initrd", "boot_parameters"]:
-                obj = S3Object(getattr(image_metadata.boot_artifacts, boot_artifact)['link']['path'],
-                               getattr(image_metadata.boot_artifacts, boot_artifact)['link']['etag'])
                 try:
+                    artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
+                    path = artifact ['link']['path']
+                    etag = artifact['link']['etag']
+                    obj = S3Object(path, etag)
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: {template_name} boot set: {bs_name} " \
