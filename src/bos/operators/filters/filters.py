@@ -22,11 +22,11 @@
 # (MIT License)
 
 import copy
-from datetime import datetime, timedelta
-from dateutil import parser
+from datetime import timedelta
 import logging
 from typing import List, Type
 
+from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.clients.capmc import status as get_power_state
@@ -140,8 +140,8 @@ class TimeSinceLastAction(LocalFilter):
 
     def _match(self, component: dict) -> bool:
         last_action_time = component.get('lastAction', {}).get('lastUpdated')
-        now = datetime.utcnow()
-        if not last_action_time or now > parser.parse(last_action_time) + timedelta(**self.kwargs):
+        now = get_current_time()
+        if not last_action_time or now > load_timestamp(last_action_time) + timedelta(**self.kwargs):
             return True
         return False
 

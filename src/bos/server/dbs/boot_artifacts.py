@@ -20,9 +20,9 @@
 #
 # (MIT License)
 
-from datetime import datetime
 import logging
 
+from bos.common.utils import get_current_timestamp
 from bos.server import redis_db_utils as dbutils
 
 LOGGER = logging.getLogger('bos.server.dbs.boot_artifacts')
@@ -55,7 +55,7 @@ def record_boot_artifacts(token: str,
     TOKENS_DB.put(token, {"kernel": kernel,
                                  "kernel_parameters": kernel_parameters,
                                  "initrd": initrd,
-                                 "timestamp": datetime.utcnow().isoformat()
+                                 "timestamp": get_current_timestamp()
                                  })
 
 

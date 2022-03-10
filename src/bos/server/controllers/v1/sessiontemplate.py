@@ -33,7 +33,7 @@ from bos.server.dbclient import BosEtcdClient
 from bos.server.utils import _canonize_xname
 from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, put_v2_sessiontemplate, delete_v2_sessiontemplate
 
-LOGGER = logging.getLogger('bos.controllers.v1.sessiontemplate')
+LOGGER = logging.getLogger('bos.server.controllers.v1.sessiontemplate')
 BASEKEY = "/sessionTemplate"
 
 EXAMPLE_BOOT_SET = {
@@ -94,7 +94,7 @@ def create_v1_sessiontemplate():  # noqa: E501
     try:
         """Convert the JSON request data into a SessionTemplate object.
            Any exceptions caught here would be generated from the model
-           (i.e. bos.models.session_template).
+           (i.e. bos.server.models.session_template).
            An example is an exception for a session template name that
            does not confirm to Kubernetes naming convention.
            In this case return 400 with a description of the specific error.

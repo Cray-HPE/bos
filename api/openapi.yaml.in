@@ -1205,7 +1205,7 @@ paths:
       description: Return list of versions currently running.
       tags:
         - version
-      x-openapi-router-controller: bos.controllers.base
+      x-openapi-router-controller: bos.server.controllers.base
       responses:
         200:
           $ref: '#/components/responses/Version'
@@ -1218,7 +1218,7 @@ paths:
       summary: Get API version
       tags:
         - version
-      x-openapi-router-controller: bos.controllers.v1.base
+      x-openapi-router-controller: bos.server.controllers.v1.base
       operationId: v1_get
       responses:
         200:
@@ -1230,7 +1230,7 @@ paths:
       summary: Get service health details
       tags:
         - healthz
-      x-openapi-router-controller: bos.controllers.v1.healthz
+      x-openapi-router-controller: bos.server.controllers.v1.healthz
       operationId: v1_get_healthz
       description:
         Get bos health details.
@@ -1246,7 +1246,7 @@ paths:
       summary: Create session template
       tags:
         - sessiontemplate
-      x-openapi-router-controller: bos.controllers.v1.sessiontemplate
+      x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
       operationId: create_v1_sessiontemplate
       description:
         Create a new session template.
@@ -1269,7 +1269,7 @@ paths:
         uniquely identified by the name.
       tags:
         - sessiontemplate
-      x-openapi-router-controller: bos.controllers.v1.sessiontemplate
+      x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
       operationId: get_v1_sessiontemplates
       responses:
         200:
@@ -1296,7 +1296,7 @@ paths:
         of the session template.
       tags:
         - sessiontemplate
-      x-openapi-router-controller: bos.controllers.v1.sessiontemplate
+      x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
       operationId: get_v1_sessiontemplate
       responses:
         200:
@@ -1308,7 +1308,7 @@ paths:
       description: Delete a session template.
       tags:
         - sessiontemplate
-      x-openapi-router-controller: bos.controllers.v1.sessiontemplate
+      x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
       operationId: delete_v1_sessiontemplate
       responses:
         204:
@@ -1324,7 +1324,7 @@ paths:
         session templates.
       tags:
         - sessiontemplate
-      x-openapi-router-controller: bos.controllers.v1.sessiontemplate
+      x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
       operationId: get_v1_sessiontemplatetemplate
       responses:
         200:
@@ -1338,7 +1338,7 @@ paths:
         on the boot set(s) defined in the session template.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.session
+      x-openapi-router-controller: bos.server.controllers.v1.session
       operationId: create_v1_session
       requestBody:
          description: A JSON object for creating a Session
@@ -1358,7 +1358,7 @@ paths:
         List all sessions, including those in progress and those complete.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.session
+      x-openapi-router-controller: bos.server.controllers.v1.session
       operationId: get_v1_sessions
       responses:
         200:
@@ -1375,7 +1375,7 @@ paths:
       description: Get session details by session_id.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.session
+      x-openapi-router-controller: bos.server.controllers.v1.session
       operationId: get_v1_session
       responses:
         200:
@@ -1387,7 +1387,7 @@ paths:
       description: Delete session by session_id.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.session
+      x-openapi-router-controller: bos.server.controllers.v1.session
       operationId: delete_v1_session
       responses:
         204:
@@ -1415,7 +1415,7 @@ paths:
         A list of the statuses for the different boot sets.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: get_v1_session_status
       responses:
         200:
@@ -1428,7 +1428,7 @@ paths:
         Creates the initial session status.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: create_v1_session_status
       requestBody:
          description: A JSON object for creating the status for a session
@@ -1448,7 +1448,7 @@ paths:
         Update the session status. You can update the start or stop times.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: update_v1_session_status
       requestBody:
         description: A JSON object for updating the status for a session
@@ -1468,7 +1468,7 @@ paths:
         Deletes an existing Session status
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: delete_v1_session_status
       responses:
         204:
@@ -1494,7 +1494,7 @@ paths:
       description: Get the status for a boot set.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: get_v1_session_status_by_bootset
       responses:
         200:
@@ -1512,7 +1512,7 @@ paths:
       tags:
         - session
         - status
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: create_v1_boot_set_status
       requestBody:
         description: A JSON object for creating a status for a Boot Set
@@ -1536,7 +1536,7 @@ paths:
       tags:
         - session
         # - cli_ignore
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: update_v1_session_status_by_bootset
       requestBody:
          description: A JSON object for updating the status for a session
@@ -1563,7 +1563,7 @@ paths:
         Deletes an existing Boot Set status
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: delete_v1_boot_set_status
       responses:
         204:
@@ -1595,7 +1595,7 @@ paths:
       description: Get the status for a specific boot set and phase.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: get_v1_session_status_by_bootset_and_phase
       responses:
         200:
@@ -1637,7 +1637,7 @@ paths:
       description: Get the status for a specific boot set, phase, and category.
       tags:
         - session
-      x-openapi-router-controller: bos.controllers.v1.status
+      x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: get_v1_session_status_by_bootset_and_phase_and_category
       responses:
         200:
@@ -1653,7 +1653,7 @@ paths:
       summary: Get API version
       tags:
         - version
-      x-openapi-router-controller: bos.controllers.v1.base
+      x-openapi-router-controller: bos.server.controllers.v1.base
       operationId: v1_get_version
       responses:
         200:
@@ -1667,7 +1667,7 @@ paths:
       tags:
         - v2
         - version
-      x-openapi-router-controller: bos.controllers.v2.base
+      x-openapi-router-controller: bos.server.controllers.v2.base
       operationId: get_v2
       responses:
         200:
@@ -1680,7 +1680,7 @@ paths:
       tags:
         - v2
         - healthz
-      x-openapi-router-controller: bos.controllers.v2.healthz
+      x-openapi-router-controller: bos.server.controllers.v2.healthz
       operationId: get_v2_healthz
       description:
         Get bos health details.
@@ -1700,7 +1700,7 @@ paths:
       tags:
         - v2
         - sessiontemplates
-      x-openapi-router-controller: bos.controllers.v2.sessiontemplates
+      x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: get_v2_sessiontemplates
       responses:
         200:
@@ -1722,7 +1722,7 @@ paths:
       tags:
         - v2
         - sessiontemplatess
-      x-openapi-router-controller: bos.controllers.v2.sessiontemplates
+      x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: get_v2_sessiontemplate
       responses:
         200:
@@ -1734,7 +1734,7 @@ paths:
       tags:
         - v2
         - sessiontemplates
-      x-openapi-router-controller: bos.controllers.v2.sessiontemplates
+      x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: put_v2_sessiontemplate
       description:
         Create a new session template.
@@ -1755,7 +1755,7 @@ paths:
       tags:
         - v2
         - sessiontemplates
-      x-openapi-router-controller: bos.controllers.v2.sessiontemplates
+      x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: patch_v2_sessiontemplate
       requestBody:
         description: A JSON object for updating a session template
@@ -1775,7 +1775,7 @@ paths:
       tags:
         - v2
         - sessiontemplates
-      x-openapi-router-controller: bos.controllers.v2.sessiontemplates
+      x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: delete_v2_sessiontemplate
       responses:
         204:
@@ -1792,7 +1792,7 @@ paths:
       tags:
         - v2
         - sessiontemplates
-      x-openapi-router-controller: bos.controllers.v2.sessiontemplates
+      x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: get_v2_sessiontemplatetemplate
       responses:
         200:
@@ -1807,7 +1807,7 @@ paths:
       tags:
         - v2
         - sessions
-      x-openapi-router-controller: bos.controllers.v2.sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: post_v2_session
       requestBody:
          $ref: '#/components/requestBodies/V2sessionCreateRequest'
@@ -1823,7 +1823,7 @@ paths:
       tags:
         - v2
         - sessions
-      x-openapi-router-controller: bos.controllers.v2.sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_sessions
       parameters:
         - name: min_age
@@ -1853,7 +1853,7 @@ paths:
       tags:
         - v2
         - sessions
-      x-openapi-router-controller: bos.controllers.v2.sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: delete_v2_sessions
       parameters:
         - name: min_age
@@ -1890,7 +1890,7 @@ paths:
       tags:
         - v2
         - sessions
-      x-openapi-router-controller: bos.controllers.v2.sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_session
       responses:
         200:
@@ -1902,7 +1902,7 @@ paths:
       tags:
         - v2
         - sessions
-      x-openapi-router-controller: bos.controllers.v2.sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
       description: Update the state for a given session in the BOS database
       operationId: patch_v2_session
       requestBody:
@@ -1920,7 +1920,7 @@ paths:
       tags:
         - v2
         - sessions
-      x-openapi-router-controller: bos.controllers.v2.sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: delete_v2_session
       responses:
         204:
@@ -1940,7 +1940,7 @@ paths:
       tags:
         - v2
         - components
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       description: >-
         Retrieve the full collection of components in the form of a
         ComponentArray. Full results can also be filtered by query
@@ -1987,7 +1987,7 @@ paths:
         - v2
         - components
         - cli_ignore
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       description: Update the state for a collection of components in the BOS database
       operationId: put_v2_components
       requestBody:
@@ -2003,7 +2003,7 @@ paths:
         - v2
         - components
         - cli_ignore
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       description: Update the state for a collection of components in the BOS database
       operationId: patch_v2_components
       requestBody:
@@ -2021,7 +2021,7 @@ paths:
       tags:
         - v2
         - components
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       description: Retrieve the current and desired state of a single component
       operationId: get_v2_component
       responses:
@@ -2036,7 +2036,7 @@ paths:
       tags:
         - v2
         - components
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       description: Update the state for a given component in the BOS database
       operationId: put_v2_component
       requestBody:
@@ -2051,7 +2051,7 @@ paths:
       tags:
         - v2
         - components
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       description: Update the state for a given component in the BOS database
       operationId: patch_v2_component
       requestBody:
@@ -2069,7 +2069,7 @@ paths:
         - components
         - cli_ignore
       summary: Delete a single component
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       description: Delete the given component
       operationId: delete_v2_component
       responses:
@@ -2095,7 +2095,7 @@ paths:
       tags:
         - v2
         - applystaged
-      x-openapi-router-controller: bos.controllers.v2.components
+      x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: post_v2_apply_staged
       requestBody:
          $ref: '#/components/requestBodies/V2applyStagedRequest'
@@ -2109,7 +2109,7 @@ paths:
       summary: Retrieve the BOS service options
       tags:
         - options
-      x-openapi-router-controller: bos.controllers.v2.options
+      x-openapi-router-controller: bos.server.controllers.v2.options
       description: Retrieve the list of BOS service options.
       operationId: get_v2_options
       responses:
@@ -2120,7 +2120,7 @@ paths:
       tags:
         - v2
         - options
-      x-openapi-router-controller: bos.controllers.v2.options
+      x-openapi-router-controller: bos.server.controllers.v2.options
       operationId: patch_v2_options
       description: Update one or more of the BOS service options.
       requestBody:
@@ -2136,7 +2136,7 @@ paths:
       tags:
         - v2
         - version
-      x-openapi-router-controller: bos.controllers.v2.base
+      x-openapi-router-controller: bos.server.controllers.v2.base
       operationId: get_version_v2
       responses:
         200:

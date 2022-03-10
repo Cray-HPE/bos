@@ -21,13 +21,13 @@
 # (MIT License)
 
 import connexion
-import datetime
-from dateutil.parser import parse
+from datetime import timedelta
 import re
 import logging
 import uuid
 from connexion.lifecycle import ConnexionResponse
 
+from bos.common.utils import get_current_time, get_current_timestamp, load_timestamp
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
@@ -96,7 +96,7 @@ def post_v2_session():  # noqa: E501
 def _create_session(session_create):
     initial_status = {
         'status': 'pending',
-        'startTime': datetime.datetime.now().isoformat(timespec='seconds'),
+        'startTime': get_current_timestamp(),
     }
     body = {
         'name': str(uuid.uuid4()),
@@ -217,7 +217,7 @@ def _matches_filter(data, min_start, max_start, status):
     start_time = session_status['startTime']
     session_start = None
     if start_time:
-        session_start = parse(start_time).replace(tzinfo=None)
+        session_start = load_timestamp(start_time)
     if min_start and (not session_start or session_start < min_start):
         return False
     if max_start and (not session_start or session_start > max_start):
@@ -231,8 +231,8 @@ def _age_to_timestamp(age):
         result = re.search('(\d+)\w*{}'.format(interval[0]), age, re.IGNORECASE)
         if result:
             delta[interval] = int(result.groups()[0])
-    delta = datetime.timedelta(**delta)
-    return datetime.datetime.now() - delta
+    delta = timedelta(**delta)
+    return get_current_time() - delta
 
 
 class ParsingException(Exception):

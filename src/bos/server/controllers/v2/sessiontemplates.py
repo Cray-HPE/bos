@@ -97,7 +97,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     try:
         """Convert the JSON request data into a SessionTemplate object.
            Any exceptions caught here would be generated from the model
-           (i.e. bos.models.session_template).
+           (i.e. bos.server.models.session_template).
            An example is an exception for a session template name that
            does not confirm to Kubernetes naming convention.
            In this case return 400 with a description of the specific error.
@@ -199,7 +199,7 @@ def patch_v2_sessiontemplate(session_template_id):
     try:
         """Convert the JSON request data into a SessionTemplate object.
            Any exceptions caught here would be generated from the model
-           (i.e. bos.models.session_template).
+           (i.e. bos.server.models.session_template).
            An example is an exception for a session template name that
            does not confirm to Kubernetes naming convention.
            In this case return 400 with a description of the specific error.
