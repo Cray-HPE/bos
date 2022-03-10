@@ -23,7 +23,7 @@
 
 import logging
 
-from bos.common.values import Action
+from bos.common.values import Action, Status
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs,\
@@ -34,12 +34,8 @@ LOGGER = logging.getLogger('bos.operators.power_off_graceful')
 
 class GracefulPowerOffOperator(BaseOperator):
     """
-    The Graceful Power-Off Operator tells capmc to power-off nodes if:
-    - Enabled in the BOS database.
-    - DesiredState != CurrentState
-    - LastAction = Complete, Recovery or not set
+    - Enabled in the BOS database and the status is power_off_pending
     - Enabled in HSM
-    - Powered on.
     """
 
     @property
@@ -50,11 +46,8 @@ class GracefulPowerOffOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True),
-            NOT(BootArtifactStatesMatch()),
-            LastActionIs('Complete,Recovery,'),
+            BOSQuery(enabled=True, status=Status.power_off_pending),
             HSMState(enabled=True),
-            PowerState(state='on')
         ]
 
     def _act(self, components):
