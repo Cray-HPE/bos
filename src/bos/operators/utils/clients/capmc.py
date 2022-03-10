@@ -21,7 +21,6 @@
 # (MIT License)
 
 import logging
-import time
 import requests
 import json
 from collections import defaultdict
@@ -88,8 +87,8 @@ def status(nodes, filtertype='show_all', session=None):
         raise
     # Check for error state in the returned response and retry
     if json_response['e']:
-        LOGGER.error("CAPMC responded with an error response code '%s': %s"
-                     % (json_response['e'], json_response))
+        LOGGER.error("CAPMC responded with an error response code '%s': %s",
+                     json_response['e'], json_response)
 
     failed_nodes, errors = parse_response(json_response)
 
@@ -155,7 +154,7 @@ def parse_response(response):
     return failed_nodes, reasons_for_failure
 
 
-def power(nodes, state, force=True, session=None, reason="BOS: Powering nodes"):
+def power(nodes, state, force=True, session=None, cont=True, reason="BOS: Powering nodes"):
     """
     Sets a node to a power state using CAPMC; returns a set of nodes that were unable to achieve
     that state.
@@ -168,6 +167,8 @@ def power(nodes, state, force=True, session=None, reason="BOS: Powering nodes"):
       state (string): Power state: off or on
       force (bool): Should the power off be forceful (True) or not forceful (False)
       session (Requests.session object): A Requests session instance
+      cont (bool): Request that the API continues the requested operation when one
+        or more of the requested components fails their action.
 
     Returns:
       failed (set): the nodes that failed to enter the desired power state
@@ -191,9 +192,9 @@ def power(nodes, state, force=True, session=None, reason="BOS: Powering nodes"):
     power_endpoint = '%s/%s_%s' % (ENDPOINT, prefix, state)
 
     if state == "on":
-        json_response = call(power_endpoint, nodes, output_format, reason)
+        json_response = call(power_endpoint, nodes, output_format, cont, reason)
     elif state == "off":
-        json_response = call(power_endpoint, nodes, output_format, reason, force=force)
+        json_response = call(power_endpoint, nodes, output_format, cont, reason, force=force)
 
     failed_nodes, errors = parse_response(json_response)
     return failed_nodes, errors
@@ -206,7 +207,7 @@ def node_type(nodes):
     return ('node', 'nids') if list(nodes)[0].startswith('nid') else ('xname', 'xnames')
 
 
-def call(endpoint, nodes, node_format='xnames', reason="None given", session=None, **kwargs):
+def call(endpoint, nodes, node_format='xnames', cont=True, reason="None given", session=None, **kwargs):
     '''
     This function makes a call to the Cray Advanced Platform Monitoring and Control (CAPMC)
     Args:
@@ -223,7 +224,8 @@ def call(endpoint, nodes, node_format='xnames', reason="None given", session=Non
     Returns: The parsed JSON response from the JSON based API.
     '''
     payload = {'reason': reason,
-               node_format: list(nodes)}
+               node_format: list(nodes),
+               'continue': cont}
     session = session or requests_retry_session()
     if kwargs:
         payload.update(kwargs)
