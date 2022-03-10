@@ -85,5 +85,9 @@ class Options:
     def max_component_wait_time(self):
         return self.get_option('maxComponentWaitTime', int, 300)
 
+    @property
+    def disable_components_on_completion(self):
+        return self.get_option('disableComponentsOnCompletion', bool, True)
+
 
 options = Options()

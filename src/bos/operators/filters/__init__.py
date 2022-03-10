@@ -21,10 +21,10 @@
 #
 # (MIT License)
 
-from .filters import BOSQuery, HSMState, PowerState, ConfigurationStatus, TimeSinceLastAction,\
+from .filters import BOSQuery, HSMState, TimeSinceLastAction,\
     LastActionIs, BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,\
     DesiredConfigurationIsNone, OR, NOT
 
-__all__ = [BOSQuery, HSMState, PowerState, ConfigurationStatus, TimeSinceLastAction, LastActionIs,
+__all__ = [BOSQuery, HSMState, TimeSinceLastAction, LastActionIs,
            BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,
            DesiredConfigurationIsNone, OR, NOT]

@@ -38,7 +38,7 @@ EMPTY_BOOT_ARTIFACTS = {
 
 
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None, on_hold=None):
+def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -53,12 +53,12 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
     response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
-                                      phase=phase, status=status, on_hold=on_hold)
+                                      phase=phase, status=status)
     return response, 200
 
 
 def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
-                           phase=None, status=None, on_hold=None):
+                           phase=None, status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -74,11 +74,11 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # and require paging to be implemented
         response = DB.get_all()
     if enabled is not None or session is not None or staged_session is not None:
-        response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status, on_hold)]
+        response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
     return response
 
 
-def _matches_filter(data, enabled, session, staged_session, phase, status, on_hold):
+def _matches_filter(data, enabled, session, staged_session, phase, status):
     if enabled is not None and data.get('enabled', None) != enabled:
         return False
     if session is not None and data.get('session', None) != session:
@@ -89,8 +89,6 @@ def _matches_filter(data, enabled, session, staged_session, phase, status, on_ho
     if phase is not None and status_data.get('phase') != phase:
         return False
     if status is not None and status_data.get('status') != status:
-        return False
-    if on_hold is not None and status_data.get('onHold') != on_hold:
         return False
     return True
 
