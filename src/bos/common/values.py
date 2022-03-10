@@ -10,16 +10,18 @@ class Actions:
     power_on = "powering_on"
     power_off_gracefully = "powering_off_gracefully"
     power_off_forcefully = "powering_off_forcefully"
+    apply_staged = "apply_staged"
     session_setup = "session_setup"
+    newly_discovered = "newly_discovered"
 
 # Status
 class Status:
-    power_on_pending
-    power_on_called
-    power_off_pending
-    power_off_gracefully_called
-    power_off_forcefully_called
-    configuring
-    stable
-    failed
-    on_hold # TODO
+    power_on_pending = "power_on_pending"
+    power_on_called = "power_on_called"
+    power_off_pending = "power_off_pending"
+    power_off_gracefully_called = "power_off_gracefully_called"
+    power_off_forcefully_called = "power_off_forcefully_called"
+    configuring = "configuring"
+    stable = "stable"
+    failed = "failed"
+    on_hold = "on_hold"

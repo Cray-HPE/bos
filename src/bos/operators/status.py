@@ -23,6 +23,7 @@
 
 import logging
 
+from bos.common.values  import Phase, Status, Action
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsNone, BootArtifactStatesMatch,\
     DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
@@ -44,7 +45,7 @@ class StatusOperator(BaseOperator):
         self.desired_boot_state_is_none = DesiredBootStateIsNone()._match
         self.boot_artifact_states_match = BootArtifactStatesMatch()._match
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
-        self.last_action_is_power_on = LastActionIs('Power-On')._match
+        self.last_action_is_power_on = LastActionIs(Action.power_on)._match
         self.wait_time_elapsed = TimeSinceLastAction(minutes=options.max_component_wait_time)._match
 
     @property
@@ -126,44 +127,45 @@ class StatusOperator(BaseOperator):
         error = ''
 
         status_data = component.get('status', {})
-        if status_data.get('status') == 'failed':
+        if status_data.get('status') == Status.failed:
             disable = True  # Failed state - the aggregated status if "failed"
         if power_state == 'off':
             if self.desired_boot_state_is_none(component):
-                phase = ''
+                phase = Phase.none
                 disable = True  # Successful state - desired and actual state are off
             else:
-                phase = 'powering-on'
+                phase = Phase.powering_on
         elif power_state == 'on':
             if self.boot_artifact_states_match(component):
                 if self.desired_configuration_is_none(component, cfs_component):
-                    phase = ''
+                    phase = Phase.none
                     disable = True  # Successful state - booted with the correct artifacts, no configuration necessary
                 else:
                     cfs_status = cfs_component.get('configurationStatus')
                     if cfs_status == 'configured':
-                        phase = ''
+                        phase = Phase.none
                         disable = True  # Successful state - booted with the correct artifacts and configured
                     elif cfs_status == 'failed':
-                        phase = 'configuring'
+                        phase = Phase.configuring
                         disable = True  # Failed state - configuration failed
-                        override = 'failed'
+                        override = Status.failed
+                        error = 'cfs configuration failed'
                     elif cfs_status is 'pending':
-                        phase = 'configuring'
+                        phase = Phase.configuring
                     else:
-                        phase = 'configuring'
+                        phase = Phase.configuring
                         disable = True  # Failed state - configuration is no longer set
-                        override = 'failed'
+                        override = Status.failed
                         error = 'cfs is not reporting a valid configuration status for this component'
             else:
                 if self.last_action_is_power_on(component) and not self.wait_time_elapsed(component):
-                    phase = 'powering-on'
+                    phase = Phase.powering_on
                 else:
                     # Includes both power-off for restarts and ready-recovery scenario
-                    phase = 'powering-off'
+                    phase = Phase.powering_off
         else:
             disable = True  # Failed state - configuration is no longer set
-            override = 'failed'
+            override = Status.failed
             error = 'capmc is not reporting a valid power state for this component'
 
         return phase, disable, override, error
