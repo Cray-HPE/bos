@@ -25,6 +25,7 @@ from collections import defaultdict
 import logging
 from requests import HTTPError
 
+from bos.common.values import Action
 import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.utils.clients.bos.options import options
@@ -49,7 +50,7 @@ class PowerOnOperator(BaseOperator):
 
     @property
     def name(self):
-        return 'Power-On'
+        return Action.power_on
 
     # Filters
     @property
@@ -59,7 +60,7 @@ class PowerOnOperator(BaseOperator):
             NOT(DesiredBootStateIsNone()),
             OR(
                 # If the last action was power-on, wait before retrying
-                [NOT(LastActionIs('Power-On'))],
+                [NOT(LastActionIs(Action.power_on))],
                 [TimeSinceLastAction(seconds=options.max_component_wait_time)]
             ),
             OR(

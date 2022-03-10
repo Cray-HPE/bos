@@ -23,6 +23,7 @@
 
 import logging
 
+from bos.common.values import Action
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs,\
@@ -43,7 +44,7 @@ class GracefulPowerOffOperator(BaseOperator):
 
     @property
     def name(self):
-        return 'Graceful-Power-Off'
+        return Action.power_off_gracefully
 
     # Filters
     @property

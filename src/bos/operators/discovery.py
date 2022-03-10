@@ -26,11 +26,10 @@ import time
 from typing import List, NoReturn, Set
 from copy import copy
 
-import bos.operators.utils.clients.capmc as capmc
+from bos.common.values import Action
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.hsm import read_all_node_xnames, HWStateManagerException
 from bos.operators.base import BaseOperator, main, _update_log_level
-from bos.operators.filters import BOSQuery, HSMState
 from bos.operators.utils.clients.bos.components import ComponentEndpoint
 
 LOGGER = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ NEW_COMPONENT = {'id': None,
                  'actualState': BLANK_STATE,
                  'desiredState': BLANK_STATE,
                  'stagedState': {},
-                 'lastAction': {'action': 'Newly Discovered',
+                 'lastAction': {'action': Action.newly_discovered,
                                 'numAttempts': 1},
                  'enabled': False,
                  'error': '',

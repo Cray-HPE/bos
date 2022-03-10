@@ -23,6 +23,7 @@
 
 import logging
 
+from bos.common.values import Action
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
@@ -45,7 +46,7 @@ class ForcefulPowerOffOperator(BaseOperator):
 
     @property
     def name(self):
-        return 'Forceful-Power-Off'
+        return Action.power_off_forcefully
 
     # Filters
     @property
@@ -53,7 +54,7 @@ class ForcefulPowerOffOperator(BaseOperator):
         return [
             BOSQuery(enabled=True),
             NOT(BootArtifactStatesMatch()),
-            LastActionIs('Graceful-Power-Off,Forceful-Power-Off'),
+            LastActionIs(','.join([Action.power_off_forcefully, Action.power_off_gracefully])),
             TimeSinceLastAction(seconds=options.max_component_wait_time),
             HSMState(enabled=True),
             PowerState(state='on')

@@ -24,6 +24,7 @@ import connexion
 import logging
 
 from bos.common.utils import get_current_timestamp
+from bos.common.values import Phase, Action, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
@@ -95,22 +96,22 @@ def _get_status(data):
 
     phase = status_data.get('phase', '')
     last_action = data.get('lastAction', {}).get('action', '')
-    if phase == 'powering-on':
-        if last_action == 'PowerOn':
-            return 'power-on-called'
+    if phase == Phase.powering_on:
+        if last_action == Action.power_on:
+            return Status.power_on_called
         else:
-            return 'power-on-pending'
-    elif phase == 'powering-off':
-        if last_action == 'PowerOffGraceful':
-            return 'power-off-gracefully-called'
-        elif last_action == 'PowerOffForceful':
-            return 'power-off-forcefully-called'
+            return Status.power_on_pending
+    elif phase == Phase.powering_off:
+        if last_action == Action.power_off_graceful:
+            return Status.power_off_gracefully_called
+        elif last_action == Action.power_off_forceful:
+            return Status.power_off_forcefully_called
         else:
-            return 'power-off-pending'
-    elif phase == 'configuring':
-        return 'configuring'
+            return Status.power_off_pending
+    elif phase == Phase.configuring:
+        return Status.configuring
     else:
-        return 'stable'
+        return Status.stable
 
 
 def _matches_filter(data, enabled, session, staged_session, phase, status):
@@ -270,7 +271,7 @@ def _apply_staged(component_id):
     finally:
         # For both the successful and failed cases, we want the new session to own the node
         data["session"] = staged_session_id
-        data["lastAction"]["action"] = "Apply-Staged"
+        data["lastAction"]["action"] = Action.apply_staged
         data["lastAction"]["numAttempts"] = 1
         data["stagedState"] = {
             "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
@@ -322,7 +323,7 @@ def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     if data.get("enabled"):
-        data["status"]["statusOverride"] = "on_hold"
+        data["status"]["statusOverride"] = Status.on_hold
     return data
 
 
