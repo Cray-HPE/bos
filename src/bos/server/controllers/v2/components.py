@@ -73,9 +73,44 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # TODO: On large scale systems, this response may be too large
         # and require paging to be implemented
         response = DB.get_all()
+    response = [_set_status(r) for r in response if r]
     if enabled is not None or session is not None or staged_session is not None:
         response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
     return response
+
+
+def _set_status(data):
+    data['status']['status'] = _get_status(data)
+    return data
+
+
+def _get_status(data):
+    """
+    Returns the status of a component
+    """
+    status_data = data.get('status', {})
+    override = status_data.get('statusOverride', '')
+    if override:
+        return override
+
+    phase = status_data.get('phase', '')
+    last_action = data.get('lastAction', {}).get('action', '')
+    if phase == 'powering-on':
+        if last_action == 'PowerOn':
+            return 'power-on-called'
+        else:
+            return 'power-on-pending'
+    elif phase == 'powering-off':
+        if last_action == 'PowerOffGraceful':
+            return 'power-off-gracefully-called'
+        elif last_action == 'PowerOffForceful':
+            return 'power-off-forcefully-called'
+        else:
+            return 'power-off-pending'
+    elif phase == 'configuring':
+        return 'configuring'
+    else:
+        return 'stable'
 
 
 def _matches_filter(data, enabled, session, staged_session, phase, status):
@@ -286,6 +321,8 @@ def _copy_staged_to_desired(data):
 def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
+    if data.get("enabled"):
+        data["status"]["statusOverride"] = "on_hold"
     return data
 
 
