@@ -33,6 +33,10 @@ from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
 
+from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
+from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
+from bos.operators.utils.clients.s3 import S3Object
+
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
 COMPONENTS_DB = dbutils.get_wrapper(db='components')
@@ -68,22 +72,11 @@ def post_v2_session():  # noqa: E501
         return msg, 400
     else:
         session_template, _ = session_template_response
+
     # Validate health/validity of the sessiontemplate before creating a session
-    boot_sets = session_template['boot_sets']
-    if not boot_sets:
-        msg = "Session template '%s' must have one or more defined boot sets for " \
-            "creation of a session." % (template_name)
-        return msg, 400
-    hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
-    for bs_name, bs in session_template['boot_sets'].items():
-        specified = [bs.get(field, None)
-                     for field in hardware_specifier_fields]
-        if not any(specified):
-            msg = "Session template '%s' boot set '%s' must have at least one " \
-                "hardware specifier field provided (%s); None defined." \
-                % (template_name, bs_name,
-                   ', '.join(sorted(hardware_specifier_fields)))
-            return msg, 400
+    msg, err = _validate_boot_sets(session_template, session_create.operation)
+    if msg:
+        return msg, err
 
     # -- Setup Record --
     session = _create_session(session_create)
@@ -91,6 +84,66 @@ def post_v2_session():  # noqa: E501
     data = dbutils.snake_to_camel_json(session)
     response = DB.put(session['name'], data)
     return response, 201
+
+
+def _validate_boot_sets(session_template: dict, operation: str) -> tuple[str, int]:
+    """
+    Validates the boot sets listed in a session template.
+    It ensures that there are boot sets.
+    It checks that each boot set specifies nodes via one of the specifier fields.
+    Ensures that the boot artifacts exist.  
+    
+    Inputs:
+      session_template (dict): Session template
+      operation (str): Requested operation  
+    Returns:
+        On success, returns (None, 200)
+        On failure, returns a tuple containing an error string and an HTTP error code
+      
+    """
+    template_name = session_template['name']
+
+    # Verify boot sets exist.
+    if 'boot_sets' not in session_template or not session_template['boot_sets']:
+        msg = f"Session template '{template_name}' must have one or more defined boot sets for " \
+        "the creation of a session. It has none."
+        return msg, 400
+
+    hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
+    for bs_name, bs in session_template['boot_sets'].items():
+        # Verify that the hardware is specified
+        specified = [bs.get(field, None)
+                     for field in hardware_specifier_fields]
+        if not any(specified):
+            msg = "Session template '%s' boot set '%s' must have at least one " \
+                "hardware specifier field provided (%s); None were provided." \
+                % (template_name, bs_name,
+                   ', '.join(sorted(hardware_specifier_fields)))
+            LOGGER.error(msg)
+            return msg, 400
+
+        if operation in ['boot', 'reboot']:
+            # Verify that the boot artifacts exist
+            try:
+                image_metadata = BootImageMetaDataFactory(bs)()
+            except Exception as err:
+                msg = f"Session template: {template_name} boot set: {bs_name} " \
+                    f"could not locate its boot artifacts. Error: {err}"
+                LOGGER.error(msg)
+                return msg, 400
+
+            # Check boot artifacts' S3 headers
+            for boot_artifact in ["kernel", "initrd", "boot_parameters"]:
+                obj = S3Object(getattr(image_metadata.boot_artifacts, boot_artifact)['link']['path'],
+                               getattr(image_metadata.boot_artifacts, boot_artifact)['link']['etag'])
+                try:
+                    _ = obj.object_header
+                except Exception as err:
+                    msg = f"Session template: {template_name} boot set: {bs_name} " \
+                    f"could not locate its {boot_artifact}. Error: {err}"
+                    LOGGER.error(msg)
+                    return msg, 400
+    return None, 200
 
 
 def _create_session(session_create):

@@ -25,17 +25,24 @@ import logging
 import os
 
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 from urllib.parse import urlparse
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.s3')
 
 
-class ArtifactMissing(Exception):
+class ArtifactNotFound(Exception):
     """
     A boot artifact could not be located.
     """
+
+
+class ManifestNotFound(Exception):
+    """
+    The manifest could not be found.
+    """
+
 
 class TooManyArtifacts(Exception):
     """
@@ -43,10 +50,18 @@ class TooManyArtifacts(Exception):
     was found.
     """
 
+
 class S3MissingConfiguration(Exception):
     """
     We were missing configuration information need to contact S3.
     """
+
+
+class S3ObjectNotFound(Exception):
+    """
+    The S3 object could not be found.
+    """
+
 
 class S3Url(object):
     """
@@ -124,13 +139,13 @@ class S3Object:
         self.s3url = S3Url(self.path)
 
     @property
-    def object_header(self):
+    def object_header(self) -> dict:
         """
         Get the S3 object's header metadata. 
         
         
         Return:
-          The S3 object headers
+          The S3 object headers (dict)
         
         Raises:
           ClientError 
@@ -143,9 +158,10 @@ class S3Object:
                         Key=self.s3url.key
                     )
         except ClientError as error:
-            LOGGER.error("s3 object %s was not found.", self.path)
+            msg = f"s3 object {self.path} was not found."
+            LOGGER.error(msg)
             LOGGER.debug(error)
-            raise
+            raise S3ObjectNotFound(msg) from error
 
         if self.etag and self.etag != s3_obj["ETag"].strip('\"'):
             LOGGER.warning("s3 object %s was found, but has an etag '%s' that does "
@@ -174,10 +190,11 @@ class S3Object:
         LOGGER.info("++ _get_s3_download_url %s with etag %s.", self.path, self.etag)
         try:
             return s3.get_object(Bucket=self.s3url.bucket, Key=self.s3url.key)
-        except ClientError as error:
-            LOGGER.error("Unable to download object {}.".format(self.path))
+        except (ClientError, ParamValidationError) as error:
+            msg = f"Unable to download object {self.path}."
+            LOGGER.error(msg)
             LOGGER.debug(error)
-            raise
+            raise S3ObjectNotFound(msg) from error
 
 
 class S3BootArtifacts(S3Object):
@@ -213,10 +230,12 @@ class S3BootArtifacts(S3Object):
         try:
             s3_manifest_obj = self.object
             s3_manifest_data = s3_manifest_obj['Body'].read().decode('utf-8')
-        except ClientError as error:
-            LOGGER.error("Unable to read manifest file {}.".format(self.path))
+        # Typical exceptions are ClientError, ParamValidationError
+        except Exception as error:
+            msg = f"Unable to read manifest file '{self.path}'."
+            LOGGER.error(msg)
             LOGGER.debug(error)
-            raise
+            raise ManifestNotFound(msg) from error
 
         # Cache the manifest.json file
         self._manifest_json = json.loads(s3_manifest_data)
@@ -242,7 +261,7 @@ class S3BootArtifacts(S3Object):
         
         Raises:
           ValueError -- Manifest file is corrupt or invalid
-          ArtifactMissing -- The requested artifact is missing
+          ArtifactNotFound -- The requested artifact is missing
           TooManyArtifacts -- There is more than one artifact when only one was expected
         """
         try:
@@ -253,9 +272,9 @@ class S3BootArtifacts(S3Object):
             LOGGER.debug(value_error)
             raise
         if not artifacts:
-            msg = "No %s artifact could be found in the image manifest." % artifact_type
+            msg = f"No artifact of type {artifact_type} could be found in the image manifest."
             LOGGER.info(msg)
-            raise ArtifactMissing(msg)
+            raise ArtifactNotFound(msg)
         if len(artifacts) > 1:
             msg = "Multiple %s artifacts found in the manifest." % artifact_type
             LOGGER.info(msg)
@@ -292,7 +311,7 @@ class S3BootArtifacts(S3Object):
         """
         try:
             bp = self._get_artifact('application/vnd.cray.image.parameters.boot')
-        except ArtifactMissing:
+        except ArtifactNotFound:
             bp = None
 
         return bp

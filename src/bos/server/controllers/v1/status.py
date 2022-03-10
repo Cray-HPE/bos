@@ -299,7 +299,7 @@ class BootSet(BootSetStatus):
 
     def _create_links(self):
         self_url = flask.helpers.url_for(
-            '.bos_controllers_v1_status_get_v1_session_status_by_bootset', session_id=self.session,
+            '.bos_server_controllers_v1_status_get_v1_session_status_by_bootset', session_id=self.session,
             boot_set_name=self.name)
         self.links = [Link(rel='self', href=self_url)]
 
@@ -554,7 +554,7 @@ class SessionStatus(SessionStatusModel):
     """
 
     def _create_links(self):
-        self_url = flask.helpers.url_for('.bos_controllers_v1_status_get_v1_session_status',
+        self_url = flask.helpers.url_for('.bos_server_controllers_v1_status_get_v1_session_status',
                                          session_id=self.id)
         self.links = [Link(rel='self', href=self_url)]
         if not self.boot_sets:
