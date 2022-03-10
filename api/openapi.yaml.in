@@ -971,9 +971,9 @@ components:
           type: string
           description: The current status of the component.  More detailed than phase.
           readOnly: true
-        onHold:
-          type: boolean
-          description: If true, BOS is waiting to confirm the current state of the component before taking actions
+        statusOverride:
+          type: string
+          description: If set, this will override the status value.
       additionalProperties: false
     V2Component:
       description: |
@@ -2007,12 +2007,6 @@ paths:
           description: >-
             Retrieve the components with the given status.
           enum: ['power-on-pending', 'power-on-called', 'power-off-pending', 'power-off-gracefully-called', 'power-off-forcefully-called', 'configuring', 'stable', 'failed', 'on-hold']
-        - name: on_hold
-          schema:
-            type: boolean
-          in: query
-          description: >-
-            Retrieve the components with the given "onHold" state.
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'

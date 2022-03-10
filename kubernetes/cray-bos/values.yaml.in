@@ -211,16 +211,6 @@ operators:
           - python3
           - "-m"
           - "bos.operators.configuration"
-  disable:
-    Values:
-      nameOverride: cray-bos-operator-disable
-      fullnameOverride: cray-bos-operator-disable
-      containers:
-        operator:
-          command:
-          - python3
-          - "-m"
-          - "bos.operators.disable"
   discovery:
     Values:
       nameOverride: cray-bos-operator-discovery
@@ -263,16 +253,6 @@ operators:
           - python3
           - "-m"
           - "bos.operators.power_on"
-  readyRecovery:
-    Values:
-      nameOverride: cray-bos-operator-ready-recovery
-      fullnameOverride: cray-bos-operator-ready-recovery
-      containers:
-        operator:
-          command:
-          - python3
-          - "-m"
-          - "bos.operators.ready_recovery"
   sessionCompletion:
     Values:
       nameOverride: cray-bos-operator-session-completion
@@ -308,6 +288,16 @@ operators:
             value: "https"
           - name: S3_GATEWAY
             value: "rgw-vip"
+  status:
+    Values:
+      nameOverride: cray-bos-operator-status
+      fullnameOverride: cray-bos-operator-status
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.status"
 
 tests:
   image: artifactory.algol60.net/csm-docker/stable/docker.io/curlimages/curl:7.80.0

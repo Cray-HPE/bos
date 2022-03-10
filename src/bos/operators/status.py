@@ -1,0 +1,173 @@
+#!/usr/bin/env python
+# Copyright 2022 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+# (MIT License)
+
+import logging
+
+from bos.operators.base import BaseOperator, main
+from bos.operators.filters import DesiredBootStateIsNone, BootArtifactStatesMatch,\
+    DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
+from bos.operators.utils.clients.bos.options import options
+from bos.operators.utils.clients.capmc import status as get_power_states
+from bos.operators.utils.clients.cfs import get_components as get_cfs_components
+
+LOGGER = logging.getLogger('bos.operators.status')
+
+
+class StatusOperator(BaseOperator):
+    """
+    The Status Operator monitors and sets the phase for all components.
+    Also disables stable components if necessary and sets some status overrides.
+    """
+    def __init__(self):
+        super().__init__()
+        # Reuse filter code
+        self.desired_boot_state_is_none = DesiredBootStateIsNone()._match
+        self.boot_artifact_states_match = BootArtifactStatesMatch()._match
+        self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
+        self.last_action_is_power_on = LastActionIs('Power-On')._match
+        self.wait_time_elapsed = TimeSinceLastAction(minutes=options.max_component_wait_time)._match
+
+    @property
+    def name(self):
+        """ Unused for the status operator """
+        return ''
+
+    # Filters
+    @property
+    def filters(self):
+        """ Unused for the status operator """
+        return []
+
+    def _run(self) -> None:
+        """ A single pass of detecting and acting on components  """
+        components = self.bos_client.components.get_components(enabled=True)
+        component_ids = ','.join([component['id'] for component in components])
+        power_states = self._get_power_states(component_ids)
+        cfs_states = self._get_cfs_components(component_ids)
+        updated_components = []
+        for component in components:
+            updated_component = self._check_status(
+                component, power_states.get(component['id']), cfs_states.get(component['id']))
+            if updated_component:
+                updated_components.append(updated_component)
+        if not updated_components:
+            LOGGER.debug('No components require status updates')
+            return
+        LOGGER.info('Found {} components that require status updates'.format(len(updated_components)))
+        self.bos_client.components.update_components(updated_components)
+
+    @staticmethod
+    def _get_power_states(component_ids):
+        power_data, _, _ = get_power_states(component_ids)
+        power_states = {}
+        for state in ['on', 'off']:
+            for component_id in power_data.get(state, []):
+                power_states[component_id] = state
+        return power_states
+
+    @staticmethod
+    def _get_cfs_components(component_ids):
+        cfs_data, _, _ = get_cfs_components(ids=component_ids)
+        cfs_states = {}
+        for component in cfs_data:
+            cfs_states[component['id']] = component
+        return cfs_states
+
+    def _check_status(self, component, power_state, cfs_component):
+        phase, disable, override, error = self._get_status(component, power_state, cfs_component)
+        updated_component = {'id': component['id'], 'status': {}}
+        update = False
+        if phase != component.get('status', {}).get('phase', ''):
+            updated_component['status']['phase'] = phase
+            update = True
+        if disable and options.disable_components_on_completion:
+            updated_component['enabled'] = False
+            update = True
+        if override:
+            updated_component['status']['statusOverride'] = override
+            update = True
+        if error:
+            updated_component['error'] = error
+            update = True
+        if update:
+            return updated_component
+        return None
+
+    def _get_status(self, component, power_state, cfs_component):
+        """
+        Disabling for successful completion should return an empty phase
+        Disabling for a failure should return the phase that failed
+        Override is used for status information that cannot be determined using only
+            internal BOS information, such as a failed configuration state.
+        """
+        phase = ''
+        disable = False
+        override = ''
+        error = ''
+
+        status_data = component.get('status', {})
+        if status_data.get('status') == 'failed':
+            disable = True  # Failed state - the aggregated status if "failed"
+        if power_state == 'off':
+            if self.desired_boot_state_is_none(component):
+                phase = ''
+                disable = True  # Successful state - desired and actual state are off
+            else:
+                phase = 'powering-on'
+        elif power_state == 'on':
+            if self.boot_artifact_states_match(component):
+                if self.desired_configuration_is_none(component, cfs_component):
+                    phase = ''
+                    disable = True  # Successful state - booted with the correct artifacts, no configuration necessary
+                else:
+                    cfs_status = cfs_component.get('configurationStatus')
+                    if cfs_status == 'configured':
+                        phase = ''
+                        disable = True  # Successful state - booted with the correct artifacts and configured
+                    elif cfs_status == 'failed':
+                        phase = 'configuring'
+                        disable = True  # Failed state - configuration failed
+                        override = 'failed'
+                    elif cfs_status is 'pending':
+                        phase = 'configuring'
+                    else:
+                        phase = 'configuring'
+                        disable = True  # Failed state - configuration is no longer set
+                        override = 'failed'
+                        error = 'cfs is not reporting a valid configuration status for this component'
+            else:
+                if self.last_action_is_power_on(component) and not self.wait_time_elapsed(component):
+                    phase = 'powering-on'
+                else:
+                    # Includes both power-off for restarts and ready-recovery scenario
+                    phase = 'powering-off'
+        else:
+            disable = True  # Failed state - configuration is no longer set
+            override = 'failed'
+            error = 'capmc is not reporting a valid power state for this component'
+
+        return phase, disable, override, error
+
+
+if __name__ == '__main__':
+    main(StatusOperator)
