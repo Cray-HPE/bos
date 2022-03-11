@@ -81,6 +81,8 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
 
 
 def _set_status(data):
+    if not 'status' in data:
+        data['status'] = {}
     data['status']['status'] = _get_status(data)
     return data
 
@@ -102,9 +104,9 @@ def _get_status(data):
         else:
             return Status.power_on_pending
     elif phase == Phase.powering_off:
-        if last_action == Action.power_off_graceful:
+        if last_action == Action.power_off_gracefully:
             return Status.power_off_gracefully_called
-        elif last_action == Action.power_off_forceful:
+        elif last_action == Action.power_off_forcefully:
             return Status.power_off_forcefully_called
         else:
             return Status.power_off_pending
@@ -124,7 +126,7 @@ def _matches_filter(data, enabled, session, staged_session, phase, status):
     status_data = data.get('status')
     if phase is not None and status_data.get('phase') != phase:
         return False
-    if status is not None and status_data.get('status') != status:
+    if status is not None and status_data.get('status') not in status.split(','):
         return False
     return True
 
@@ -322,6 +324,8 @@ def _copy_staged_to_desired(data):
 def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
+    if "status" not in data:
+        data["status"] = {"phase": "", "statusOverride": ""}
     if data.get("enabled"):
         data["status"]["statusOverride"] = Status.on_hold
     return data
