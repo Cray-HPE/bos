@@ -252,10 +252,10 @@ class Session:
                 image_kernel_parameters = image_kernel_parameters_raw.split()
                 if image_kernel_parameters:
                     boot_param_pieces.extend(image_kernel_parameters)
-            except ClientError as error:
+            except (ClientError, UnicodeDecodeError) as error:
                 LOGGER.error("Unable to read file {}. Thus, no kernel boot parameters obtained "
                              "from image".format(artifact_info['boot_parameters']))
-                LOGGER.debug(error)
+                LOGGER.error(error)
 
         # Parameters from the BOS Session template if the parameters exist.
         if boot_set.get('kernel_parameters'):

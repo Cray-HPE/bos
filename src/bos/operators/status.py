@@ -53,18 +53,21 @@ class StatusOperator(BaseOperator):
         """ Unused for the status operator """
         return ''
 
-    # Filters
+    # This operator overrides _run and does not use "filters" or "_act", but they are defined here
+    # because they are abstract methods in the base class and must be implemented.
     @property
     def filters(self):
-        """ Unused for the status operator """
         return []
+
+    def _act(self, components):
+        return components
 
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
         components = self.bos_client.components.get_components(enabled=True)
-        component_ids = ','.join([component['id'] for component in components])
+        component_ids = [component['id'] for component in components]
         power_states = self._get_power_states(component_ids)
-        cfs_states = self._get_cfs_components(component_ids)
+        cfs_states = self._get_cfs_components(','.join(component_ids))
         updated_components = []
         for component in components:
             updated_component = self._check_status(
@@ -88,7 +91,7 @@ class StatusOperator(BaseOperator):
 
     @staticmethod
     def _get_cfs_components(component_ids):
-        cfs_data, _, _ = get_cfs_components(ids=component_ids)
+        cfs_data = get_cfs_components(ids=component_ids)
         cfs_states = {}
         for component in cfs_data:
             cfs_states[component['id']] = component

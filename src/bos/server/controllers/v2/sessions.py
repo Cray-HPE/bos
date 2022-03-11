@@ -36,7 +36,6 @@ from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
 
-from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.clients.s3 import S3Object
 
@@ -327,11 +326,16 @@ def _get_v2_session_status(session_id, session=None):
     if not session:
         session = DB.get(session_id)
     components = get_v2_components_data(session=session_id)
-    num_managed_components = len(components)
-    component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components])
-    component_phase_counts['successful'] = [c for c in components if c.get('status', {}).get('status') == Status.stable]
-    component_phase_counts['failed'] = [c for c in components if c.get('status', {}).get('status') == Status.failed]
-    component_phase_percents = {phase: (component_phase_counts[phase]/num_managed_components)*100 for phase in component_phase_counts}
+    staged_components = get_v2_components_data(staged_session=session_id)
+    num_managed_components = len(components) + len(staged_components)
+    if num_managed_components:
+        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components])
+        component_phase_counts['successful'] = len([c for c in components if c.get('status', {}).get('status') == Status.stable])
+        component_phase_counts['failed'] = len([c for c in components if c.get('status', {}).get('status') == Status.failed])
+        component_phase_counts['staged'] = len(staged_components)
+        component_phase_percents = {phase: (component_phase_counts[phase]/num_managed_components)*100 for phase in component_phase_counts}
+    else:
+        component_phase_percents = {}
     component_errors_data = defaultdict(set)
     for component in components:
         if component.get('error'):
@@ -356,8 +360,9 @@ def _get_v2_session_status(session_id, session=None):
             'percent_complete': component_phase_percents.get('successful', 0) + component_phase_percents.get('failed', 0),
             'percent_powering_on': component_phase_percents.get(Phase.powering_on, 0),
             'percent_powering_off': component_phase_percents.get(Phase.powering_off, 0),
-            'percent_configuring': component_phase_percents.get(Phase.configuring, 0)
+            'percent_configuring': component_phase_percents.get(Phase.configuring, 0),
         },
+        'percent_staged': component_phase_percents.get('staged', 0),
         'percent_successful': component_phase_percents.get('successful', 0),
         'percent_failed': component_phase_percents.get('failed', 0),
         'error_summary': component_errors,

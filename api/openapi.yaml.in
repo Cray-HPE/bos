@@ -922,7 +922,7 @@ components:
           description: |
             The status of a session.
         managed_components_count:
-          type: int
+          type: integer
           description: |
             The count of components currently managed by this session
         phases:
@@ -935,6 +935,10 @@ components:
           type: float
           description: |
             The percent of components currently in a failed state
+        percent_staged:
+          type: float
+          description: |
+            The percent of components currently still staged for this session
         error_summary:
           type: object
           description: |
@@ -1241,6 +1245,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionArray'
+    V2SessionExtendedStatus:
+      description: Session status details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2SessionExtendedStatus'
     V2componentDetails:
       description: A single component state
       content:
@@ -2053,6 +2063,13 @@ paths:
           $ref: '#/components/responses/V2SessionDetails'
         404:
           $ref: '#/components/responses/ResourceNotFound'
+    parameters:
+      - name: session_id
+        in: path
+        description: Session ID
+        required: true
+        schema:
+          type: string
   /v2/components:
     get:
       summary: Retrieve the state of a collection of components
@@ -2101,14 +2118,12 @@ paths:
           in: query
           description: >-
             Retrieve the components in the given phase.
-          enum: ['powering-on', 'powering-off', 'configuring', '']
         - name: status
           schema:
             type: string
           in: query
           description: >-
             Retrieve the components with the given status.
-          enum: ['power-on-pending', 'power-on-called', 'power-off-pending', 'power-off-gracefully-called', 'power-off-forcefully-called', 'configuring', 'stable', 'failed', 'on-hold']
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'

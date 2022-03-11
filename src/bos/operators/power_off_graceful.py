@@ -26,8 +26,7 @@ import logging
 from bos.common.values import Action, Status
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs,\
-    BootArtifactStatesMatch, NOT
+from bos.operators.filters import BOSQuery, HSMState
 
 LOGGER = logging.getLogger('bos.operators.power_off_graceful')
 
