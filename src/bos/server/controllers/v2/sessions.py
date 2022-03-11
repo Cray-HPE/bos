@@ -22,13 +22,16 @@
 
 import connexion
 from datetime import timedelta
+from collections import defaultdict, Counter
 import re
 import logging
 import uuid
 from connexion.lifecycle import ConnexionResponse
 
 from bos.common.utils import get_current_time, get_current_timestamp, load_timestamp
+from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
@@ -40,7 +43,9 @@ from bos.operators.utils.clients.s3 import S3Object
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
 COMPONENTS_DB = dbutils.get_wrapper(db='components')
+STATUS_DB = dbutils.get_wrapper(db='session_status')
 BASEKEY = "/sessions"
+MAX_COMPONENTS_IN_ERROR_DETAILS = 10
 
 
 @dbutils.redis_error_handler
@@ -197,8 +202,8 @@ def get_v2_session(session_id):  # noqa: E501
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
-    component = DB.get(session_id)
-    return component, 200
+    session = DB.get(session_id)
+    return session, 200
 
 
 @dbutils.redis_error_handler
@@ -222,6 +227,8 @@ def delete_v2_session(session_id):  # noqa: E501
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
+    if session_id in STATUS_DB:
+        STATUS_DB.delete(session_id)
     return DB.delete(session_id), 204
 
 
@@ -233,6 +240,8 @@ def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
         for session in sessions:
             session_name = session['name']
             DB.delete(session_name)
+            if session_name in STATUS_DB:
+                STATUS_DB.delete(session_name)
     except ParsingException as err:
         return connexion.problem(
             detail=str(err),
@@ -240,6 +249,42 @@ def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
             title='Error parsing age field'
         )
     return None, 204
+
+
+@dbutils.redis_error_handler
+def get_v2_session_status(session_id):  # noqa: E501
+    """GET /v2/session/status
+    Get the session status by session ID
+    Args:
+      session_id (str): Session ID
+    Return:
+      Session Status Dictionary, Status Code
+    """
+    if session_id not in DB:
+        return connexion.problem(
+            status=404, title="Session could not found.",
+            detail="Session {} could not be found".format(session_id))
+    session = DB.get(session_id)
+    if session.get("status", {}).get("status") == "complete" and session_id in STATUS_DB:
+        # If the session is complete and the status is saved, return the status from completion time
+        return STATUS_DB.get(session_id), 200
+    return _get_v2_session_status(session_id, session), 200
+
+
+@dbutils.redis_error_handler
+def save_v2_session_status(session_id):  # noqa: E501
+    """POST /v2/session/status
+    Get the session status by session ID
+    Args:
+      session_id (str): Session ID
+    Return:
+      Session Status Dictionary, Status Code
+    """
+    if session_id not in DB:
+        return connexion.problem(
+            status=404, title="Session could not found.",
+            detail="Session {} could not be found".format(session_id))
+    return STATUS_DB.put(session_id, _get_v2_session_status(session_id)), 200
 
 
 def _get_filtered_sessions(min_age, max_age, status):
@@ -276,6 +321,53 @@ def _matches_filter(data, min_start, max_start, status):
     if max_start and (not session_start or session_start > max_start):
         return False
     return True
+
+
+def _get_v2_session_status(session_id, session=None):
+    if not session:
+        session = DB.get(session_id)
+    components = get_v2_components_data(session=session_id)
+    num_managed_components = len(components)
+    component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components])
+    component_phase_counts['successful'] = [c for c in components if c.get('status', {}).get('status') == Status.stable]
+    component_phase_counts['failed'] = [c for c in components if c.get('status', {}).get('status') == Status.failed]
+    component_phase_percents = {phase: (component_phase_counts[phase]/num_managed_components)*100 for phase in component_phase_counts}
+    component_errors_data = defaultdict(set)
+    for component in components:
+        if component.get('error'):
+            component_errors_data[component.get('error')].add(component.get('id'))
+    component_errors = {}
+    for error, components in component_errors_data.items():
+        component_list = ','.join(components[:MAX_COMPONENTS_IN_ERROR_DETAILS])
+        if len(components) > MAX_COMPONENTS_IN_ERROR_DETAILS:
+            component_list += '...'
+        component_errors[error] = {'count': len(components), 'list': component_list}
+    session_status = session.get('status', {})
+    start_time = session_status.get('startTime')
+    end_time = session_status.get('endTime')
+    if end_time:
+        duration = str(load_timestamp(end_time) - load_timestamp(start_time))
+    else:
+        duration = str(get_current_time() - load_timestamp(start_time))
+    status = {
+        'status': session_status.get('status', ''),
+        'managed_components_count': num_managed_components,
+        'phases': {
+            'percent_complete': component_phase_percents.get('successful', 0) + component_phase_percents.get('failed', 0),
+            'percent_powering_on': component_phase_percents.get(Phase.powering_on, 0),
+            'percent_powering_off': component_phase_percents.get(Phase.powering_off, 0),
+            'percent_configuring': component_phase_percents.get(Phase.configuring, 0)
+        },
+        'percent_successful': component_phase_percents.get('successful', 0),
+        'percent_failed': component_phase_percents.get('failed', 0),
+        'error_summary': component_errors,
+        'timing': {
+            'start_time': start_time,
+            'end_time': end_time,
+            'duration': duration
+        }
+    }
+    return status
 
 
 def _age_to_timestamp(age):
