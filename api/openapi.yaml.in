@@ -741,6 +741,10 @@ components:
           type: string
           description: |
             When the session was created.
+        endTime:
+          type: string
+          description: |
+            When the session completed.
         status:
           type: string
           enum: ['pending', 'running', 'complete']
@@ -867,6 +871,77 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2Session'
+    V2SessionExtendedStatusPhases:
+      type: object
+      description: |
+        Detailed information on the phases of a session.
+      properties:
+        percent_complete:
+          type: float
+          description: |
+            The percent of components currently in a completed/stable state
+        percent_powering_on:
+          type: float
+          description: |
+            The percent of components currently in the powering-on phase
+        percent_powering_off:
+          type: float
+          description: |
+            The percent of components currently in the powering-off phase
+        percent_configuring:
+          type: float
+          description: |
+            The percent of components currently in the configuring phase
+      additionalProperties: false
+    V2SessionExtendedStatusTiming:
+      type: object
+      description: |
+        Detailed information on the timing of a session.
+      properties:
+        startTime:
+          type: string
+          description: |
+            When the session was created.
+        endTime:
+          type: string
+          description: |
+            When the session completed.
+        duration:
+          type: string
+          description: |
+            The current duration of the on-going session or final duration of the completed session.
+      additionalProperties: false
+    V2SessionExtendedStatus:
+      type: object
+      description: |
+        Detailed information on the status of a session.
+      properties:
+        status:
+          type: string
+          enum: ['pending', 'running', 'complete']
+          description: |
+            The status of a session.
+        managed_components_count:
+          type: int
+          description: |
+            The count of components currently managed by this session
+        phases:
+          $ref: '#/components/schemas/V2SessionExtendedStatusPhases'
+        percent_successful:
+          type: float
+          description: |
+            The percent of components currently in a successful state
+        percent_failed:
+          type: float
+          description: |
+            The percent of components currently in a failed state
+        error_summary:
+          type: object
+          description: |
+            A summary of the errors currently listed by all components
+        timing:
+          $ref: '#/components/schemas/V2SessionExtendedStatusTiming'
+      additionalProperties: false
     V2BootArtifacts:
       description: |
         A collection of boot artifacts.
@@ -1951,6 +2026,33 @@ paths:
         required: true
         schema:
           type: string
+  /v2/sessions/{session_id}/status:
+    get:
+      summary: Get session extended status information by id
+      description: Get session extended status information by id
+      tags:
+        - v2
+        - sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
+      operationId: get_v2_session_status
+      responses:
+        200:
+          $ref: '#/components/responses/V2SessionExtendedStatus'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
+    post:
+      summary: Saves the current session to database
+      tags:
+        - v2
+        - sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
+      description: Saves the current session to database.  For use at session completion.
+      operationId: save_v2_session_status
+      responses:
+        200:
+          $ref: '#/components/responses/V2SessionDetails'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
   /v2/components:
     get:
       summary: Retrieve the state of a collection of components
