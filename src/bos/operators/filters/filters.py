@@ -30,7 +30,6 @@ from typing import List, Type
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
-from bos.operators.utils.clients.capmc import status as get_power_state
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
@@ -89,33 +88,6 @@ class HSMState(IDFilter):
             return [component['ID'] for component in components['Components']
                     if (component['State'] == 'Ready') is self.ready]
         return [component['ID'] for component in components['Components']]
-
-
-class PowerState(IDFilter):
-    """ Returns all components that are in desired power state """
-
-    def __init__(self, state: str='on') -> None:
-        super().__init__()
-        self.state = state
-
-    def _filter(self, components: List[str]) -> List[str]:
-        # Address CASMCMS-7804: Once that Jira is resolved, uncomment this line
-        # and delete the one below it.
-        # response, _, _ = get_power_state(components, filtertype='show_{}'.format(self.state))
-        response, _, _ = get_power_state(components)
-        return response[self.state]
-
-
-class ConfigurationStatus(IDFilter):
-    """ Returns all components that are in desired configuration status """
-
-    def __init__(self, status: str='configured') -> None:
-        super().__init__()
-        self.status = status
-
-    def _filter(self, components: List[str]) -> List[str]:
-        components = get_cfs_components(ids=components, status=self.status)
-        return [component['id'] for component in components]
 
 
 class NOT(LocalFilter):

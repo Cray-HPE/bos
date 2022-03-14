@@ -24,11 +24,11 @@
 #
 import logging
 
+from bos.common.values import Action, Status
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction,\
-    LastActionIs, BootArtifactStatesMatch, NOT
+from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
 
 LOGGER = logging.getLogger('bos.operators.power_off_forceful')
 
@@ -36,28 +36,22 @@ LOGGER = logging.getLogger('bos.operators.power_off_forceful')
 class ForcefulPowerOffOperator(BaseOperator):
     """
     The Forceful Power-Off Operator tells capmc to power-off nodes if:
-    - Enabled in the BOS database.
-    - DesiredState != CurrentState
-    - LastAction = Graceful-Power-Off or Forceful-Power-Off
-    - TimeSinceLastAction > wait time (default 5 minutes)
+    - Enabled in the BOS database and the status is power_off_gracefully of power_off_forcefully
     - Enabled in HSM
-    - Powered on.
     """
 
     @property
     def name(self):
-        return 'Forceful-Power-Off'
+        return Action.power_off_forcefully
 
     # Filters
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True),
-            NOT(BootArtifactStatesMatch()),
-            LastActionIs('Graceful-Power-Off,Forceful-Power-Off'),
+            BOSQuery(enabled=True, status=','.join([Status.power_off_forcefully_called,
+                                                    Status.power_off_gracefully_called])),
             TimeSinceLastAction(seconds=options.max_component_wait_time),
             HSMState(enabled=True),
-            PowerState(state='on')
         ]
 
     def _act(self, components):

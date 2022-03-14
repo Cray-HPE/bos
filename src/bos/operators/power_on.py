@@ -26,12 +26,11 @@ from collections import defaultdict
 import logging
 from requests import HTTPError
 
+from bos.common.values import Action, Status
 import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.capmc as capmc
-from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, \
-    DesiredBootStateIsNone, DesiredConfigurationSetInCFS, DesiredConfigurationIsNone, NOT, OR
+from bos.operators.filters import BOSQuery, HSMState, DesiredConfigurationSetInCFS, DesiredConfigurationIsNone, OR
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger('bos.operators.power_on')
@@ -40,35 +39,25 @@ LOGGER = logging.getLogger('bos.operators.power_on')
 class PowerOnOperator(BaseOperator):
     """
     The Power-On Operator tells capmc to power-on nodes if:
-    - Enabled in the BOS database.
-    - DesiredState != None
-    - DesiredConfiguration == SetConfiguration OR DesiredConfiguration == None
-    - LastAction != Power-On OR TimeSinceLastAction > wait time (default 5 minutes)
+    - Enabled in the BOS database and the status is power_on_pending
     - Enabled in HSM
-    - Powered off.
+    - DesiredConfiguration == SetConfiguration OR DesiredConfiguration == None
     """
 
     @property
     def name(self):
-        return 'Power-On'
+        return Action.power_on
 
     # Filters
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True),
-            NOT(DesiredBootStateIsNone()),
-            OR(
-                # If the last action was power-on, wait before retrying
-                [NOT(LastActionIs('Power-On'))],
-                [TimeSinceLastAction(seconds=options.max_component_wait_time)]
-            ),
+            BOSQuery(enabled=True, status=Status.power_on_pending),
             OR(
                 [DesiredConfigurationSetInCFS()],
                 [DesiredConfigurationIsNone()]
             ),
-            HSMState(enabled=True),
-            PowerState(state='off')
+            HSMState(enabled=True)
         ]
 
     def _act(self, components):

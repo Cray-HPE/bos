@@ -24,6 +24,7 @@
 #
 import logging
 
+from bos.common.utils import get_current_timestamp
 from bos.operators.base import BaseOperator, main
 
 LOGGER = logging.getLogger('bos.operators.session_completion')
@@ -64,7 +65,9 @@ class SessionCompletionOperator(BaseOperator):
         return components
 
     def _mark_session_complete(self, session_id):
-        self.bos_client.sessions.update_session(session_id, {'status': {'status': 'complete'}})
+        self.bos_client.sessions.update_session(session_id, {'status': {'status': 'complete',
+                                                                        'endTime': get_current_timestamp()}})
+        self.bos_client.session_status.update_session_status(session_id)
         LOGGER.info('Session {} is complete'.format(session_id))
 
 

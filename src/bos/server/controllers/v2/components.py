@@ -25,6 +25,7 @@ import connexion
 import logging
 
 from bos.common.utils import get_current_timestamp
+from bos.common.values import Phase, Action, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
@@ -39,7 +40,7 @@ EMPTY_BOOT_ARTIFACTS = {
 
 
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None):
+def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -53,11 +54,13 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None):
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
-    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session)
+    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
+                                      phase=phase, status=status)
     return response, 200
 
 
-def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None):
+def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
+                           phase=None, status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -72,17 +75,59 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # TODO: On large scale systems, this response may be too large
         # and require paging to be implemented
         response = DB.get_all()
+    response = [_set_status(r) for r in response if r]
     if enabled is not None or session is not None or staged_session is not None:
-        response = [r for r in response if _matches_filter(r, enabled, session, staged_session)]
+        response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
     return response
 
 
-def _matches_filter(data, enabled, session, staged_session):
+def _set_status(data):
+    if not 'status' in data:
+        data['status'] = {}
+    data['status']['status'] = _get_status(data)
+    return data
+
+
+def _get_status(data):
+    """
+    Returns the status of a component
+    """
+    status_data = data.get('status', {})
+    override = status_data.get('statusOverride', '')
+    if override:
+        return override
+
+    phase = status_data.get('phase', '')
+    last_action = data.get('lastAction', {}).get('action', '')
+    if phase == Phase.powering_on:
+        if last_action == Action.power_on:
+            return Status.power_on_called
+        else:
+            return Status.power_on_pending
+    elif phase == Phase.powering_off:
+        if last_action == Action.power_off_gracefully:
+            return Status.power_off_gracefully_called
+        elif last_action == Action.power_off_forcefully:
+            return Status.power_off_forcefully_called
+        else:
+            return Status.power_off_pending
+    elif phase == Phase.configuring:
+        return Status.configuring
+    else:
+        return Status.stable
+
+
+def _matches_filter(data, enabled, session, staged_session, phase, status):
     if enabled is not None and data.get('enabled', None) != enabled:
         return False
     if session is not None and data.get('session', None) != session:
         return False
     if staged_session is not None and data.get('stagedState', {}).get('session', None) != staged_session:
+        return False
+    status_data = data.get('status')
+    if phase is not None and status_data.get('phase') != phase:
+        return False
+    if status is not None and status_data.get('status') not in status.split(','):
         return False
     return True
 
@@ -229,7 +274,7 @@ def _apply_staged(component_id):
     finally:
         # For both the successful and failed cases, we want the new session to own the node
         data["session"] = staged_session_id
-        data["lastAction"]["action"] = "Apply-Staged"
+        data["lastAction"]["action"] = Action.apply_staged
         data["lastAction"]["numAttempts"] = 1
         data["stagedState"] = {
             "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
@@ -280,6 +325,10 @@ def _copy_staged_to_desired(data):
 def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
+    if "status" not in data:
+        data["status"] = {"phase": "", "statusOverride": ""}
+    if data.get("enabled"):
+        data["status"]["statusOverride"] = Status.on_hold
     return data
 
 
