@@ -700,6 +700,14 @@ components:
         A Session Creation object
       type: object
       properties:
+        name:
+          type: string
+          description: Name of the session. A uuid name is generated if a name is not provided.
+          example: "session-20190728032600"
+          # These validation parameters are restricted by Kubernetes naming conventions.
+          minLength: 1
+          maxLength: 45
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
         operation:
           type: string
           enum: ['boot', 'reboot', 'shutdown']

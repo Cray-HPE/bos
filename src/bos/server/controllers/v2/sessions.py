@@ -160,7 +160,7 @@ def _create_session(session_create):
         'start_time': get_current_timestamp(),
     }
     body = {
-        'name': str(uuid.uuid4()),
+        'name': session_create.name or str(uuid.uuid4()),
         'operation': session_create.operation,
         'template_name': session_create.template_name or '',
         'limit': session_create.limit or '',
