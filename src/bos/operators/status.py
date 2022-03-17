@@ -109,7 +109,7 @@ class StatusOperator(BaseOperator):
             updated_component['enabled'] = False
             update = True
         if override:
-            updated_component['status']['statusOverride'] = override
+            updated_component['status']['status_override'] = override
             update = True
         if error:
             updated_component['error'] = error

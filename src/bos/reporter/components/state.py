@@ -80,6 +80,6 @@ def report_state(component, state, session=None):
     """
     Report the <component>'s state.
     """
-    data = {'id': component, 'actualState': state}
+    data = {'id': component, 'actual_state': state}
     patch_component(component, data, session=session)
 

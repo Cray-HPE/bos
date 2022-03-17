@@ -35,16 +35,16 @@ from bos.operators.utils.clients.bos.components import ComponentEndpoint
 
 LOGGER = logging.getLogger(__name__)
 
-BLANK_STATE = {'bootArtifacts': {'kernel': '',
-                                 'kernel_parameters': '',
-                                 'initrd': ''},
+BLANK_STATE = {'boot_artifacts': {'kernel': '',
+                                  'kernel_parameters': '',
+                                  'initrd': ''},
                'configuration': ''}
 NEW_COMPONENT = {'id': None,
-                 'actualState': BLANK_STATE,
-                 'desiredState': BLANK_STATE,
-                 'stagedState': {},
-                 'lastAction': {'action': Action.newly_discovered,
-                                'numAttempts': 1},
+                 'actual_state': BLANK_STATE,
+                 'desired_state': BLANK_STATE,
+                 'staged_state': {},
+                 'last_action': {'action': Action.newly_discovered,
+                                 'num_attempts': 1},
                  'enabled': False,
                  'error': '',
                  'session': ''}

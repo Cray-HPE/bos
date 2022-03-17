@@ -93,12 +93,12 @@ def _get_status(data):
     Returns the status of a component
     """
     status_data = data.get('status', {})
-    override = status_data.get('statusOverride', '')
+    override = status_data.get('status_override', '')
     if override:
         return override
 
     phase = status_data.get('phase', '')
-    last_action = data.get('lastAction', {}).get('action', '')
+    last_action = data.get('last_action', {}).get('action', '')
     if phase == Phase.powering_on:
         if last_action == Action.power_on:
             return Status.power_on_called
@@ -122,7 +122,7 @@ def _matches_filter(data, enabled, session, staged_session, phase, status):
         return False
     if session is not None and data.get('session', None) != session:
         return False
-    if staged_session is not None and data.get('stagedState', {}).get('session', None) != staged_session:
+    if staged_session is not None and data.get('staged_state', {}).get('session', None) != staged_session:
         return False
     status_data = data.get('status')
     if phase is not None and status_data.get('phase') != phase:
@@ -261,7 +261,7 @@ def _apply_staged(component_id):
     if component_id not in DB:
         return False
     data = DB.get(component_id)
-    staged_state = data.get("stagedState", {})
+    staged_state = data.get("staged_state", {})
     staged_session_id = staged_state.get("session", "")
     if not staged_session_id:
         return False
@@ -274,10 +274,10 @@ def _apply_staged(component_id):
     finally:
         # For both the successful and failed cases, we want the new session to own the node
         data["session"] = staged_session_id
-        data["lastAction"]["action"] = Action.apply_staged
-        data["lastAction"]["numAttempts"] = 1
-        data["stagedState"] = {
-            "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
+        data["last_action"]["action"] = Action.apply_staged
+        data["last_action"]["num_attempts"] = 1
+        data["staged_state"] = {
+            "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
             "configuration": ""
         }
         _set_auto_fields(data)
@@ -286,27 +286,27 @@ def _apply_staged(component_id):
 
 
 def _set_state_from_staged(data):
-    staged_state = data.get("stagedState", {})
+    staged_state = data.get("staged_state", {})
     staged_session_id = staged_state.get("session", "")
     if staged_session_id not in SESSIONS_DB:
         raise Exception("Staged session no longer exists")
     session = SESSIONS_DB.get(staged_session_id)
     operation = session["operation"]
     if operation == "shutdown":
-        if any(staged_state.get("bootArtifacts", {}).values()):
+        if any(staged_state.get("boot_artifacts", {}).values()):
             raise Exception("Staged operation is shutdown but boot artifact have been specified")
         _copy_staged_to_desired(data)
     elif operation == "boot":
-        if not all(staged_state.get("bootArtifacts", {}).values()):
+        if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception("Staged operation is boot but some boot artifacts have not been specified")
         _copy_staged_to_desired(data)
     elif operation == "reboot":
-        if not all(staged_state.get("bootArtifacts", {}).values()):
+        if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception("Staged operation is reboot but some boot artifacts have not been specified")
         _copy_staged_to_desired(data)
-        data["actualState"] = {
-            "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
-            "bssToken": ""
+        data["actual_state"] = {
+            "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+            "bss_token": ""
         }
     else:
         raise Exception("Invalid operation in staged session")
@@ -315,9 +315,9 @@ def _set_state_from_staged(data):
 
 
 def _copy_staged_to_desired(data):
-    staged_state = data.get("stagedState", {})
-    data["desiredState"] = {
-        "bootArtifacts": staged_state.get("bootArtifacts", {}),
+    staged_state = data.get("staged_state", {})
+    data["desired_state"] = {
+        "boot_artifacts": staged_state.get("boot_artifacts", {}),
         "configuration": staged_state.get("configuration", "")
     }
 
@@ -326,17 +326,17 @@ def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     if "status" not in data:
-        data["status"] = {"phase": "", "statusOverride": ""}
+        data["status"] = {"phase": "", "status_override": ""}
     if data.get("enabled"):
-        data["status"]["statusOverride"] = Status.on_hold
+        data["status"]["status_override"] = Status.on_hold
     return data
 
 
 def _populate_boot_artifacts(data):
     """
-    If there is a BSS Token present in the actualState, 
+    If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the
-    actualState data.
+    actual_state data.
     
     If the data contains any boot artifacts and the BSS
     token, then those boot artifacts will be overwritten.
@@ -346,26 +346,26 @@ def _populate_boot_artifacts(data):
     the boot artifacts will not be overwritten.
     """
     try:
-        token = data['actualState']['bssToken']
+        token = data['actual_state']['bss_token']
     except KeyError:
-        # Either actualState or bssToken was not present.
+        # Either actual_state or bss_token was not present.
         pass
     else:
-        # Populate the boot artifacts using the bssToken
+        # Populate the boot artifacts using the bss_token
         try:
             boot_artifacts = get_boot_artifacts(token)
         except BssTokenUnknown:
             LOGGER.error(f"Reported BSS Token: {token} is unknown.")
         else:
-            data['actualState']['bootArtifacts'] = boot_artifacts
+            data['actual_state']['boot_artifacts'] = boot_artifacts
     return data
 
 
 def _set_last_updated(data):
     timestamp = get_current_timestamp()
-    for section in ['actualState', 'desiredState', 'stagedState', 'lastAction']:
-        if section in data and type(data[section]) == dict and data[section].keys() != {"bssToken"}:
-            data[section]['lastUpdated'] = timestamp
+    for section in ['actual_state', 'desired_state', 'staged_state', 'last_action']:
+        if section in data and type(data[section]) == dict and data[section].keys() != {"bss_token"}:
+            data[section]['last_updated'] = timestamp
     return data
 
 

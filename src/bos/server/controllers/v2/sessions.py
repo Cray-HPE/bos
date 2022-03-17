@@ -70,7 +70,7 @@ def post_v2_session():  # noqa: E501
         return msg, 400
     template_name = session_create.template_name
     LOGGER.debug(f"Template Name: {template_name} operation: {session_create.operation}")
-    # Check that the templateName exists.
+    # Check that the template_name exists.
     session_template_response = get_v2_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
         msg = "Session Template Name invalid: {}".format(template_name)
@@ -157,12 +157,12 @@ def _validate_boot_sets(session_template: dict, operation: str) -> tuple[str, in
 def _create_session(session_create):
     initial_status = {
         'status': 'pending',
-        'startTime': get_current_timestamp(),
+        'start_time': get_current_timestamp(),
     }
     body = {
         'name': str(uuid.uuid4()),
         'operation': session_create.operation,
-        'templateName': session_create.template_name or '',
+        'template_name': session_create.template_name or '',
         'limit': session_create.limit or '',
         'stage': session_create.stage,
         'components': '',
@@ -315,7 +315,7 @@ def _matches_filter(data, min_start, max_start, status):
     session_status = data.get('status', {})
     if status and status != session_status.get('status'):
         return False
-    start_time = session_status['startTime']
+    start_time = session_status['start_time']
     session_start = None
     if start_time:
         session_start = load_timestamp(start_time)
@@ -351,8 +351,8 @@ def _get_v2_session_status(session_id, session=None):
             component_list += '...'
         component_errors[error] = {'count': len(components), 'list': component_list}
     session_status = session.get('status', {})
-    start_time = session_status.get('startTime')
-    end_time = session_status.get('endTime')
+    start_time = session_status.get('start_time')
+    end_time = session_status.get('end_time')
     if end_time:
         duration = str(load_timestamp(end_time) - load_timestamp(start_time))
     else:

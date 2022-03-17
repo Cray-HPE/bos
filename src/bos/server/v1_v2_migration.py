@@ -58,7 +58,9 @@ def convert_v1_to_v2(v1_st):
     v2_st = {'boot_sets': {}}
     for k, v in v1_st.items():
         if k in session_template_keys:
-            if k != "boot_sets":
+            if k == "templateUrl":
+                v2_st["template_url"] = v
+            elif k != "boot_sets":
                 v2_st[k] = v
         else:
             LOGGER.warning("Discarding attribute: '{}' from session template: '{}'".format(k, v1_st['name']))

@@ -93,7 +93,7 @@ class Session:
     @property
     def template(self):
         if not self._template:
-            template_name = self.session_data.get('templateName')
+            template_name = self.session_data.get('template_name')
             self._template = self.bos_client.session_templates.get_session_template(template_name)
         return self._template
 
@@ -174,26 +174,26 @@ class Session:
         stage = self.session_data.get("stage", False)
         data = {"id": component_id}
         if stage:
-            data["stagedState"] = self._generate_desired_state(boot_set)
-            data["stagedState"]["session"] = self.name
+            data["staged_state"] = self._generate_desired_state(boot_set)
+            data["staged_state"]["session"] = self.name
         else:
-            data["desiredState"] = self._generate_desired_state(boot_set)
+            data["desired_state"] = self._generate_desired_state(boot_set)
             if self.operation_type == "reboot" :
-                data["actualState"] = {
-                    "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
-                    "bssToken": ""
+                data["actual_state"] = {
+                    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+                    "bss_token": ""
                 }
             data["enabled"] = True
-            # Set node's lastAction
-            data["lastAction"] = {"action": Action.session_setup,
-                                  "numAttempts": 1}
+            # Set node's last_action
+            data["last_action"] = {"action": Action.session_setup,
+                                   "num_attempts": 1}
         return data
 
     def _generate_desired_state(self, boot_set):
         if self.operation_type == "shutdown":
             state = {
                 "configuration": "",
-                "bootArtifacts": EMPTY_BOOT_ARTIFACTS
+                "boot_artifacts": EMPTY_BOOT_ARTIFACTS
             }
             return state
         else:
@@ -208,7 +208,7 @@ class Session:
         boot_artifacts['kernel'] = artifact_info['kernel']
         boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")
         boot_artifacts['kernel_parameters'] = self.assemble_kernel_boot_parameters(boot_set, artifact_info)
-        state['bootArtifacts'] = boot_artifacts
+        state['boot_artifacts'] = boot_artifacts
 
         if self.session_data.get('enable_cfs', False):
             configuration = self.session_data.get('cfs', {}).get('configuration', '')

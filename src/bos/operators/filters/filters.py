@@ -112,7 +112,7 @@ class TimeSinceLastAction(LocalFilter):
         self.kwargs = kwargs
 
     def _match(self, component: dict) -> bool:
-        last_action_time = component.get('lastAction', {}).get('lastUpdated')
+        last_action_time = component.get('last_action', {}).get('last_updated')
         now = get_current_time()
         if not last_action_time or now > load_timestamp(last_action_time) + timedelta(**self.kwargs):
             return True
@@ -127,7 +127,7 @@ class LastActionIs(LocalFilter):
         self.actions = actions.split(',')
 
     def _match(self, component: dict) -> bool:
-        last_action = component.get('lastAction', {}).get('action', '')
+        last_action = component.get('last_action', {}).get('action', '')
         if last_action in self.actions:
             return True
         return False
@@ -137,10 +137,10 @@ class BootArtifactStatesMatch(LocalFilter):
     """ Returns when current and desired kernel and image states match """
 
     def _match(self, component: dict) -> bool:
-        desired_state = component.get('desiredState', {})
-        actual_state = component.get('actualState', {})
-        desired_boot_state = desired_state.get('bootArtifacts', {})
-        actual_boot_state = actual_state.get('bootArtifacts', {})
+        desired_state = component.get('desired_state', {})
+        actual_state = component.get('actual_state', {})
+        desired_boot_state = desired_state.get('boot_artifacts', {})
+        actual_boot_state = actual_state.get('boot_artifacts', {})
         for key in ['kernel', 'kernel_parameters', 'initrd']:
             if desired_boot_state.get(key, None) != actual_boot_state.get(key, None):
                 return False
@@ -161,8 +161,8 @@ class DesiredConfigurationSetInCFS(DetailsFilter):
         return matching_components
 
     def _match(self, component: dict, cfs_component: dict) -> bool:
-        desired_configuration = component.get('desiredState', {}).get('configuration')
-        set_configuration = cfs_component.get('desiredConfig')
+        desired_configuration = component.get('desired_state', {}).get('configuration')
+        set_configuration = cfs_component.get('desired_config')
         return desired_configuration == set_configuration
 
 
@@ -170,8 +170,8 @@ class DesiredBootStateIsNone(LocalFilter):
     """ Returns when the desired state is None """
 
     def _match(self, component: dict) -> bool:
-        desired_state = component.get('desiredState', {})
-        desired_boot_state = desired_state.get('bootArtifacts', {})
+        desired_state = component.get('desired_state', {})
+        desired_boot_state = desired_state.get('boot_artifacts', {})
         if not desired_boot_state or not all([bool(v) for v in desired_boot_state.values()]):
             return True
         return False
@@ -181,7 +181,7 @@ class DesiredConfigurationIsNone(LocalFilter):
     """ Returns when the desired configuration is None """
 
     def _match(self, component: dict) -> bool:
-        desired_state = component.get('desiredState', {})
+        desired_state = component.get('desired_state', {})
         if not desired_state or not desired_state.get('configuration', ''):
             return True
         return False

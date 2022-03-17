@@ -66,7 +66,7 @@ class SessionCompletionOperator(BaseOperator):
 
     def _mark_session_complete(self, session_id):
         self.bos_client.sessions.update_session(session_id, {'status': {'status': 'complete',
-                                                                        'endTime': get_current_timestamp()}})
+                                                                        'end_time': get_current_timestamp()}})
         self.bos_client.session_status.update_session_status(session_id)
         LOGGER.info('Session {} is complete'.format(session_id))
 

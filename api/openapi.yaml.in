@@ -52,9 +52,9 @@ info:
 
     #### POST /session
 
-    Specify templateName and an
+    Specify template_name and an
     operation to create a new session.
-    The templateName corresponds to the session template *name*.
+    The template_name corresponds to the session template *name*.
     A new session is launched as a result of this call.
 
     A limit can also be specified to narrow the scope of the session. The limit
@@ -649,11 +649,11 @@ components:
 
         * self : The session object
       properties:
-        templateUrl:
+        template_url:
           type: string
           description: |
             The URL to the resource providing the session template data.
-            Specify either a templateURL, or the other session
+            Specify either a template_url, or the other session
             template parameters.
         name:
           type: string
@@ -713,7 +713,7 @@ components:
                 Boot                 Applies the template to the components and boots/reboots if necessary.
                 Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
-        templateName:
+        template_name:
           type: string
           description: The name of the Session Template
           example: "my-session-template"
@@ -730,18 +730,18 @@ components:
             Set to force nodes to reboot even if they are already in the desired
             state.
           default: false
-      required: [operation, templateName]
+      required: [operation, template_name]
       additionalProperties: false
     V2SessionStatus:
       type: object
       description: |
         Information on the status of a session.
       properties:
-        startTime:
+        start_time:
           type: string
           description: |
             When the session was created.
-        endTime:
+        end_time:
           type: string
           description: |
             When the session completed.
@@ -841,7 +841,7 @@ components:
                 Boot                 Applies the template to the components and boots/reboots if necessary.
                 Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
-        templateName:
+        template_name:
           type: string
           description: The name of the Session Template
           example: "my-session-template"
@@ -898,11 +898,11 @@ components:
       description: |
         Detailed information on the timing of a session.
       properties:
-        startTime:
+        start_time:
           type: string
           description: |
             When the session was created.
-        endTime:
+        end_time:
           type: string
           description: |
             When the session completed.
@@ -966,14 +966,14 @@ components:
         The desired boot artifacts and configuration for a component
       type: object
       properties:
-        bootArtifacts:
+        boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
-        bssToken:
+        bss_token:
           type: string
           description: >
             A token received from the node identifying the boot artifacts. 
             For BOS use-only, users should not set this field. It will be overwritten.
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -984,17 +984,17 @@ components:
         The desired boot artifacts and configuration for a component
       type: object
       properties:
-        bootArtifacts:
+        boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         configuration:
           type: string
           description: A CFS configuration ID.
-        bssToken:
+        bss_token:
           type: string
           description: >
             A token received from BSS identifying the boot artifacts. 
             For BOS use-only, users should not set this field. It will be overwritten.
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -1006,7 +1006,7 @@ components:
         The desired boot artifacts and configuration for a component
       type: object
       properties:
-        bootArtifacts:
+        boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         configuration:
           type: string
@@ -1014,7 +1014,7 @@ components:
         session:
           type: string
           description: A session which can be triggered at a later time against this component.
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -1026,7 +1026,7 @@ components:
         Information on the most recent action taken against the node.
       type: object
       properties:
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -1035,7 +1035,7 @@ components:
         action:
           type: string
           description: A description of the most recent operator/action to impact the component.
-        numAttempts:
+        num_attempts:
           type: integer
           description: How many attempts have been made for this action.
       additionalProperties: false
@@ -1050,7 +1050,7 @@ components:
           type: string
           description: The current status of the component.  More detailed than phase.
           readOnly: true
-        statusOverride:
+        status_override:
           type: string
           description: If set, this will override the status value.
       additionalProperties: false
@@ -1062,13 +1062,13 @@ components:
         id:
           type: string
           description: The component's id. e.g. xname for hardware components
-        actualState:
+        actual_state:
           $ref: '#/components/schemas/V2ComponentActualState'
-        desiredState:
+        desired_state:
           $ref: '#/components/schemas/V2ComponentDesiredState'
-        stagedState:
+        staged_state:
           $ref: '#/components/schemas/V2ComponentStagedState'
-        lastAction:
+        last_action:
           $ref: '#/components/schemas/V2ComponentLastAction'
         status:
           $ref: '#/components/schemas/V2ComponentStatus'
@@ -1124,16 +1124,16 @@ components:
         Options for the boot orchestration service.
       type: object
       properties:
-        maxComponentWaitTime:
+        max_component_wait_time:
           type: integer
           description: How long BOS will wait for a node (in seconds)
-        pollingFrequency:
+        polling_frequency:
           type: integer
           description: How frequently the BOS operators check component state for needed actions. (in seconds)
-        discoveryFrequency:
+        discovery_frequency:
           type: integer
           description: How frequently the BOS discovery agent syncs new components from HSM. (ins seconds)
-        loggingLevel:
+        logging_level:
           type: string
           description: The logging level for all BOS services
       additionalProperties: false

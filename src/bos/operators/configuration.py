@@ -71,7 +71,7 @@ class ConfigurationOperator(BaseOperator):
     def _set_cfs(components):
         configurations = defaultdict(list)
         for component in components:
-            config_name = component.get('desiredState', {}).get('configuration', '')
+            config_name = component.get('desired_state', {}).get('configuration', '')
             if not config_name:
                 continue
             bos_session = component.get('session')

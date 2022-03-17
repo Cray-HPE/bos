@@ -128,14 +128,14 @@ class BaseOperator(ABC):
             }
             if self.name:
                 attempts = 1
-                last_action = component.get('lastAction', {})
+                last_action = component.get('last_action', {})
                 if last_action.get('action') == self.name:
-                    attempts = last_action.get('numAttempts', 1) + 1
+                    attempts = last_action.get('num_attempts', 1) + 1
                 last_action_data = {
                     'action': self.name,
-                    'numAttempts': attempts,
+                    'num_attempts': attempts,
                 }
-                patch['lastAction'] = last_action_data
+                patch['last_action'] = last_action_data
 
             if additional_fields:
                 patch.update(additional_fields)
