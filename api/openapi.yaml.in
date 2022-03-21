@@ -2063,6 +2063,7 @@ paths:
       tags:
         - v2
         - sessions
+        - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       description: Saves the current session to database.  For use at session completion.
       operationId: save_v2_session_status
