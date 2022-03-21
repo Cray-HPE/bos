@@ -26,10 +26,10 @@ CLI_VERSION="v5.3.0"
 cp ./api/openapi.yaml.in ./api/openapi.yaml
 docker run --rm -v ${PWD}:/local -e PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i" openapitools/openapi-generator-cli:${CLI_VERSION} \
   generate \
-    -i api/openapi.yaml \
+    -i /local/api/openapi.yaml \
     -g python-flask \
-    -o src/ \
-    -c config/autogen-server.json \
+    -o /local/src/ \
+    -c /local/config/autogen-server.json \
     --generate-alias-as-model
 rm ./api/openapi.yaml
 echo "Code has been generated within src for development purposes ONLY."
