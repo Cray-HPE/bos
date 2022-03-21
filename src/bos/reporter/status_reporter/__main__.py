@@ -1,5 +1,8 @@
 #
-# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+# MIT License
+#
+# (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -12,13 +15,12 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
 import logging
 import sys
 from time import sleep
@@ -65,7 +67,7 @@ def report_state_until_success(component):
         session = requests_retry_session()
         try:
             bss_referral_token = get_value_from_proc_cmdline('bss_referral_token')
-            state = {'actualState': {'bootArtifacts': {'bssToken': bss_referral_token}}}
+            state = {'actual_state': {'boot_artifacts': {'bss_token': bss_referral_token}}}
             report_state(component, state, session)
         except UnknownComponent:
             LOGGER.warning("BOS has no record of component '%s'; nothing to report." % (component))
@@ -77,7 +79,7 @@ def report_state_until_success(component):
         except OSError as exc:
             LOGGER.error("BOS client encountered an %s" % (exc))
             continue
-        LOGGER.info("Updated the actualState record for BOS component '%s'." % (component))
+        LOGGER.info("Updated the actual_state record for BOS component '%s'." % (component))
         return
 
 

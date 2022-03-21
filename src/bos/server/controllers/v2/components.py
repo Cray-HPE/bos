@@ -1,4 +1,7 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -12,18 +15,17 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import connexion
 import logging
 
 from bos.common.utils import get_current_timestamp
+from bos.common.values import Phase, Action, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
@@ -38,7 +40,7 @@ EMPTY_BOOT_ARTIFACTS = {
 
 
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None):
+def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -52,11 +54,13 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None):
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
-    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session)
+    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
+                                      phase=phase, status=status)
     return response, 200
 
 
-def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None):
+def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
+                           phase=None, status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -71,17 +75,59 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # TODO: On large scale systems, this response may be too large
         # and require paging to be implemented
         response = DB.get_all()
+    response = [_set_status(r) for r in response if r]
     if enabled is not None or session is not None or staged_session is not None:
-        response = [r for r in response if _matches_filter(r, enabled, session, staged_session)]
+        response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
     return response
 
 
-def _matches_filter(data, enabled, session, staged_session):
+def _set_status(data):
+    if not 'status' in data:
+        data['status'] = {}
+    data['status']['status'] = _get_status(data)
+    return data
+
+
+def _get_status(data):
+    """
+    Returns the status of a component
+    """
+    status_data = data.get('status', {})
+    override = status_data.get('status_override', '')
+    if override:
+        return override
+
+    phase = status_data.get('phase', '')
+    last_action = data.get('last_action', {}).get('action', '')
+    if phase == Phase.powering_on:
+        if last_action == Action.power_on:
+            return Status.power_on_called
+        else:
+            return Status.power_on_pending
+    elif phase == Phase.powering_off:
+        if last_action == Action.power_off_gracefully:
+            return Status.power_off_gracefully_called
+        elif last_action == Action.power_off_forcefully:
+            return Status.power_off_forcefully_called
+        else:
+            return Status.power_off_pending
+    elif phase == Phase.configuring:
+        return Status.configuring
+    else:
+        return Status.stable
+
+
+def _matches_filter(data, enabled, session, staged_session, phase, status):
     if enabled is not None and data.get('enabled', None) != enabled:
         return False
     if session is not None and data.get('session', None) != session:
         return False
-    if staged_session is not None and data.get('stagedState', {}).get('session', None) != staged_session:
+    if staged_session is not None and data.get('staged_state', {}).get('session', None) != staged_session:
+        return False
+    status_data = data.get('status')
+    if phase is not None and status_data.get('phase') != phase:
+        return False
+    if status is not None and status_data.get('status') not in status.split(','):
         return False
     return True
 
@@ -215,7 +261,7 @@ def _apply_staged(component_id):
     if component_id not in DB:
         return False
     data = DB.get(component_id)
-    staged_state = data.get("stagedState", {})
+    staged_state = data.get("staged_state", {})
     staged_session_id = staged_state.get("session", "")
     if not staged_session_id:
         return False
@@ -228,10 +274,10 @@ def _apply_staged(component_id):
     finally:
         # For both the successful and failed cases, we want the new session to own the node
         data["session"] = staged_session_id
-        data["lastAction"]["action"] = "Apply-Staged"
-        data["lastAction"]["numAttempts"] = 1
-        data["stagedState"] = {
-            "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
+        data["last_action"]["action"] = Action.apply_staged
+        data["last_action"]["num_attempts"] = 1
+        data["staged_state"] = {
+            "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
             "configuration": ""
         }
         _set_auto_fields(data)
@@ -240,27 +286,27 @@ def _apply_staged(component_id):
 
 
 def _set_state_from_staged(data):
-    staged_state = data.get("stagedState", {})
+    staged_state = data.get("staged_state", {})
     staged_session_id = staged_state.get("session", "")
     if staged_session_id not in SESSIONS_DB:
         raise Exception("Staged session no longer exists")
     session = SESSIONS_DB.get(staged_session_id)
     operation = session["operation"]
     if operation == "shutdown":
-        if any(staged_state.get("bootArtifacts", {}).values()):
+        if any(staged_state.get("boot_artifacts", {}).values()):
             raise Exception("Staged operation is shutdown but boot artifact have been specified")
         _copy_staged_to_desired(data)
     elif operation == "boot":
-        if not all(staged_state.get("bootArtifacts", {}).values()):
+        if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception("Staged operation is boot but some boot artifacts have not been specified")
         _copy_staged_to_desired(data)
     elif operation == "reboot":
-        if not all(staged_state.get("bootArtifacts", {}).values()):
+        if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception("Staged operation is reboot but some boot artifacts have not been specified")
         _copy_staged_to_desired(data)
-        data["actualState"] = {
-            "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
-            "bssToken": ""
+        data["actual_state"] = {
+            "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+            "bss_token": ""
         }
     else:
         raise Exception("Invalid operation in staged session")
@@ -269,9 +315,9 @@ def _set_state_from_staged(data):
 
 
 def _copy_staged_to_desired(data):
-    staged_state = data.get("stagedState", {})
-    data["desiredState"] = {
-        "bootArtifacts": staged_state.get("bootArtifacts", {}),
+    staged_state = data.get("staged_state", {})
+    data["desired_state"] = {
+        "boot_artifacts": staged_state.get("boot_artifacts", {}),
         "configuration": staged_state.get("configuration", "")
     }
 
@@ -279,14 +325,18 @@ def _copy_staged_to_desired(data):
 def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
+    if "status" not in data:
+        data["status"] = {"phase": "", "status_override": ""}
+    if data.get("enabled"):
+        data["status"]["status_override"] = Status.on_hold
     return data
 
 
 def _populate_boot_artifacts(data):
     """
-    If there is a BSS Token present in the actualState, 
+    If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the
-    actualState data.
+    actual_state data.
     
     If the data contains any boot artifacts and the BSS
     token, then those boot artifacts will be overwritten.
@@ -296,26 +346,26 @@ def _populate_boot_artifacts(data):
     the boot artifacts will not be overwritten.
     """
     try:
-        token = data['actualState']['bssToken']
+        token = data['actual_state']['bss_token']
     except KeyError:
-        # Either actualState or bssToken was not present.
+        # Either actual_state or bss_token was not present.
         pass
     else:
-        # Populate the boot artifacts using the bssToken
+        # Populate the boot artifacts using the bss_token
         try:
             boot_artifacts = get_boot_artifacts(token)
         except BssTokenUnknown:
             LOGGER.error(f"Reported BSS Token: {token} is unknown.")
         else:
-            data['actualState']['bootArtifacts'] = boot_artifacts
+            data['actual_state']['boot_artifacts'] = boot_artifacts
     return data
 
 
 def _set_last_updated(data):
     timestamp = get_current_timestamp()
-    for section in ['actualState', 'desiredState', 'stagedState', 'lastAction']:
-        if section in data and type(data[section]) == dict and data[section].keys() != {"bssToken"}:
-            data[section]['lastUpdated'] = timestamp
+    for section in ['actual_state', 'desired_state', 'staged_state', 'last_action']:
+        if section in data and type(data[section]) == dict and data[section].keys() != {"bss_token"}:
+            data[section]['last_updated'] = timestamp
     return data
 
 

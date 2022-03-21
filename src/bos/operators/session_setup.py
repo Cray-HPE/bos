@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -13,14 +16,12 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import logging
 from botocore.exceptions import ClientError
 
@@ -29,6 +30,7 @@ from bos.operators.utils.clients.hsm import Inventory
 from bos.operators.utils.clients.s3 import S3Object
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.rootfs.factory import ProviderFactory
+from bos.common.values import Action
 
 LOGGER = logging.getLogger('bos.operators.session_setup')
 EMPTY_BOOT_ARTIFACTS = {
@@ -73,6 +75,7 @@ class SessionSetupOperator(BaseOperator):
 
 
 class Session:
+
     def __init__(self, data, inventory_cache, bos_client):
         self.session_data = data
         self.inventory = inventory_cache
@@ -90,7 +93,7 @@ class Session:
     @property
     def template(self):
         if not self._template:
-            template_name = self.session_data.get('templateName')
+            template_name = self.session_data.get('template_name')
             self._template = self.bos_client.session_templates.get_session_template(template_name)
         return self._template
 
@@ -109,7 +112,6 @@ class Session:
             self.bos_client.components.update_components(data)
         return list(set(all_component_ids))
 
-
     def _get_boot_set_component_list(self, boot_set):
         nodes = set()
         # Populate from nodelist
@@ -118,13 +120,13 @@ class Session:
         # Populate from node_groups
         for group_name in boot_set.get('node_groups', []):
             if group_name not in self.inventory.groups:
-                self._log(LOGGER.warning, "No hardware matching label {}".format(group_name))
+                self._log(LOGGER.warning, f"No hardware matching label {group_name}")
                 continue
             nodes |= self.inventory.groups[group_name]
         # Populate from node_roles_groups
         for role_name in boot_set.get('node_roles_groups', []):
             if role_name not in self.inventory.roles:
-                self._log(LOGGER.warning, "No hardware matching role {}".format(role_name))
+                self._log(LOGGER.warning, f"No hardware matching role {role_name}")
                 continue
             nodes |= self.inventory.roles[role_name]
         # Filter to nodes defined by limit
@@ -138,7 +140,7 @@ class Session:
         if not session_limit:
             # No limit is defined, so all nodes are allowed
             return nodes
-        self._log(LOGGER.info, 'Applying limit to session: {}'.format(session_limit))
+        self._log(LOGGER.info, f'Applying limit to session: {session_limit}')
         limit_node_set = set()
         for limit in session_limit.split(','):
             if limit[0] == '&':
@@ -172,23 +174,26 @@ class Session:
         stage = self.session_data.get("stage", False)
         data = {"id": component_id}
         if stage:
-            data["stagedState"] = self._generate_desired_state(boot_set)
-            data["stagedState"]["session"] = self.name
+            data["staged_state"] = self._generate_desired_state(boot_set)
+            data["staged_state"]["session"] = self.name
         else:
-            data["desiredState"] = self._generate_desired_state(boot_set)
+            data["desired_state"] = self._generate_desired_state(boot_set)
             if self.operation_type == "reboot" :
-                data["actualState"] = {
-                    "bootArtifacts": EMPTY_BOOT_ARTIFACTS,
-                    "bssToken": ""
+                data["actual_state"] = {
+                    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+                    "bss_token": ""
                 }
             data["enabled"] = True
+            # Set node's last_action
+            data["last_action"] = {"action": Action.session_setup,
+                                   "num_attempts": 1}
         return data
 
     def _generate_desired_state(self, boot_set):
         if self.operation_type == "shutdown":
             state = {
                 "configuration": "",
-                "bootArtifacts": EMPTY_BOOT_ARTIFACTS
+                "boot_artifacts": EMPTY_BOOT_ARTIFACTS
             }
             return state
         else:
@@ -203,7 +208,6 @@ class Session:
         boot_artifacts['kernel'] = artifact_info['kernel']
         boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")
         boot_artifacts['kernel_parameters'] = self.assemble_kernel_boot_parameters(boot_set, artifact_info)
-        state['bootArtifacts'] = boot_artifacts
         state['configuration'] = self._get_configuration_from_boot_set(boot_set)
         return state
 
@@ -264,10 +268,10 @@ class Session:
                 image_kernel_parameters = image_kernel_parameters_raw.split()
                 if image_kernel_parameters:
                     boot_param_pieces.extend(image_kernel_parameters)
-            except ClientError as error:
+            except (ClientError, UnicodeDecodeError) as error:
                 LOGGER.error("Unable to read file {}. Thus, no kernel boot parameters obtained "
                              "from image".format(artifact_info['boot_parameters']))
-                LOGGER.debug(error)
+                LOGGER.error(error)
 
         # Parameters from the BOS Session template if the parameters exist.
         if boot_set.get('kernel_parameters'):

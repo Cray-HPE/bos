@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -13,47 +16,38 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import logging
 
+from bos.common.values import Action, Status
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, LastActionIs,\
-    BootArtifactStatesMatch, NOT
+from bos.operators.filters import BOSQuery, HSMState
 
 LOGGER = logging.getLogger('bos.operators.power_off_graceful')
 
 
 class GracefulPowerOffOperator(BaseOperator):
     """
-    The Graceful Power-Off Operator tells capmc to power-off nodes if:
-    - Enabled in the BOS database.
-    - DesiredState != CurrentState
-    - LastAction = Complete, Recovery or not set
+    - Enabled in the BOS database and the status is power_off_pending
     - Enabled in HSM
-    - Powered on.
     """
 
     @property
     def name(self):
-        return 'Graceful-Power-Off'
+        return Action.power_off_gracefully
 
     # Filters
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True),
-            NOT(BootArtifactStatesMatch()),
-            LastActionIs('Complete,Recovery,'),
+            BOSQuery(enabled=True, status=Status.power_off_pending),
             HSMState(enabled=True),
-            PowerState(state='on')
         ]
 
     def _act(self, components):

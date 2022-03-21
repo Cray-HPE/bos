@@ -1,4 +1,7 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -12,14 +15,12 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import logging
 import connexion
 import threading
@@ -35,9 +36,9 @@ DB = dbutils.get_wrapper(db='options')
 # options simpler
 OPTIONS_KEY = 'options'
 DEFAULTS = {
-    'maxComponentWaitTime': 3600,
-    'pollingFrequency': 60,
-    'loggingLevel': 'INFO'
+    'max_component_wait_time': 3600,
+    'polling_frequency': 60,
+    'logging_level': 'INFO'
 }
 
 
@@ -115,7 +116,7 @@ def patch_v2_options():
     return DB.patch(OPTIONS_KEY, data), 200
 
 
-def update_v2_log_level(new_level_str):
+def update_log_level(new_level_str):
     new_level = logging.getLevelName(new_level_str.upper())
     current_level = LOGGER.getEffectiveLevel()
     if current_level != new_level:
@@ -130,9 +131,9 @@ def update_v2_log_level(new_level_str):
 def check_v2_logging_level():
     while True:
         try:
-            data = get_options_data()
-            if 'loggingLevel' in data:
-                update_log_level(data['loggingLevel'])
+            data = get_v2_options_data()
+            if 'logging_level' in data:
+                update_log_level(data['logging_level'])
         except Exception as e:
             LOGGER.debug(e)
         time.sleep(5)

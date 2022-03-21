@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -13,24 +16,22 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 from collections import defaultdict
 import logging
 from requests import HTTPError
 
+from bos.common.values import Action, Status
 import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.capmc as capmc
-from bos.operators.utils.clients.bos.options import options
+from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, PowerState, TimeSinceLastAction, LastActionIs, \
-    DesiredBootStateIsNone, DesiredConfigurationSetInCFS, DesiredConfigurationIsNone, NOT, OR
+from bos.operators.filters import BOSQuery, HSMState, DesiredConfigurationSetInCFS, DesiredConfigurationIsNone, OR
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger('bos.operators.power_on')
@@ -39,39 +40,25 @@ LOGGER = logging.getLogger('bos.operators.power_on')
 class PowerOnOperator(BaseOperator):
     """
     The Power-On Operator tells capmc to power-on nodes if:
-    - Enabled in the BOS database.
-    - DesiredState != None
-    - DesiredConfiguration == SetConfiguration OR DesiredConfiguration == None
-    - LastAction != Power-On OR TimeSinceLastAction > wait time (default 5 minutes)
+    - Enabled in the BOS database and the status is power_on_pending
     - Enabled in HSM
-    - Powered off.
     """
 
     @property
     def name(self):
-        return 'Power-On'
+        return Action.power_on
 
     # Filters
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True),
-            NOT(DesiredBootStateIsNone()),
-            OR(
-                # If the last action was power-on, wait before retrying
-                [NOT(LastActionIs('Power-On'))],
-                [TimeSinceLastAction(seconds=options.max_component_wait_time)]
-            ),
-            OR(
-                [DesiredConfigurationSetInCFS()],
-                [DesiredConfigurationIsNone()]
-            ),
-            HSMState(enabled=True),
-            PowerState(state='off')
+            BOSQuery(enabled=True, status=Status.power_on_pending),
+            HSMState(enabled=True)
         ]
 
     def _act(self, components):
         self._set_bss(components)
+        set_cfs(components, enabled=False)
         component_ids = [component['id'] for component in components]
         capmc.power(component_ids, state='on')
         return components
@@ -85,7 +72,7 @@ class PowerOnOperator(BaseOperator):
         """
         parameters = defaultdict(set)
         for component in components:
-            boot_artifacts = component.get('desiredState', {}).get('bootArtifacts', {})
+            boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
             kernel = boot_artifacts.get('kernel')
             kernel_parameters = boot_artifacts.get('kernel_parameters')
             initrd = boot_artifacts.get('initrd')
@@ -109,7 +96,7 @@ class PowerOnOperator(BaseOperator):
 
                 for node in nodes:
                     bss_tokens.append({"id": node,
-                                       "desiredState": {"bssToken": token}})
+                                       "desired_state": {"bss_token": token}})
         self.bos_client.components.update_components(bss_tokens)
 
 

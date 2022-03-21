@@ -52,9 +52,9 @@ info:
 
     #### POST /session
 
-    Specify templateName and an
+    Specify template_name and an
     operation to create a new session.
-    The templateName corresponds to the session template *name*.
+    The template_name corresponds to the session template *name*.
     A new session is launched as a result of this call.
 
     A limit can also be specified to narrow the scope of the session. The limit
@@ -650,11 +650,11 @@ components:
 
         * self : The session object
       properties:
-        templateUrl:
+        template_url:
           type: string
           description: |
             The URL to the resource providing the session template data.
-            Specify either a templateURL, or the other session
+            Specify either a template_url, or the other session
             template parameters.
         name:
           type: string
@@ -701,6 +701,14 @@ components:
         A Session Creation object
       type: object
       properties:
+        name:
+          type: string
+          description: Name of the session. A uuid name is generated if a name is not provided.
+          example: "session-20190728032600"
+          # These validation parameters are restricted by Kubernetes naming conventions.
+          minLength: 1
+          maxLength: 45
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
         operation:
           type: string
           enum: ['boot', 'reboot', 'shutdown']
@@ -714,7 +722,7 @@ components:
                 Boot                 Applies the template to the components and boots/reboots if necessary.
                 Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
-        templateName:
+        template_name:
           type: string
           description: The name of the Session Template
           example: "my-session-template"
@@ -731,17 +739,21 @@ components:
             Set to force nodes to reboot even if they are already in the desired
             state.
           default: false
-      required: [operation, templateName]
+      required: [operation, template_name]
       additionalProperties: false
     V2SessionStatus:
       type: object
       description: |
         Information on the status of a session.
       properties:
-        startTime:
+        start_time:
           type: string
           description: |
             When the session was created.
+        end_time:
+          type: string
+          description: |
+            When the session completed.
         status:
           type: string
           enum: ['pending', 'running', 'complete']
@@ -840,7 +852,7 @@ components:
                 Boot                 Applies the template to the components and boots/reboots if necessary.
                 Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
-        templateName:
+        template_name:
           type: string
           description: The name of the Session Template
           example: "my-session-template"
@@ -870,6 +882,81 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2Session'
+    V2SessionExtendedStatusPhases:
+      type: object
+      description: |
+        Detailed information on the phases of a session.
+      properties:
+        percent_complete:
+          type: float
+          description: |
+            The percent of components currently in a completed/stable state
+        percent_powering_on:
+          type: float
+          description: |
+            The percent of components currently in the powering-on phase
+        percent_powering_off:
+          type: float
+          description: |
+            The percent of components currently in the powering-off phase
+        percent_configuring:
+          type: float
+          description: |
+            The percent of components currently in the configuring phase
+      additionalProperties: false
+    V2SessionExtendedStatusTiming:
+      type: object
+      description: |
+        Detailed information on the timing of a session.
+      properties:
+        start_time:
+          type: string
+          description: |
+            When the session was created.
+        end_time:
+          type: string
+          description: |
+            When the session completed.
+        duration:
+          type: string
+          description: |
+            The current duration of the on-going session or final duration of the completed session.
+      additionalProperties: false
+    V2SessionExtendedStatus:
+      type: object
+      description: |
+        Detailed information on the status of a session.
+      properties:
+        status:
+          type: string
+          enum: ['pending', 'running', 'complete']
+          description: |
+            The status of a session.
+        managed_components_count:
+          type: integer
+          description: |
+            The count of components currently managed by this session
+        phases:
+          $ref: '#/components/schemas/V2SessionExtendedStatusPhases'
+        percent_successful:
+          type: float
+          description: |
+            The percent of components currently in a successful state
+        percent_failed:
+          type: float
+          description: |
+            The percent of components currently in a failed state
+        percent_staged:
+          type: float
+          description: |
+            The percent of components currently still staged for this session
+        error_summary:
+          type: object
+          description: |
+            A summary of the errors currently listed by all components
+        timing:
+          $ref: '#/components/schemas/V2SessionExtendedStatusTiming'
+      additionalProperties: false
     V2BootArtifacts:
       description: |
         A collection of boot artifacts.
@@ -890,14 +977,14 @@ components:
         The desired boot artifacts and configuration for a component
       type: object
       properties:
-        bootArtifacts:
+        boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
-        bssToken:
+        bss_token:
           type: string
           description: >
             A token received from the node identifying the boot artifacts. 
             For BOS use-only, users should not set this field. It will be overwritten.
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -908,17 +995,17 @@ components:
         The desired boot artifacts and configuration for a component
       type: object
       properties:
-        bootArtifacts:
+        boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         configuration:
           type: string
           description: A CFS configuration ID.
-        bssToken:
+        bss_token:
           type: string
           description: >
             A token received from BSS identifying the boot artifacts. 
             For BOS use-only, users should not set this field. It will be overwritten.
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -930,7 +1017,7 @@ components:
         The desired boot artifacts and configuration for a component
       type: object
       properties:
-        bootArtifacts:
+        boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         configuration:
           type: string
@@ -938,7 +1025,7 @@ components:
         session:
           type: string
           description: A session which can be triggered at a later time against this component.
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -950,7 +1037,7 @@ components:
         Information on the most recent action taken against the node.
       type: object
       properties:
-        lastUpdated:
+        last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
           example: '2019-07-28T03:26:00Z'
@@ -959,9 +1046,24 @@ components:
         action:
           type: string
           description: A description of the most recent operator/action to impact the component.
-        numAttempts:
+        num_attempts:
           type: integer
           description: How many attempts have been made for this action.
+      additionalProperties: false
+    V2ComponentStatus:
+      description: Status information for the component
+      type: object
+      properties:
+        phase:
+          type: string
+          description: The current phase of the component in the boot process.
+        status:
+          type: string
+          description: The current status of the component.  More detailed than phase.
+          readOnly: true
+        status_override:
+          type: string
+          description: If set, this will override the status value.
       additionalProperties: false
     V2Component:
       description: |
@@ -971,14 +1073,16 @@ components:
         id:
           type: string
           description: The component's id. e.g. xname for hardware components
-        actualState:
+        actual_state:
           $ref: '#/components/schemas/V2ComponentActualState'
-        desiredState:
+        desired_state:
           $ref: '#/components/schemas/V2ComponentDesiredState'
-        stagedState:
+        staged_state:
           $ref: '#/components/schemas/V2ComponentStagedState'
-        lastAction:
+        last_action:
           $ref: '#/components/schemas/V2ComponentLastAction'
+        status:
+          $ref: '#/components/schemas/V2ComponentStatus'
         enabled:
           type: boolean
           description: A flag indicating if actions should be taken for this component.
@@ -1031,16 +1135,16 @@ components:
         Options for the boot orchestration service.
       type: object
       properties:
-        maxComponentWaitTime:
+        max_component_wait_time:
           type: integer
           description: How long BOS will wait for a node (in seconds)
-        pollingFrequency:
+        polling_frequency:
           type: integer
           description: How frequently the BOS operators check component state for needed actions. (in seconds)
-        discoveryFrequency:
+        discovery_frequency:
           type: integer
           description: How frequently the BOS discovery agent syncs new components from HSM. (ins seconds)
-        loggingLevel:
+        logging_level:
           type: string
           description: The logging level for all BOS services
       additionalProperties: false
@@ -1152,6 +1256,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionArray'
+    V2SessionExtendedStatus:
+      description: Session status details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2SessionExtendedStatus'
     V2componentDetails:
       description: A single component state
       content:
@@ -1937,6 +2047,40 @@ paths:
         required: true
         schema:
           type: string
+  /v2/sessions/{session_id}/status:
+    get:
+      summary: Get session extended status information by id
+      description: Get session extended status information by id
+      tags:
+        - v2
+        - sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
+      operationId: get_v2_session_status
+      responses:
+        200:
+          $ref: '#/components/responses/V2SessionExtendedStatus'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
+    post:
+      summary: Saves the current session to database
+      tags:
+        - v2
+        - sessions
+      x-openapi-router-controller: bos.server.controllers.v2.sessions
+      description: Saves the current session to database.  For use at session completion.
+      operationId: save_v2_session_status
+      responses:
+        200:
+          $ref: '#/components/responses/V2SessionDetails'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
+    parameters:
+      - name: session_id
+        in: path
+        description: Session ID
+        required: true
+        schema:
+          type: string
   /v2/components:
     get:
       summary: Retrieve the state of a collection of components
@@ -1979,6 +2123,18 @@ paths:
           in: query
           description: >-
             Retrieve the components with the "enabled" state.
+        - name: phase
+          schema:
+            type: string
+          in: query
+          description: >-
+            Retrieve the components in the given phase.
+        - name: status
+          schema:
+            type: string
+          in: query
+          description: >-
+            Retrieve the components with the given status.
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'

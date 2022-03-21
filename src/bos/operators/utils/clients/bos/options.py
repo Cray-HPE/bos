@@ -1,4 +1,7 @@
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -12,14 +15,12 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import logging
 import json
 from requests.exceptions import HTTPError, ConnectionError
@@ -71,19 +72,23 @@ class Options:
 
     @property
     def logging_level(self):
-        return self.get_option('loggingLevel', str, 'INFO')
+        return self.get_option('logging_level', str, 'INFO')
 
     @property
     def polling_frequency(self):
-        return self.get_option('pollingFrequency', int, 60)
+        return self.get_option('polling_frequency', int, 60)
 
     @property
     def discovery_frequency(self):
-        return self.get_option('discoveryFrequency', int, 5*60)
+        return self.get_option('discovery_frequency', int, 5*60)
 
     @property
     def max_component_wait_time(self):
-        return self.get_option('maxComponentWaitTime', int, 300)
+        return self.get_option('max_component_wait_time', int, 300)
+
+    @property
+    def disable_components_on_completion(self):
+        return self.get_option('disable_components_on_completion', bool, True)
 
 
 options = Options()

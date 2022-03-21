@@ -1,4 +1,7 @@
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -12,13 +15,13 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
+from collections import defaultdict
 import logging
 from requests.exceptions import HTTPError, ConnectionError
 
@@ -73,3 +76,16 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None):
             data = []
     if data:
         patch_components(data, session=session)
+
+
+def set_cfs(components, enabled):
+    configurations = defaultdict(list)
+    for component in components:
+        config_name = component.get('desired_state', {}).get('configuration', '')
+        bos_session = component.get('session')
+        key = (config_name, bos_session)
+        configurations[key].append(components['id'])
+    for key, ids in configurations.items():
+        config_name, bos_session = key
+        patch_desired_config(ids, config_name, enabled=enabled,
+                             tags={'bos_session': bos_session})

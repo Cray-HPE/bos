@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -13,13 +16,12 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
 """
 BOS Operator - A Python operator for the Boot Orchestration Service.
 """
@@ -126,14 +128,14 @@ class BaseOperator(ABC):
             }
             if self.name:
                 attempts = 1
-                last_action = component.get('lastAction', {})
+                last_action = component.get('last_action', {})
                 if last_action.get('action') == self.name:
-                    attempts = last_action.get('numAttempts', 1) + 1
+                    attempts = last_action.get('num_attempts', 1) + 1
                 last_action_data = {
                     'action': self.name,
-                    'numAttempts': attempts,
+                    'num_attempts': attempts,
                 }
-                patch['lastAction'] = last_action_data
+                patch['last_action'] = last_action_data
 
             if additional_fields:
                 patch.update(additional_fields)

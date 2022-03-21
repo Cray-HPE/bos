@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -13,14 +16,12 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import copy
 from datetime import timedelta
 import logging
@@ -29,7 +30,6 @@ from typing import List, Type
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
-from bos.operators.utils.clients.capmc import status as get_power_state
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
@@ -90,33 +90,6 @@ class HSMState(IDFilter):
         return [component['ID'] for component in components['Components']]
 
 
-class PowerState(IDFilter):
-    """ Returns all components that are in desired power state """
-
-    def __init__(self, state: str='on') -> None:
-        super().__init__()
-        self.state = state
-
-    def _filter(self, components: List[str]) -> List[str]:
-        # Address CASMCMS-7804: Once that Jira is resolved, uncomment this line
-        # and delete the one below it.
-        # response, _, _ = get_power_state(components, filtertype='show_{}'.format(self.state))
-        response, _, _ = get_power_state(components)
-        return response[self.state]
-
-
-class ConfigurationStatus(IDFilter):
-    """ Returns all components that are in desired configuration status """
-
-    def __init__(self, status: str='configured') -> None:
-        super().__init__()
-        self.status = status
-
-    def _filter(self, components: List[str]) -> List[str]:
-        components = get_cfs_components(ids=components, status=self.status)
-        return [component['id'] for component in components]
-
-
 class NOT(LocalFilter):
     """ Returns the opposite of the given filter.  Use on local filters only."""
 
@@ -139,7 +112,7 @@ class TimeSinceLastAction(LocalFilter):
         self.kwargs = kwargs
 
     def _match(self, component: dict) -> bool:
-        last_action_time = component.get('lastAction', {}).get('lastUpdated')
+        last_action_time = component.get('last_action', {}).get('last_updated')
         now = get_current_time()
         if not last_action_time or now > load_timestamp(last_action_time) + timedelta(**self.kwargs):
             return True
@@ -154,7 +127,7 @@ class LastActionIs(LocalFilter):
         self.actions = actions.split(',')
 
     def _match(self, component: dict) -> bool:
-        last_action = component.get('lastAction', {}).get('action', '')
+        last_action = component.get('last_action', {}).get('action', '')
         if last_action in self.actions:
             return True
         return False
@@ -164,10 +137,10 @@ class BootArtifactStatesMatch(LocalFilter):
     """ Returns when current and desired kernel and image states match """
 
     def _match(self, component: dict) -> bool:
-        desired_state = component.get('desiredState', {})
-        actual_state = component.get('actualState', {})
-        desired_boot_state = desired_state.get('bootArtifacts', {})
-        actual_boot_state = actual_state.get('bootArtifacts', {})
+        desired_state = component.get('desired_state', {})
+        actual_state = component.get('actual_state', {})
+        desired_boot_state = desired_state.get('boot_artifacts', {})
+        actual_boot_state = actual_state.get('boot_artifacts', {})
         for key in ['kernel', 'kernel_parameters', 'initrd']:
             if desired_boot_state.get(key, None) != actual_boot_state.get(key, None):
                 return False
@@ -188,8 +161,8 @@ class DesiredConfigurationSetInCFS(DetailsFilter):
         return matching_components
 
     def _match(self, component: dict, cfs_component: dict) -> bool:
-        desired_configuration = component.get('desiredState', {}).get('configuration')
-        set_configuration = cfs_component.get('desiredConfig')
+        desired_configuration = component.get('desired_state', {}).get('configuration')
+        set_configuration = cfs_component.get('desired_config')
         return desired_configuration == set_configuration
 
 
@@ -197,8 +170,8 @@ class DesiredBootStateIsNone(LocalFilter):
     """ Returns when the desired state is None """
 
     def _match(self, component: dict) -> bool:
-        desired_state = component.get('desiredState', {})
-        desired_boot_state = desired_state.get('bootArtifacts', {})
+        desired_state = component.get('desired_state', {})
+        desired_boot_state = desired_state.get('boot_artifacts', {})
         if not desired_boot_state or not all([bool(v) for v in desired_boot_state.values()]):
             return True
         return False
@@ -208,7 +181,7 @@ class DesiredConfigurationIsNone(LocalFilter):
     """ Returns when the desired configuration is None """
 
     def _match(self, component: dict) -> bool:
-        desired_state = component.get('desiredState', {})
+        desired_state = component.get('desired_state', {})
         if not desired_state or not desired_state.get('configuration', ''):
             return True
         return False

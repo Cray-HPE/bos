@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright 2022 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -13,38 +16,35 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import logging
 import time
 from typing import List, NoReturn, Set
 from copy import copy
 
-import bos.operators.utils.clients.capmc as capmc
+from bos.common.values import Action
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.hsm import read_all_node_xnames, HWStateManagerException
 from bos.operators.base import BaseOperator, main, _update_log_level
-from bos.operators.filters import BOSQuery, HSMState
 from bos.operators.utils.clients.bos.components import ComponentEndpoint
 
 LOGGER = logging.getLogger(__name__)
 
-BLANK_STATE = {'bootArtifacts': {'kernel': '',
-                                 'kernel_parameters': '',
-                                 'initrd': ''},
+BLANK_STATE = {'boot_artifacts': {'kernel': '',
+                                  'kernel_parameters': '',
+                                  'initrd': ''},
                'configuration': ''}
 NEW_COMPONENT = {'id': None,
-                 'actualState': BLANK_STATE,
-                 'desiredState': BLANK_STATE,
-                 'stagedState': {},
-                 'lastAction': {'action': 'Newly Discovered',
-                                'numAttempts': 1},
+                 'actual_state': BLANK_STATE,
+                 'desired_state': BLANK_STATE,
+                 'staged_state': {},
+                 'last_action': {'action': Action.newly_discovered,
+                                 'num_attempts': 1},
                  'enabled': False,
                  'error': '',
                  'session': ''}
