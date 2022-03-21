@@ -27,6 +27,7 @@ import connexion
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
 from bos.server import redis_db_utils as dbutils
 from bos.server.utils import _canonize_xname
+from .boot_set import validate_boot_sets
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
 DB = dbutils.get_wrapper(db='session_templates')
@@ -75,7 +76,7 @@ def _sanitize_xnames(st_json):
 
 @dbutils.redis_error_handler
 def put_v2_sessiontemplate(session_template_id):  # noqa: E501
-    """POST /v2/sessiontemplate
+    """PUT /v2/sessiontemplate
 
     Creates a new session template. # noqa: E501
     """
@@ -85,7 +86,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
         LOGGER.debug("type=%s", type(connexion.request.get_json()))
         LOGGER.debug("Received: %s", connexion.request.get_json())
     else:
-        return "Post must be in JSON format", 400
+        return "PUT must be in JSON format", 400
 
     try:
         data = connexion.request.get_json()
@@ -95,13 +96,17 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
             detail=str(err))
 
     template_data = data
+    # Validate health/validity of the sessiontemplate before creating a session
+    msg = validate_boot_sets(template_data, "boot")
+    if msg:
+        LOGGER.warn(msg)
 
     try:
         """Convert the JSON request data into a SessionTemplate object.
            Any exceptions caught here would be generated from the model
            (i.e. bos.server.models.session_template).
            An example is an exception for a session template name that
-           does not confirm to Kubernetes naming convention.
+           does not conform to Kubernetes naming convention.
            In this case return 400 with a description of the specific error.
         """
         SessionTemplate.from_dict(template_data)
