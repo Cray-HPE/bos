@@ -50,12 +50,7 @@ def calc_version(details):
         ])
 
     # parse open API spec file from docker image or local repository
-    openapispec_f = '/app/lib/server/bos/openapi/openapi.yaml'
-    if not path.exists(openapispec_f):
-        repo_root_dir = subprocess.Popen(
-            ['git', 'rev-parse', '--show-toplevel'],
-            stdout=subprocess.PIPE).communicate()[0].rstrip().decode('utf-8')
-        openapispec_f = repo_root_dir + '/src/server/bos/openapi/openapi.yaml'
+    openapispec_f = '/app/lib/bos/server/openapi/openapi.yaml'
     f = None
     try:
         f = open(openapispec_f, 'r')
