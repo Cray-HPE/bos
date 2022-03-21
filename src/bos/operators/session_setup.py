@@ -222,11 +222,12 @@ class Session:
         """
         if not self.session_data.get('enable_cfs', True):
             return ''
-        bs_config = self.session_data['boot_sets'][boot_set].get('cfs', {}).get('configuration', '')
+        
+        bs_config = self.template['boot_sets'][boot_set].get('cfs', {}).get('configuration', '')
         if bs_config:
             return bs_config
         # Otherwise, we take the configuration value from the session itself
-        return self.session_data.get('cfs', {}).get('cconfigurations', '')
+        return self.session_data.get('cfs', {}).get('configuration', '')
 
     def assemble_kernel_boot_parameters(self, boot_set, artifact_info):
         """
