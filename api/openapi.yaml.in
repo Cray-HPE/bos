@@ -779,7 +779,7 @@ components:
           description: |
             A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
             It will be processed based on the type attribute.
-        cfs:
+        configuration:
           $ref: '#/components/schemas/V2CfsParameters'
         type:
           type: string
