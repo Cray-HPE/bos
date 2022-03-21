@@ -86,9 +86,8 @@ def post_v2_session():  # noqa: E501
 
     # -- Setup Record --
     session = _create_session(session_create)
-    session = session.to_dict()
-    data = dbutils.snake_to_camel_json(session)
-    response = DB.put(session['name'], data)
+    session_data = session.to_dict()
+    response = DB.put(session_data['name'], session_data)
     return response, 201
 
 
@@ -187,7 +186,7 @@ def patch_v2_session(session_id):
 
     if not connexion.request.is_json:
         return "Post must be in JSON format", 400
-    data = dbutils.snake_to_camel_json(connexion.request.get_json())
+    data = connexion.request.get_json()
     component = DB.patch(session_id, data)
     return component, 200
 

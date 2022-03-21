@@ -152,21 +152,3 @@ def redis_error_handler(func):
 def get_wrapper(db):
     """Returns a database object."""
     return DBWrapper(db)
-
-
-# Our api uses camel case, but the auto generated models return snake case
-# so this allows users to use the model validation, while storing/returning data that matches our spec
-def snake_to_camel_json(data):
-    if type(data) == dict:
-        camel_out = {}
-        for key, value in data.items():
-            camel_out[snake_to_camel(key)] = snake_to_camel_json(value)
-        return camel_out
-    elif type(data) == list:
-        return [snake_to_camel_json(i) for i in data]
-    else:
-        return data
-
-
-def snake_to_camel(snake_input):
-    return ''.join((word.title() if i != 0 else word) for i, word in enumerate(snake_input.split('_')))
