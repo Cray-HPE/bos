@@ -689,7 +689,7 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/Link'
-      required: [name]
+      required: []
       additionalProperties: false
     V2SessionTemplateArray:
       description: An array of session templates.
