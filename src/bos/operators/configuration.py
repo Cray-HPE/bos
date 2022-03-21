@@ -25,7 +25,8 @@
 from collections import defaultdict
 import logging
 
-import bos.operators.utils.clients.cfs as cfs
+from bos.common.values import Status
+from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, \
     BootArtifactStatesMatch, NOT
@@ -36,15 +37,8 @@ LOGGER = logging.getLogger('bos.operators.configuration')
 class ConfigurationOperator(BaseOperator):
     """
     The Configure Operator sets the desired configuration in CFS if:
-    - Enabled in the BOS database.
-    - DesiredConfiguration != None
+    - Enabled in the BOS database and the current phase is configuring
     - DesiredConfiguration != SetConfiguration
-
-    Additional filters are applied before the action.
-    BOS enables the node in CFS if:
-    - DesiredState == CurrentState
-
-    otherwise BOS disables the node in CFS.
     """
 
     @property
@@ -58,33 +52,13 @@ class ConfigurationOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True),
-            NOT(DesiredConfigurationIsNone()),
+            BOSQuery(enabled=True, status=Status.configuring),
             NOT(DesiredConfigurationSetInCFS())
         ]
 
     def _act(self, components):
-        self._set_cfs(components)
+        set_cfs(components, enabled=True)
         return components
-
-    @staticmethod
-    def _set_cfs(components):
-        configurations = defaultdict(list)
-        for component in components:
-            config_name = component.get('desired_state', {}).get('configuration', '')
-            if not config_name:
-                continue
-            bos_session = component.get('session')
-            enabled = False
-            if BootArtifactStatesMatch._match(component):
-                # BOS won't reboot the node.  Configure now rather than waiting for a reboot.
-                enabled = True
-            key = (config_name, enabled, bos_session)
-            configurations[key].append(components['id'])
-        for key, ids in configurations.items():
-            config_name, enabled, bos_session = key
-            cfs.patch_desired_config(ids, config_name, enabled=enabled,
-                                     tags={'bos_session': bos_session})
 
 
 if __name__ == '__main__':

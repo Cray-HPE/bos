@@ -27,7 +27,7 @@ import logging
 from bos.common.values  import Phase, Status, Action
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsNone, BootArtifactStatesMatch,\
-    DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
+    DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.capmc import status as get_power_states
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
@@ -46,6 +46,7 @@ class StatusOperator(BaseOperator):
         self.desired_boot_state_is_none = DesiredBootStateIsNone()._match
         self.boot_artifact_states_match = BootArtifactStatesMatch()._match
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
+        self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
         self.last_action_is_power_on = LastActionIs(Action.power_on)._match
         self.wait_time_elapsed = TimeSinceLastAction(minutes=options.max_component_wait_time)._match
 
@@ -141,7 +142,9 @@ class StatusOperator(BaseOperator):
                 phase = Phase.powering_on
         elif power_state == 'on':
             if self.boot_artifact_states_match(component):
-                if self.desired_configuration_is_none(component, cfs_component):
+                if not self.desired_configuration_set_in_cfs(component, cfs_component):
+                    phase = Phase.configuring
+                elif self.desired_configuration_is_none(component, cfs_component):
                     phase = Phase.none
                     disable = True  # Successful state - booted with the correct artifacts, no configuration necessary
                 else:

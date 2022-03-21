@@ -29,6 +29,7 @@ from requests import HTTPError
 from bos.common.values import Action, Status
 import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.capmc as capmc
+from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, DesiredConfigurationSetInCFS, DesiredConfigurationIsNone, OR
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
@@ -41,7 +42,6 @@ class PowerOnOperator(BaseOperator):
     The Power-On Operator tells capmc to power-on nodes if:
     - Enabled in the BOS database and the status is power_on_pending
     - Enabled in HSM
-    - DesiredConfiguration == SetConfiguration OR DesiredConfiguration == None
     """
 
     @property
@@ -53,15 +53,12 @@ class PowerOnOperator(BaseOperator):
     def filters(self):
         return [
             BOSQuery(enabled=True, status=Status.power_on_pending),
-            OR(
-                [DesiredConfigurationSetInCFS()],
-                [DesiredConfigurationIsNone()]
-            ),
             HSMState(enabled=True)
         ]
 
     def _act(self, components):
         self._set_bss(components)
+        set_cfs(components, enabled=False)
         component_ids = [component['id'] for component in components]
         capmc.power(component_ids, state='on')
         return components
