@@ -183,6 +183,7 @@ class Session:
                     "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
                     "bss_token": ""
                 }
+            data["session"] = self.name
             data["enabled"] = True
             # Set node's last_action
             data["last_action"] = {"action": Action.session_setup,
