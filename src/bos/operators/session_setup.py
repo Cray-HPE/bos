@@ -211,7 +211,7 @@ class Session:
         state['configuration'] = self._get_configuration_from_boot_set(boot_set)
         return state
 
-    def _get_configuration_from_boot_set(self, boot_set):
+    def _get_configuration_from_boot_set(self, boot_set: dict):
         """
         An abstraction method for determining the configuration to use
         in the event for any given <boot set> within a session. Boot Sets
@@ -222,8 +222,7 @@ class Session:
         """
         if not self.session_data.get('enable_cfs', True):
             return ''
-        
-        bs_config = self.template['boot_sets'][boot_set].get('cfs', {}).get('configuration', '')
+        bs_config = boot_set.get('configuration', '')
         if bs_config:
             return bs_config
         # Otherwise, we take the configuration value from the session itself
