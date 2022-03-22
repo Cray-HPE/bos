@@ -36,6 +36,7 @@ EXAMPLE_BOOT_SET = {
     "type": "your-boot-type",
     "etag": "your_boot_image_etag",
     "kernel_parameters": "your-kernel-parameters",
+    "cfs": {"configuration": "bootset_specific_cfs_override"},
     "network": "nmn",
     "node_list": [
         "xname1", "xname2", "xname3"],
@@ -47,7 +48,7 @@ EXAMPLE_SESSION_TEMPLATE = {
     "boot_sets": {
         "name_your_boot_set": EXAMPLE_BOOT_SET},
     "cfs": {
-        "configuration": "desired-cfs-config"},
+        "configuration": "default-sessiontemplate-cfs-config"},
     "enable_cfs": True,
     "name": "name-your-template"}
 

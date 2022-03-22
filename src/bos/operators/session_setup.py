@@ -103,7 +103,7 @@ class Session:
 
     def _setup_components(self):
         all_component_ids = []
-        for name, boot_set in self.template.get('boot_sets', {}).items():
+        for _, boot_set in self.template.get('boot_sets', {}).items():
             components = self._get_boot_set_component_list(boot_set)
             data = []
             for component_id in components:
@@ -208,14 +208,25 @@ class Session:
         boot_artifacts['kernel'] = artifact_info['kernel']
         boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")
         boot_artifacts['kernel_parameters'] = self.assemble_kernel_boot_parameters(boot_set, artifact_info)
-        state['boot_artifacts'] = boot_artifacts
-
-        if self.session_data.get('enable_cfs', False):
-            configuration = self.session_data.get('cfs', {}).get('configuration', '')
-            if configuration:
-                state['configuration'] = configuration
-
+        state['configuration'] = self._get_configuration_from_boot_set(boot_set)
         return state
+
+    def _get_configuration_from_boot_set(self, boot_set: dict):
+        """
+        An abstraction method for determining the configuration to use
+        in the event for any given <boot set> within a session. Boot Sets
+        can define their own cfs configuration name as an override to
+        a provided session level configuration. Alternatively, disabling
+        configuration from within the session level boolean 'enable_cfs'
+        will override any value set within a boot set.
+        """
+        if not self.session_data.get('enable_cfs', True):
+            return ''
+        bs_config = boot_set.get('configuration', '')
+        if bs_config:
+            return bs_config
+        # Otherwise, we take the configuration value from the session itself
+        return self.session_data.get('cfs', {}).get('configuration', '')
 
     def assemble_kernel_boot_parameters(self, boot_set, artifact_info):
         """

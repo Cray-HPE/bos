@@ -627,7 +627,8 @@ components:
       type: object
       description: |
         CFS Parameters is the collection of parameters that are passed to the Configuration
-        Framework Service when configuration is enabled.
+        Framework Service when configuration is enabled. Can be set as the global value for
+        a Session Template, or individually within a boot set.
       properties:
         configuration:
           type: string
@@ -688,7 +689,7 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/Link'
-      required: [name]
+      required: []
       additionalProperties: false
     V2SessionTemplateArray:
       description: An array of session templates.
@@ -778,6 +779,8 @@ components:
           description: |
             A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
             It will be processed based on the type attribute.
+        cfs:
+          $ref: '#/components/schemas/V2CfsParameters'
         type:
           type: string
           description: |
