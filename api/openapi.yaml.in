@@ -1137,7 +1137,7 @@ components:
       properties:
         cleanup_completed_session_age:
           type: integer
-          descriptions: Delete complete sessions that are older than cleanup_completed_session_age (in seconds ago). 0 disables cleanup behavior.
+          description: Delete complete sessions that are older than cleanup_completed_session_age (in seconds ago). 0 disables cleanup behavior.
         disable_components_on_completion:
           type: bool
           description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 
