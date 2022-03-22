@@ -78,7 +78,7 @@ def post_v2_session():  # noqa: E501
         session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
-    msg = validate_boot_sets(session_template, session_create.operation)
+    msg = validate_boot_sets(session_template, session_create.operation, template_name)
     if msg:
         return msg, 400
 

@@ -97,7 +97,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
 
     template_data = data
     # Validate health/validity of the sessiontemplate before creating a session
-    msg = validate_boot_sets(template_data, "boot")
+    msg = validate_boot_sets(template_data, "boot", session_template_id)
     if msg:
         LOGGER.warn(msg)
 

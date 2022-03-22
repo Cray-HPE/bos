@@ -29,7 +29,9 @@ from bos.operators.utils.clients.s3 import S3Object
 LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
 
 
-def validate_boot_sets(session_template: dict, operation: str) -> tuple[str, int]:
+def validate_boot_sets(session_template: dict,
+                       operation: str,
+                       template_name: str) -> tuple[str, int]:
     """
     Validates the boot sets listed in a session template.
     It ensures that there are boot sets.
@@ -37,14 +39,16 @@ def validate_boot_sets(session_template: dict, operation: str) -> tuple[str, int
     Ensures that the boot artifacts exist.  
     
     Inputs:
-      session_template (dict): Session template
+      session_template (dict): Session template data
       operation (str): Requested operation  
+      template_name (str): The name of the session template; Note, during Session template
+                                 creation, the name in the session template data does not have 
+                                 to match the name used to create the session template.
     Returns:
         On success, returns None
         On failure, returns anerror string
       
     """
-    template_name = session_template['name']
 
     # Verify boot sets exist.
     if 'boot_sets' not in session_template or not session_template['boot_sets']:
