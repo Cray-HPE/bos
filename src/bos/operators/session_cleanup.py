@@ -63,7 +63,7 @@ class SessionCleanupOperator(BaseOperator):
         """
         When users set the cleanup time to 0, no cleanup behavior is desired.
         """
-        return bool(options.cleanup_completed_session_age)
+        return not bool(options.cleanup_completed_session_age)
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
