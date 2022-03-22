@@ -1135,18 +1135,24 @@ components:
         Options for the boot orchestration service.
       type: object
       properties:
-        max_component_wait_time:
+        cleanup_completed_session_age:
           type: integer
-          description: How long BOS will wait for a node (in seconds)
-        polling_frequency:
-          type: integer
-          description: How frequently the BOS operators check component state for needed actions. (in seconds)
+          descriptions: Delete complete sessions that are older than cleanup_completed_session_age (in seconds ago). 0 disables cleanup behavior.
+        disable_components_on_completion:
+          type: bool
+          description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 
         discovery_frequency:
           type: integer
           description: How frequently the BOS discovery agent syncs new components from HSM. (ins seconds)
         logging_level:
           type: string
           description: The logging level for all BOS services
+        max_component_wait_time:
+          type: integer
+          description: How long BOS will wait for a node (in seconds)
+        polling_frequency:
+          type: integer
+          description: How frequently the BOS operators check component state for needed actions. (in seconds)
       additionalProperties: false
   requestBodies:
     V2sessionCreateRequest:

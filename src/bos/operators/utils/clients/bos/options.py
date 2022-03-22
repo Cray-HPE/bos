@@ -90,5 +90,10 @@ class Options:
     def disable_components_on_completion(self):
         return self.get_option('disable_components_on_completion', bool, True)
 
+    @property
+    def cleanup_completed_session_age(self):
+        return self.get_option('cleanup_completed_session_age', bool, 7*24*60*60) # Defaults to 1 week (604800 seconds).
+
+
 
 options = Options()

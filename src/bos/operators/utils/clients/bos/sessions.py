@@ -42,3 +42,7 @@ class SessionEndpoint(BaseBosEndpoint):
 
     def update_sessions(self, data):
         return self.update_items(data)
+
+    def delete_sessions(self, data):
+        return self.delete_items(data)
+
