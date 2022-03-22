@@ -43,7 +43,7 @@ class SessionCleanupOperator(BaseOperator):
 
     @property
     def name(self):
-        return 'SessionCompletion'
+        return 'SessionCleanup'
 
     @property
     def max_age(self):
