@@ -110,3 +110,12 @@ class BaseBosEndpoint(object):
         response.raise_for_status()
         items = json.loads(response.text)
         return items
+
+    @log_call_errors
+    def delete_items(self, data):
+        """Delete information for multiple BOS items"""
+        session = requests_retry_session()
+        response = session.delete(self.base_url, json=data)
+        response.raise_for_status()
+        items = json.loads(response.text)
+        return items
