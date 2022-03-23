@@ -1135,15 +1135,15 @@ components:
         Options for the boot orchestration service.
       type: object
       properties:
-        cleanup_completed_session_age:
-          type: integer
-          description: Delete complete sessions that are older than cleanup_completed_session_age (in seconds ago). 0 disables cleanup behavior.
+        cleanup_completed_session_ttl:
+          type: string
+          description: Delete complete sessions that are older than cleanup_completed_session_ttl (in hours). 0h disables cleanup behavior.
         disable_components_on_completion:
-          type: bool
+          type: boolean
           description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 
         discovery_frequency:
           type: integer
-          description: How frequently the BOS discovery agent syncs new components from HSM. (ins seconds)
+          description: How frequently the BOS discovery agent syncs new components from HSM. (in seconds)
         logging_level:
           type: string
           description: The logging level for all BOS services
