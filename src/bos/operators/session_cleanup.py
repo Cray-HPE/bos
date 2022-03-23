@@ -88,7 +88,7 @@ class SessionCleanupOperator(BaseOperator):
 
         for session in self.bos_client.sessions.get_sessions(status='complete'):
             session_end_time = load_timestamp(session['status']['end_time'])
-            print(session_end_time, self.max_age)
+            LOGGER.info(" ---> Comparison", session_end_time, self.max_age)
             if session_end_time < self.max_age:
                 # This completed session has an age "younger" than our maximum
                 # old age allowed; flag it for deletion.
