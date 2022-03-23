@@ -117,5 +117,7 @@ class BaseBosEndpoint(object):
         session = requests_retry_session()
         response = session.delete(self.base_url, json=data)
         response.raise_for_status()
-        items = json.loads(response.text)
-        return items
+        if response.text:
+            return json.loads(response.text)
+        else:
+            return None
