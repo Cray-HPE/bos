@@ -23,6 +23,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+import re
 from datetime import datetime, timedelta
 
 from bos.common.utils import load_timestamp
@@ -46,24 +47,12 @@ class SessionCleanupOperator(BaseOperator):
         return 'SessionCleanup'
 
     @property
-    def max_age(self):
-        """
-        A datetime value indicating the oldest possible time to keep
-        any given completed session. This operator will remove completed
-        sessions that are older than this date.
-        """
-        if self._max_age:
-            return self._max_age
-        delta = timedelta(seconds=options.cleanup_completed_session_age)
-        self._max_age = datetime.now() - delta
-        return self.max_age
-
-    @property
     def disabled(self):
         """
         When users set the cleanup time to 0, no cleanup behavior is desired.
         """
-        return not bool(options.cleanup_completed_session_age)
+        options_stripped = re.sub('[^0-9]', '', options.cleanup_completed_session_ttl)
+        return not bool(int(options_stripped))
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
@@ -76,27 +65,15 @@ class SessionCleanupOperator(BaseOperator):
 
     def _run(self) -> None:
         """ A single pass of Session Cleanup. """
-        sessions_to_delete = []
-
-        # Obtain a new max age for deletion
-        self._max_age = None
+        # Obtain a set of options in case this is now disabled
         options.update()
 
         # Exit early if configured so.
         if self.disabled:
             return
 
-        for session in self.bos_client.sessions.get_sessions(status='complete'):
-            session_end_time = load_timestamp(session['status']['end_time'])
-            LOGGER.info(" ---> Comparison %s %s", session_end_time, self.max_age)
-            if session_end_time < self.max_age:
-                # This completed session has an age "younger" than our maximum
-                # old age allowed; flag it for deletion.
-                sessions_to_delete.append({'name': session['name']})
-        if sessions_to_delete:
-            LOGGER.info("Cleaning up completed session(s): "
-                        ', '.join(sorted([session['name'] for session in sessions_to_delete])))
-            self.bos_client.sessions.delete_sessions(sessions_to_delete)
+        self.bos_client.sessions.delete_sessions(**{'status': 'complete',
+                                                    'min_age': options.cleanup_completed_session_ttl})
 
 if __name__ == '__main__':
     main(SessionCleanupOperator)

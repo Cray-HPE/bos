@@ -1135,10 +1135,9 @@ components:
         Options for the boot orchestration service.
       type: object
       properties:
-        cleanup_completed_session_age:
-          type: integer
-          description: Delete complete sessions that are older than cleanup_completed_session_age (in seconds ago). 0 disables cleanup behavior.
-          minimum: 0
+        cleanup_completed_session_ttl:
+          type: string
+          description: Delete complete sessions that are older than cleanup_completed_session_ttl (in hours). 0h disables cleanup behavior.
         disable_components_on_completion:
           type: boolean
           description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 
