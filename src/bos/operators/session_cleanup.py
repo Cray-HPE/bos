@@ -38,7 +38,7 @@ class SessionCleanupOperator(BaseOperator):
     that are part of the session have been disabled.
     """
     def __init__(self):
-        super().__init__(self)
+        super().__init__()
         self._max_age = None
 
     @property
