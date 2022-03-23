@@ -94,7 +94,8 @@ class SessionCleanupOperator(BaseOperator):
                 # old age allowed; flag it for deletion.
                 sessions_to_delete.append({'name': session['name']})
         if sessions_to_delete:
-            LOGGER.info("Cleaning up %s completed session(s)." %(len(sessions_to_delete)))
+            LOGGER.info("Cleaning up completed session(s): "
+                        ', '.join(sorted([session['name'] for session in sessions_to_delete])))
             self.bos_client.sessions.delete_sessions(sessions_to_delete)
 
 if __name__ == '__main__':
