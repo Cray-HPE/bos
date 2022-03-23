@@ -5,10 +5,11 @@ info:
   title: "Boot Orchestration Service"
   version: "0.0.0-api"
   description: |
-    The Boot Orchestration Service (BOS) applies actions to a list of compute nodes
-    using a specified image (if applicable), with specified kernel parameters,
-    over a specified network. Currently, only one network option is available.
-    After boot or reboot, nodes can be reconfigured.
+    The Boot Orchestration Service (BOS) provides coordinated provisioning actions
+    over defined hardware sets to enable boot, reboot, shutdown, configuration and
+    staging for specified hardware subsets. These provisioning actions apply state
+    through numerous system management APIs at the request of system administrators
+    for managed product environments.
 
     The default content type for the BOS API is "application/json". Unsuccessful
     API calls return a content type of "application/problem+json" as per RFC 7807.
@@ -23,11 +24,12 @@ info:
     configuration detail.
 
     A boot set defines a list of nodes, the image you want to boot/reboot the nodes with,
-    kernel parameters to use to boot the nodes, and the network to boot the nodes over.
+    kernel parameters to use to boot the nodes, and additional configuration management
+    framework actions to apply during node bringup.
 
     ### /session
 
-    A BOS session applies the action to the nodes in the session
+    A BOS session applies a provided action to the nodes defined in a session
     template.
 
     ## Workflow
@@ -762,12 +764,10 @@ components:
       additionalProperties: false
     V2BootSet:
       description: |
-        A boot set defines a collection of nodes and the information about the
-        boot artifacts and parameters to be sent to each node over the specified
-        network to enable these nodes to boot. When multiple boot sets are used
-        in a session template, the boot_ordinal and shtudown_ordinal indicate
-        the order in which boot sets need to be acted upon. Boot sets sharing
-        the same ordinal number will be addressed at the same time.
+        A boot set is a collection of nodes defined by an explicit list, their functional
+        role, and their logical groupings. This collection of nodes is associated with one
+        set of boot artifacts and optional additional records for configuration and root
+        filesystem provisioning.
       type: object
       properties:
         name:
