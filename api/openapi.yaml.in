@@ -689,7 +689,6 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/Link'
-      required: []
       additionalProperties: false
     V2SessionTemplateArray:
       description: An array of session templates.
@@ -888,19 +887,19 @@ components:
         Detailed information on the phases of a session.
       properties:
         percent_complete:
-          type: float
+          type: number
           description: |
             The percent of components currently in a completed/stable state
         percent_powering_on:
-          type: float
+          type: number
           description: |
             The percent of components currently in the powering-on phase
         percent_powering_off:
-          type: float
+          type: number
           description: |
             The percent of components currently in the powering-off phase
         percent_configuring:
-          type: float
+          type: number
           description: |
             The percent of components currently in the configuring phase
       additionalProperties: false
@@ -939,15 +938,15 @@ components:
         phases:
           $ref: '#/components/schemas/V2SessionExtendedStatusPhases'
         percent_successful:
-          type: float
+          type: number
           description: |
             The percent of components currently in a successful state
         percent_failed:
-          type: float
+          type: number
           description: |
             The percent of components currently in a failed state
         percent_staged:
-          type: float
+          type: number
           description: |
             The percent of components currently still staged for this session
         error_summary:
@@ -982,7 +981,7 @@ components:
         bss_token:
           type: string
           description: >
-            A token received from the node identifying the boot artifacts. 
+            A token received from the node identifying the boot artifacts.
             For BOS use-only, users should not set this field. It will be overwritten.
         last_updated:
           type: string
@@ -1003,7 +1002,7 @@ components:
         bss_token:
           type: string
           description: >
-            A token received from BSS identifying the boot artifacts. 
+            A token received from BSS identifying the boot artifacts.
             For BOS use-only, users should not set this field. It will be overwritten.
         last_updated:
           type: string
@@ -1139,7 +1138,7 @@ components:
           type: integer
           description: Delete complete sessions that are older than cleanup_completed_session_age (in seconds ago). 0 disables cleanup behavior.
         disable_components_on_completion:
-          type: bool
+          type: boolean
           description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 
         discovery_frequency:
           type: integer
