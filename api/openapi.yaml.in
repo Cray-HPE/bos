@@ -19,13 +19,13 @@ info:
 
     ### /sessiontemplate
 
-    A session template controls the activity of BOS; it is a collection of one or more boot
-    sets, combined with partition information, and
-    configuration detail.
+    A session template sets the operational context of which nodes to operate on for
+    any given set of nodes. It is largely comprised of one or more boot
+    sets and their associated software configuration.
 
     A boot set defines a list of nodes, the image you want to boot/reboot the nodes with,
     kernel parameters to use to boot the nodes, and additional configuration management
-    framework actions to apply during node bringup.
+    framework actions to apply during node bring up.
 
     ### /session
 
@@ -678,10 +678,6 @@ components:
           default: true
         cfs:
           $ref: '#/components/schemas/V2CfsParameters'
-        partition:
-          type: string
-          description: |
-            The machine partition to operate on.
         boot_sets:
           type: object
           additionalProperties:
