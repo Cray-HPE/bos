@@ -1153,7 +1153,7 @@ components:
         polling_frequency:
           type: integer
           description: How frequently the BOS operators check component state for needed actions. (in seconds)
-      additionalProperties: false
+      additionalProperties: true
   requestBodies:
     V2sessionCreateRequest:
       description: The information to create a session
