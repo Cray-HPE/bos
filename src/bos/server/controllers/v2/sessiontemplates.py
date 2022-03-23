@@ -96,10 +96,6 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
             detail=str(err))
 
     template_data = data
-    # Validate health/validity of the sessiontemplate before creating a session
-    msg = validate_boot_sets(template_data, "boot", session_template_id)
-    if msg:
-        LOGGER.warn(msg)
 
     try:
         """Convert the JSON request data into a SessionTemplate object.
@@ -221,3 +217,28 @@ def patch_v2_sessiontemplate(session_template_id):
     template_data['name'] = session_template_id
 
     return DB.patch(session_template_id, template_data), 200
+
+
+@dbutils.redis_error_handler
+def validate_v2_sessiontemplate(session_template_id: str):
+    """
+    Validate a V2 session template. Look for missing elements or errors that would prevent
+    a session from being launched using this template. 
+    """
+    data, status_code = get_v2_sessiontemplate(session_template_id)
+
+    if status_code != 200:
+        return data, status_code
+
+    # We assume boot because it and reboot are the most demanding from a validation
+    # standpoint.
+    operation = "boot"
+
+    msg = validate_boot_sets(data, operation, session_template_id)
+    if not msg:
+        # There were no errors.
+        msg = "Valid"
+    # We return 200 because the request itself was successful even if the session template
+    # is invalid.
+    return msg, 200
+
