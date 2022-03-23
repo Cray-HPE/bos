@@ -24,9 +24,7 @@
 #
 import logging
 import re
-from datetime import datetime, timedelta
 
-from bos.common.utils import load_timestamp
 from bos.operators.base import BaseOperator, main
 from bos.operators.utils.clients.bos.options import options
 
@@ -38,10 +36,6 @@ class SessionCleanupOperator(BaseOperator):
     The Session Completion Operator marks sessions complete when all components
     that are part of the session have been disabled.
     """
-    def __init__(self):
-        super().__init__()
-        self._max_age = None
-
     @property
     def name(self):
         return 'SessionCleanup'
