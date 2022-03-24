@@ -212,7 +212,7 @@ class ActualBootStateIsNone(LocalFilter):
     def _match(self, component: dict) -> bool:
         actual_state = component.get('actual_state', {})
         actual_boot_state = actual_state.get('boot_artifacts', {})
-        if not actual_boot_state or not all([bool(v) for v in actual_boot_state.values()]):
+        if not actual_boot_state or not any([bool(v) for v in actual_boot_state.values()]):
             return True
         return False
 
