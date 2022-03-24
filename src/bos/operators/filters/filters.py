@@ -172,7 +172,7 @@ class DesiredBootStateIsNone(LocalFilter):
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desired_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
-        if not desired_boot_state or not all([bool(v) for v in desired_boot_state.values()]):
+        if not desired_boot_state or not any([bool(v) for v in desired_boot_state.values()]):
             return True
         return False
 
