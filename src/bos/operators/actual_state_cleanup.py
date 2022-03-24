@@ -51,7 +51,6 @@ class ActualStageCleanupOperator(BaseOperator):
     # Filters
     @property
     def filters(self):
-        options.update()
         return [
             NOT(ActualBootStateIsNone()),
             ActualStateAge(seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds())
