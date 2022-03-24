@@ -1097,6 +1097,25 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
+    V2ComponentsFilter:
+      description: Information for patching multiple components.
+      type: object
+      properties:
+        ids:
+          type: string
+          description: A comma separated list of component ids
+        session:
+          type: string
+          description: A session name.  All components part of this session will be patched.
+    V2ComponentsUpdate:
+      description: Information for patching multiple components.
+      type: object
+      properties:
+        patch:
+          $ref: '#/components/schemas/V2Component'
+        filter:
+          $ref: '#/components/schemas/V2ComponentsUpdate'
+        required: [patch, filter]
     V2ApplyStagedComponents:
       description: |
         A list of components that should have their staged session applied.
@@ -1174,7 +1193,9 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/V2ComponentArray'
+            oneOf:
+              - $ref: '#/components/schemas/V2ComponentsUpdate'
+              - $ref: '#/components/schemas/V2ComponentArray'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
