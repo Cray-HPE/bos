@@ -25,8 +25,8 @@
 
 from .filters import BOSQuery, HSMState, TimeSinceLastAction,\
     LastActionIs, BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,\
-    DesiredConfigurationIsNone, OR, NOT
+    DesiredConfigurationIsNone, OR, NOT, ActualStateAge, ActualBootStateIsNone
 
 __all__ = [BOSQuery, HSMState, TimeSinceLastAction, LastActionIs,
            BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,
-           DesiredConfigurationIsNone, OR, NOT]
+           DesiredConfigurationIsNone, OR, NOT, ActualStateAge, ActualBootStateIsNone]

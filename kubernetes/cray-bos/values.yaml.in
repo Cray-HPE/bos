@@ -201,6 +201,16 @@ operatorDefaults:
         timeoutSeconds: 3
 
 operators:
+  actual_state_cleanup:
+    Values:
+      nameOverride: cray-bos-operator-actual-state-cleanup
+      fullnameOverride: cray-bos-operator-actual-state-cleanup
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.actual_state_cleanup"
   configuration:
     Values:
       nameOverride: cray-bos-operator-configuration
