@@ -1093,6 +1093,25 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
+    V2ComponentsFilter:
+      description: Information for patching multiple components.
+      type: object
+      properties:
+        ids:
+          type: string
+          description: A comma separated list of component ids
+        session:
+          type: string
+          description: A session name.  All components part of this session will be patched.
+    V2ComponentsUpdate:
+      description: Information for patching multiple components.
+      type: object
+      properties:
+        patch:
+          $ref: '#/components/schemas/V2Component'
+        filters:
+          $ref: '#/components/schemas/V2ComponentsFilter'
+      required: [patch, filters]
     V2ApplyStagedComponents:
       description: |
         A list of components that should have their staged session applied.
@@ -1164,13 +1183,22 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Component'
-    V2componentsUpdateRequest:
+    V2componentsPutRequest:
       description: The state for an array of components
       required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2ComponentArray'
+    V2componentsUpdateRequest:
+      description: The state for an array of components
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/V2ComponentsUpdate'
+              - $ref: '#/components/schemas/V2ComponentArray'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
@@ -2152,7 +2180,7 @@ paths:
       description: Update the state for a collection of components in the BOS database
       operationId: put_v2_components
       requestBody:
-        $ref: '#/components/requestBodies/V2componentsUpdateRequest'
+        $ref: '#/components/requestBodies/V2componentsPutRequest'
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'
@@ -2163,7 +2191,6 @@ paths:
       tags:
         - v2
         - components
-        - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
       description: Update the state for a collection of components in the BOS database
       operationId: patch_v2_components

@@ -157,8 +157,19 @@ def put_v2_components():
 def patch_v2_components():
     """Used by the PATCH /components API operation"""
     LOGGER.debug("PATCH /components invoked patch_components")
+    data = connexion.request.get_json()
+    if type(data) == list:
+        return patch_v2_components_list(data)
+    elif type(data) == dict:
+        return patch_v2_components_dict(data)
+    else:
+        return connexion.problem(
+           status=400, title="Error parsing the data provided.",
+           detail="Unexpected data type {}".format(str(type(data))))
+
+
+def patch_v2_components_list(data):
     try:
-        data = connexion.request.get_json()
         components = []
         for component_data in data:
             component_id = component_data['id']
@@ -173,8 +184,41 @@ def patch_v2_components():
             detail=str(err))
     response = []
     for component_id, component_data in components:
+        if "id" in component_data:
+            del component_data["id"]
         component_data = _set_auto_fields(component_data)
         response.append(DB.patch(component_id, component_data, _update_handler))
+    return response, 200
+
+
+def patch_v2_components_dict(data):
+    filters = data.get("filters", {})
+    ids = filters.get("ids", None)
+    session = filters.get("session", None)
+    if ids and session:
+        return connexion.problem(
+            status=400, title="Only one filter may be provided.",
+            detail="Only one filter may be provided.")
+    elif ids:
+        try:
+            id_list = ids.split(',')
+        except Exception as err:
+            return connexion.problem(
+                status=400, title="Error parsing the ids provided.",
+                detail=str(err))
+    elif session:
+        id_list = [component["id"] for component in get_v2_components_data(session=session)]
+    else:
+        return connexion.problem(
+            status=400, title="One filter must be provided.",
+            detail="Only one filter may be provided.")
+    response = []
+    patch = data.get("patch")
+    if "id" in patch:
+        del patch["id"]
+    patch = _set_auto_fields(patch)
+    for component_id in id_list:
+        response.append(DB.patch(component_id, patch, _update_handler))
     return response, 200
 
 
@@ -219,6 +263,8 @@ def patch_v2_component(component_id):
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
+    if "id" in data:
+        del data["id"]
     data = _set_auto_fields(data)
     return DB.patch(component_id, data, _update_handler), 200
 
