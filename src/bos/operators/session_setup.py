@@ -29,6 +29,7 @@ from bos.operators.base import BaseOperator, main
 from bos.operators.utils.clients.hsm import Inventory
 from bos.operators.utils.clients.s3 import S3Object
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
+from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.common.values import Action
 
@@ -287,6 +288,9 @@ class Session:
         nmd_parameters = provider.nmd_field
         if nmd_parameters:
             boot_param_pieces.append(nmd_parameters)
+
+        # Add the bos actual state ttl value so nodes know how frequently to report
+        boot_param_pieces.append('bos_update_frequency=%s' %(options.component_actual_state_ttl))
 
         # Add the Session ID to the kernel parameters
         boot_param_pieces.append("bos_session_id={}".format(self.name))

@@ -57,7 +57,6 @@ def post_v2_session():  # noqa: E501
 
     :rtype: Session
     """
-
     # -- Validation --
     if connexion.request.is_json:
         LOGGER.debug("connexion.request.is_json")
@@ -113,6 +112,7 @@ def _validate_boot_sets(session_template: dict, operation: str) -> tuple[str, in
         msg = f"Session template '{template_name}' must have one or more defined boot sets for " \
         "the creation of a session. It has none."
         return msg, 400
+
 
     hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
     for bs_name, bs in session_template['boot_sets'].items():

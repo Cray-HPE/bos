@@ -1134,6 +1134,9 @@ components:
         cleanup_completed_session_ttl:
           type: string
           description: Delete complete sessions that are older than cleanup_completed_session_ttl (in hours). 0h disables cleanup behavior.
+        component_actual_state_ttl:
+          type: string
+          description: The maximum amount of time a component's actual state is considered valid (in hours). 0h disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
         disable_components_on_completion:
           type: boolean
           description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 

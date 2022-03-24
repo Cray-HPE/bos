@@ -23,6 +23,9 @@
 #
 import logging
 import sys
+import random
+import re
+import datetime
 from time import sleep
 
 from bos.reporter.client import requests_retry_session
@@ -39,14 +42,19 @@ try:
     LOG_LEVEL = getattr(logging, LOG_LEVEL.upper(), logging.WARN)
 except KeyError:
     LOG_LEVEL = logging.WARN
-PROJECT_LOGGER = logging.getLogger('BOS')
+PROJECT_LOGGER = logging.getLogger('bos')
 LOGGER = logging.getLogger('bos.reporter.status_reporter')
 LOGGER.setLevel(LOG_LEVEL)
 _stream_handler = logging.StreamHandler(sys.stdout)
 _stream_handler.setLevel(LOG_LEVEL)
 PROJECT_LOGGER.addHandler(_stream_handler)
 PROJECT_LOGGER.setLevel(LOG_LEVEL)
+TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M|re.S)
 
+# The percentage of the total TTL to wait before reporting status, e.g.
+# a state ttl of 4 hours with a ratio of .75 means nodes report every 3 hours.
+REPORTING_RATIO = .75
+STATE_UPDATE_FREQUENCY = 14400  # Number of seconds between state updates (4h default)
 
 def report_state_until_success(component):
     """
@@ -83,7 +91,20 @@ def report_state_until_success(component):
         return
 
 
-STATE_UPDATE_FREQUENCY = 86400  # Number of seconds between state updates
+def duration_to_timedelta(timestamp: str):
+    """
+    Converts a <digit><duration string> to a timedelta object.
+    """
+    # Calculate the corresponding multiplier for each time value
+    seconds_table = {'s': 1,
+                     'm': 60,
+                     'h': 60*60,
+                     'd': 60*60*24,
+                     'w': 60*60*24*7}
+    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
+    timeval = float(timeval)
+    seconds = timeval * seconds_table[durationval]
+    return datetime.timedelta(seconds=seconds)
 
 
 def main():
@@ -93,9 +114,18 @@ def main():
     """
     component = read_identity()
     try:
-        sleep_time = get_value_from_proc_cmdline('bos_update_frequency')
+        sleep_time = duration_to_timedelta(get_value_from_proc_cmdline('bos_update_frequency'))
+        sleep_time *= REPORTING_RATIO * sleep_time.total_seconds()
     except KeyError:
-        sleep_time = STATE_UPDATE_FREQUENCY
+        sleep_time = STATE_UPDATE_FREQUENCY * REPORTING_RATIO
+
+    # In order to reduce overall thundering herd conditions after a full system
+    # boot, the amount of time between reporting is less than the whole amount
+    # of time in sleep_time for the first reporting interval. It is thought that
+    # this optimization decreases overall load on the BOS API for very large systems
+    # and reduces the likelihood that our horizontal autoscaler unnecessarily increases
+    # the number of instances serving requests over the lifetime of a session boot.
+    has_slept_before = False
 
     while True:
         LOGGER.info("Attempting to report status for '%s'" % (component))
@@ -103,7 +133,11 @@ def main():
             report_state_until_success(component)
         except Exception as exp:
             LOGGER.error("An error occurred: {}".format(exp))
-        sleep(sleep_time)
+        if has_slept_before:
+            sleep(sleep_time)
+        else:
+            sleep(sleep_time*random.random())
+            has_slept_before = True
 
 
 if __name__ == '__main__':

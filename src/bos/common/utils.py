@@ -22,8 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import datetime
+import re
 from dateutil.parser import parse
 
+TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M|re.S)
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.
 def get_current_time() -> datetime.datetime:
@@ -36,3 +38,19 @@ def get_current_timestamp() -> str:
 
 def load_timestamp(timestamp: str) -> datetime.datetime:
     return parse(timestamp).replace(tzinfo=None)
+
+
+def duration_to_timedelta(timestamp: str):
+    """
+    Converts a <digit><duration string> to a timedelta object.
+    """
+    # Calculate the corresponding multiplier for each time value
+    seconds_table = {'s': 1,
+                     'm': 60,
+                     'h': 60*60,
+                     'd': 60*60*24,
+                     'w': 60*60*24*7}
+    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
+    timeval = float(timeval)
+    seconds = timeval * seconds_table[durationval]
+    return datetime.timedelta(seconds=seconds)

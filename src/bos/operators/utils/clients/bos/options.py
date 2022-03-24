@@ -94,6 +94,10 @@ class Options:
     def cleanup_completed_session_ttl(self):
         return self.get_option('cleanup_completed_session_ttl', str, '7d') # Defaults to 7 days (168 hours).
 
+    @property
+    def component_actual_state_ttl(self):
+        return self.get_option('component_actual_state_ttl', str, '4h')
+
 
 
 options = Options()
