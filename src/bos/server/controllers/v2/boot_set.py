@@ -28,6 +28,10 @@ from bos.operators.utils.clients.s3 import S3Object
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
 
+BOOT_SET_SUCCESS = 0
+BOOT_SET_WARNING = 1
+BOOT_SET_ERROR = 2
+
 
 def validate_boot_sets(session_template: dict,
                        operation: str,
@@ -45,16 +49,19 @@ def validate_boot_sets(session_template: dict,
                                  creation, the name in the session template data does not have 
                                  to match the name used to create the session template.
     Returns:
-        On success, returns None
-        On failure, returns anerror string
+        Returns an error_code and a message
+          error_code:
+            0 -- Success
+            1 -- Warning, not fatal
+            2 -- Error, fatal
+        
       
     """
-
     # Verify boot sets exist.
     if 'boot_sets' not in session_template or not session_template['boot_sets']:
         msg = f"Session template '{template_name}' must have one or more defined boot sets for " \
         "the creation of a session. It has none."
-        return msg
+        return BOOT_SET_ERROR, msg
 
     hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
     for bs_name, bs in session_template['boot_sets'].items():
@@ -67,20 +74,19 @@ def validate_boot_sets(session_template: dict,
                 % (template_name, bs_name,
                    ', '.join(sorted(hardware_specifier_fields)))
             LOGGER.error(msg)
-            return msg
-
+            return BOOT_SET_ERROR, msg
         if operation in ['boot', 'reboot']:
             # Verify that the boot artifacts exist
             try:
                 image_metadata = BootImageMetaDataFactory(bs)()
             except Exception as err:
-                msg = f"Session template: {template_name} boot set: {bs_name} " \
+                msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
                     f"could not locate its boot artifacts. Error: {err}"
                 LOGGER.error(msg)
-                return msg
+                return BOOT_SET_ERROR, msg
 
             # Check boot artifacts' S3 headers
-            for boot_artifact in ["kernel", "initrd", "boot_parameters"]:
+            for boot_artifact in ["kernel"]:
                 try:
                     artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
                     path = artifact ['link']['path']
@@ -88,9 +94,28 @@ def validate_boot_sets(session_template: dict,
                     obj = S3Object(path, etag)
                     _ = obj.object_header
                 except Exception as err:
-                    msg = f"Session template: {template_name} boot set: {bs_name} " \
+                    msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
                     f"could not locate its {boot_artifact}. Error: {err}"
                     LOGGER.error(msg)
-                    return msg
-    return None
+                    return BOOT_SET_ERROR, msg
+
+            for boot_artifact in ["initrd", "boot_parameters"]:
+                warning_flag = False
+                warn_msg = ""
+                try:
+                    artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
+                    path = artifact ['link']['path']
+                    etag = artifact['link']['etag']
+                    obj = S3Object(path, etag)
+                    _ = obj.object_header
+                except Exception as err:
+                    msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
+                    f"could not locate its {boot_artifact}. Warning: {err}. "
+                    LOGGER.warn(msg)
+                    warning_flag = True
+                    warn_msg = warn_msg + msg
+            if warning_flag:
+                    return BOOT_SET_WARNING, warn_msg
+
+    return BOOT_SET_SUCCESS, "Valid"
 

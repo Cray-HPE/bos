@@ -234,10 +234,7 @@ def validate_v2_sessiontemplate(session_template_id: str):
     # standpoint.
     operation = "boot"
 
-    msg = validate_boot_sets(data, operation, session_template_id)
-    if not msg:
-        # There were no errors.
-        msg = "Valid"
+    _error_code, msg = validate_boot_sets(data, operation, session_template_id)
     # We return 200 because the request itself was successful even if the session template
     # is invalid.
     return msg, 200

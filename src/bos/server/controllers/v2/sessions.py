@@ -36,7 +36,7 @@ from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
-from .boot_set import validate_boot_sets
+from .boot_set import validate_boot_sets, BOOT_SET_ERROR
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
@@ -78,8 +78,8 @@ def post_v2_session():  # noqa: E501
         session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
-    msg = validate_boot_sets(session_template, session_create.operation, template_name)
-    if msg:
+    error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name)
+    if error_code >= BOOT_SET_ERROR:
         return msg, 400
 
     # -- Setup Record --

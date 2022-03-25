@@ -26,7 +26,7 @@ import logging
 from botocore.exceptions import ClientError
 
 from . import BootImageMetaData, BootImageMetaDataBadRead
-from ..clients.s3 import S3BootArtifacts, S3MissingConfiguration
+from ..clients.s3 import S3BootArtifacts, S3MissingConfiguration, ArtifactNotFound
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_image_metadata')
 
@@ -41,14 +41,31 @@ class S3BootImageMetaData(BootImageMetaData):
         path = self._boot_set.get('path', None)
         etag = self._boot_set.get('etag', None)
         self.boot_artifacts = S3BootArtifacts(path, etag)
-        self.artifact_summary = {
-            'kernel': self.kernel_path,
-            'initrd': self.initrd_path,
-            'rootfs': self.rootfs_path,
-            'rootfs_etag': self.rootfs_etag,
-            'boot_parameters': self.boot_parameters_path,
-            'boot_parameters_etag': self.boot_parameters_etag
-        }
+        self.artifact_summary = {}
+        try:
+            self.artifact_summary['kernel'] = self.kernel_path
+        except ArtifactNotFound as err:
+            LOGGER.warn(err)
+        try:
+            self.artifact_summary['initrd'] = self.initrd_path
+        except ArtifactNotFound as err:
+            LOGGER.warn(err)
+        try:
+            self.artifact_summary['rootfs'] = self.rootfs_path
+        except ArtifactNotFound as err:
+            LOGGER.warn(err)
+        try:
+            self.artifact_summary['rootfs_etag'] = self.rootfs_etag
+        except ArtifactNotFound as err:
+            LOGGER.warn(err)
+        try:
+            self.artifact_summary['boot_parameters'] = self.boot_parameters_path
+        except ArtifactNotFound as err:
+            LOGGER.warn(err)
+        try:
+            self.artifact_summary['boot_parameters_etag'] = self.boot_parameters_etag
+        except ArtifactNotFound as err:
+            LOGGER.warn(err)
 
     @property
     def metadata(self):
