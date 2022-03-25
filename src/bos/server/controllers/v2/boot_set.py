@@ -69,10 +69,10 @@ def validate_boot_sets(session_template: dict,
         specified = [bs.get(field, None)
                      for field in hardware_specifier_fields]
         if not any(specified):
-            msg = "Session template '%s' boot set '%s' must have at least one " \
-                "hardware specifier field provided (%s); None were provided." \
-                % (template_name, bs_name,
-                   ', '.join(sorted(hardware_specifier_fields)))
+            msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
+                  f"must have at least one " \
+                f"hardware specifier field provided (%s); None were provided." \
+                % (', '.join(sorted(hardware_specifier_fields)))
             LOGGER.error(msg)
             return BOOT_SET_ERROR, msg
         if operation in ['boot', 'reboot']:
@@ -99,10 +99,18 @@ def validate_boot_sets(session_template: dict,
                     LOGGER.error(msg)
                     return BOOT_SET_ERROR, msg
 
+            warning_flag = False
             for boot_artifact in ["initrd", "boot_parameters"]:
-                warning_flag = False
                 warn_msg = ""
                 try:
+                    if not hasattr(image_metadata.boot_artifacts, boot_artifact):
+                        msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
+                        f"does not contain a {boot_artifact}.\n"
+                        LOGGER.warn(msg)
+                        warning_flag = True
+                        warn_msg = warn_msg + msg
+                        continue
+
                     artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
                     path = artifact ['link']['path']
                     etag = artifact['link']['etag']
@@ -110,7 +118,7 @@ def validate_boot_sets(session_template: dict,
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Warning: {err}. "
+                    f"could not locate its {boot_artifact}. Warning: {err}.\n"
                     LOGGER.warn(msg)
                     warning_flag = True
                     warn_msg = warn_msg + msg
