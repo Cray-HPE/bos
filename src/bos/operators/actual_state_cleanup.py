@@ -46,7 +46,7 @@ class ActualStageCleanupOperator(BaseOperator):
 
     @property
     def name(self):
-        return 'Actual Stage Cleanup Operator'
+        return 'Actual ßStage Cleanup Operator'
 
     # Filters
     @property
@@ -60,10 +60,10 @@ class ActualStageCleanupOperator(BaseOperator):
         data = []
         for component_id in [component['id'] for component in components]:
             data.append([{'id': component_id,
-                          'actual_state': {'bss_token': '',
-                                           'kernel': '',
-                                           'kernel_parameters': '',
-                                           'initrd': ''}}])
+                          'actual_state': {'boot_artifacts': {'bss_token': '',
+                                                              'kernel': '',
+                                                              'kernel_parameters': '',
+                                                              'initrd': ''}}}])
         self.bos_client.components.update_components(data)
         return components
 
