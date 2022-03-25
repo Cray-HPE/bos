@@ -32,6 +32,11 @@ from bos.operators.filters import ActualStateAge, ActualBootStateIsNone, NOT
 LOGGER = logging.getLogger('bos.operators.actual_stage_cleanup')
 
 
+ZEROED_ACTUAL_STATE = {'bss_token': '',
+                       'boot_artifacts': {'kernel': '',
+                                          'initrd': '',
+                                          'kernel_parameters': ''}}
+
 class ActualStageCleanupOperator(BaseOperator):
     """
     The ActualStageCleanupOperator is responsible for identifying components that have
@@ -60,10 +65,7 @@ class ActualStageCleanupOperator(BaseOperator):
         data = []
         for component_id in [component['id'] for component in components]:
             data.append([{'id': component_id,
-                          'actual_state': {'boot_artifacts': {'bss_token': '',
-                                                              'kernel': '',
-                                                              'kernel_parameters': '',
-                                                              'initrd': ''}}}])
+                          'actual_state': ZEROED_ACTUAL_STATE}])
         self.bos_client.components.update_components(data)
         return components
 
