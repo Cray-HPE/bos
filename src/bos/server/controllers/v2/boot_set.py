@@ -100,8 +100,8 @@ def validate_boot_sets(session_template: dict,
                     return BOOT_SET_ERROR, msg
 
             warning_flag = False
+            warn_msg = ""
             for boot_artifact in ["initrd", "boot_parameters"]:
-                warn_msg = ""
                 try:
                     if not hasattr(image_metadata.boot_artifacts, boot_artifact):
                         msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
@@ -110,7 +110,6 @@ def validate_boot_sets(session_template: dict,
                         warning_flag = True
                         warn_msg = warn_msg + msg
                         continue
-
                     artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
                     path = artifact ['link']['path']
                     etag = artifact['link']['etag']
