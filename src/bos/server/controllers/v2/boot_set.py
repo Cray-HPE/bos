@@ -24,7 +24,7 @@
 
 import logging
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
-from bos.operators.utils.clients.s3 import S3Object
+from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
 
@@ -103,14 +103,10 @@ def validate_boot_sets(session_template: dict,
             warn_msg = ""
             for boot_artifact in ["initrd", "boot_parameters"]:
                 try:
-                    if not hasattr(image_metadata.boot_artifacts, boot_artifact):
-                        msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                        f"does not contain a {boot_artifact}."
-                        LOGGER.warn(msg)
-                        warning_flag = True
-                        warn_msg = warn_msg + msg
-                        continue
                     artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
+                    if not artifact:
+                        raise ArtifactNotFound(f"Session template: '{template_name}' boot set: '{bs_name}' " \
+                                               f"does not contain a {boot_artifact}.")
                     path = artifact ['link']['path']
                     etag = artifact['link']['etag']
                     obj = S3Object(path, etag)
