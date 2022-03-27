@@ -105,7 +105,7 @@ def validate_boot_sets(session_template: dict,
                 try:
                     if not hasattr(image_metadata.boot_artifacts, boot_artifact):
                         msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                        f"does not contain a {boot_artifact}.\n"
+                        f"does not contain a {boot_artifact}."
                         LOGGER.warn(msg)
                         warning_flag = True
                         warn_msg = warn_msg + msg
@@ -117,7 +117,7 @@ def validate_boot_sets(session_template: dict,
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Warning: {err}.\n"
+                    f"could not locate its {boot_artifact}. Warning: {err}."
                     LOGGER.warn(msg)
                     warning_flag = True
                     warn_msg = warn_msg + msg
