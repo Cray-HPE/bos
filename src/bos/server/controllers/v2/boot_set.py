@@ -113,7 +113,7 @@ def validate_boot_sets(session_template: dict,
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Warning: {err}."
+                    f"could not locate its {boot_artifact}. Warning: {err}"
                     LOGGER.warn(msg)
                     warning_flag = True
                     warn_msg = warn_msg + msg
