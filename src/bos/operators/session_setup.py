@@ -209,6 +209,7 @@ class Session:
         boot_artifacts['kernel'] = artifact_info['kernel']
         boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")
         boot_artifacts['kernel_parameters'] = self.assemble_kernel_boot_parameters(boot_set, artifact_info)
+        state['boot_artifacts'] = boot_artifacts
         state['configuration'] = self._get_configuration_from_boot_set(boot_set)
         return state
 
