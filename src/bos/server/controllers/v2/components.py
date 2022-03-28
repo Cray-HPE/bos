@@ -371,10 +371,10 @@ def _copy_staged_to_desired(data):
 def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
+    data = _set_on_hold_when_enabled(data)
+    data = _clear_session_when_manually_updated(data)
     if "status" not in data:
         data["status"] = {"phase": "", "status_override": ""}
-    if data.get("enabled"):
-        data["status"]["status_override"] = Status.on_hold
     return data
 
 
@@ -412,6 +412,26 @@ def _set_last_updated(data):
     for section in ['actual_state', 'desired_state', 'staged_state', 'last_action']:
         if section in data and type(data[section]) == dict and data[section].keys() != {"bss_token"}:
             data[section]['last_updated'] = timestamp
+    return data
+
+
+def _set_on_hold_when_enabled(data):
+    """
+    The status operator doesn't monitor disabled components, so this causes a delay until it can
+    revaluate the component so that other operators don't act on old phase information.
+    """
+    if data.get("enabled"):
+        data["status"]["status_override"] = Status.on_hold
+    return data
+
+
+def _clear_session_when_manually_updated(data):
+    """
+    If the desired state for a component is updated outside of the setup operator, that component
+    should no longer be considered part of it's original session.
+    """
+    if data.get("desired_state") and not data.get("session"):
+        data["session"] = ""
     return data
 
 
