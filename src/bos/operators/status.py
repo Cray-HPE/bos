@@ -26,7 +26,7 @@ import logging
 
 from bos.common.values  import Phase, Status, Action
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import DesiredBootStateIsNone, BootArtifactStatesMatch,\
+from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch,\
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.capmc import status as get_power_states
@@ -43,7 +43,7 @@ class StatusOperator(BaseOperator):
     def __init__(self):
         super().__init__()
         # Reuse filter code
-        self.desired_boot_state_is_none = DesiredBootStateIsNone()._match
+        self.desired_boot_state_is_off = DesiredBootStateIsOff()._match
         self.boot_artifact_states_match = BootArtifactStatesMatch()._match
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
         self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
@@ -135,13 +135,15 @@ class StatusOperator(BaseOperator):
         if status_data.get('status') == Status.failed:
             disable = True  # Failed state - the aggregated status if "failed"
         if power_state == 'off':
-            if self.desired_boot_state_is_none(component):
+            if self.desired_boot_state_is_off(component):
                 phase = Phase.none
                 disable = True  # Successful state - desired and actual state are off
             else:
                 phase = Phase.powering_on
         elif power_state == 'on':
-            if self.boot_artifact_states_match(component):
+            if self.desired_boot_state_is_off(component):
+                phase = Phase.powering_off
+            elif self.boot_artifact_states_match(component):
                 if not self.desired_configuration_set_in_cfs(component, cfs_component):
                     phase = Phase.configuring
                 elif self.desired_configuration_is_none(component, cfs_component):
