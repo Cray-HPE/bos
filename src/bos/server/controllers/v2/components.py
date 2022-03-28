@@ -371,10 +371,10 @@ def _copy_staged_to_desired(data):
 def _set_auto_fields(data):
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
-    data = _set_on_hold_when_enabled(data)
-    data = _clear_session_when_manually_updated(data)
     if "status" not in data:
         data["status"] = {"phase": "", "status_override": ""}
+    data = _set_on_hold_when_enabled(data)
+    data = _clear_session_when_manually_updated(data)
     return data
 
 
