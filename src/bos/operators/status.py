@@ -101,7 +101,13 @@ class StatusOperator(BaseOperator):
 
     def _check_status(self, component, power_state, cfs_component):
         phase, disable, override, error = self._get_status(component, power_state, cfs_component)
-        updated_component = {'id': component['id'], 'status': {}}
+        updated_component = {
+            'id': component['id'],
+            'status': {
+                'status_override': '',
+                'phase': ''
+            }
+        }
         update = False
         if phase != component.get('status', {}).get('phase', ''):
             updated_component['status']['phase'] = phase
