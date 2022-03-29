@@ -231,6 +231,7 @@ def get_v2_component(component_id):
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
     component = DB.get(component_id)
+    component = _set_status(component)
     return component, 200
 
 
