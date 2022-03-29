@@ -29,7 +29,8 @@ from collections import defaultdict
 from bos.operators.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-capmc'
-ENDPOINT = "%s://%s/capmc" % (PROTOCOL, SERVICE_NAME)
+CAPMC_VERSION = 'v1'
+ENDPOINT = "%s://%s/capmc/%s" % (PROTOCOL, SERVICE_NAME, CAPMC_VERSION)
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.capmc')
 
