@@ -100,23 +100,22 @@ class StatusOperator(BaseOperator):
         return cfs_states
 
     def _check_status(self, component, power_state, cfs_component):
-        phase, disable, override, error = self._get_status(component, power_state, cfs_component)
+        phase, override, disable, error = self._get_status(component, power_state, cfs_component)
         updated_component = {
             'id': component['id'],
             'status': {
                 'status_override': '',
-                'phase': ''
             }
         }
         update = False
         if phase != component.get('status', {}).get('phase', ''):
             updated_component['status']['phase'] = phase
             update = True
+        if override != component.get('status', {}).get('status_override', ''):
+            updated_component['status']['status_override'] = override
+            update = True
         if disable and options.disable_components_on_completion:
             updated_component['enabled'] = False
-            update = True
-        if override:
-            updated_component['status']['status_override'] = override
             update = True
         if error:
             updated_component['error'] = error
@@ -133,8 +132,8 @@ class StatusOperator(BaseOperator):
             internal BOS information, such as a failed configuration state.
         """
         phase = ''
-        disable = False
         override = ''
+        disable = False
         error = ''
 
         status_data = component.get('status', {})
@@ -183,7 +182,7 @@ class StatusOperator(BaseOperator):
             override = Status.failed
             error = 'capmc is not reporting a valid power state for this component'
 
-        return phase, disable, override, error
+        return phase, override, disable, error
 
 
 if __name__ == '__main__':
