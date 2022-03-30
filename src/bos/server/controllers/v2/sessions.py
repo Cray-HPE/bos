@@ -84,6 +84,12 @@ def post_v2_session():  # noqa: E501
 
     # -- Setup Record --
     session = _create_session(session_create)
+    if session.name in DB:
+        return connexion.problem(
+            detail="A session with the name {} already exists".format(session.name),
+            status=409,
+            title="Conflicting session name"
+        )
     session_data = session.to_dict()
     response = DB.put(session_data['name'], session_data)
     return response, 201
