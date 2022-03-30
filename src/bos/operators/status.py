@@ -48,7 +48,7 @@ class StatusOperator(BaseOperator):
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
         self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
         self.last_action_is_power_on = LastActionIs(Action.power_on)._match
-        self.wait_time_elapsed = TimeSinceLastAction(minutes=options.max_component_wait_time)._match
+        self.power_on_wait_time_elapsed = TimeSinceLastAction(minutes=options.max_power_on_wait_time)._match
 
     @property
     def name(self):
@@ -172,7 +172,7 @@ class StatusOperator(BaseOperator):
                         override = Status.failed
                         error = 'cfs is not reporting a valid configuration status for this component'
             else:
-                if self.last_action_is_power_on(component) and not self.wait_time_elapsed(component):
+                if self.last_action_is_power_on(component) and not self.power_on_wait_time_elapsed(component):
                     phase = Phase.powering_on
                 else:
                     # Includes both power-off for restarts and ready-recovery scenario
