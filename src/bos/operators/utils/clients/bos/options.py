@@ -83,8 +83,12 @@ class Options:
         return self.get_option('discovery_frequency', int, 5*60)
 
     @property
-    def max_component_wait_time(self):
-        return self.get_option('max_component_wait_time', int, 300)
+    def max_power_on_wait_time(self):
+        return self.get_option('max_power_on_wait_time', int, 600)
+
+    @property
+    def max_power_off_wait_time(self):
+        return self.get_option('max_power_off_wait_time', int, 180)
 
     @property
     def disable_components_on_completion(self):
