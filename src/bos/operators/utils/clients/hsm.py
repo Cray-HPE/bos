@@ -146,8 +146,13 @@ class Inventory(object):
             data = self.get('State/Components', params=params)
             roles = defaultdict(set)
             for component in data['Components']:
+                role=''
                 if 'Role' in component:
-                    roles[component['Role']].add(component['ID'])
+                    role = str(component['Role'])
+                    roles[role].add(component['ID'])
+                if 'SubRole' in component:
+                    subrole = role + '_' + str(component['SubRole'])
+                    roles[subrole].add(component['ID'])
             self._roles = roles
         return self._roles
 
