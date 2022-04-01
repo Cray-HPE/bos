@@ -48,7 +48,7 @@ def convert_v1_to_v2(v1_st):
     Returns:
       v2_st: A v2 session template
     """
-    session_template_keys = ['templateUrl', 'name', 'description',
+    session_template_keys = ['name', 'description',
                              'enable_cfs', 'cfs', 'partition',
                              'boot_sets', 'links']
     boot_set_keys = ['name', 'path', 'type', 'etag', 'kernel_parameters',
@@ -58,9 +58,7 @@ def convert_v1_to_v2(v1_st):
     v2_st = {'boot_sets': {}}
     for k, v in v1_st.items():
         if k in session_template_keys:
-            if k == "templateUrl":
-                v2_st["template_url"] = v
-            elif k != "boot_sets":
+            if k != "boot_sets":
                 v2_st[k] = v
         else:
             LOGGER.warning("Discarding attribute: '{}' from session template: '{}'".format(k, v1_st['name']))
