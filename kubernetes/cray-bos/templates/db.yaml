@@ -116,11 +116,23 @@ metadata:
   labels:
     app.kubernetes.io/name: "{{ include "cray-service.name" . }}-db"
 spec:
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app.kubernetes.io/name: {{ include "cray-service.name" . }}
   podSelector:
     matchLabels:
       app.kubernetes.io/name: "{{ include "cray-service.name" . }}-db"
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    {{/* BOS API servers */}}
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ include "cray-service.name" . }}
+    {{/* BOS Power-on operator */}}
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ .Values.operators.poweron.Values.fullnameOverride}}
+    {{/* Redis database port */}}
+    ports:
+    - protocol: TCP
+      port: 6379
+          
