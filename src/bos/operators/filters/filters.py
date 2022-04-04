@@ -177,6 +177,17 @@ class DesiredBootStateIsNone(LocalFilter):
         return False
 
 
+class DesiredBootStateIsOff(LocalFilter):
+    """ Returns when the desired state has no kernel set """
+
+    def _match(self, component: dict) -> bool:
+        desired_state = component.get('desired_state', {})
+        desired_boot_state = desired_state.get('boot_artifacts', {})
+        if not desired_boot_state.get('kernel'):
+            return True
+        return False
+
+
 class DesiredConfigurationIsNone(LocalFilter):
     """ Returns when the desired configuration is None """
 

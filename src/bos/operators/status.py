@@ -26,7 +26,7 @@ import logging
 
 from bos.common.values  import Phase, Status, Action
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import DesiredBootStateIsNone, BootArtifactStatesMatch,\
+from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch,\
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.capmc import status as get_power_states
@@ -43,12 +43,12 @@ class StatusOperator(BaseOperator):
     def __init__(self):
         super().__init__()
         # Reuse filter code
-        self.desired_boot_state_is_none = DesiredBootStateIsNone()._match
+        self.desired_boot_state_is_off = DesiredBootStateIsOff()._match
         self.boot_artifact_states_match = BootArtifactStatesMatch()._match
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
         self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
         self.last_action_is_power_on = LastActionIs(Action.power_on)._match
-        self.wait_time_elapsed = TimeSinceLastAction(minutes=options.max_component_wait_time)._match
+        self.power_on_wait_time_elapsed = TimeSinceLastAction(minutes=options.max_power_on_wait_time)._match
 
     @property
     def name(self):
@@ -100,17 +100,22 @@ class StatusOperator(BaseOperator):
         return cfs_states
 
     def _check_status(self, component, power_state, cfs_component):
-        phase, disable, override, error = self._get_status(component, power_state, cfs_component)
-        updated_component = {'id': component['id'], 'status': {}}
+        phase, override, disable, error = self._get_status(component, power_state, cfs_component)
+        updated_component = {
+            'id': component['id'],
+            'status': {
+                'status_override': '',
+            }
+        }
         update = False
         if phase != component.get('status', {}).get('phase', ''):
             updated_component['status']['phase'] = phase
             update = True
+        if override != component.get('status', {}).get('status_override', ''):
+            updated_component['status']['status_override'] = override
+            update = True
         if disable and options.disable_components_on_completion:
             updated_component['enabled'] = False
-            update = True
-        if override:
-            updated_component['status']['status_override'] = override
             update = True
         if error:
             updated_component['error'] = error
@@ -127,21 +132,23 @@ class StatusOperator(BaseOperator):
             internal BOS information, such as a failed configuration state.
         """
         phase = ''
-        disable = False
         override = ''
+        disable = False
         error = ''
 
         status_data = component.get('status', {})
         if status_data.get('status') == Status.failed:
             disable = True  # Failed state - the aggregated status if "failed"
         if power_state == 'off':
-            if self.desired_boot_state_is_none(component):
+            if self.desired_boot_state_is_off(component):
                 phase = Phase.none
                 disable = True  # Successful state - desired and actual state are off
             else:
                 phase = Phase.powering_on
         elif power_state == 'on':
-            if self.boot_artifact_states_match(component):
+            if self.desired_boot_state_is_off(component):
+                phase = Phase.powering_off
+            elif self.boot_artifact_states_match(component):
                 if not self.desired_configuration_set_in_cfs(component, cfs_component):
                     phase = Phase.configuring
                 elif self.desired_configuration_is_none(component, cfs_component):
@@ -165,7 +172,7 @@ class StatusOperator(BaseOperator):
                         override = Status.failed
                         error = 'cfs is not reporting a valid configuration status for this component'
             else:
-                if self.last_action_is_power_on(component) and not self.wait_time_elapsed(component):
+                if self.last_action_is_power_on(component) and not self.power_on_wait_time_elapsed(component):
                     phase = Phase.powering_on
                 else:
                     # Includes both power-off for restarts and ready-recovery scenario
@@ -175,7 +182,7 @@ class StatusOperator(BaseOperator):
             override = Status.failed
             error = 'capmc is not reporting a valid power state for this component'
 
-        return phase, disable, override, error
+        return phase, override, disable, error
 
 
 if __name__ == '__main__':

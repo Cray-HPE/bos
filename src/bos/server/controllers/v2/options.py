@@ -41,7 +41,8 @@ DEFAULTS = {
     'disable_components_on_completion': True,
     'discovery_frequency': 5*60,
     'logging_level': 'INFO',
-    'max_component_wait_time': 3600,
+    'max_power_on_wait_time': 600,
+    'max_power_off_wait_time': 180,
     'polling_frequency': 60,
 }
 

@@ -36,9 +36,7 @@ from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
-
-from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
-from bos.operators.utils.clients.s3 import S3Object
+from .boot_set import validate_boot_sets, BOOT_SET_ERROR
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
@@ -79,12 +77,18 @@ def post_v2_session():  # noqa: E501
         session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
-    msg, err = _validate_boot_sets(session_template, session_create.operation)
-    if msg:
-        return msg, err
+    error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name)
+    if error_code >= BOOT_SET_ERROR:
+        return msg, 400
 
     # -- Setup Record --
     session = _create_session(session_create)
+    if session.name in DB:
+        return connexion.problem(
+            detail="A session with the name {} already exists".format(session.name),
+            status=409,
+            title="Conflicting session name"
+        )
     session_data = session.to_dict()
     response = DB.put(session_data['name'], session_data)
     return response, 201
@@ -336,7 +340,7 @@ def _get_v2_session_status(session_id, session=None):
         component_phase_counts['successful'] = len([c for c in components if c.get('status', {}).get('status') == Status.stable])
         component_phase_counts['failed'] = len([c for c in components if c.get('status', {}).get('status') == Status.failed])
         component_phase_counts['staged'] = len(staged_components)
-        component_phase_percents = {phase: (component_phase_counts[phase]/num_managed_components)*100 for phase in component_phase_counts}
+        component_phase_percents = {phase: (component_phase_counts[phase] / num_managed_components) * 100 for phase in component_phase_counts}
     else:
         component_phase_percents = {}
     component_errors_data = defaultdict(set)

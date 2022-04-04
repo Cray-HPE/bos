@@ -694,6 +694,10 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2SessionTemplate'
+    V2SessionTemplateValidation:
+      description: |
+        Message describing errors or incompleteness in a Session Template.
+      type: string
     V2SessionCreate:
       description: |
         A Session Creation object
@@ -1094,6 +1098,25 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
+    V2ComponentsFilter:
+      description: Information for patching multiple components.
+      type: object
+      properties:
+        ids:
+          type: string
+          description: A comma separated list of component ids
+        session:
+          type: string
+          description: A session name.  All components part of this session will be patched.
+    V2ComponentsUpdate:
+      description: Information for patching multiple components.
+      type: object
+      properties:
+        patch:
+          $ref: '#/components/schemas/V2Component'
+        filters:
+          $ref: '#/components/schemas/V2ComponentsFilter'
+      required: [patch, filters]
     V2ApplyStagedComponents:
       description: |
         A list of components that should have their staged session applied.
@@ -1146,9 +1169,12 @@ components:
         logging_level:
           type: string
           description: The logging level for all BOS services
-        max_component_wait_time:
+        max_power_on_wait_time:
           type: integer
-          description: How long BOS will wait for a node (in seconds)
+          description: How long BOS will wait for a node to power on before rebooting again (in seconds)
+        max_power_off_wait_time:
+          type: integer
+          description: How long BOS will wait for a node to power off before forcefully powering off (in seconds)
         polling_frequency:
           type: integer
           description: How frequently the BOS operators check component state for needed actions. (in seconds)
@@ -1168,13 +1194,22 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Component'
-    V2componentsUpdateRequest:
+    V2componentsPutRequest:
       description: The state for an array of components
       required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2ComponentArray'
+    V2componentsUpdateRequest:
+      description: The state for an array of components
+      required: true
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/V2ComponentsUpdate'
+              - $ref: '#/components/schemas/V2ComponentArray'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
@@ -1249,6 +1284,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionTemplateArray'
+    V2SessionTemplateValidation:
+      description: Session template validity details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2SessionTemplateValidation'
     V2SessionDetails:
       description: Session details
       content:
@@ -1823,6 +1864,30 @@ paths:
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetailsArray'
+  /v2/sessiontemplatesvalid/{session_template_id}:
+    parameters:
+      - name: session_template_id
+        in: path
+        description: Session Template ID
+        required: true
+        schema:
+          type: string
+    get:
+      summary: Validate the session template by id
+      description: |
+        Validate session template by session_template_id.
+        The session_template_id corresponds to the *name*
+        of the session template.
+      tags:
+        - v2
+        - sessiontemplatess
+      x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
+      operationId: validate_v2_sessiontemplate
+      responses:
+        200:
+          $ref: '#/components/responses/V2SessionTemplateValidation'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
   /v2/sessiontemplates/{session_template_id}:
     parameters:
       - name: session_template_id
@@ -2156,7 +2221,7 @@ paths:
       description: Update the state for a collection of components in the BOS database
       operationId: put_v2_components
       requestBody:
-        $ref: '#/components/requestBodies/V2componentsUpdateRequest'
+        $ref: '#/components/requestBodies/V2componentsPutRequest'
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'

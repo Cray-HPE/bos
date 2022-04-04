@@ -27,6 +27,7 @@ import connexion
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
 from bos.server import redis_db_utils as dbutils
 from bos.server.utils import _canonize_xname
+from .boot_set import validate_boot_sets
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
 DB = dbutils.get_wrapper(db='session_templates')
@@ -75,7 +76,7 @@ def _sanitize_xnames(st_json):
 
 @dbutils.redis_error_handler
 def put_v2_sessiontemplate(session_template_id):  # noqa: E501
-    """POST /v2/sessiontemplate
+    """PUT /v2/sessiontemplate
 
     Creates a new session template. # noqa: E501
     """
@@ -85,7 +86,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
         LOGGER.debug("type=%s", type(connexion.request.get_json()))
         LOGGER.debug("Received: %s", connexion.request.get_json())
     else:
-        return "Post must be in JSON format", 400
+        return "PUT must be in JSON format", 400
 
     try:
         data = connexion.request.get_json()
@@ -101,7 +102,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
            Any exceptions caught here would be generated from the model
            (i.e. bos.server.models.session_template).
            An example is an exception for a session template name that
-           does not confirm to Kubernetes naming convention.
+           does not conform to Kubernetes naming convention.
            In this case return 400 with a description of the specific error.
         """
         SessionTemplate.from_dict(template_data)
@@ -216,3 +217,25 @@ def patch_v2_sessiontemplate(session_template_id):
     template_data['name'] = session_template_id
 
     return DB.patch(session_template_id, template_data), 200
+
+
+@dbutils.redis_error_handler
+def validate_v2_sessiontemplate(session_template_id: str):
+    """
+    Validate a V2 session template. Look for missing elements or errors that would prevent
+    a session from being launched using this template. 
+    """
+    data, status_code = get_v2_sessiontemplate(session_template_id)
+
+    if status_code != 200:
+        return data, status_code
+
+    # We assume boot because it and reboot are the most demanding from a validation
+    # standpoint.
+    operation = "boot"
+
+    _error_code, msg = validate_boot_sets(data, operation, session_template_id)
+    # We return 200 because the request itself was successful even if the session template
+    # is invalid.
+    return msg, 200
+

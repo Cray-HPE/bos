@@ -29,4 +29,6 @@ from .filters import BOSQuery, HSMState, TimeSinceLastAction,\
 
 __all__ = [BOSQuery, HSMState, TimeSinceLastAction, LastActionIs,
            BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,
-           DesiredConfigurationIsNone, OR, NOT, ActualStateAge, ActualBootStateIsNone]
+           DesiredBootStateIsOff, DesiredConfigurationIsNone, OR, NOT, ActualStateAge,
+           ActualBootStateIsNone]
+
