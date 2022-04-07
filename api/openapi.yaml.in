@@ -652,12 +652,6 @@ components:
 
         * self : The session object
       properties:
-        template_url:
-          type: string
-          description: |
-            The URL to the resource providing the session template data.
-            Specify either a template_url, or the other session
-            template parameters.
         name:
           type: string
           description: Name of the SessionTemplate. The length of the name is restricted to 45 characters.

@@ -84,7 +84,7 @@ def set_cfs(components, enabled):
         config_name = component.get('desired_state', {}).get('configuration', '')
         bos_session = component.get('session')
         key = (config_name, bos_session)
-        configurations[key].append(components['id'])
+        configurations[key].append(component['id'])
     for key, ids in configurations.items():
         config_name, bos_session = key
         patch_desired_config(ids, config_name, enabled=enabled,
