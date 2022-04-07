@@ -76,7 +76,7 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # and require paging to be implemented
         response = DB.get_all()
     response = [_set_status(r) for r in response if r]
-    if enabled is not None or session is not None or staged_session is not None:
+    if enabled is not None or session is not None or staged_session is not None or phase is not None or status is not None:
         response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
     return response
 
