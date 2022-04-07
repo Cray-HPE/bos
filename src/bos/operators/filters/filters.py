@@ -172,7 +172,7 @@ class DesiredBootStateIsNone(LocalFilter):
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desired_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
-        if not desired_boot_state or not all([bool(v) for v in desired_boot_state.values()]):
+        if not desired_boot_state or not any([bool(v) for v in desired_boot_state.values()]):
             return True
         return False
 
@@ -196,3 +196,34 @@ class DesiredConfigurationIsNone(LocalFilter):
         if not desired_state or not desired_state.get('configuration', ''):
             return True
         return False
+
+
+class ActualStateAge(LocalFilter):
+    """ Returns all components whose Actual Stage age is older than <age>, as set in kwargs. """
+
+    def __init__(self, **kwargs) -> None:
+        """
+        Init for the ActualStageAge filter
+        kwargs corresponds to arguments for datetime.timedelta
+        """
+        super().__init__()
+        self.kwargs = kwargs
+
+    def _match(self, component: dict) -> bool:
+        last_updated = component.get('actual_state', {}).get('last_updated')
+        now = get_current_time()
+        if not last_updated or now > load_timestamp(last_updated) + timedelta(**self.kwargs):
+            return True
+        return False
+
+
+class ActualBootStateIsNone(LocalFilter):
+    """ Returns when the actual state is None """
+
+    def _match(self, component: dict) -> bool:
+        actual_state = component.get('actual_state', {})
+        actual_boot_state = actual_state.get('boot_artifacts', {})
+        if not actual_boot_state or not any([bool(v) for v in actual_boot_state.values()]):
+            return True
+        return False
+
