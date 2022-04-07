@@ -23,12 +23,11 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+
 from .filters import BOSQuery, HSMState, TimeSinceLastAction,\
     LastActionIs, BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,\
-    DesiredConfigurationIsNone, OR, NOT, ActualStateAge, ActualBootStateIsNone
+    DesiredConfigurationIsNone, DesiredBootStateIsOff, OR, NOT, ActualStateAge, ActualBootStateIsNone
 
-__all__ = [BOSQuery, HSMState, TimeSinceLastAction, LastActionIs,
-           BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,
-           DesiredBootStateIsOff, DesiredConfigurationIsNone, OR, NOT, ActualStateAge,
-           ActualBootStateIsNone]
-
+__all__ = [BOSQuery, HSMState, TimeSinceLastAction, LastActionIs, BootArtifactStatesMatch,
+           DesiredConfigurationSetInCFS, DesiredBootStateIsNone, DesiredConfigurationIsNone,
+           DesiredBootStateIsOff, OR, NOT, ActualStateAge, ActualBootStateIsNone]
