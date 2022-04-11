@@ -27,9 +27,9 @@ import logging
 from bos.common.utils import duration_to_timedelta
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import ActualStateAge, ActualBootStateIsNone, NOT
+from bos.operators.filters import BOSQuery, ActualStateAge, ActualBootStateIsNone, NOT
 
-LOGGER = logging.getLogger('bos.operators.actual_stage_cleanup')
+LOGGER = logging.getLogger('bos.operators.actual_state_cleanup')
 
 
 ZEROED_ACTUAL_STATE = {'bss_token': '',
@@ -37,9 +37,9 @@ ZEROED_ACTUAL_STATE = {'bss_token': '',
                                           'initrd': '',
                                           'kernel_parameters': ''}}
 
-class ActualStageCleanupOperator(BaseOperator):
+class ActualStateCleanupOperator(BaseOperator):
     """
-    The ActualStageCleanupOperator is responsible for identifying components that have
+    The ActualStateCleanupOperator is responsible for identifying components that have
     an expired actual state set (from boot artifacts). Typically this can happen when
     a node is NMI'd, the node management network goes down, or there is an otherwise
     undetected kernel panic that prevents system services from reporting in, a user
@@ -51,12 +51,13 @@ class ActualStageCleanupOperator(BaseOperator):
 
     @property
     def name(self):
-        return 'Actual ßStage Cleanup Operator'
+        return 'Actual State Cleanup Operator'
 
     # Filters
     @property
     def filters(self):
         return [
+            BOSQuery(),
             NOT(ActualBootStateIsNone()),
             ActualStateAge(seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds())
         ]
@@ -71,4 +72,4 @@ class ActualStageCleanupOperator(BaseOperator):
 
 
 if __name__ == '__main__':
-    main(ActualStageCleanupOperator)
+    main(ActualStateCleanupOperator)

@@ -201,14 +201,6 @@ class DesiredConfigurationIsNone(LocalFilter):
 class ActualStateAge(LocalFilter):
     """ Returns all components whose Actual Stage age is older than <age>, as set in kwargs. """
 
-    def __init__(self, **kwargs) -> None:
-        """
-        Init for the ActualStageAge filter
-        kwargs corresponds to arguments for datetime.timedelta
-        """
-        super().__init__()
-        self.kwargs = kwargs
-
     def _match(self, component: dict) -> bool:
         last_updated = component.get('actual_state', {}).get('last_updated')
         now = get_current_time()
