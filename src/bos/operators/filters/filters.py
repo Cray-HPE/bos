@@ -96,8 +96,11 @@ class NOT(LocalFilter):
     def __init__(self, filter: Type[LocalFilter]) -> None:
         self.negated_filter = filter
 
-    def _match(self, component: dict):
-        return not self.negated_filter._match(component)
+    def _filter(self, components: List[dict]) -> List[dict]:
+        return self.negated_filter._filter(components)
+
+    def _match(self, components: dict):
+        return not self.negated_filter._match(components)
 
 
 class TimeSinceLastAction(LocalFilter):
@@ -147,22 +150,30 @@ class BootArtifactStatesMatch(LocalFilter):
         return True
 
 
-class DesiredConfigurationSetInCFS(DetailsFilter):
+class DesiredConfigurationSetInCFS(LocalFilter):
     """ Returns when desired configuration is set in CFS """
+
+    def __init__(self):
+        self.cfs_components_dict = {}
+        super().__init__()
 
     def _filter(self, components: List[dict]) -> List[dict]:
         component_ids = ','.join([component['id'] for component in components])
         cfs_components = get_cfs_components(ids=component_ids)
-        cfs_components_dict = {component['id']: component for component in cfs_components}
-        matching_components = []
-        for component in components:
-            if self._match(component, cfs_components_dict[component['id']]):
-                matching_components.append(component)
-        return matching_components
+        self.cfs_components_dict = {component['id']: component for component in cfs_components}
+        return super()._filter(components)
 
-    def _match(self, component: dict, cfs_component: dict) -> bool:
+    def _match(self, component: dict, cfs_component: dict=None) -> bool:
+        # The NOT filter class does not allow the cfs_component parameter to be passed
+        # into this function. This necessitated passing the CFS components through the instance attribute
+        # cfs_components_dict.
+        # The status operator needs to pass in the cfs_component parameter because it is
+        # not calling the _filter method which sets/updates eth cfs_components_dict attribute.
         desired_configuration = component.get('desired_state', {}).get('configuration')
-        set_configuration = cfs_component.get('desired_config')
+        if cfs_component is None:
+            set_configuration = self.cfs_components_dict[component['id']].get('desired_config')
+        else:
+            set_configuration = cfs_component.get('desired_config')
         return desired_configuration == set_configuration
 
 

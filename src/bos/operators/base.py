@@ -38,7 +38,6 @@ from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
-
 LOGGER = logging.getLogger('bos.operators.base')
 
 
@@ -55,6 +54,7 @@ class BaseOperator(ABC):
 
     Any other method may also be overridden, but functionality such as error handling may be lost.
     """
+
     def __init__(self) -> NoReturn:
         self.bos_client = BOSClient()
 
@@ -94,12 +94,12 @@ class BaseOperator(ABC):
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
         components = self._get_components()
-        for component in components:  # Unset old errors components
-            component['error'] = ''
         if not components:
             LOGGER.debug('Found 0 components that require action')
             return
         LOGGER.info('Found {} components that require action'.format(len(components)))
+        for component in components:  # Unset old errors components
+            component['error'] = ''
         components = self._act(components)
         self._update_database(components)
 
@@ -115,7 +115,7 @@ class BaseOperator(ABC):
         """ The action taken by the operator on target components """
         raise NotImplementedError()
 
-    def _update_database(self, components: List[dict], additional_fields: dict = None) -> None:
+    def _update_database(self, components: List[dict], additional_fields: dict=None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
         Includes updating min_wait/max_wait, the last action, attempt count and error
