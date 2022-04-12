@@ -217,13 +217,13 @@ class ActualStateAge(LocalFilter):
         return False
 
 
-class ActualBootStateIsNone(LocalFilter):
-    """ Returns when the actual state is None """
+class ActualBootStateIsSet(LocalFilter):
+    """ Returns when the actual state has a set value """
 
     def _match(self, component: dict) -> bool:
         actual_state = component.get('actual_state', {})
-        actual_boot_state = actual_state.get('boot_artifacts', {})
-        if not actual_boot_state or not any([bool(v) for v in actual_boot_state.values()]):
+        actual_boot_state = actual_state.get('boot_artifacts', None)
+        if actual_boot_state and any([bool(v) for v in actual_boot_state.values()]):
             return True
         return False
 
