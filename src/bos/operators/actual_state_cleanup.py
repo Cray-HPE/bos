@@ -65,8 +65,8 @@ class ActualStateCleanupOperator(BaseOperator):
     def _act(self, components):
         data = []
         for component_id in [component['id'] for component in components]:
-            data.append([{'id': component_id,
-                          'actual_state': ZEROED_ACTUAL_STATE}])
+            data.append({'id': component_id,
+                         'actual_state': ZEROED_ACTUAL_STATE})
         if data:
             LOGGER.debug('Calling to update with payload: %s' %(data))
             self.bos_client.components.update_components(data)
