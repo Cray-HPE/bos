@@ -67,7 +67,8 @@ class ActualStateCleanupOperator(BaseOperator):
         for component_id in [component['id'] for component in components]:
             data.append([{'id': component_id,
                           'actual_state': ZEROED_ACTUAL_STATE}])
-        self.bos_client.components.update_components(data)
+        if data:
+            self.bos_client.components.update_components(data)
         return components
 
 
