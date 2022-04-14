@@ -33,6 +33,7 @@ LOGGER = logging.getLogger('bos.operators.actual_state_cleanup')
 
 
 ZEROED_ACTUAL_STATE = {'bss_token': '',
+                       'configuration': '',
                        'boot_artifacts': {'kernel': '',
                                           'initrd': '',
                                           'kernel_parameters': ''}}

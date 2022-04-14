@@ -221,7 +221,7 @@ class ActualStateAge(LocalFilter):
         self.kwargs = kwargs
 
     def _match(self, component: dict) -> bool:
-        last_updated = component.get('actual_state', {}).get('last_updated')
+        last_updated = component.get('actual_state', {}).get('last_updated', None)
         now = get_current_time()
         if not last_updated or now > load_timestamp(last_updated) + timedelta(**self.kwargs):
             return True
@@ -229,12 +229,14 @@ class ActualStateAge(LocalFilter):
 
 
 class ActualBootStateIsSet(LocalFilter):
-    """ Returns when the actual state has a set value """
+    """ Returns when the actual state h """
 
     def _match(self, component: dict) -> bool:
-        actual_state = component.get('actual_state', {})
-        actual_boot_state = actual_state.get('boot_artifacts', None)
-        if actual_boot_state and any([bool(v) for v in actual_boot_state.values()]):
+        actual_state_boot_artifacts = component.get('actual_state', {}).get('boot_artifacts', {})
+        # The timestamp field doesn't count as a set record we particularly care about
+        if 'timestamp' in actual_state_boot_artifacts:
+            del actual_state_boot_artifacts['timestamp']
+        if any([bool(v) for v in actual_state_boot_artifacts.values()]):
             return True
         return False
 
