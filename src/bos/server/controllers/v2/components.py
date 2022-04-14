@@ -56,6 +56,8 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
                 detail=str(err))
     response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
                                       phase=phase, status=status)
+    for component in response:
+        del_timestamp(component)
     return response, 200
 
 
@@ -232,6 +234,7 @@ def get_v2_component(component_id):
             detail="Component {} could not be found".format(component_id))
     component = DB.get(component_id)
     component = _set_status(component)
+    del_timestamp(component)
     return component, 200
 
 
@@ -384,7 +387,7 @@ def _populate_boot_artifacts(data):
     If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the
     actual_state data.
-    
+
     If the data contains any boot artifacts and the BSS
     token, then those boot artifacts will be overwritten.
     If there are boot artifacts and no BSS token, then
@@ -407,6 +410,19 @@ def _populate_boot_artifacts(data):
             data['actual_state']['boot_artifacts'] = boot_artifacts
     return data
 
+
+def del_timestamp(data: dict): -> None
+    """
+    # The actual state boot artifacts dictionary contains a timestamp
+    # that is used for internal references only; we should strip it
+    # from any given data. The dictionary is modified in place, and
+    # no return is given.
+    """
+    try:
+        del data['actual_state']['boot_artifacts']['timestamp']
+    except KeyError:
+        pass
+    return None
 
 def _set_last_updated(data):
     timestamp = get_current_timestamp()
