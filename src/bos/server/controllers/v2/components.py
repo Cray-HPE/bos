@@ -411,7 +411,7 @@ def _populate_boot_artifacts(data):
     return data
 
 
-def del_timestamp(data: dict): -> None
+def del_timestamp(data: dict):
     """
     # The actual state boot artifacts dictionary contains a timestamp
     # that is used for internal references only; we should strip it
