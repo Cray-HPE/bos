@@ -32,5 +32,5 @@ class BOSClient:
     def __init__(self):
         self.components = ComponentEndpoint()
         self.sessions = SessionEndpoint()
-        self.sessions_status = SessionStatusEndpoint()
+        self.session_status = SessionStatusEndpoint()
         self.session_templates = SessionTemplateEndpoint()
