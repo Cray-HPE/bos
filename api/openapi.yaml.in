@@ -755,6 +755,10 @@ components:
           enum: ['pending', 'running', 'complete']
           description: |
             The status of a session.
+        error:
+          type: string
+          description: |
+            Error which prevented the session from running
       additionalProperties: false
     V2BootSet:
       description: |

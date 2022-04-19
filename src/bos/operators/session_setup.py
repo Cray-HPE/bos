@@ -27,10 +27,11 @@ from botocore.exceptions import ClientError
 
 from bos.operators.base import BaseOperator, main
 from bos.operators.utils.clients.hsm import Inventory
-from bos.operators.utils.clients.s3 import S3Object
+from bos.operators.utils.clients.s3 import S3Object, S3ObjectNotFound
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
+from bos.operators.session_completion import SessionCompletionOperator
 from bos.common.values import Action
 
 LOGGER = logging.getLogger('bos.operators.session_setup')
@@ -39,6 +40,11 @@ EMPTY_BOOT_ARTIFACTS = {
     "kernel_parameters": "",
     "initrd": ""
 }
+
+
+class SessionSetupException(Exception):
+    """ The Session Set-up experienced a fatal error """
+    pass
 
 
 class SessionSetupOperator(BaseOperator):
@@ -72,7 +78,7 @@ class SessionSetupOperator(BaseOperator):
             session.setup()
 
     def _get_pending_sessions(self):
-        return self.bos_client.sessions.get_sessions(status='pending')
+        return self.bos_client.sessions.get_sessions(status = 'pending')
 
 
 class Session:
@@ -99,17 +105,25 @@ class Session:
         return self._template
 
     def setup(self):
-        component_ids = self._setup_components()
-        self._mark_running(component_ids)
+        try:
+            component_ids = self._setup_components()
+        except SessionSetupException as err:
+            self._mark_failed(str(err))
+        else:
+            self._mark_running(component_ids)
 
     def _setup_components(self):
         all_component_ids = []
-        for _, boot_set in self.template.get('boot_sets', {}).items():
-            components = self._get_boot_set_component_list(boot_set)
-            data = []
-            for component_id in components:
-                data.append(self._operate(component_id, boot_set))
-            all_component_ids += components
+        data = []
+        try:
+            for _, boot_set in self.template.get('boot_sets', {}).items():
+                components = self._get_boot_set_component_list(boot_set)
+                for component_id in components:
+                    data.append(self._operate(component_id, boot_set))
+                all_component_ids += components
+        except Exception as err:
+            raise SessionSetupException(err)
+        else:
             self.bos_client.components.update_components(data)
         return list(set(all_component_ids))
 
@@ -166,6 +180,17 @@ class Session:
         self.bos_client.sessions.update_session(
             self.name, {'status': {'status': 'running'}, "components": ",".join(component_ids)})
         self._log(LOGGER.info, 'Session is running')
+
+    def _mark_failed(self, err):
+        """
+        Input:
+          err (string): The error that prevented the session from running
+        """
+        self.bos_client.sessions.update_session(
+            self.name, {'status': {'error': err}})
+        sco = SessionCompletionOperator()
+        sco._mark_session_complete(self.name)
+        self._log(LOGGER.info, f'Session {self.name} has failed.')
 
     def _log(self, logger, message):
         logger('Session {}: {}'.format(self.name, message))
@@ -271,10 +296,11 @@ class Session:
                 image_kernel_parameters = image_kernel_parameters_raw.split()
                 if image_kernel_parameters:
                     boot_param_pieces.extend(image_kernel_parameters)
-            except (ClientError, UnicodeDecodeError) as error:
+            except (ClientError, UnicodeDecodeError, S3ObjectNotFound) as error:
                 LOGGER.error("Unable to read file {}. Thus, no kernel boot parameters obtained "
                              "from image".format(artifact_info['boot_parameters']))
                 LOGGER.error(error)
+                raise
 
         # Parameters from the BOS Session template if the parameters exist.
         if boot_set.get('kernel_parameters'):
@@ -291,7 +317,7 @@ class Session:
             boot_param_pieces.append(nmd_parameters)
 
         # Add the bos actual state ttl value so nodes know how frequently to report
-        boot_param_pieces.append('bos_update_frequency=%s' %(options.component_actual_state_ttl))
+        boot_param_pieces.append('bos_update_frequency=%s' % (options.component_actual_state_ttl))
 
         # Add the Session ID to the kernel parameters
         boot_param_pieces.append("bos_session_id={}".format(self.name))
