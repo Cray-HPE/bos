@@ -24,9 +24,13 @@
 from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
+from .sessions_status import SessionStatusEndpoint
+
 
 class BOSClient:
+
     def __init__(self):
         self.components = ComponentEndpoint()
         self.sessions = SessionEndpoint()
+        self.sessions_status = SessionStatusEndpoint()
         self.session_templates = SessionTemplateEndpoint()

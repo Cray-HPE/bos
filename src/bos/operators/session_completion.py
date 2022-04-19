@@ -35,6 +35,7 @@ class SessionCompletionOperator(BaseOperator):
     The Session Completion Operator marks sessions complete when all components
     that are part of the session have been disabled.
     """
+
     @property
     def name(self):
         return 'SessionCompletion'
@@ -57,16 +58,17 @@ class SessionCompletionOperator(BaseOperator):
                 self._mark_session_complete(session["name"])
 
     def _get_incomplete_sessions(self):
-        return self.bos_client.sessions.get_sessions(status='running')
+        return self.bos_client.sessions.get_sessions(status = 'running')
 
     def _get_incomplete_components(self, session_id):
-        components = self.bos_client.components.get_components(session=session_id, enabled=True)
-        components += self.bos_client.components.get_components(staged_session=session_id)
+        components = self.bos_client.components.get_components(session = session_id, enabled = True)
+        components += self.bos_client.components.get_components(staged_session = session_id)
         return components
 
     def _mark_session_complete(self, session_id):
         self.bos_client.sessions.update_session(session_id, {'status': {'status': 'complete',
                                                                         'end_time': get_current_timestamp()}})
+        # This causes the session status to stored rather than aggregated for this session.
         self.bos_client.session_status.update_session_status(session_id)
         LOGGER.info('Session {} is complete'.format(session_id))
 
