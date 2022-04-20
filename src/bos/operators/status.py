@@ -164,7 +164,7 @@ class StatusOperator(BaseOperator):
                         disable = True  # Failed state - configuration failed
                         override = Status.failed
                         error = 'cfs configuration failed'
-                    elif cfs_status is 'pending':
+                    elif cfs_status == 'pending':
                         phase = Phase.configuring
                     else:
                         phase = Phase.configuring
