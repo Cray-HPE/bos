@@ -26,7 +26,7 @@ import logging
 
 from bos.common.values  import Phase, Status, Action
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch,\
+from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.capmc import status as get_power_states
@@ -40,6 +40,7 @@ class StatusOperator(BaseOperator):
     The Status Operator monitors and sets the phase for all components.
     Also disables stable components if necessary and sets some status overrides.
     """
+
     def __init__(self):
         super().__init__()
         # Reuse filter code
@@ -48,7 +49,7 @@ class StatusOperator(BaseOperator):
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
         self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
         self.last_action_is_power_on = LastActionIs(Action.power_on)._match
-        self.power_on_wait_time_elapsed = TimeSinceLastAction(minutes=options.max_power_on_wait_time)._match
+        self.power_on_wait_time_elapsed = TimeSinceLastAction(minutes = options.max_power_on_wait_time)._match
 
     @property
     def name(self):
@@ -66,7 +67,7 @@ class StatusOperator(BaseOperator):
 
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
-        components = self.bos_client.components.get_components(enabled=True)
+        components = self.bos_client.components.get_components(enabled = True)
         component_ids = [component['id'] for component in components]
         power_states = self._get_power_states(component_ids)
         cfs_states = self._get_cfs_components(','.join(component_ids))
@@ -93,7 +94,7 @@ class StatusOperator(BaseOperator):
 
     @staticmethod
     def _get_cfs_components(component_ids):
-        cfs_data = get_cfs_components(ids=component_ids)
+        cfs_data = get_cfs_components(ids = component_ids)
         cfs_states = {}
         for component in cfs_data:
             cfs_states[component['id']] = component
@@ -180,7 +181,7 @@ class StatusOperator(BaseOperator):
         else:
             disable = True  # Failed state - configuration is no longer set
             override = Status.failed
-            error = 'capmc is not reporting a valid power state for this component'
+            error = f'capmc is not reporting a valid power state for this component. State: {power_state}'
 
         return phase, override, disable, error
 
