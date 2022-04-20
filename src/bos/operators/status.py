@@ -69,7 +69,7 @@ class StatusOperator(BaseOperator):
         """ A single pass of detecting and acting on components  """
         components = self.bos_client.components.get_components(enabled = True)
         component_ids = [component['id'] for component in components]
-        power_states = self._get_power_states(component_ids)
+        power_states, _failed_nodes = get_power_states(component_ids)
         cfs_states = self._get_cfs_components(','.join(component_ids))
         updated_components = []
         for component in components:
@@ -82,15 +82,6 @@ class StatusOperator(BaseOperator):
             return
         LOGGER.info('Found {} components that require status updates'.format(len(updated_components)))
         self.bos_client.components.update_components(updated_components)
-
-    @staticmethod
-    def _get_power_states(component_ids):
-        power_data, _, _ = get_power_states(component_ids)
-        power_states = {}
-        for state in ['on', 'off']:
-            for component_id in power_data.get(state, []):
-                power_states[component_id] = state
-        return power_states
 
     @staticmethod
     def _get_cfs_components(component_ids):

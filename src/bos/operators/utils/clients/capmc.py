@@ -47,7 +47,7 @@ class CapmcTimeoutException(CapmcException):
     """
 
 
-def status(nodes, filtertype='show_all', session=None):
+def status(nodes, filtertype = 'show_all', session = None):
     """
     For a given iterable of nodes, represented by xnames, query CAPMC for
     the power status of all nodes. Return a dictionary of nodes that have
@@ -73,7 +73,7 @@ def status(nodes, filtertype='show_all', session=None):
     body = {'filter': filtertype,
             'xnames': list(nodes)}
 
-    response = session.post(endpoint, json=body)
+    response = session.post(endpoint, json = body)
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -99,10 +99,17 @@ def status(nodes, filtertype='show_all', session=None):
             del json_response[key]
         except KeyError:
             pass
-    # For the remainder of the keys in the response, translate the status to set operation
-    for key in json_response:
-        status_bucket[key] |= set(json_response[key])
-    return status_bucket, failed_nodes, errors
+
+    # Reorder JSON response into a dictionary where the nodes are the keys.
+    node_status = {}
+    for power_state, nodes in json_response.items():
+        for node in nodes:
+            node_status[node] = power_state
+
+    # Add in the nodes with errors.
+    node_status.update(errors)
+
+    return node_status, failed_nodes
 
 
 def parse_response(response):
@@ -156,7 +163,7 @@ def parse_response(response):
     return failed_nodes, reasons_for_failure
 
 
-def power(nodes, state, force=True, session=None, cont=True, reason="BOS: Powering nodes"):
+def power(nodes, state, force = True, session = None, cont = True, reason = "BOS: Powering nodes"):
     """
     Sets a node to a power state using CAPMC; returns a set of nodes that were unable to achieve
     that state.
@@ -196,7 +203,7 @@ def power(nodes, state, force=True, session=None, cont=True, reason="BOS: Poweri
     if state == "on":
         json_response = call(power_endpoint, nodes, output_format, cont, reason)
     elif state == "off":
-        json_response = call(power_endpoint, nodes, output_format, cont, reason, force=force)
+        json_response = call(power_endpoint, nodes, output_format, cont, reason, force = force)
 
     failed_nodes, errors = parse_response(json_response)
     return failed_nodes, errors
@@ -209,7 +216,7 @@ def node_type(nodes):
     return ('node', 'nids') if list(nodes)[0].startswith('nid') else ('xname', 'xnames')
 
 
-def call(endpoint, nodes, node_format='xnames', cont=True, reason="None given", session=None, **kwargs):
+def call(endpoint, nodes, node_format = 'xnames', cont = True, reason = "None given", session = None, **kwargs):
     '''
     This function makes a call to the Cray Advanced Platform Monitoring and Control (CAPMC)
     Args:
@@ -232,7 +239,7 @@ def call(endpoint, nodes, node_format='xnames', cont=True, reason="None given", 
     if kwargs:
         payload.update(kwargs)
     try:
-        resp = session.post(endpoint, verify=False, json=payload)
+        resp = session.post(endpoint, verify = False, json = payload)
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:
         LOGGER.error("Failed interacting with Cray Advanced Platform Monitoring and Control "
