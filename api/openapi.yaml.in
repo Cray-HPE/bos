@@ -660,6 +660,7 @@ components:
           minLength: 1
           maxLength: 45
           pattern: "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"
+          readOnly: true
         description:
           type: string
           description: |
