@@ -57,7 +57,7 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
     """
     # This environment variable needs to be set because the get-auth-token script utilizes it.
     if not os.getenv('SPIRE_AGENT_PATH'):
-        os.environ['SPIRE_AGENT_PATH'] = '/usr/bin/cfs-state-reporter-spire-agent'
+        os.environ['SPIRE_AGENT_PATH'] = '/usr/bin/bos-reporter-spire-agent'
     while True:
         try:
             out = subprocess.check_output([path], universal_newlines=True)
