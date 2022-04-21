@@ -49,12 +49,13 @@ _stream_handler = logging.StreamHandler(sys.stdout)
 _stream_handler.setLevel(LOG_LEVEL)
 PROJECT_LOGGER.addHandler(_stream_handler)
 PROJECT_LOGGER.setLevel(LOG_LEVEL)
-TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M|re.S)
+TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M | re.S)
 
-# The percentage of the total TTL to wait before reporting status, e.g.
-# a state ttl of 4 hours with a ratio of .75 means nodes report every 3 hours.
+# The percentage of the total Time To Live (TTL) to wait before reporting status, e.g.
+# a state TTL of 4 hours with a ratio of .75 means nodes report every 3 hours.
 REPORTING_RATIO = .75
 STATE_UPDATE_FREQUENCY = 14400  # Number of seconds between state updates (4h default)
+
 
 def report_state_until_success(component):
     """
@@ -98,13 +99,13 @@ def duration_to_timedelta(timestamp: str):
     # Calculate the corresponding multiplier for each time value
     seconds_table = {'s': 1,
                      'm': 60,
-                     'h': 60*60,
-                     'd': 60*60*24,
-                     'w': 60*60*24*7}
+                     'h': 60 * 60,
+                     'd': 60 * 60 * 24,
+                     'w': 60 * 60 * 24 * 7}
     timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
-    return datetime.timedelta(seconds=seconds)
+    return datetime.timedelta(seconds = seconds)
 
 
 def main():
@@ -134,9 +135,9 @@ def main():
         except Exception as exp:
             LOGGER.error("An error occurred: {}".format(exp))
         if has_slept_before:
-            sleep(sleep_time)
+            sleep(sleep_time.total_seconds())
         else:
-            sleep(sleep_time*random.random())
+            sleep(sleep_time.total_seconds() * random.random())
             has_slept_before = True
 
 
