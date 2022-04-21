@@ -72,6 +72,9 @@ class StatusOperator(BaseOperator):
         power_states, _failed_nodes = get_power_states(component_ids)
         cfs_states = self._get_cfs_components(','.join(component_ids))
         updated_components = []
+        if components:
+            # Recreate this filter to pull in the latest options.max_power_on_wait_time
+            self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
         for component in components:
             updated_component = self._check_status(
                 component, power_states.get(component['id']), cfs_states.get(component['id']))
