@@ -138,7 +138,7 @@ class StatusOperator(BaseOperator):
                 disable = True  # Successful state - desired and actual state are off
             else:
                 phase = Phase.powering_on
-        elif power_state == 'on':
+        else:
             if self.desired_boot_state_is_off(component):
                 phase = Phase.powering_off
             elif self.boot_artifact_states_match(component):
@@ -170,10 +170,6 @@ class StatusOperator(BaseOperator):
                 else:
                     # Includes both power-off for restarts and ready-recovery scenario
                     phase = Phase.powering_off
-        else:
-            disable = True  # Failed state - configuration is no longer set
-            override = Status.failed
-            error = f'capmc is not reporting a valid power state for this component. State: {power_state}'
 
         return phase, override, disable, error
 
