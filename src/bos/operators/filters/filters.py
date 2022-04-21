@@ -161,14 +161,23 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         component_ids = ','.join([component['id'] for component in components])
         cfs_components = get_cfs_components(ids=component_ids)
         self.cfs_components_dict = {component['id']: component for component in cfs_components}
-        return super()._filter(components)
+        matches = super()._filter(components)
+        # Clear this, so there are no lingering side-effects of running this method.
+        self.cfs_components_dict = {}
+        return matches
 
     def _match(self, component: dict, cfs_component: dict=None) -> bool:
-        # The NOT filter class does not allow the cfs_component parameter to be passed
-        # into this function. This necessitated passing the CFS components through the instance attribute
+        # There are two ways to communicate the cfs_component to this method.
+        # First: cfs_component input variable
+        # Second: cfs_component_dict instance attribute
+        #
+        # The reason for the second input method is the NOT filter class does
+        # not allow the cfs_component parameter to be passed into this function.
+        # This necessitated passing the CFS components through the instance attribute
         # cfs_components_dict.
-        # The status operator needs to pass in the cfs_component parameter because it is
-        # not calling the _filter method which sets/updates eth cfs_components_dict attribute.
+        # However, the status operator needs to pass in the cfs_component parameter
+        # (i.e. the first method) because it is not calling the _filter method
+        # which sets/updates the cfs_components_dict attribute.
         desired_configuration = component.get('desired_state', {}).get('configuration')
         if cfs_component is None:
             set_configuration = self.cfs_components_dict[component['id']].get('desired_config')
