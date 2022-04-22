@@ -101,21 +101,29 @@ def _get_status(data):
 
     phase = status_data.get('phase', '')
     last_action = data.get('last_action', {}).get('action', '')
+    component = data.get('id', '')
     if phase == Phase.powering_on:
         if last_action == Action.power_on:
+            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_on_called}")
             return Status.power_on_called
         else:
+            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_on_pending}")
             return Status.power_on_pending
     elif phase == Phase.powering_off:
         if last_action == Action.power_off_gracefully:
+            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_off_gracefully_called}")
             return Status.power_off_gracefully_called
         elif last_action == Action.power_off_forcefully:
+            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_off_forcefully_called}")
             return Status.power_off_forcefully_called
         else:
+            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_off_pending}")
             return Status.power_off_pending
     elif phase == Phase.configuring:
+        LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.configuring}")
         return Status.configuring
     else:
+        LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.stable}")
         return Status.stable
 
 
@@ -423,6 +431,7 @@ def del_timestamp(data: dict):
     except KeyError:
         pass
     return None
+
 
 def _set_last_updated(data):
     timestamp = get_current_timestamp()
