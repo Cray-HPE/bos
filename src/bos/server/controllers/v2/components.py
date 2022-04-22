@@ -85,6 +85,7 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
 
 def _set_status(data):
     if not 'status' in data:
+        LOGGER.debug(f"No status in data: {data}")
         data['status'] = {}
     data['status']['status'] = _get_status(data)
     return data
