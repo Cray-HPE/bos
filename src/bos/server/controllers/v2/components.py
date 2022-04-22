@@ -77,6 +77,7 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # TODO: On large scale systems, this response may be too large
         # and require paging to be implemented
         response = DB.get_all()
+    # The status must be set before using _matches_filter as the status is one of the matching criteria.
     response = [_set_status(r) for r in response if r]
     if enabled is not None or session is not None or staged_session is not None or phase is not None or status is not None:
         response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
@@ -84,17 +85,19 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
 
 
 def _set_status(data):
-    if not 'status' in data:
-        LOGGER.debug(f"No status in data: {data}")
-        data['status'] = {}
-    data['status']['status'] = _get_status(data)
+    """
+    This sets the status field of the overall status.
+    """
+    data['status']['status'] = _calculate_status(data)
     return data
 
 
-def _get_status(data):
+def _calculate_status(data):
     """
-    Returns the status of a component
+    Calculates and returns the status of a component
     """
+    if not 'status' in data:
+        LOGGER.debug(f"No status in data: {data}. This will have the effect of clearing any pre-existing phase.")
     status_data = data.get('status', {})
     override = status_data.get('status_override', '')
     if override:
@@ -103,28 +106,29 @@ def _get_status(data):
     phase = status_data.get('phase', '')
     last_action = data.get('last_action', {}).get('action', '')
     component = data.get('id', '')
+    now = get_current_timestamp()
     if phase == Phase.powering_on:
         if last_action == Action.power_on:
-            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_on_called}")
+            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_called}")
             return Status.power_on_called
         else:
-            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_on_pending}")
+            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_pending}")
             return Status.power_on_pending
     elif phase == Phase.powering_off:
         if last_action == Action.power_off_gracefully:
-            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_off_gracefully_called}")
+            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_gracefully_called}")
             return Status.power_off_gracefully_called
         elif last_action == Action.power_off_forcefully:
-            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_off_forcefully_called}")
+            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_forcefully_called}")
             return Status.power_off_forcefully_called
         else:
-            LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.power_off_pending}")
+            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_pending}")
             return Status.power_off_pending
     elif phase == Phase.configuring:
-        LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.configuring}")
+        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.configuring}")
         return Status.configuring
     else:
-        LOGGER.debug(f"Component: {component} Phase: {phase} Status: {Status.stable}")
+        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.stable}")
         return Status.stable
 
 
