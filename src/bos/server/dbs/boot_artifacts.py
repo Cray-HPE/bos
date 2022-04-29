@@ -54,10 +54,9 @@ def record_boot_artifacts(token: str,
                 f"\nkernel_parameters: {kernel_parameters}"
                 f"\ninitrd: {initrd}")
     TOKENS_DB.put(token, {"kernel": kernel,
-                                 "kernel_parameters": kernel_parameters,
-                                 "initrd": initrd,
-                                 "timestamp": get_current_timestamp()
-                                 })
+                          "kernel_parameters": kernel_parameters,
+                          "initrd": initrd,
+                          "timestamp": get_current_timestamp()})
 
 
 def get_boot_artifacts(token: str) -> dict:
