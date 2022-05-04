@@ -74,6 +74,9 @@ rm -rf %{buildroot}
 %{_systemdsvcdir}/bos-reporter.service
 
 %pre
+%if 0%{?suse_version}
+%service_add_pre bos-reporter.service
+%endif
 
 %post
 ln -f /usr/bin/spire-agent /usr/bin/bos-reporter-spire-agent
