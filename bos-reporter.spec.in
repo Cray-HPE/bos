@@ -31,6 +31,7 @@ Source: %{name}-%{version}.tar.bz2
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: python-rpm-macros
+BuildRequires: systemd-rpm-macros
 Requires: python3-base
 Requires: python3-requests
 Requires: systemd
@@ -80,6 +81,11 @@ rm -rf %{buildroot}
 
 %post
 ln -f /usr/bin/spire-agent /usr/bin/bos-reporter-spire-agent
+%if 0%{?suse_version}
+%service_add_post bos-reporter.service
+%else
+%systemd_post bos-reporter.service
+%endif
 
 %preun
 %if 0%{?suse_version}
