@@ -78,7 +78,7 @@ class SessionSetupOperator(BaseOperator):
             session.setup()
 
     def _get_pending_sessions(self):
-        return self.bos_client.sessions.get_sessions(status = 'pending')
+        return self.bos_client.sessions.get_sessions(status='pending')
 
 
 class Session:
@@ -248,13 +248,13 @@ class Session:
         configuration from within the session level boolean 'enable_cfs'
         will override any value set within a boot set.
         """
-        if not self.session_data.get('enable_cfs', True):
+        if not self.template.get('enable_cfs', True):
             return ''
         bs_config = boot_set.get('configuration', '')
         if bs_config:
             return bs_config
-        # Otherwise, we take the configuration value from the session itself
-        return self.session_data.get('cfs', {}).get('configuration', '')
+        # Otherwise, we take the configuration value from the session template itself
+        return self.template.get('cfs', {}).get('configuration', '')
 
     def assemble_kernel_boot_parameters(self, boot_set, artifact_info):
         """
