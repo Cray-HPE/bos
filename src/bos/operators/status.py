@@ -147,7 +147,7 @@ class StatusOperator(BaseOperator):
             elif self.boot_artifact_states_match(component):
                 if not self.desired_configuration_set_in_cfs(component, cfs_component):
                     phase = Phase.configuring
-                elif self.desired_configuration_is_none(component, cfs_component):
+                elif self.desired_configuration_is_none(component):
                     phase = Phase.none
                     disable = True  # Successful state - booted with the correct artifacts, no configuration necessary
                 else:
