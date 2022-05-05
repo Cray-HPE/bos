@@ -151,7 +151,7 @@ class StatusOperator(BaseOperator):
                     phase = Phase.none
                     disable = True  # Successful state - booted with the correct artifacts, no configuration necessary
                 else:
-                    cfs_status = cfs_component.get('configurationStatus')
+                    cfs_status = cfs_component.get('configurationStatus', '').lower()
                     if cfs_status == 'configured':
                         phase = Phase.none
                         disable = True  # Successful state - booted with the correct artifacts and configured
@@ -166,7 +166,7 @@ class StatusOperator(BaseOperator):
                         phase = Phase.configuring
                         disable = True  # Failed state - configuration is no longer set
                         override = Status.failed
-                        error = 'cfs is not reporting a valid configuration status for this component'
+                        error = f'cfs is not reporting a valid configuration status for this component: {cfs_status}'
             else:
                 if self.last_action_is_power_on(component) and not self.power_on_wait_time_elapsed(component):
                     phase = Phase.powering_on
