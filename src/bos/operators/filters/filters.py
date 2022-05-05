@@ -180,9 +180,9 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         # which sets/updates the cfs_components_dict attribute.
         desired_configuration = component.get('desired_state', {}).get('configuration')
         if cfs_component is None:
-            set_configuration = self.cfs_components_dict[component['id']].get('desired_config')
+            set_configuration = self.cfs_components_dict[component['id']].get('desiredConfig')
         else:
-            set_configuration = cfs_component.get('desired_config')
+            set_configuration = cfs_component.get('desiredConfig')
         return desired_configuration == set_configuration
 
 
