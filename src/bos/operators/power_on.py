@@ -71,7 +71,9 @@ class PowerOnOperator(BaseOperator):
         Update each node's desired state with the token.
         """
         parameters = defaultdict(set)
+        sessions = {}
         for component in components:
+            # Handle the boot artifacts
             boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
             kernel = boot_artifacts.get('kernel')
             kernel_parameters = boot_artifacts.get('kernel_parameters')
@@ -80,6 +82,8 @@ class PowerOnOperator(BaseOperator):
                 continue
             key = (kernel, kernel_parameters, initrd)
             parameters[key].add(component['id'])
+            # Handle the session
+            sessions[component['id']] = component.get('session', "")
         bss_tokens = []
         for key, nodes in parameters.items():
             kernel, kernel_parameters, initrd = key
@@ -96,7 +100,8 @@ class PowerOnOperator(BaseOperator):
 
                 for node in nodes:
                     bss_tokens.append({"id": node,
-                                       "desired_state": {"bss_token": token}})
+                                       "desired_state": {"bss_token": token},
+                                       "session": sessions[node]})
         self.bos_client.components.update_components(bss_tokens)
 
 

@@ -41,6 +41,18 @@ from bos.operators.utils.liveness.timestamp import Timestamp
 LOGGER = logging.getLogger('bos.operators.base')
 
 
+class BaseOperatorException(Exception):
+    pass
+
+
+class MissingSessionData(BaseOperatorException):
+    """
+    Operators are expected to update the session data, if they are updating a component's
+    desired state.
+    """
+    pass
+
+
 class BaseOperator(ABC):
     """
     An abstract class for all BOS operators.
@@ -139,6 +151,13 @@ class BaseOperator(ABC):
 
             if additional_fields:
                 patch.update(additional_fields)
+            
+            # When updating a component's desired state, operators
+            # are expected to provide session data as a hacky way to prove
+            # that they are operators. If they do not provide it, then the
+            # session is incorrectly blanked.
+            if 'session' not in patch:
+                raise MissingSessionData
             data.append(patch)
         self.bos_client.components.update_components(data)
 
