@@ -156,7 +156,7 @@ class BaseOperator(ABC):
             # are expected to provide session data as a hacky way to prove
             # that they are operators. If they do not provide it, then the
             # session is incorrectly blanked.
-            if 'session' not in patch:
+            if 'desired_state' in patch and 'session' not in patch:
                 raise MissingSessionData
             data.append(patch)
         self.bos_client.components.update_components(data)
