@@ -37,6 +37,13 @@ SERVICE_NAME = 'cray-bos'
 ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)
 
 
+def MissingName():
+    """
+    The session template's name is missing
+    """
+    pass
+
+
 def convert_v1_to_v2(v1_st):
     """
     Convert a v1 session template to a v2 session template.
@@ -47,6 +54,11 @@ def convert_v1_to_v2(v1_st):
     
     Returns:
       v2_st: A v2 session template
+      name: The name of the session template
+    
+    Raises:
+      MissingName: If the session template's name is missing, then raise this
+                   exception.
     """
     session_template_keys = ['name', 'description',
                              'enable_cfs', 'cfs', 'partition',
@@ -56,9 +68,13 @@ def convert_v1_to_v2(v1_st):
                      'rootfs_provider', 'rootfs_provider_passthrough']
 
     v2_st = {'boot_sets': {}}
+    try:
+        name = v1_st['name']
+    except KeyError:
+        raise MissingName()
     for k, v in v1_st.items():
         if k in session_template_keys:
-            if k != "boot_sets":
+            if k != "boot_sets" and k != "name":
                 v2_st[k] = v
         else:
             LOGGER.warning("Discarding attribute: '{}' from session template: '{}'".format(k, v1_st['name']))
@@ -72,7 +88,7 @@ def convert_v1_to_v2(v1_st):
                 LOGGER.warning("Discarding attribute: '{}' from boot set: '{}' from session template: '{}'".format(k,
                                                                                                                   boot_set,
                                                                                                                   v1_st['name']))
-    return v2_st
+    return v2_st, name
 
 
 def migrate_v1_to_v2_session_templates():
@@ -84,8 +100,8 @@ def migrate_v1_to_v2_session_templates():
     template standards.
     """
     session = requests_retry_session()
+    st_endpoint = "{}/sessiontemplates".format(ENDPOINT)
     with BosEtcdClient() as bec:
-        st_endpoint = "{}/sessiontemplates".format(ENDPOINT)
         for session_template_byte_str, _meta in bec.get_prefix('{}/'.format(BASEKEY)):
             v1_st = json.loads(session_template_byte_str.decode("utf-8"))
             response = session.get("{}/{}".format(st_endpoint, v1_st['name']))
@@ -95,10 +111,16 @@ def migrate_v1_to_v2_session_templates():
             elif response.status_code == 404:
                 LOGGER.info("Migrating v1 session template: '{}' to v2 "
                             "database".format(v1_st['name']))
-                v2_st = convert_v1_to_v2(v1_st)
-                response = session.put("{}/{}".format(st_endpoint,
-                                                       v2_st['name']),
-                                                       json=v2_st)
+                try:
+                    v2_st, name = convert_v1_to_v2(v1_st)
+                except MissingName as err:
+                    if 'name' in v1_st:
+                        # We should probably never get here.
+                        LOGGER.error("Session template: '{}' was not migrated because it was missing its name.".format(v1_st['name']))
+                    else:
+                        LOGGER.error("A session template: '{}' was not migrated because it was missing its name.".format(name))
+                response = session.put("{}/{}".format(st_endpoint, name),
+                                                      json=v2_st)
                 if not response.ok:
                     LOGGER.error("Session template: '{}' was not migrated due "
                                  "to error: {}".format(v1_st['name'],
