@@ -88,6 +88,8 @@ def _set_status(data):
     """
     This sets the status field of the overall status.
     """
+    if "status" not in data:
+        data["status"] = {"phase": "", "status_override": ""}
     data['status']['status'] = _calculate_status(data)
     return data
 
