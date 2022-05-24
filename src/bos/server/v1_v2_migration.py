@@ -74,7 +74,7 @@ def convert_v1_to_v2(v1_st):
         raise MissingName()
     for k, v in v1_st.items():
         if k in session_template_keys:
-            if k != "boot_sets" or k != "name":
+            if k != "boot_sets" and k != "name":
                 v2_st[k] = v
         else:
             LOGGER.warning("Discarding attribute: '{}' from session template: '{}'".format(k, v1_st['name']))
