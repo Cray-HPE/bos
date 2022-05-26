@@ -7,7 +7,7 @@ After=multi-user.target
 [Service]
 Environment="MODULEFLAG=-m"
 Environment="MODULENAME=bos.reporter.status_reporter"
-Type=simple
+Type=oneshot
 ExecStart=/usr/bin/python3 ${MODULEFLAG} ${MODULENAME}
 
 [Install]
