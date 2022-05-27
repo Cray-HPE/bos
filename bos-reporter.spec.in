@@ -30,17 +30,12 @@ Release: %(echo ${BUILD_METADATA})
 Source: %{name}-%{version}.tar.bz2
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
-BuildRequires: python-rpm-macros
-BuildRequires: systemd-rpm-macros
 Requires: python3-base
 Requires: python3-requests
 Requires: systemd
 Requires: cray-auth-utils
 
-# Death to Fascist build policies
-%define _unpackaged_files_terminate_build 0
 %define _systemdsvcdir /usr/lib/systemd/system
-%define craydir /opt/cray
 
 %description
 Provides a systemd service and associated library that reports
@@ -55,23 +50,22 @@ pushd ./src
 popd
 
 %install
-rm -rf %{buildroot}
+rm -rf $RPM_BUILD_ROOT
 
 pushd ./src
-/usr/bin/python3 setup.py install -O1 --skip-build --root %{buildroot}
-mkdir -p ${RPM_BUILD_ROOT}%{_systemdsvcdir}
-cp bos/reporter/etc/bos-reporter.service %{buildroot}/%{_systemdsvcdir}/bos-reporter.service
-chmod +x %{buildroot}/%{python3_sitelib}/bos/reporter/status_reporter/__main__.py
+/usr/bin/python3 setup.py install -O1 --skip-build --root $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT%{_systemdsvcdir}
+cp bos/reporter/etc/bos-reporter.service $RPM_BUILD_ROOT/%{_unitdir}/bos-reporter.service
+chmod +x $RPM_BUILD_ROOT/%{python3_sitelib}/bos/reporter/status_reporter/__main__.py
 popd
 
 %clean
-rm -rf %{buildroot}
+rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-
-%dir %{python3_sitelib}/bos
-%{python3_sitelib}/bos/reporter
+%{python3_sitelib}/*
+%dir %{_systemdsvcdir}
 %{_systemdsvcdir}/bos-reporter.service
 
 %pre
