@@ -105,6 +105,13 @@ class StatusOperator(BaseOperator):
         }
         update = False
         if phase != component.get('status', {}).get('phase', ''):
+            if phase == Phase.none:
+                # The current event has completed.  Reset the event stats
+                updated_component['event_stats'] = {
+                    "power_on_attempts": 0,
+                    "power_off_graceful_attempts": 0,
+                    "power_off_forceful_attempts": 0
+                }
             updated_component['status']['phase'] = phase
             update = True
         if override != component.get('status', {}).get('status_override', ''):

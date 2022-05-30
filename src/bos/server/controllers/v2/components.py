@@ -392,6 +392,7 @@ def _set_auto_fields(data):
     data = _set_last_updated(data)
     data = _set_on_hold_when_enabled(data)
     data = _clear_session_when_manually_updated(data)
+    data = _clear_event_stats_when_desired_state_changes(data)
     return data
 
 
@@ -466,6 +467,17 @@ def _clear_session_when_manually_updated(data):
     """
     if data.get("desired_state") and not data.get("session"):
         data["session"] = ""
+    return data
+
+
+def _clear_event_stats_when_desired_state_changes(data):
+    desired_state = data.get("desired_state", {})
+    if "boot_artifacts" in desired_state or "configuration" in desired_state:
+        data["event_stats"] = {
+            "power_on_attempts": 0,
+            "power_off_graceful_attempts": 0,
+            "power_off_forceful_attempts": 0
+        }
     return data
 
 

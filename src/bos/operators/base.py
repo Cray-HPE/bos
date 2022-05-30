@@ -33,6 +33,7 @@ import os
 import time
 from typing import List, NoReturn, Type
 
+from bos.common.values import Status
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.bos import BOSClient
@@ -66,6 +67,8 @@ class BaseOperator(ABC):
 
     Any other method may also be overridden, but functionality such as error handling may be lost.
     """
+
+    retry_attempt_field = ""
 
     def __init__(self) -> NoReturn:
         self.bos_client = BOSClient()
@@ -110,6 +113,8 @@ class BaseOperator(ABC):
             LOGGER.debug('Found 0 components that require action')
             return
         LOGGER.info('Found {} components that require action'.format(len(components)))
+        if self.retry_attempt_field:  # Only check for failed components if we track retries for this operator
+            components = self._handle_failed_components(components)
         for component in components:  # Unset old errors components
             component['error'] = ''
         components = self._act(components)
@@ -122,6 +127,21 @@ class BaseOperator(ABC):
             components = f.filter(components)
         return components
 
+    def _handle_failed_components(self, components: List[dict]) -> List[dict]:
+        """ Marks components failed if the retry limits are exceeded """
+        failed_components = []
+        good_components = []  # Any component that isn't determined to be in a failed state
+        for component in components:
+            num_attempts = component.get('event_stats', {}).get(self.retry_attempt_field, 0)
+            retries = int(component.get('retry_policy', options.default_retry_policy))
+            if retries != -1 and num_attempts >= retries:
+                # This component has hit its retry limit
+                failed_components.append(component)
+            else:
+                good_components.append(component)
+        self._update_database_for_failure(failed_components)
+        return good_components
+
     @abstractmethod
     def _act(self, components: List[dict]) -> List[dict]:
         """ The action taken by the operator on target components """
@@ -130,7 +150,7 @@ class BaseOperator(ABC):
     def _update_database(self, components: List[dict], additional_fields: dict=None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
-        Includes updating min_wait/max_wait, the last action, attempt count and error
+        Includes updating the last action, attempt count and error
         """
         data = []
         for component in components:
@@ -139,15 +159,15 @@ class BaseOperator(ABC):
                 'error': component['error']  # New error, or clearing out old error
             }
             if self.name:
-                attempts = 1
-                last_action = component.get('last_action', {})
-                if last_action.get('action') == self.name:
-                    attempts = last_action.get('num_attempts', 1) + 1
                 last_action_data = {
                     'action': self.name,
-                    'num_attempts': attempts,
                 }
                 patch['last_action'] = last_action_data
+            if self.retry_attempt_field:
+                event_stats_data = {
+                    self.retry_attempt_field: component.get('event_stats', {}).get(self.retry_attempt_field, 0) + 1
+                }
+                patch['event_stats']  = event_stats_data
 
             if additional_fields:
                 patch.update(additional_fields)
@@ -158,6 +178,19 @@ class BaseOperator(ABC):
             # session is incorrectly blanked.
             if 'desired_state' in patch and 'session' not in patch:
                 raise MissingSessionData
+            data.append(patch)
+        self.bos_client.components.update_components(data)
+
+    def _update_database_for_failure(self, components: List[dict]) -> None:
+        """
+        Updates the BOS database for all components the operator believes have failed
+        """
+        data = []
+        for component in components:
+            patch = {
+                'id': component['id'],
+                'status': {'status_override': Status.failed}
+            }
             data.append(patch)
         self.bos_client.components.update_components(data)
 
