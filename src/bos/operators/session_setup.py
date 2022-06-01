@@ -220,7 +220,8 @@ class Session:
         if self.operation_type == "shutdown":
             state = {
                 "configuration": "",
-                "boot_artifacts": EMPTY_BOOT_ARTIFACTS
+                "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+                "bss_token": ""
             }
             return state
         else:
