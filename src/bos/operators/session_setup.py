@@ -319,9 +319,6 @@ class Session:
         # Add the bos actual state ttl value so nodes know how frequently to report
         boot_param_pieces.append('bos_update_frequency=%s' % (options.component_actual_state_ttl))
 
-        # Add the Session ID to the kernel parameters
-        boot_param_pieces.append("bos_session_id={}".format(self.name))
-
         return ' '.join(boot_param_pieces)
 
 

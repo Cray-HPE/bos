@@ -96,7 +96,11 @@ class StatusOperator(BaseOperator):
         return cfs_states
 
     def _check_status(self, component, power_state, cfs_component):
-        phase, override, disable, error = self._get_status(component, power_state, cfs_component)
+        """
+        Calculate the component's current status based upon its power state and CFS configuration
+        state. If its status differs from the status in the database, return this information.
+        """
+        phase, override, disable, error = self._calculate_status(component, power_state, cfs_component)
         updated_component = {
             'id': component['id'],
             'status': {
@@ -127,8 +131,11 @@ class StatusOperator(BaseOperator):
             return updated_component
         return None
 
-    def _get_status(self, component, power_state, cfs_component):
+    def _calculate_status(self, component, power_state, cfs_component):
         """
+        Calculate a component's status based on its current state, power state, and
+        CFS state.
+        
         Disabling for successful completion should return an empty phase
         Disabling for a failure should return the phase that failed
         Override is used for status information that cannot be determined using only

@@ -25,6 +25,7 @@
 import copy
 from datetime import timedelta
 import logging
+import re
 from typing import List, Type
 
 from bos.common.utils import get_current_time, load_timestamp
@@ -144,10 +145,31 @@ class BootArtifactStatesMatch(LocalFilter):
         actual_state = component.get('actual_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
         actual_boot_state = actual_state.get('boot_artifacts', {})
-        for key in ['kernel', 'kernel_parameters', 'initrd']:
+        for key in ['kernel', 'initrd']:
             if desired_boot_state.get(key, None) != actual_boot_state.get(key, None):
                 return False
+        # Filter out kernel parameters that dynamically change.
+        actual_kernel_parameters = self._sanitize_kernel_parameters(actual_boot_state.get('kernel_parameters', None))
+        desired_kernel_parameters = self._sanitize_kernel_parameters(desired_boot_state.get('kernel_parameters', None))
+
+        if actual_kernel_parameters != desired_kernel_parameters:
+            return False
+
         return True
+
+    def _sanitize_kernel_parameters(self, parameter_string):
+        """
+        Filter out kernel parameters that dynamically change from session to session and
+        should not be used for comparison.
+        * spire_join_token
+        
+        Returns:
+        A parameter string without the dynamic parameters or None if the string is None
+        """
+        if not parameter_string:
+            return None
+
+        return re.sub(r'(^\\s)+spire_join_token=[\S]*' , '', parameter_string)
 
 
 class DesiredConfigurationSetInCFS(LocalFilter):
