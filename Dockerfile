@@ -25,7 +25,7 @@
 
 # Upstream Build Args
 ARG OPENAPI_IMAGE=openapitools/openapi-generator-cli:v4.1.2
-ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
+ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/docker.io/alpine:3.14
 
 # Generate Code
 FROM $OPENAPI_IMAGE as codegen
@@ -62,16 +62,16 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
     apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     apk -U upgrade --no-cache && \
     pip3 install --no-cache-dir -U pip && \
-    pip3 install --no-cache-dir -r requirements.txt --ignore-installed six
-RUN cd lib && pip3 install --no-cache-dir --ignore-installed six .
+    pip3 install --no-cache-dir -r requirements.txt
+RUN cd lib && pip3 install --no-cache-dir .
 
 # Testing image
 FROM base as testing
 WORKDIR /app
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
-RUN apk add --no-cache --repository https://arti.hpc.amslabs.hpecorp.net/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
-RUN cd /app && pip3 install --no-cache-dir --ignore-installed six -r test-requirements.txt
+RUN apk add --no-cache --repository https://arti.dev.cray.com/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
+RUN cd /app && pip3 install --no-cache-dir -r test-requirements.txt
 CMD [ "./docker_test_entry.sh" ]
 
 # Codestyle reporting
@@ -101,7 +101,7 @@ FROM intermediate as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app
 RUN apk add --no-cache busybox-extras && \
-    pip3 install rpdb --ignore-installed six
+    pip3 install rpdb
 
 # Application image
 FROM intermediate as application
