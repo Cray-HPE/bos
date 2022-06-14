@@ -1,6 +1,6 @@
 
 [Unit]
-Description=bos-reporter reports BOS session ID that the node was booted with
+Description=bos-status-reporter reports boot session information periodically to the BOS API
 DefaultDependencies=no
 After=multi-user.target
 

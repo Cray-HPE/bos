@@ -116,7 +116,7 @@ def main():
     component = read_identity()
     try:
         sleep_time = duration_to_timedelta(get_value_from_proc_cmdline('bos_update_frequency'))
-        sleep_time *= REPORTING_RATIO * sleep_time.total_seconds()
+        sleep_time = REPORTING_RATIO * sleep_time.total_seconds()
     except KeyError:
         sleep_time = STATE_UPDATE_FREQUENCY * REPORTING_RATIO
 
@@ -135,10 +135,11 @@ def main():
         except Exception as exp:
             LOGGER.error("An error occurred: {}".format(exp))
         if has_slept_before:
-            sleep(sleep_time.total_seconds())
+            sleep(sleep_time)
         else:
-            sleep(sleep_time.total_seconds() * random.random())
+            sleep(sleep_time * random.random())
             has_slept_before = True
+            LOGGER.info("Now periodically reporting every ~%s seconds.", sleep_time)
 
 
 if __name__ == '__main__':
