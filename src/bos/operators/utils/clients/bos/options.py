@@ -102,6 +102,10 @@ class Options:
     def component_actual_state_ttl(self):
         return self.get_option('component_actual_state_ttl', str, '4h')
 
+    @property
+    def default_retry_policy(self):
+        return self.get_option('default_retry_policy', int, 3)
+
 
 
 options = Options()

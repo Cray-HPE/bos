@@ -44,6 +44,8 @@ class PowerOnOperator(BaseOperator):
     - Enabled in HSM
     """
 
+    retry_attempt_field = "power_on_attempts"
+
     @property
     def name(self):
         return Action.power_on

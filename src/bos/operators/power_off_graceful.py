@@ -38,6 +38,8 @@ class GracefulPowerOffOperator(BaseOperator):
     - Enabled in HSM
     """
 
+    retry_attempt_field = "power_off_graceful_attempts"
+
     @property
     def name(self):
         return Action.power_off_gracefully

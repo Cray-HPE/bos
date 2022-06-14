@@ -44,6 +44,7 @@ DEFAULTS = {
     'max_power_on_wait_time': 600,
     'max_power_off_wait_time': 180,
     'polling_frequency': 60,
+    'default_retry_policy': 3,
 }
 
 
