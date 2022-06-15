@@ -59,10 +59,19 @@ class PowerOnOperator(BaseOperator):
         ]
 
     def _act(self, components):
-        self._set_bss(components)
-        set_cfs(components, enabled=False)
+        try:
+            self._set_bss(components)
+        except Exception as e:
+            raise Exception("An error was encountered while setting BSS information: {}".format(e)) from e
+        try:
+            set_cfs(components, enabled=False)
+        except Exception as e:
+            raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
         component_ids = [component['id'] for component in components]
-        capmc.power(component_ids, state='on')
+        try:
+            capmc.power(component_ids, state='on')
+        except Exception as e:
+            raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
         return components
 
     def _set_bss(self, components):
