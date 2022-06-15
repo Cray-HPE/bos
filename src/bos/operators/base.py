@@ -117,7 +117,12 @@ class BaseOperator(ABC):
             components = self._handle_failed_components(components)
         for component in components:  # Unset old errors components
             component['error'] = ''
-        components = self._act(components)
+        try:
+            components = self._act(components)
+        except Exception as e:
+            LOGGER.error("An unhandled exception was caught while trying to act on components: {}".format(e))
+            for component in components:
+                component["error"] = str(e)
         self._update_database(components)
 
     def _get_components(self) -> List[dict]:
