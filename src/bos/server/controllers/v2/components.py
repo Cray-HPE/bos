@@ -340,7 +340,6 @@ def _apply_staged(component_id):
         # For both the successful and failed cases, we want the new session to own the node
         data["session"] = staged_session_id
         data["last_action"]["action"] = Action.apply_staged
-        data["last_action"]["num_attempts"] = 1
         data["staged_state"] = {
             "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
             "configuration": ""
