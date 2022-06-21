@@ -83,8 +83,12 @@ class Options:
         return self.get_option('discovery_frequency', int, 5*60)
 
     @property
+    def max_boot_wait_time(self):
+        return self.get_option('max_boot_wait_time', int, 600)
+
+    @property
     def max_power_on_wait_time(self):
-        return self.get_option('max_power_on_wait_time', int, 600)
+        return self.get_option('max_power_on_wait_time', int, 30)
 
     @property
     def max_power_off_wait_time(self):
