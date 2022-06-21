@@ -39,7 +39,7 @@ class SessionStatusEndpoint(object):
     @log_call_errors
     def get_session_status(self, session_id):
         """Get information for a single BOS item"""
-        url = self.base_url + '/' + session_id + 'status'
+        url = self.base_url + '/' + session_id + '/status'
         session = requests_retry_session()
         response = session.get(url)
         response.raise_for_status()
@@ -47,33 +47,14 @@ class SessionStatusEndpoint(object):
         return item
 
     @log_call_errors
-    def update_session_status(self, session_id, data):
-        """Update information for a single BOS item"""
-        url = self.base_url + '/' + session_id + 'status'
+    def post_session_status(self, session_id):
+        """
+        Post information for a single BOS Session status.
+        This basically saves the BOS Session status to the database.
+        """
         session = requests_retry_session()
-        response = session.patch(url, json = data)
-        response.raise_for_status()
-        item = json.loads(response.text)
-        return item
-
-    @log_call_errors
-    def put_session_status(self, session_id, data):
-        """Put information for a single BOS Session status"""
-        session = requests_retry_session()
-        url = self.base_url + '/' + session_id + 'status'
-        response = session.put(url, json = data)
+        url = self.base_url + '/' + session_id + '/status'
+        response = session.post(url)
         response.raise_for_status()
         items = json.loads(response.text)
         return items
-
-    @log_call_errors
-    def delete_session_status(self, session_id):
-        """Delete a single BOS Session status"""
-        session = requests_retry_session()
-        url = self.base_url + '/' + session_id + 'status'
-        response = session.delete(url)
-        response.raise_for_status()
-        if response.text:
-            return json.loads(response.text)
-        else:
-            return None

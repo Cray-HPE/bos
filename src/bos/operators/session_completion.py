@@ -68,8 +68,8 @@ class SessionCompletionOperator(BaseOperator):
     def _mark_session_complete(self, session_id):
         self.bos_client.sessions.update_session(session_id, {'status': {'status': 'complete',
                                                                         'end_time': get_current_timestamp()}})
-        # This causes the session status to stored rather than aggregated for this session.
-        self.bos_client.session_status.update_session_status(session_id)
+        # This call causes the session status to saved in the database.
+        self.bos_client.session_status.post_session_status(session_id)
         LOGGER.info('Session {} is complete'.format(session_id))
 
 
