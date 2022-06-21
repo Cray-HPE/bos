@@ -149,7 +149,8 @@ class StatusOperator(BaseOperator):
         status_data = component.get('status', {})
         if status_data.get('status') == Status.failed:
             disable = True  # Failed state - the aggregated status if "failed"
-        if power_state == 'off':
+            override = Status.failed
+        elif power_state == 'off':
             if self.desired_boot_state_is_off(component):
                 phase = Phase.none
                 disable = True  # Successful state - desired and actual state are off
