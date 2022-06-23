@@ -197,6 +197,8 @@ class BaseOperator(ABC):
                 'id': component['id'],
                 'status': {'status_override': Status.failed}
             }
+            if not component['error']:
+                patch['error'] = 'The retry limit has been hit for this component, but no services have reported specific errors'
             data.append(patch)
         self.bos_client.components.update_components(data)
 
