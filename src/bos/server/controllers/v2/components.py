@@ -110,7 +110,7 @@ def _calculate_status(data):
     component = data.get('id', '')
     now = get_current_timestamp()
     if phase == Phase.powering_on:
-        if last_action == Action.power_on:
+        if last_action == Action.power_on and not data.get('last_action', {}).get('failed', False):
             LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_called}")
             return Status.power_on_called
         else:

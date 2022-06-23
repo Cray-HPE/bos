@@ -49,6 +49,7 @@ class StatusOperator(BaseOperator):
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
         self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
         self.last_action_is_power_on = LastActionIs(Action.power_on)._match
+        self.boot_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_boot_wait_time)._match
         self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
 
     @property
@@ -73,7 +74,8 @@ class StatusOperator(BaseOperator):
         cfs_states = self._get_cfs_components(','.join(component_ids))
         updated_components = []
         if components:
-            # Recreate this filter to pull in the latest options.max_power_on_wait_time
+            # Recreate these filters to pull in the latest options values
+            self.boot_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_boot_wait_time)._match
             self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
         for component in components:
             updated_component = self._check_status(
@@ -100,7 +102,7 @@ class StatusOperator(BaseOperator):
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
         """
-        phase, override, disable, error = self._calculate_status(component, power_state, cfs_component)
+        phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
         updated_component = {
             'id': component['id'],
             'status': {
@@ -118,14 +120,19 @@ class StatusOperator(BaseOperator):
                 }
             updated_component['status']['phase'] = phase
             update = True
-        if override != component.get('status', {}).get('status_override', ''):
+        if override:
             updated_component['status']['status_override'] = override
+        if override != component.get('status', {}).get('status_override', ''):
             update = True
         if disable and options.disable_components_on_completion:
             updated_component['enabled'] = False
             update = True
-        if error:
+        if error and error != component.get('error', ''):
             updated_component['error'] = error
+            update = True
+        if action_failed and action_failed != component.get('last_action', {}).get('failed', False):
+            updated_component['last_action'] = {}
+            updated_component['last_action']['failed'] = True
             update = True
         if update:
             return updated_component
@@ -145,16 +152,19 @@ class StatusOperator(BaseOperator):
         override = ''
         disable = False
         error = ''
+        action_failed = False
 
         status_data = component.get('status', {})
         if status_data.get('status') == Status.failed:
             disable = True  # Failed state - the aggregated status if "failed"
             override = Status.failed
-        elif power_state == 'off':
+        if power_state == 'off':
             if self.desired_boot_state_is_off(component):
                 phase = Phase.none
                 disable = True  # Successful state - desired and actual state are off
             else:
+                if self.last_action_is_power_on(component) and self.power_on_wait_time_elapsed(component):
+                    action_failed = True
                 phase = Phase.powering_on
         else:
             if self.desired_boot_state_is_off(component):
@@ -183,13 +193,13 @@ class StatusOperator(BaseOperator):
                         override = Status.failed
                         error = f'cfs is not reporting a valid configuration status for this component: {cfs_status}'
             else:
-                if self.last_action_is_power_on(component) and not self.power_on_wait_time_elapsed(component):
+                if self.last_action_is_power_on(component) and not self.boot_wait_time_elapsed(component):
                     phase = Phase.powering_on
                 else:
                     # Includes both power-off for restarts and ready-recovery scenario
                     phase = Phase.powering_off
 
-        return phase, override, disable, error
+        return phase, override, disable, error, action_failed
 
 
 if __name__ == '__main__':

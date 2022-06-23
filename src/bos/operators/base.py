@@ -166,6 +166,7 @@ class BaseOperator(ABC):
             if self.name:
                 last_action_data = {
                     'action': self.name,
+                    'failed': False
                 }
                 patch['last_action'] = last_action_data
             if self.retry_attempt_field:
