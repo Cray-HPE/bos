@@ -1,3 +1,28 @@
+/*
+ *
+ *  MIT License
+ *
+ *  (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+ *
+ *  Permission is hereby granted, free of charge, to any person obtaining a
+ *  copy of this software and associated documentation files (the "Software"),
+ *  to deal in the Software without restriction, including without limitation
+ *  the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ *  and/or sell copies of the Software, and to permit persons to whom the
+ *  Software is furnished to do so, subject to the following conditions:
+ *
+ *  The above copyright notice and this permission notice shall be included
+ *  in all copies or substantial portions of the Software.
+ *
+ *  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ *  THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ *  OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ *  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ *  OTHER DEALINGS IN THE SOFTWARE.
+ *
+ */
 @Library('cms-meta-tools') _
 @Library('csm-shared-library') __
 
@@ -13,11 +38,15 @@ pipeline {
 
     environment {
         NAME = "cray-bos"
+        TEST_NAME = "cray-bos"
+        REPORTER_NAME = "bos-reporter"
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
         RPTR_SPEC_FILE = "bos-reporter.spec"
         TEST_SPEC_FILE = "bos-crayctldeploy-test.spec"
         IS_STABLE = getBuildIsStable()
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
+        PUBLISH_SP2 = "sle-15sp2"
+        PUBLISH_SP3 = "sle-15sp3"        
     }
 
     stages {
@@ -64,13 +93,7 @@ pipeline {
             }
         }
 
-        stage("Prepare RPM Build") {
-            steps {
-                sh "make rpm_prepare"
-            }
-        }
-
-        stage("Build") {
+        stage("Build Image and Chart") {
             parallel {
                 stage('Image') {
                     environment {
@@ -94,25 +117,16 @@ pipeline {
                         sh "make chart"
                     }
                 }
-
-                stage('Reporter Rpm') {
-                    steps {
-                        sh "make rptr_rpm"
-                    }
-                }
-
-                stage('Test Rpm') {
-                    steps {
-                        sh "make test_rpm"
-                    }
-                }
-            }
-        }
+			}
+		}
 
         stage('Publish ') {
             parallel {
                 // I combine these two steps because if the image publish fails, we do not want to publish the chart
                 // referencing that image
+                // But we do publish the RPMs even if this fails. That was a practical matter of not being able to
+                // build the SP2 and SP3 rpms first (because the SP3 overwrites the SP2) and then publish them, so
+                // I just published them immediately after they are built.
                 stage('Image and Chart') {
                     environment {
                         DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
@@ -121,16 +135,85 @@ pipeline {
                         publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
                         publishCsmHelmCharts(component: env.NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
                     }
-                }
-                
-                // Similar to the chart/image logic, if the main RPM publish fails, no reason to publish the source RPMs
-                stage('RPMs') {
-                    steps {
-                        publishCsmRpms(component: "bos", pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
-                        publishCsmRpms(component: "bos", pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
-                    }
-                }
+                }                
             }
         }
+
+        stage("RPM Build Prepare") {
+        	steps {
+        		sh "make rpm_prepare"
+        	}
+        }
+		
+        stage("SP2 RPM Build") {
+	            agent {
+	                docker {
+	                    image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
+	                    reuseNode true
+	                    // Support docker in docker for clamav scan
+	                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+	                }
+	            }
+	            steps {
+	                sh "make rptr_rpm_prepare"
+	                sh "make rptr_rpm"
+	            }
+		}
+
+        stage("SP2 RPM Publish") {
+	            steps {
+	                script {
+	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP2, arch: "x86_64", isStable: env.IS_STABLE)
+	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP2, arch: "src", isStable: env.IS_STABLE)
+	                }
+	                sh "make rpm_build_clean"
+	                sh "make rpm_build_source_clean"
+	                
+	            }
+        }
+
+        stage("SP3 RPM Build") {
+	            agent {
+	                docker {
+	                    image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp3_build_environment:latest"
+	                    reuseNode true
+	                    // Support docker in docker for clamav scan
+	                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+	                }
+	            }
+	            steps {
+	                sh "make rptr_rpm_prepare"
+	                sh "make rptr_rpm"
+	            }
+		}
+
+        stage("SP3 RPM Publish") {
+	            steps {
+	                script {
+	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
+	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
+	                }
+	                sh "make rpm_build_clean"
+	                sh "make rpm_build_source_clean"
+	            }
+	     }
+		     
+		stage("Test RPM Build") {
+	        steps {
+	        	sh "make test_rpm_prepare"
+	            sh "make test_rpm"
+            }
+        }
+
+        stage("Test RPM Publish") {
+	            steps {
+	                script {
+	                    publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
+	                    publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
+	                }
+	                sh "make rpm_build_clean"
+	                sh "make rpm_build_source_clean"
+	            }
+	     }
     }
 }

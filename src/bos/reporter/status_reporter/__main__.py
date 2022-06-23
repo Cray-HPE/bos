@@ -1,5 +1,8 @@
 #
-# Copyright 2020-2021 Hewlett Packard Enterprise Development LP
+# MIT License
+#
+# (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+#
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
 # to deal in the Software without restriction, including without limitation
@@ -12,15 +15,17 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
 import logging
 import sys
+import random
+import re
+import datetime
 from time import sleep
 
 from bos.reporter.client import requests_retry_session
@@ -37,13 +42,19 @@ try:
     LOG_LEVEL = getattr(logging, LOG_LEVEL.upper(), logging.WARN)
 except KeyError:
     LOG_LEVEL = logging.WARN
-PROJECT_LOGGER = logging.getLogger('BOS')
+PROJECT_LOGGER = logging.getLogger('bos')
 LOGGER = logging.getLogger('bos.reporter.status_reporter')
 LOGGER.setLevel(LOG_LEVEL)
 _stream_handler = logging.StreamHandler(sys.stdout)
 _stream_handler.setLevel(LOG_LEVEL)
 PROJECT_LOGGER.addHandler(_stream_handler)
 PROJECT_LOGGER.setLevel(LOG_LEVEL)
+TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M | re.S)
+
+# The percentage of the total Time To Live (TTL) to wait before reporting status, e.g.
+# a state TTL of 4 hours with a ratio of .75 means nodes report every 3 hours.
+REPORTING_RATIO = .75
+STATE_UPDATE_FREQUENCY = 14400  # Number of seconds between state updates (4h default)
 
 
 def report_state_until_success(component):
@@ -64,8 +75,8 @@ def report_state_until_success(component):
         LOGGER.info("Attempt %s of contacting BOS..." % (attempt))
         session = requests_retry_session()
         try:
-            boot_artifact_id = get_value_from_proc_cmdline('boot_artifact_id')
-            state = {'bootArtifacts': {'boot_artifact_id': boot_artifact_id}}
+            bss_referral_token = get_value_from_proc_cmdline('bss_referral_token')
+            state = {'bss_token': bss_referral_token}
             report_state(component, state, session)
         except UnknownComponent:
             LOGGER.warning("BOS has no record of component '%s'; nothing to report." % (component))
@@ -77,11 +88,24 @@ def report_state_until_success(component):
         except OSError as exc:
             LOGGER.error("BOS client encountered an %s" % (exc))
             continue
-        LOGGER.info("Updated the actualState record for BOS component '%s'." % (component))
+        LOGGER.info("Updated the actual_state record for BOS component '%s'." % (component))
         return
 
 
-STATE_UPDATE_FREQUENCY = 86400  # Number of seconds between state updates
+def duration_to_timedelta(timestamp: str):
+    """
+    Converts a <digit><duration string> to a timedelta object.
+    """
+    # Calculate the corresponding multiplier for each time value
+    seconds_table = {'s': 1,
+                     'm': 60,
+                     'h': 60 * 60,
+                     'd': 60 * 60 * 24,
+                     'w': 60 * 60 * 24 * 7}
+    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
+    timeval = float(timeval)
+    seconds = timeval * seconds_table[durationval]
+    return datetime.timedelta(seconds = seconds)
 
 
 def main():
@@ -91,9 +115,18 @@ def main():
     """
     component = read_identity()
     try:
-        sleep_time = get_value_from_proc_cmdline('bos_update_frequency')
+        sleep_time = duration_to_timedelta(get_value_from_proc_cmdline('bos_update_frequency'))
+        sleep_time = REPORTING_RATIO * sleep_time.total_seconds()
     except KeyError:
-        sleep_time = STATE_UPDATE_FREQUENCY
+        sleep_time = STATE_UPDATE_FREQUENCY * REPORTING_RATIO
+
+    # In order to reduce overall thundering herd conditions after a full system
+    # boot, the amount of time between reporting is less than the whole amount
+    # of time in sleep_time for the first reporting interval. It is thought that
+    # this optimization decreases overall load on the BOS API for very large systems
+    # and reduces the likelihood that our horizontal autoscaler unnecessarily increases
+    # the number of instances serving requests over the lifetime of a session boot.
+    has_slept_before = False
 
     while True:
         LOGGER.info("Attempting to report status for '%s'" % (component))
@@ -101,7 +134,12 @@ def main():
             report_state_until_success(component)
         except Exception as exp:
             LOGGER.error("An error occurred: {}".format(exp))
-        sleep(sleep_time)
+        if has_slept_before:
+            sleep(sleep_time)
+        else:
+            sleep(sleep_time * random.random())
+            has_slept_before = True
+            LOGGER.info("Now periodically reporting every ~%s seconds.", sleep_time)
 
 
 if __name__ == '__main__':

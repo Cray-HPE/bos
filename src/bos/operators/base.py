@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -13,32 +16,42 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
 """
 BOS Operator - A Python operator for the Boot Orchestration Service.
 """
 
 from abc import ABC, abstractmethod
-import datetime
 import logging
 import threading
 import os
 import time
 from typing import List, NoReturn, Type
 
+from bos.common.values import Status
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
-from bos.operators.utils.clients.bos.components import update_components
+from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
-
 LOGGER = logging.getLogger('bos.operators.base')
+
+
+class BaseOperatorException(Exception):
+    pass
+
+
+class MissingSessionData(BaseOperatorException):
+    """
+    Operators are expected to update the session data, if they are updating a component's
+    desired state.
+    """
+    pass
 
 
 class BaseOperator(ABC):
@@ -54,6 +67,11 @@ class BaseOperator(ABC):
 
     Any other method may also be overridden, but functionality such as error handling may be lost.
     """
+
+    retry_attempt_field = ""
+
+    def __init__(self) -> NoReturn:
+        self.bos_client = BOSClient()
 
     @property
     @abstractmethod
@@ -91,10 +109,20 @@ class BaseOperator(ABC):
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
         components = self._get_components()
+        if not components:
+            LOGGER.debug('Found 0 components that require action')
+            return
+        LOGGER.info('Found {} components that require action'.format(len(components)))
+        if self.retry_attempt_field:  # Only check for failed components if we track retries for this operator
+            components = self._handle_failed_components(components)
         for component in components:  # Unset old errors components
             component['error'] = ''
-        LOGGER.info('Found {} components that require action'.format(len(components)))
-        components = self._act(components)
+        try:
+            components = self._act(components)
+        except Exception as e:
+            LOGGER.error("An unhandled exception was caught while trying to act on components: {}".format(e))
+            for component in components:
+                component["error"] = str(e)
         self._update_database(components)
 
     def _get_components(self) -> List[dict]:
@@ -104,32 +132,73 @@ class BaseOperator(ABC):
             components = f.filter(components)
         return components
 
+    def _handle_failed_components(self, components: List[dict]) -> List[dict]:
+        """ Marks components failed if the retry limits are exceeded """
+        failed_components = []
+        good_components = []  # Any component that isn't determined to be in a failed state
+        for component in components:
+            num_attempts = component.get('event_stats', {}).get(self.retry_attempt_field, 0)
+            retries = int(component.get('retry_policy', options.default_retry_policy))
+            if retries != -1 and num_attempts >= retries:
+                # This component has hit its retry limit
+                failed_components.append(component)
+            else:
+                good_components.append(component)
+        self._update_database_for_failure(failed_components)
+        return good_components
+
     @abstractmethod
     def _act(self, components: List[dict]) -> List[dict]:
         """ The action taken by the operator on target components """
         raise NotImplementedError()
 
-    def _update_database(self, components: List[dict]) -> None:
+    def _update_database(self, components: List[dict], additional_fields: dict=None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
-        Includes updating min_wait/max_wait, the last action, attempt count and error
+        Includes updating the last action, attempt count and error
         """
         data = []
         for component in components:
-            attempts = 1
-            last_action = component.get('lastAction', {})
-            if last_action.get('action') == self.name:
-                attempts = last_action.get('numAttempts', 1) + 1
             patch = {
                 'id': component['id'],
-                'lastAction': {
-                    'action': self.name,
-                    'numAttempts': attempts,
-                },
                 'error': component['error']  # New error, or clearing out old error
             }
+            if self.name:
+                last_action_data = {
+                    'action': self.name,
+                    'failed': False
+                }
+                patch['last_action'] = last_action_data
+            if self.retry_attempt_field:
+                event_stats_data = {
+                    self.retry_attempt_field: component.get('event_stats', {}).get(self.retry_attempt_field, 0) + 1
+                }
+                patch['event_stats']  = event_stats_data
+
+            if additional_fields:
+                patch.update(additional_fields)
+            
+            # When updating a component's desired state, operators
+            # are expected to provide session data as a hacky way to prove
+            # that they are operators. If they do not provide it, then the
+            # session is incorrectly blanked.
+            if 'desired_state' in patch and 'session' not in patch:
+                raise MissingSessionData
             data.append(patch)
-        update_components(data)
+        self.bos_client.components.update_components(data)
+
+    def _update_database_for_failure(self, components: List[dict]) -> None:
+        """
+        Updates the BOS database for all components the operator believes have failed
+        """
+        data = []
+        for component in components:
+            patch = {
+                'id': component['id'],
+                'status': {'status_override': Status.failed}
+            }
+            data.append(patch)
+        self.bos_client.components.update_components(data)
 
 
 def _update_log_level() -> None:

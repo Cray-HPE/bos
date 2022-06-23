@@ -1,0 +1,89 @@
+{{/*
+MIT License
+
+(C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of this software and associated documentation files (the "Software"),
+to deal in the Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the
+Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included
+in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+*/}}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name:  "{{ include "cray-service.name" . }}-session-template-migration"
+  labels:
+    app.kubernetes.io/managed-by: "{{ include "cray-service.name" . }}"
+    app.kubernetes.io/instance: "{{ include "cray-service.name" . }}"
+    app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" }}
+    helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+  annotations:
+    "helm.sh/hook": post-upgrade
+    "helm.sh/hook-weight": "-1"
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation 
+    
+
+spec:
+  template:
+    metadata:
+      name: "{{ .Release.Name }}"
+      labels:
+        app.kubernetes.io/managed-by:  "{{ include "cray-service.name" . }}"
+        app.kubernetes.io/instance:  "{{ include "cray-service.name" . }}"
+        helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
+      annotations:
+        traffic.sidecar.istio.io/excludeOutboundPorts: "2379,2380,6379"
+    spec:
+      serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration"
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65534
+        runAsGroup: 65534
+      
+      initContainers:
+      - name: cray-bos-wait-for-etcd
+        image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.19.15
+        command:
+          - /bin/sh
+          - -c
+          - |
+            while true; do
+              JOB_CONDITION="$(kubectl get jobs -n services -l app.kubernetes.io/name=cray-bos-wait-for-etcd -o jsonpath='{.items[0].status.conditions[0].type}')"
+              JOB_CONDITION_RC=$?
+              if [ $JOB_CONDITION_RC -eq 0 ]; then
+                if [ "$JOB_CONDITION" == 'Complete' ]; then
+                  echo "Completed"
+                  break
+                fi
+                echo "Waiting for the cray-bos-wait-for-etcd job in the services namespace to complete, current condition is $(kubectl get jobs -n services -l app.kubernetes.io/name=cray-bos-wait-for-etcd -o jsonpath='{.items[0].status}')"
+                sleep 3
+              elif [ $JOB_CONDITION_RC -ne 1 ]; then
+                echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , failing"
+                exit 1
+              else
+                echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , will retry"
+              sleep 3
+              fi
+            done      
+      containers:
+      - name: v1-v2-session-template-migration  
+        image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}:{{ .Chart.AppVersion}}
+        command:
+          - python3
+          - "-m"
+          - "bos.server.v1_v2_migration"

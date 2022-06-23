@@ -13,8 +13,8 @@ dependencies:
 - name: cray-service
   version: ^7.0.0
   repository: https://artifactory.algol60.net/artifactory/csm-helm-charts/
-description: "Kubernetes resources for BOS"
-home: scms/bos
+description: "Kubernetes resources for the Boot Orchestration Service (BOS)"
+home: "https://github.com/Cray-HPE/bos"
 keywords:
   - boa
   - bos

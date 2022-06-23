@@ -1,4 +1,7 @@
-# Copyright 2021 Hewlett Packard Enterprise Development LP
+#
+# MIT License
+#
+# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -12,16 +15,13 @@
 #
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
 # THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-# (MIT License)
-
 import logging
-import time
 import requests
 import json
 from collections import defaultdict
@@ -29,7 +29,8 @@ from collections import defaultdict
 from bos.operators.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-capmc'
-ENDPOINT = "%s://%s/capmc" % (PROTOCOL, SERVICE_NAME)
+CAPMC_VERSION = 'v1'
+ENDPOINT = "%s://%s/capmc/%s" % (PROTOCOL, SERVICE_NAME, CAPMC_VERSION)
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.capmc')
 
@@ -46,7 +47,7 @@ class CapmcTimeoutException(CapmcException):
     """
 
 
-def status(nodes, filtertype='show_all', session=None):
+def status(nodes, filtertype = 'show_all', session = None):
     """
     For a given iterable of nodes, represented by xnames, query CAPMC for
     the power status of all nodes. Return a dictionary of nodes that have
@@ -72,7 +73,7 @@ def status(nodes, filtertype='show_all', session=None):
     body = {'filter': filtertype,
             'xnames': list(nodes)}
 
-    response = session.post(endpoint, json=body)
+    response = session.post(endpoint, json = body)
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -88,8 +89,8 @@ def status(nodes, filtertype='show_all', session=None):
         raise
     # Check for error state in the returned response and retry
     if json_response['e']:
-        LOGGER.error("CAPMC responded with an error response code '%s': %s"
-                     % (json_response['e'], json_response))
+        LOGGER.error("CAPMC responded with an error response code '%s': %s",
+                     json_response['e'], json_response)
 
     failed_nodes, errors = parse_response(json_response)
 
@@ -98,10 +99,17 @@ def status(nodes, filtertype='show_all', session=None):
             del json_response[key]
         except KeyError:
             pass
-    # For the remainder of the keys in the response, translate the status to set operation
-    for key in json_response:
-        status_bucket[key] |= set(json_response[key])
-    return status_bucket, failed_nodes, errors
+
+    # Reorder JSON response into a dictionary where the nodes are the keys.
+    node_status = {}
+    for power_state, nodes in json_response.items():
+        for node in nodes:
+            node_status[node] = power_state
+
+    # Add in the nodes with errors.
+    node_status.update(errors)
+
+    return node_status, failed_nodes
 
 
 def parse_response(response):
@@ -155,7 +163,7 @@ def parse_response(response):
     return failed_nodes, reasons_for_failure
 
 
-def power(nodes, state, force=True, session=None, reason="BOS: Powering nodes"):
+def power(nodes, state, force = True, session = None, cont = True, reason = "BOS: Powering nodes"):
     """
     Sets a node to a power state using CAPMC; returns a set of nodes that were unable to achieve
     that state.
@@ -168,6 +176,8 @@ def power(nodes, state, force=True, session=None, reason="BOS: Powering nodes"):
       state (string): Power state: off or on
       force (bool): Should the power off be forceful (True) or not forceful (False)
       session (Requests.session object): A Requests session instance
+      cont (bool): Request that the API continues the requested operation when one
+        or more of the requested components fails their action.
 
     Returns:
       failed (set): the nodes that failed to enter the desired power state
@@ -191,9 +201,9 @@ def power(nodes, state, force=True, session=None, reason="BOS: Powering nodes"):
     power_endpoint = '%s/%s_%s' % (ENDPOINT, prefix, state)
 
     if state == "on":
-        json_response = call(power_endpoint, nodes, output_format, reason)
+        json_response = call(power_endpoint, nodes, output_format, cont, reason)
     elif state == "off":
-        json_response = call(power_endpoint, nodes, output_format, reason, force=force)
+        json_response = call(power_endpoint, nodes, output_format, cont, reason, force = force)
 
     failed_nodes, errors = parse_response(json_response)
     return failed_nodes, errors
@@ -206,7 +216,7 @@ def node_type(nodes):
     return ('node', 'nids') if list(nodes)[0].startswith('nid') else ('xname', 'xnames')
 
 
-def call(endpoint, nodes, node_format='xnames', reason="None given", session=None, **kwargs):
+def call(endpoint, nodes, node_format = 'xnames', cont = True, reason = "None given", session = None, **kwargs):
     '''
     This function makes a call to the Cray Advanced Platform Monitoring and Control (CAPMC)
     Args:
@@ -223,12 +233,13 @@ def call(endpoint, nodes, node_format='xnames', reason="None given", session=Non
     Returns: The parsed JSON response from the JSON based API.
     '''
     payload = {'reason': reason,
-               node_format: list(nodes)}
+               node_format: list(nodes),
+               'continue': cont}
     session = session or requests_retry_session()
     if kwargs:
         payload.update(kwargs)
     try:
-        resp = session.post(endpoint, verify=False, json=payload)
+        resp = session.post(endpoint, verify = False, json = payload)
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:
         LOGGER.error("Failed interacting with Cray Advanced Platform Monitoring and Control "

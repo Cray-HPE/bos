@@ -33,16 +33,13 @@ nodes (Node Personalization) or Images (Image Customization).
     * ims_image_id: The Image Management Service (IMS) ID of the image you want to boot/reboot the nodes with;
       This ID will help BOS find all of the boot artifacts needed to boot the nodes.
     * Kernel parameters: The kernel parameters to use to boot the nodes
-    * Network: The network to boot the nodes over; Choices:
-      * NMN -- Node Management Network
     * rootfs_provider_passthrough: Additional kernel parameters that will be appended to the 'rootfs=\<protocol>' kernel parameter
+    * cfs: The Configuration Framework Service (CFS) configuration name to associate with a particular boot set.
 
 * Session Template -- A collection of one or more Boot Sets and some associated data
   * boot_sets: One or more Boot Sets as described above
-  * partition: The machine partition to operate on
   * enable_cfs: Whether to enable the Configuration Framework Service (CFS); Choices: true/false
-  * cfs_url:The The repository clone url for the repository providing the configuration.
-  * cfs_branch: The name of the branch containing the configuration that you want to apply to the nodes
+  * cfs: The configuration framework service configuration options to use for all boot sets that don't already define their own.
 
 * Session -- Performs an Operation (action) on a Session Template.  The creation of
 a Session results in the creation of one or more Kubernetes BOA jobs which interact

@@ -1,1 +1,4 @@
 Installation info for chart {{ include "cray-service.name" . }}:
+
+Usage: Use the cray CLI to interface with BOS.
+cray bos --help  

@@ -61,6 +61,16 @@ cray-service:
         value: "https"
       - name: S3_GATEWAY
         value: "rgw-vip"
+      - name: S3_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "bos-s3-credentials"
+            key: access_key
+      - name: S3_SECRET_KEY
+        valueFrom:
+          secretKeyRef:
+            name: "bos-s3-credentials"
+            key: secret_key      
       # Default configuration for the number of retries is
       # 30 minutes (5s x 360 ~ 1800s or 30 minutes).
       # This value is placed in the boa-job-template config map.
@@ -117,6 +127,18 @@ cray-service:
       name: job-template
       configMap:
         name: boa-job-template
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchExpressions:
+              - key: app.kubernetes.io/name
+                operator: In
+                values:
+                - cray-bos
   ingress:
     ui: false
     enabled: true
@@ -140,3 +162,162 @@ cray-service:
         cpu: 10m
         memory: 64Mi
 
+deploymentDefaults:
+  service:
+    enabled: False
+  etcdCluster:
+    enabled: False
+  sqlCluster:
+    enabled: False
+  global:
+    chart:
+      name: cray-bos
+  initContainers: []
+  kafkaCluster:
+    enabled: False
+  volumes: []
+
+operatorDefaults:
+  containers:
+    operator:
+      name: operator
+      image:
+        repository: artifactory.algol60.net/csm-docker/stable/cray-bos
+      resources:
+        requests:
+          memory: "150Mi"
+          cpu: "200m"
+        limits:
+          memory: "250Mi"
+          cpu: "500m"
+      livenessProbe:
+        exec:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.utils.liveness"
+        initialDelaySeconds: 10
+        periodSeconds: 30
+        timeoutSeconds: 3
+
+operators:
+  actual_state_cleanup:
+    Values:
+      nameOverride: cray-bos-operator-actual-state-cleanup
+      fullnameOverride: cray-bos-operator-actual-state-cleanup
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.actual_state_cleanup"
+  configuration:
+    Values:
+      nameOverride: cray-bos-operator-configuration
+      fullnameOverride: cray-bos-operator-configuration
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.configuration"
+  discovery:
+    Values:
+      nameOverride: cray-bos-operator-discovery
+      fullnameOverride: cray-bos-operator-discovery
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.discovery"
+  forcefulPoweroff:
+    Values:
+      nameOverride: cray-bos-operator-power-off-forceful
+      fullnameOverride: cray-bos-operator-power-off-forceful
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.power_off_forceful"
+  gracefulPoweroff:
+    Values:
+      nameOverride: cray-bos-operator-power-off-graceful
+      fullnameOverride: cray-bos-operator-power-off-graceful
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.power_off_graceful"
+  poweron:
+    Values:
+      nameOverride: cray-bos-operator-power-on
+      fullnameOverride: cray-bos-operator-power-on
+      podAnnotations:
+        traffic.sidecar.istio.io/excludeOutboundPorts: "6379"
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.power_on"
+  sessionCleanup:
+    Values:
+      nameOverride: cray-bos-operator-session-cleanup
+      fullnameOverride: cray-bos-operator-session-cleanup
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.session_cleanup"
+  sessionCompletion:
+    Values:
+      nameOverride: cray-bos-operator-session-completion
+      fullnameOverride: cray-bos-operator-session-completion
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.session_completion"
+  sessionSetup:
+    Values:
+      nameOverride: cray-bos-operator-session-setup
+      fullnameOverride: cray-bos-operator-session-setup
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.session_setup"
+          env:
+          - name: S3_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "bos-s3-credentials"
+                key: access_key
+          - name: S3_SECRET_KEY
+            valueFrom:
+              secretKeyRef:
+                name: "bos-s3-credentials"
+                key: secret_key
+          - name: S3_PROTOCOL
+            value: "https"
+          - name: S3_GATEWAY
+            value: "rgw-vip"
+  status:
+    Values:
+      nameOverride: cray-bos-operator-status
+      fullnameOverride: cray-bos-operator-status
+      containers:
+        operator:
+          command:
+          - python3
+          - "-m"
+          - "bos.operators.status"
+
+tests:
+  image: artifactory.algol60.net/csm-docker/stable/docker.io/curlimages/curl:7.80.0
