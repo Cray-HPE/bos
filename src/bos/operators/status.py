@@ -102,7 +102,18 @@ class StatusOperator(BaseOperator):
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
         """
-        phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
+        if power_state and cfs_component:
+            phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
+        else:
+            # If the component cannot be found in capmc or cfs
+            phase = Phase.none
+            override = Status.on_hold
+            action_failed = False
+            if not power_state:
+                error = 'Component information was not returned by capmc'
+            elif not cfs_component:
+                error = 'Component information was not returned by cfs'
+
         updated_component = {
             'id': component['id'],
             'status': {
