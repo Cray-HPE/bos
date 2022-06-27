@@ -99,6 +99,7 @@ rptr_rpm_prepare:
 		mkdir -p $(RPTR_BUILD_DIR)/SPECS \
 				 $(RPTR_BUILD_DIR)/SOURCES
 		cp $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/
+		cat $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/bos-reporter.spec
 
 image:
 		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
