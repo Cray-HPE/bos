@@ -155,8 +155,6 @@ pipeline {
 	                }
 	            }
 	            steps {
-	                sh "cat .rpm_version"
-	                sh "cat .rpm_release"
 	                sh "make rptr_rpm_prepare"
 	                sh "make rptr_rpm"
 	            }
