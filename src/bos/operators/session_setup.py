@@ -32,14 +32,9 @@ from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFac
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
-from bos.common.values import Action
+from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
 
 LOGGER = logging.getLogger('bos.operators.session_setup')
-EMPTY_BOOT_ARTIFACTS = {
-    "kernel": "",
-    "kernel_parameters": "",
-    "initrd": ""
-}
 
 
 class SessionSetupException(Exception):
@@ -205,10 +200,7 @@ class Session:
         else:
             data["desired_state"] = self._generate_desired_state(boot_set)
             if self.operation_type == "reboot" :
-                data["actual_state"] = {
-                    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
-                    "bss_token": ""
-                }
+                data["actual_state"] = EMPTY_ACTUAL_STATE
             data["session"] = self.name
             data["enabled"] = True
             # Set node's last_action
@@ -217,11 +209,7 @@ class Session:
 
     def _generate_desired_state(self, boot_set):
         if self.operation_type == "shutdown":
-            state = {
-                "configuration": "",
-                "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
-                "bss_token": ""
-            }
+            state = EMPTY_DESIRED_STATE
             return state
         else:
             state = self._get_state_from_boot_set(boot_set)

@@ -25,18 +25,13 @@ import connexion
 import logging
 
 from bos.common.utils import get_current_timestamp
-from bos.common.values import Phase, Action, Status
+from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE
 from bos.server import redis_db_utils as dbutils
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.components')
 DB = dbutils.get_wrapper(db='components')
 SESSIONS_DB = dbutils.get_wrapper(db='sessions')
-EMPTY_BOOT_ARTIFACTS = {
-    "kernel": "",
-    "kernel_parameters": "",
-    "initrd": ""
-}
 
 
 @dbutils.redis_error_handler
@@ -340,10 +335,7 @@ def _apply_staged(component_id):
         # For both the successful and failed cases, we want the new session to own the node
         data["session"] = staged_session_id
         data["last_action"]["action"] = Action.apply_staged
-        data["staged_state"] = {
-            "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
-            "configuration": ""
-        }
+        data["staged_state"] = EMPTY_STAGED_STATE
         _set_auto_fields(data)
         DB.put(component_id, data)
     return response
