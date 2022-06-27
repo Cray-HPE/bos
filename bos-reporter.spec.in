@@ -47,7 +47,7 @@ Provides a systemd service and associated library that reports
 BOS' Boot Artifact ID for a node throughout its booted life.
 
 %prep
-%setup -q
+%setup -qn %{name}-@RPM_VERSION@-@RPM_RELEASE@
 
 %build
 pushd ./src

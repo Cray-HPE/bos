@@ -57,7 +57,7 @@ Requires: python3-requests
 This is a collection of post-install tests for the Boot Orchestration Services (BOS).
 
 %prep
-%setup -q
+%setup -qn %{name}-@RPM_VERSION@-@RPM_RELEASE@
 
 %build
 
