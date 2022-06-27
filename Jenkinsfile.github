@@ -140,21 +140,23 @@ pipeline {
         }
 
         stage("RPM Build Prepare") {
-            steps {
-                sh "make rpm_prepare"
-            }
+        	steps {
+        		sh "make rpm_prepare"
+        	}
         }
-
-        stage("SLES15SP3 RPM Build") {
+		
+        stage("SLES15 SP2 RPM Build") {
 	            agent {
 	                docker {
-	                    image "artifactory.algol60.net/csm-docker/stable/csm-docker-sle:15.3"
+	                    image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
 	                    reuseNode true
 	                    // Support docker in docker for clamav scan
 	                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
 	                }
 	            }
 	            steps {
+	                sh "cat .rpm_version"
+	                sh "cat .rpm_release"
 	                sh "make rptr_rpm_prepare"
 	                sh "make rptr_rpm"
 	            }
@@ -217,3 +219,4 @@ pipeline {
 	     }
     }
 }
+
