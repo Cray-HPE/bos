@@ -69,6 +69,7 @@ class BaseOperator(ABC):
     """
 
     retry_attempt_field = ""
+    frequency_option = "polling_frequency"
 
     def __init__(self) -> NoReturn:
         self.bos_client = BOSClient()
@@ -99,7 +100,7 @@ class BaseOperator(ABC):
                 LOGGER.exception('Unhandled exception detected: {}'.format(e))
 
             try:
-                sleep_time = options.polling_frequency - (time.time() - start_time)
+                sleep_time = getattr(options, self.frequency_option) - (time.time() - start_time)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             except Exception as e:

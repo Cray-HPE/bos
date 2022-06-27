@@ -989,6 +989,7 @@ components:
           example: '2019-07-28T03:26:00Z'
           format: date-time
           readOnly: true
+      additionalProperties: false
     V2ComponentDesiredState:
       description: |
         The desired boot artifacts and configuration for a component
