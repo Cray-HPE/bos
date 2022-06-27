@@ -29,7 +29,7 @@ Group: System/Management
 # The version is substituted at build time by runBuildPrep.sh
 Version: @RPM_VERSION@
 Release: @RPM_RELEASE@
-Source: %{name}-%{version}.tar.bz2
+Source: %{name}-%{version}-%{release}.tar.bz2
 Vendor: Cray Inc.
 Requires: cray-cmstools-crayctldeploy-test >= 0.2.11
 Conflicts: cray-crus-crayctldeploy-test < 0.2.9

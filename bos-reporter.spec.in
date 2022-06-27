@@ -27,7 +27,7 @@ Summary: A program system service which reports BOS' Boot Artifact ID for a give
 Group: System/Management
 Version: @RPM_VERSION@
 Release: @RPM_RELEASE@
-Source: %{name}-%{version}.tar.bz2
+Source: %{name}-%{version}-%{release}.tar.bz2
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: python-rpm-macros
