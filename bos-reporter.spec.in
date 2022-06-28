@@ -23,11 +23,11 @@
 #
 Name: bos-reporter
 License: MIT
-Summary: A program system service which reports BOS' Boot Artifact ID for a given node
+Summary: A system service which reports information about a booted node state
 Group: System/Management
 Version: @RPM_VERSION@
-Release: %(echo ${BUILD_METADATA})
-Source: %{name}-%{version}.tar.bz2
+Release: @RPM_RELEASE@
+Source: %{name}-@RPM_VERSION@-@RPM_RELEASE@.tar.bz2
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: python-rpm-macros
@@ -47,7 +47,7 @@ Provides a systemd service and associated library that reports
 BOS' Boot Artifact ID for a node throughout its booted life.
 
 %prep
-%setup -q
+%setup -qn %{name}-@RPM_VERSION@-@RPM_RELEASE@
 
 %build
 pushd ./src

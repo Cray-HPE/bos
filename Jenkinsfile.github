@@ -145,9 +145,11 @@ pipeline {
         	}
         }
 		
-        stage("SP2 RPM Build") {
+        stage("SLES15 SP2 RPM Build") {
 	            agent {
 	                docker {
+	                     // Artifactory build image not working yet; missing setuptools
+	                     // image "artifactory.algol60.net/csm-docker/stable/csm-docker-sle:15.2"
 	                    image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
 	                    reuseNode true
 	                    // Support docker in docker for clamav scan
@@ -217,3 +219,4 @@ pipeline {
 	     }
     }
 }
+

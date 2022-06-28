@@ -28,8 +28,8 @@ Summary: Cray post-install tests for Boot Orchestration Services (BOS)
 Group: System/Management
 # The version is substituted at build time by runBuildPrep.sh
 Version: @RPM_VERSION@
-Release: %(echo ${BUILD_METADATA})
-Source: %{name}-%{version}.tar.bz2
+Release: @RPM_RELEASE@
+Source: %{name}-@RPM_VERSION@-@RPM_RELEASE@.tar.bz2
 Vendor: Cray Inc.
 Requires: cray-cmstools-crayctldeploy-test >= 0.2.11
 Conflicts: cray-crus-crayctldeploy-test < 0.2.9
@@ -57,7 +57,7 @@ Requires: python3-requests
 This is a collection of post-install tests for the Boot Orchestration Services (BOS).
 
 %prep
-%setup -q
+%setup -qn %{name}-@RPM_VERSION@-@RPM_RELEASE@
 
 %build
 
