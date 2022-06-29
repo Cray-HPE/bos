@@ -23,25 +23,18 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
-import time
-from typing import List, NoReturn, Set
+from typing import Set
 from copy import copy
 
-from bos.common.values import Action
-from bos.operators.utils.clients.bos.options import options
+from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
 from bos.operators.utils.clients.hsm import read_all_node_xnames, HWStateManagerException
 from bos.operators.base import BaseOperator, main, _update_log_level
-from bos.operators.utils.clients.bos.components import ComponentEndpoint
 
 LOGGER = logging.getLogger(__name__)
 
-BLANK_STATE = {'boot_artifacts': {'kernel': '',
-                                  'kernel_parameters': '',
-                                  'initrd': ''},
-               'configuration': ''}
 NEW_COMPONENT = {'id': None,
-                 'actual_state': BLANK_STATE,
-                 'desired_state': BLANK_STATE,
+                 'actual_state': EMPTY_ACTUAL_STATE,
+                 'desired_state': EMPTY_DESIRED_STATE,
                  'staged_state': {},
                  'last_action': {'action': Action.newly_discovered},
                  'enabled': False,
@@ -56,6 +49,8 @@ class DiscoveryOperator(BaseOperator):
     any records caused by transient loss or hardware swap actions.
     """
 
+    frequency_option = "discovery_frequency"
+
     @property
     def name(self):
         return "Discovery"
@@ -68,28 +63,6 @@ class DiscoveryOperator(BaseOperator):
 
     def _act(self, components):
         return components
-
-    def run(self) -> NoReturn:
-        """
-        The core method of the operator that periodically detects and acts on components.
-        This includes updating the options and logging level, as well as exception handling and
-        sleeping between passes.
-        """
-        while True:
-            start_time = time.time()
-            try:
-                options.update()
-                _update_log_level()
-                self._run()
-            except Exception as e:
-                LOGGER.exception('Unhandled exception detected: {}'.format(e))
-            try:
-                sleep_time = options.discovery_frequency - (time.time() - start_time)
-                if sleep_time > 0:
-                    time.sleep(sleep_time)
-            except Exception as e:
-                LOGGER.exception('Unhandled exception getting polling frequency: {}'.format(e))
-                time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
 
     def _run(self) -> None:
         """
@@ -105,8 +78,7 @@ class DiscoveryOperator(BaseOperator):
             LOGGER.info("No new component(s) discovered.")
             return
         LOGGER.info("%s new component(s) from HSM." %(len(components_to_add)))
-        ce = ComponentEndpoint()
-        ce.put_components(components_to_add)
+        self.bos_client.components.put_components(components_to_add)
         LOGGER.info("%s new component(s) added to BOS!" %(len(components_to_add)))
 
     @property

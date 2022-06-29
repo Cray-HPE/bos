@@ -24,7 +24,7 @@
 #
 import logging
 
-from bos.common.values  import Phase, Status, Action
+from bos.common.values  import Phase, Status, Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
@@ -102,7 +102,18 @@ class StatusOperator(BaseOperator):
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
         """
-        phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
+        if power_state and cfs_component:
+            phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
+        else:
+            # If the component cannot be found in capmc or cfs
+            phase = Phase.none
+            override = Status.on_hold
+            action_failed = False
+            if not power_state:
+                error = 'Component information was not returned by capmc'
+            elif not cfs_component:
+                error = 'Component information was not returned by cfs'
+
         updated_component = {
             'id': component['id'],
             'status': {
@@ -110,7 +121,8 @@ class StatusOperator(BaseOperator):
             }
         }
         update = False
-        if phase != component.get('status', {}).get('phase', ''):
+        previous_phase = component.get('status', {}).get('phase', '')
+        if phase != previous_phase:
             if phase == Phase.none:
                 # The current event has completed.  Reset the event stats
                 updated_component['event_stats'] = {
@@ -118,6 +130,9 @@ class StatusOperator(BaseOperator):
                     "power_off_graceful_attempts": 0,
                     "power_off_forceful_attempts": 0
                 }
+            if previous_phase == Phase.powering_off:
+                # Powering off has been completed.  The actual state can be cleared.
+                updated_component['actual_state'] = EMPTY_ACTUAL_STATE
             updated_component['status']['phase'] = phase
             update = True
         if override:

@@ -48,3 +48,26 @@ class Status:
     stable = "stable"
     failed = "failed"
     on_hold = "on_hold"
+
+
+EMPTY_BOOT_ARTIFACTS = {
+    "kernel": "",
+    "kernel_parameters": "",
+    "initrd": ""
+}
+
+EMPTY_ACTUAL_STATE = {
+    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+    "bss_token": ""
+}
+
+EMPTY_DESIRED_STATE = {
+    "configuration": "",
+    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+    "bss_token": ""
+}
+
+EMPTY_STAGED_STATE = {
+    "configuration": "",
+    "boot_artifacts": EMPTY_BOOT_ARTIFACTS
+}
