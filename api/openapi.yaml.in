@@ -1192,7 +1192,7 @@ components:
         logging_level:
           type: string
           description: The logging level for all BOS services
-        max_boot_on_wait_time:
+        max_boot_wait_time:
           type: integer
           description: How long BOS will wait for a node to boot into a usable state before rebooting it again (in seconds)
         max_power_on_wait_time:
