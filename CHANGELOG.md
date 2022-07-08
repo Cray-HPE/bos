@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated upstream build constraints
 - Support for SLES SP4
 
+### Changed
+- Remove length restriction from v1 sessiontemplate names
+- Updated v1/v2 migration of sessiontemplates to retain a v1 copy
+
 ## [1.2.6] - 2022-06-23
 ### Added
 - Disable publishing of BOS test RPM (not currently used)
