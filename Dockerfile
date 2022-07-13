@@ -101,5 +101,5 @@ RUN apk add --no-cache busybox-extras && \
 # Application image
 FROM intermediate as application
 WORKDIR /app
-#USER 65534:65534
+USER 65534:65534
 
