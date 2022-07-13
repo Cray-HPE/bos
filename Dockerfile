@@ -57,8 +57,8 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
     apk update && \
     apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     apk -U upgrade --no-cache && \
-    pip3 install --no-cache-dir -U pip && \
-    pip3 install --no-cache-dir -r requirements.txt
+    pip3 install --no-cache-dir -U pip
+RUN pip3 install --no-cache-dir -r requirements.txt
 RUN cd lib && pip3 install --no-cache-dir .
 
 # Testing image
