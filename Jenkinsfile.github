@@ -38,7 +38,6 @@ pipeline {
 
     environment {
         NAME = "cray-bos"
-        TEST_NAME = "cray-bos"
         REPORTER_NAME = "bos-reporter"
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
         RPTR_SPEC_FILE = "bos-reporter.spec"
@@ -220,24 +219,6 @@ pipeline {
                     script {
                         publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
                         publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
-                    }
-                    sh "make rpm_build_clean"
-                    sh "make rpm_build_source_clean"
-                }
-         }
-
-        stage("Test RPM Build") {
-            steps {
-                sh "make test_rpm_prepare"
-                sh "make test_rpm"
-            }
-        }
-
-        stage("Test RPM Publish") {
-                steps {
-                    script {
-                        publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
-                        publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
                     }
                     sh "make rpm_build_clean"
                     sh "make rpm_build_source_clean"
