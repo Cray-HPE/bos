@@ -437,9 +437,7 @@ components:
           type: string
           description: Name of the SessionTemplate. The length of the name is restricted to 45 characters.
           example: "cle-1.0.0"
-          # These validation parameters are restricted by Kubernetes naming conventions.
           minLength: 1
-          maxLength: 45
           pattern: "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"
         description:
           type: string
