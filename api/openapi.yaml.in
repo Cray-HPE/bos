@@ -682,7 +682,6 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/Link'
-      required: []
       additionalProperties: false
     V2SessionTemplateArray:
       description: An array of session templates.
@@ -887,19 +886,19 @@ components:
         Detailed information on the phases of a session.
       properties:
         percent_complete:
-          type: float
+          type: number 
           description: |
             The percent of components currently in a completed/stable state
         percent_powering_on:
-          type: float
+          type: number 
           description: |
             The percent of components currently in the powering-on phase
         percent_powering_off:
-          type: float
+          type: number 
           description: |
             The percent of components currently in the powering-off phase
         percent_configuring:
-          type: float
+          type: number 
           description: |
             The percent of components currently in the configuring phase
       additionalProperties: false
@@ -938,19 +937,19 @@ components:
         phases:
           $ref: '#/components/schemas/V2SessionExtendedStatusPhases'
         percent_successful:
-          type: float
+          type: number 
           description: |
             The percent of components currently in a successful state
         percent_failed:
-          type: float
+          type: number 
           description: |
             The percent of components currently in a failed state
         percent_staged:
-          type: float
+          type: number 
           description: |
             The percent of components currently still staged for this session
         error_summary:
-          type: object
+          type: object 
           description: |
             A summary of the errors currently listed by all components
         timing:
