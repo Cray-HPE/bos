@@ -9,7 +9,7 @@
 
 boa_image:
   repository: artifactory.algol60.net/csm-docker/stable/cray-boa
-  tag: 0.0.0-boa 
+  tag: 0.0.0-boa
 database:
   image:
     repository: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis
@@ -37,7 +37,7 @@ cray-service:
     cray-bos:
       name: cray-bos
       image:
-        repository: artifactory.algol60.net/csm-docker/stable/cray-bos
+        repository: artifactory.algol60.net/csm-docker/S-T-A-B-L-E/cray-bos
         # tag defaults to chart appVersion
       ports:
       - name: http
@@ -182,7 +182,7 @@ operatorDefaults:
     operator:
       name: operator
       image:
-        repository: artifactory.algol60.net/csm-docker/stable/cray-bos
+        repository: artifactory.algol60.net/csm-docker/S-T-A-B-L-E/cray-bos
       resources:
         requests:
           memory: "150Mi"
