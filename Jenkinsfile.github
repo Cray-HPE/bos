@@ -41,7 +41,6 @@ pipeline {
         REPORTER_NAME = "bos-reporter"
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
         RPTR_SPEC_FILE = "bos-reporter.spec"
-        TEST_SPEC_FILE = "bos-crayctldeploy-test.spec"
         IS_STABLE = getBuildIsStable()
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
         PUBLISH_SP2 = "sle-15sp2"
@@ -54,236 +53,145 @@ pipeline {
             steps {
                 // This function is defined in cms-meta-tools:vars/cloneCMSMetaTools.groovy
                 cloneCMSMetaTools()
+                }
             }
-        }
-
         stage("Set Versions") {
             steps {
                 // This function is defined in cms-meta-tools:vars/setVersionFiles.groovy
                 setVersionFiles()
+                }
             }
-        }
-
         stage("runBuildPrep") {
             steps {
                 sh "make runbuildprep"
+                }
             }
-        }
-
         stage("Lint") {
             steps {
                 sh "make lint"
-            }
-        }
-
-        stage("Add RPM Metadata") {
-            parallel {
-                stage('bos-reporter') {
-                    steps {
-                        echo "RPM build metadata is ${env.BUILD_METADATA}"
-                        runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
-                    }
-                }
-
-                stage('bos tests') {
-                    steps {
-                        runLibraryScript("addRpmMetaData.sh", env.TEST_SPEC_FILE)
-                    }
                 }
             }
-        }
-
+        stage('Add RPM Metadata to bos-reporter') {
+            steps {
+                echo "RPM build metadata is ${env.BUILD_METADATA}"
+                runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
+                }
+            }
         stage("Build Image and Chart") {
             parallel {
                 stage('Image') {
                     environment {
                         DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
                         DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.DOCKER_VERSION)
-                    }
-
+                        }
                     steps {
                         echo "Docker args are ${env.DOCKER_ARGS}"
                         sh "make image"
+                        }
                     }
-                }
-
                 stage('Chart') {
                     environment {
                         DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
-                    }
-
+                        }
                     steps {
                         updateCsmHelmChartAppVersion(chartPath: "${WORKSPACE}/kubernetes/${NAME}", appVersion: env.DOCKER_VERSION)
                         sh "make chart"
+                        }
                     }
                 }
             }
-        }
-
         stage('Publish ') {
             parallel {
-                // I combine these two steps because if the image publish fails, we do not want to publish the chart
-                // referencing that image
-                // But we do publish the RPMs even if this fails. That was a practical matter of not being able to
-                // build the SP2 and SP3 rpms first (because the SP3 overwrites the SP2) and then publish them, so
-                // I just published them immediately after they are built.
                 stage('Image and Chart') {
                     environment {
                         DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
-                    }
+                        }
                     steps {
                         publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
                         publishCsmHelmCharts(component: env.NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
+                        }
                     }
                 }
             }
-        }
-
         stage("RPM Build Prepare") {
-        	steps {
-        		sh "make rpm_prepare"
-        	}
-        }
-
-        stage("SLES15SP2 RPM Build") {
-                agent {
-                    docker {
-                         // https://rndwiki-pro.its.hpecorp.net/display/CSMTemp/Build+Environment+Docker+Images
-                        image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
-                        reuseNode true
-                        // Support docker in docker for clamav scan
-                        args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
-                    }
-                }
-                steps {
-                    sh "make rptr_rpm_prepare"
-                    sh "make rptr_rpm"
-                }
-        }
-
-        stage("SLES15SP2 RPM Publish") {
-	            steps {
-	                script {
-	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP2, arch: "x86_64", isStable: env.IS_STABLE)
-	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP2, arch: "src", isStable: env.IS_STABLE)
-	                }
-	                sh "make rpm_build_clean"
-	                sh "make rpm_build_source_clean"
-	                
-	            }
-        }
-
-        stage("SLES15SP3 RPM Build") {
-                agent {
-                    docker {
-                        // https://rndwiki-pro.its.hpecorp.net/display/CSMTemp/Build+Environment+Docker+Images
-                        image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp3_build_environment:latest"
-                        reuseNode true
-                        // Support docker in docker for clamav scan
-                        args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
-                    }
-                }
-                steps {
-                    sh "make rptr_rpm_prepare"
-                    sh "make rptr_rpm"
-                }
-        }
-
-        stage("SLES15SP3 RPM Publish") {
-	            steps {
-	                script {
-	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
-	                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
-	                }
-	                sh "make rpm_build_clean"
-	                sh "make rpm_build_source_clean"
-	            }
-	     }
             steps {
-                sh "make rpm_prepare"
+               sh "make rpm_prepare"
+        	}
             }
-        }
-
-        stage("SLES15 SP2 RPM Build") {
-                agent {
-                    docker {
-                         // Artifactory build image not working yet; missing setuptools
-                         // image "artifactory.algol60.net/csm-docker/stable/csm-docker-sle:15.2"
-                        image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
-                        reuseNode true
-                        // Support docker in docker for clamav scan
-                        args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+        stage("SLES15SP2 RPM Build") {
+            agent {
+                docker {
+                    // https://rndwiki-pro.its.hpecorp.net/display/CSMTemp/Build+Environment+Docker+Images
+                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
+                    reuseNode true
+                    // Support docker in docker for clamav scan
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                     }
                 }
-                steps {
-                    sh "make rptr_rpm_prepare"
-                    sh "make rptr_rpm"
+            steps {
+                sh "make rptr_rpm_prepare"
+                sh "make rptr_rpm"
                 }
-        }
-
-        stage("SP2 RPM Publish") {
-                steps {
-                    script {
-                        publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP2, arch: "x86_64", isStable: env.IS_STABLE)
-                        publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP2, arch: "src", isStable: env.IS_STABLE)
-                    }
-                    sh "make rpm_build_clean"
-                    sh "make rpm_build_source_clean"
-
-                }
-        }
-
-        stage("SP3 RPM Build") {
-                agent {
-                    docker {
-                        image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp3_build_environment:latest"
-                        reuseNode true
-                        // Support docker in docker for clamav scan
-                        args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+            }
+        stage("SLES15SP2 RPM Publish") {
+	    steps {
+	         script {
+	             publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP2, arch: "x86_64", isStable: env.IS_STABLE)
+	             publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP2, arch: "src", isStable: env.IS_STABLE)
+	             }
+	         sh "make rpm_build_clean"
+	         sh "make rpm_build_source_clean"
+	        }
+            }
+        stage("SLES15SP3 RPM Build") {
+            agent {
+                docker {
+                    // https://rndwiki-pro.its.hpecorp.net/display/CSMTemp/Build+Environment+Docker+Images
+                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp3_build_environment:latest"
+                    reuseNode true
+                    // Support docker in docker for clamav scan
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                     }
                 }
-                steps {
-                    sh "make rptr_rpm_prepare"
-                    sh "make rptr_rpm"
+            steps {
+                sh "make rptr_rpm_prepare"
+                sh "make rptr_rpm"
                 }
-        }
-
-        stage("SP3 RPM Publish") {
-                steps {
-                    script {
-                        publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
-                        publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
-                    }
-                    sh "make rpm_build_clean"
-                    sh "make rpm_build_source_clean"
-                }
-         }
-
+            }
+        stage("SLES15SP3 RPM Publish") {
+	    steps {
+	        script {
+	            publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
+	            publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
+	            }
+	        sh "make rpm_build_clean"
+	        sh "make rpm_build_source_clean"
+	        }
+	    }
         stage("SP4 RPM Build") {
-                agent {
-                    docker {
-                        image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest"
-                        reuseNode true
-                        // Support docker in docker for clamav scan
-                        args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+            agent {
+                docker {
+                    image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest"
+                    reuseNode true
+                    // Support docker in docker for clamav scan
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
                     }
                 }
-                steps {
-                    sh "make rptr_rpm_prepare"
-                    sh "make rptr_rpm"
+            steps {
+                sh "make rptr_rpm_prepare"
+                sh "make rptr_rpm"
                 }
-        }
-
+            }
         stage("SP4 RPM Publish") {
-                steps {
-                    script {
-                        publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
-                        publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
+            steps {
+                script {
+                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
                     }
-                    sh "make rpm_build_clean"
-                    sh "make rpm_build_source_clean"
+                sh "make rpm_build_clean"
+                sh "make rpm_build_source_clean"
                 }
-         }
+             }
+        }
     }
-}
 
