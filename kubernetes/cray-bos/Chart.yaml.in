@@ -3,7 +3,7 @@ annotations:
     - name: cray-boa
       image: artifactory.algol60.net/csm-docker/stable/cray-boa:0.0.0-boa
     - name: cray-bos
-      image: artifactory.algol60.net/csm-docker/stable/cray-bos:0.0.0-bos
+      image: artifactory.algol60.net/csm-docker/S-T-A-B-L-E/cray-bos:0.0.0-bos
     - name: redis
       image: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis:5.0-alpine3.12
   artifacthub.io/license: MIT
