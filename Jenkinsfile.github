@@ -168,10 +168,10 @@ pipeline {
 	        sh "make rpm_build_source_clean"
 	        }
 	    }
-        stage("SP4 RPM Build") {
+        stage("SLES15SP4 RPM Build") {
             agent {
                 docker {
-                    image "arti.dev.cray.com/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest"
+                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest"
                     reuseNode true
                     // Support docker in docker for clamav scan
                     args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
@@ -182,7 +182,7 @@ pipeline {
                 sh "make rptr_rpm"
                 }
             }
-        stage("SP4 RPM Publish") {
+        stage("SLES15SP4 RPM Publish") {
             steps {
                 script {
                     publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
