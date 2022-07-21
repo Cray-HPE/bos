@@ -66,7 +66,7 @@ FROM base as testing
 WORKDIR /app
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
-RUN apk add --no-cache --repository https://arti.dev.cray.com/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
+RUN apk add --no-cache --repository https://arti.hpc.amslabs.hpecorp.net/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
 RUN cd /app && pip3 install --no-cache-dir -r test-requirements.txt
 CMD [ "./docker_test_entry.sh" ]
 
