@@ -186,10 +186,10 @@ operatorDefaults:
       resources:
         requests:
           memory: "150Mi"
-          cpu: "200m"
+          cpu: "250m"
         limits:
           memory: "250Mi"
-          cpu: "500m"
+          cpu: "1000m"
       livenessProbe:
         exec:
           command:
