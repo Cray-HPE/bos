@@ -730,8 +730,8 @@ components:
         stage:
           type: boolean
           description: >
-            Set to force nodes to reboot even if they are already in the desired
-            state.
+            Set to stage a session which will not immediately change the state of any components.
+            The "applystaged" endpoint can be called at a later time to trigger the start of this session.
           default: false
       required: [operation, template_name]
       additionalProperties: false
