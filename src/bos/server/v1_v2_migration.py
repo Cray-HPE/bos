@@ -35,6 +35,7 @@ BASEKEY = "/sessionTemplate"
 PROTOCOL = 'http'
 SERVICE_NAME = 'cray-bos'
 ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)
+V1_ENDPOINT = "%s://%s/v1" % (PROTOCOL, SERVICE_NAME)
 
 
 def MissingName():
@@ -101,6 +102,7 @@ def migrate_v1_to_v2_session_templates():
     """
     session = requests_retry_session()
     st_endpoint = "{}/sessiontemplates".format(ENDPOINT)
+    st_v1_endpoint = "{}/sessiontemplate".format(V1_ENDPOINT)
     with BosEtcdClient() as bec:
         for session_template_byte_str, _meta in bec.get_prefix('{}/'.format(BASEKEY)):
             v1_st = json.loads(session_template_byte_str.decode("utf-8"))
@@ -122,7 +124,15 @@ def migrate_v1_to_v2_session_templates():
                 response = session.put("{}/{}".format(st_endpoint, name),
                                                       json=v2_st)
                 if not response.ok:
-                    LOGGER.error("Session template: '{}' was not migrated due "
+                    LOGGER.error("Session template: '{}' was not migrated for v2 due "
+                                 "to error: {}".format(v1_st['name'],
+                                                       response.reason))
+                    LOGGER.error("Error specifics: {}".format(response.text))
+
+                v1_st["name"] = v1_st["name"] + "_v1_deprecated"
+                response = session.post("{}".format(st_v1_endpoint), json=v1_st)
+                if not response.ok:
+                    LOGGER.error("Session template: '{}' was not migrated for v1 due "
                                  "to error: {}".format(v1_st['name'],
                                                        response.reason))
                     LOGGER.error("Error specifics: {}".format(response.text))
