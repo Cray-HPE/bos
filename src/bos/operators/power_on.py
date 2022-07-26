@@ -64,7 +64,7 @@ class PowerOnOperator(BaseOperator):
         except Exception as e:
             raise Exception("An error was encountered while setting BSS information: {}".format(e)) from e
         try:
-            set_cfs(components, enabled=False)
+            set_cfs(components, enabled=False, clear_state=True)
         except Exception as e:
             raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
         component_ids = [component['id'] for component in components]

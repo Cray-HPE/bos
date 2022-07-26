@@ -59,18 +59,21 @@ def patch_components(data, session=None):
         raise
 
 
-def patch_desired_config(node_ids, desired_config, enabled=False, tags=None):
+def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False):
     session = requests_retry_session()
     data = []
     if not tags:
         tags = {}
     for node_id in node_ids:
-        data.append({
+        node_patch = {
             'id': node_id,
             'enabled': enabled,
             'desiredConfig': desired_config,
             'tags': tags
-        })
+        }
+        if clear_state:
+            node_patch['state'] = []
+        data.append(node_patch)
         if len(data) >= PATCH_BATCH_SIZE:
             patch_components(data, session=session)
             data = []
@@ -78,7 +81,7 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None):
         patch_components(data, session=session)
 
 
-def set_cfs(components, enabled):
+def set_cfs(components, enabled, clear_state=False):
     configurations = defaultdict(list)
     for component in components:
         config_name = component.get('desired_state', {}).get('configuration', '')
@@ -88,4 +91,4 @@ def set_cfs(components, enabled):
     for key, ids in configurations.items():
         config_name, bos_session = key
         patch_desired_config(ids, config_name, enabled=enabled,
-                             tags={'bos_session': bos_session})
+                             tags={'bos_session': bos_session}, clear_state=clear_state)
