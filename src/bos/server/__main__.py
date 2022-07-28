@@ -32,6 +32,18 @@ import connexion
 from bos.server import specialized_encoder
 from bos.server.controllers.v2 import options
 
+### Shim so that old pickled records still work
+# Remove when v1 is removed
+import sys
+import bos.server.controllers as controllers
+import bos.server.models as models
+
+models.v1_generic_metadata.GenericMetadata = models.v1_generic_metadata.V1GenericMetadata
+sys.modules['bos.controllers'] = controllers
+sys.modules['bos.models'] = models
+sys.modules['bos.models.generic_metadata'] = models.v1_generic_metadata
+###
+
 LOGGER = logging.getLogger('bos.__main__')
 
 
