@@ -47,6 +47,7 @@ spec:
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
       annotations:
         traffic.sidecar.istio.io/excludeOutboundPorts: "2379,2380,6379"
+        "proxy.istio.io/config": '{ "holdApplicationUntilProxyStarts": true }'        
     spec:
       serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration"
       restartPolicy: Never
@@ -87,3 +88,17 @@ spec:
           - python3
           - "-m"
           - "bos.server.v1_v2_migration"
+        env:
+        - name: APP_VERSION
+          value: 0.0.0-app-version
+        {{ range (index .Values "cray-service" "containers" "cray-bos" "ports") -}}
+        {{if eq .name "http" }}
+        - name: BOS_CONTAINER_PORT
+          value: "{{ .containerPort }}"
+        {{ end }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 9000
+          protocol: TCP
+          

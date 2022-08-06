@@ -22,7 +22,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import json
+from kubernetes import client, config
 import logging
+import os
 
 from bos.server.dbclient import BosEtcdClient
 from bos.operators.utils import requests_retry_session
@@ -34,15 +36,34 @@ BASEKEY = "/sessionTemplate"
 
 PROTOCOL = 'http'
 SERVICE_NAME = 'cray-bos'
-ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)
-V1_ENDPOINT = "%s://%s/v1" % (PROTOCOL, SERVICE_NAME)
-
 
 def MissingName():
     """
     The session template's name is missing
     """
     pass
+
+
+def pod_ip():
+    """
+    Find the IP address for the pod that corresponds to the correct the labels, 
+    specifically 'cray-bos' and the version number of this version of BOS.
+    """
+    pod_ip = None
+    config.load_incluster_config()
+    v1 = client.CoreV1Api()
+    # Find the correct version of the cray-bos pod
+    version = os.getenv('APP_VERSION')
+    if not version:
+        msg = "Could not determine application's version. Therefore could not contact the correct BOS pod. Aborting."
+        LOGGER.error(msg)
+        raise ValueError(msg)
+    pods = v1.list_namespaced_pod("services",
+                                  label_selector=f"app.kubernetes.io/name=cray-bos,app.kubernetes.io/version={version}")
+    # Get the pod's IP address
+    if pods:
+        pod_ip = pods.items[0].status.pod_ip
+    return pod_ip
 
 
 def convert_v1_to_v2(v1_st):
@@ -100,13 +121,16 @@ def migrate_v1_to_v2_session_templates():
     Sanitize the V1 session templates so they conform to the V2 session
     template standards.
     """
+    pod_ip_addr = pod_ip()
+    pod_port = os.getenv('BOS_CONTAINER_PORT')
+    endpoint = f"{PROTOCOL}://{pod_ip_addr}:{pod_port}"
+    st_v2_endpoint = f"{endpoint}/v2/sessiontemplates"
+    st_v1_endpoint = f"{endpoint}/v1/sessiontemplate"
     session = requests_retry_session()
-    st_endpoint = "{}/sessiontemplates".format(ENDPOINT)
-    st_v1_endpoint = "{}/sessiontemplate".format(V1_ENDPOINT)
     with BosEtcdClient() as bec:
         for session_template_byte_str, _meta in bec.get_prefix('{}/'.format(BASEKEY)):
             v1_st = json.loads(session_template_byte_str.decode("utf-8"))
-            response = session.get("{}/{}".format(st_endpoint, v1_st['name']))
+            response = session.get("{}/{}".format(st_v1_endpoint, v1_st['name']))
             if response.status_code == 200:
                 LOGGER.warning("Session template: '{}' already exists. Not "
                                "overwriting.".format(v1_st['name']))
@@ -121,7 +145,7 @@ def migrate_v1_to_v2_session_templates():
                         LOGGER.error("Session template: '{}' was not migrated because it was missing its name.".format(v1_st['name']))
                     else:
                         LOGGER.error("A session template: '{}' was not migrated because it was missing its name.".format(name))
-                response = session.put("{}/{}".format(st_endpoint, name),
+                response = session.put("{}/{}".format(st_v2_endpoint, name),
                                                       json=v2_st)
                 if not response.ok:
                     LOGGER.error("Session template: '{}' was not migrated for v2 due "
