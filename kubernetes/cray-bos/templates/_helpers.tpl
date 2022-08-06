@@ -28,6 +28,7 @@ spec:
       labels:
         app.kubernetes.io/name: {{ include "cray-service.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/version: {{ .Chart.AppVersion }}
       annotations:
         {{- include "cray-service.pod-annotations" . | nindent 8 }}
     spec:

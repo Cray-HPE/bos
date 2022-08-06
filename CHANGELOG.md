@@ -6,12 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.0.0] - 2022-08-17
 ### Added
 - Support for Alpine3.16/python10
 - Updated Build Sources
 - Updated upstream build constraints
 - Support for SLES SP4
 - Build valid unstable charts
+- Migration script for migrating V1 session templates to V2's schema
 
 ### Changed
 - Changed to use the internal HPE network.
