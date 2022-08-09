@@ -9,5 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.6] - 2022-06-23
 ### Added
+- Zero error state of components during session creation.
 - Initial Gitflow/Changelog conversion of BOS repository.
 - Fixes for BOS v2 error handling
