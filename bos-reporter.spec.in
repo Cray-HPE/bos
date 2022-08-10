@@ -32,6 +32,7 @@ Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: python-rpm-macros
 BuildRequires: systemd-rpm-macros
+BuildRequires: python3-base
 Requires: python3-base
 Requires: python3-requests
 Requires: systemd
@@ -51,6 +52,7 @@ BOS' Boot Artifact ID for a node throughout its booted life.
 
 %build
 pushd ./src
+pip3 install setuptools
 /usr/bin/python3 setup.py build
 popd
 
