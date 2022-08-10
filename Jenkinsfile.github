@@ -209,7 +209,7 @@ pipeline {
 
         stage("Test RPM Publish") {
                 // BOS doesn't use this test RPM anylonger; disabling until we have a use for it.
-	            // steps {
+	            steps {
 	            //    script {
 	            //        publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
 	            //        publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
