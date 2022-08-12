@@ -25,7 +25,7 @@ import connexion
 import logging
 
 from bos.common.utils import get_current_timestamp
-from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE
+from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
@@ -308,7 +308,8 @@ def post_v2_apply_staged():
                     response["succeeded"].append(xname)
                 else:
                     response["ignored"].append(xname)
-            except Exception:
+            except Exception as err:
+                LOGGER.error(f"An error was encountered while attempting to apply stage for node {xname}: {err}")
                 response["failed"].append(xname)
     except Exception as err:
         return connexion.problem(
@@ -407,12 +408,11 @@ def _populate_boot_artifacts(data):
         pass
     else:
         # Populate the boot artifacts using the bss_token
-        try:
-            boot_artifacts = get_boot_artifacts(token)
-        except BssTokenUnknown:
-            LOGGER.error(f"Reported BSS Token: {token} is unknown.")
-        else:
-            data['actual_state']['boot_artifacts'] = boot_artifacts
+        if token:
+            try:
+                data['actual_state']['boot_artifacts'] = get_boot_artifacts(token)
+            except BssTokenUnknown:
+                LOGGER.warn(f"Reported BSS Token: {token} is unknown.")
     return data
 
 
