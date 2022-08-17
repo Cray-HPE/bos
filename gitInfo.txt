@@ -1,1 +1,0 @@
-Did you forget to run the gitInfo.sh script before the build?
