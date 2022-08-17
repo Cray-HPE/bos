@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support for SLES SP4
 - Build valid unstable charts
 - Migration script for migrating V1 session templates to V2's schema
+- Add overrides for pvc storage class
 
 ### Changed
 - Changed to use the internal HPE network.

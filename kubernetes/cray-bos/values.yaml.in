@@ -14,6 +14,8 @@ database:
   image:
     repository: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis
     tag: 5.0-alpine3.12
+  storageClass: ceph-cephfs-external
+  accessMode: ReadWriteMany
 cray-service:
   podLabels:
     app.kubernetes.io/version: 0.0.0-app-version
