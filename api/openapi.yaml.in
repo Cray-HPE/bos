@@ -102,7 +102,7 @@ components:
       description: Service health status
       type: object
       properties:
-        etcdStatus:
+        dbStatus:
           type: string
         apiStatus:
           type: string
