@@ -52,6 +52,6 @@ def get_v2_healthz():
     :rtype: Healthz
     """
     return Healthz(
-        redis_status=_get_db_status,
+        db_status=_get_db_status(),
         api_status='ok',
     ), 200
