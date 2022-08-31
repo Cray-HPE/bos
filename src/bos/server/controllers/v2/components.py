@@ -302,7 +302,7 @@ def post_v2_apply_staged():
     response = {"succeeded": [], "failed": [], "ignored": []}
     # Obtain latest desired behavior for how to clear staging information
     # for all components
-    clear_staged = get_v2_options_data.get('clear_completed_stage', False)
+    clear_staged = get_v2_options_data.get('clear_stage', False)
     try:
         data = connexion.request.get_json()
         xnames = data.get("xnames", [])
