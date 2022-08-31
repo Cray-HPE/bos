@@ -27,6 +27,7 @@ import logging
 from bos.common.utils import get_current_timestamp
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.v2.opt import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.components')
@@ -299,12 +300,15 @@ def post_v2_apply_staged():
     """Used by the POST /applystaged API operation"""
     LOGGER.debug("POST /applystaged invoked post_v2_apply_staged")
     response = {"succeeded": [], "failed": [], "ignored": []}
+    # Obtain latest desired behavior for how to clear staging information
+    # for all components
+    clear_staged = get_v2_options_data.get('clear_completed_stage', False)
     try:
         data = connexion.request.get_json()
         xnames = data.get("xnames", [])
         for xname in xnames:
             try:
-                if _apply_staged(xname):
+                if _apply_staged(xname, clear_staged):
                     response["succeeded"].append(xname)
                 else:
                     response["ignored"].append(xname)
@@ -318,7 +322,7 @@ def post_v2_apply_staged():
     return response, 200
 
 
-def _apply_staged(component_id):
+def _apply_staged(component_id, clear_staged=False):
     if component_id not in DB:
         return False
     data = DB.get(component_id)
@@ -336,7 +340,8 @@ def _apply_staged(component_id):
         # For both the successful and failed cases, we want the new session to own the node
         data["session"] = staged_session_id
         data["last_action"]["action"] = Action.apply_staged
-        data["staged_state"] = EMPTY_STAGED_STATE
+        if clear_staged:
+            data["staged_state"] = EMPTY_STAGED_STATE
         _set_auto_fields(data)
         DB.put(component_id, data)
     return response

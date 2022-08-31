@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Migration script for migrating V1 session templates to V2's schema
 - Abstracting v1 andd v2 healthz endpoint to be database agnostic
 - Add overrides for pvc storage class
+- Adds option for persisting component staged information via a new option 'clear_completed_stage'
 
 ### Changed
 - Changed to use the internal HPE network.
