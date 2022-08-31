@@ -27,7 +27,7 @@ import logging
 from bos.common.utils import get_current_timestamp
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
-from bos.server.controllers.v2.opt import get_v2_options_data
+from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.components')
