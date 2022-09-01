@@ -1177,6 +1177,9 @@ components:
         cleanup_completed_session_ttl:
           type: string
           description: Delete complete sessions that are older than cleanup_completed_session_ttl (in hours). 0h disables cleanup behavior.
+        clear_stage:
+          type: boolean
+          description: Allows components staged information to be cleared when the requested staging action has been started. Defaults to false.
         component_actual_state_ttl:
           type: string
           description: The maximum amount of time a component's actual state is considered valid (in hours). 0h disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
