@@ -44,9 +44,9 @@ def v1_get_healthz():
         bec.put('health', 'ok')
         value, _ = bec.get('health')
         if value.decode('utf-8') != 'ok':
-            return Healthz(etcd_status='Failed to read from cluster',
+            return Healthz(db_status='Failed to read from cluster',
                            api_status='Not Ready'), 503
     return Healthz(
-        etcd_status='ok',
+        db_status='ok',
         api_status='ok',
     ), 200

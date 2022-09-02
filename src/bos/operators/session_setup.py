@@ -205,6 +205,7 @@ class Session:
             data["enabled"] = True
             # Set node's last_action
             data["last_action"] = {"action": Action.session_setup}
+        data['error'] = ''
         return data
 
     def _generate_desired_state(self, boot_set):

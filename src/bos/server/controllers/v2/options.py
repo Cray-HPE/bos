@@ -37,6 +37,7 @@ DB = dbutils.get_wrapper(db='options')
 OPTIONS_KEY = 'options'
 DEFAULTS = {
     'cleanup_completed_session_ttl': "7d",
+    'clear_stage': False,
     'component_actual_state_ttl': "4h",
     'disable_components_on_completion': True,
     'discovery_frequency': 5*60,
