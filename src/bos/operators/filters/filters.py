@@ -96,12 +96,16 @@ class NOT(LocalFilter):
 
     def __init__(self, filter: Type[LocalFilter]) -> None:
         self.negated_filter = filter
+        self.filter_match = filter._match
+        def negated_match(*args, **kwargs):
+            return not self.filter_match(*args, **kwargs)
+        self.negated_filter._match = negated_match
 
     def _filter(self, components: List[dict]) -> List[dict]:
         return self.negated_filter._filter(components)
 
     def _match(self, components: dict):
-        return not self.negated_filter._match(components)
+        return self.negated_filter._match(components)
 
 
 class TimeSinceLastAction(LocalFilter):

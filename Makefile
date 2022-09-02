@@ -28,6 +28,7 @@ NAME ?= cray-bos
 CHART_PATH ?= kubernetes
 DOCKER_VERSION ?= $(shell head -1 .docker_version)
 RPM_VERSION ?= $(shell head -1 .version)
+RPM_RELEASE ?= $(shell head -1 .rpm_release)
 API_VERSION ?= $(shell head -1 .api_version)
 CHART_VERSION ?= $(shell head -1 .chart_version)
 
@@ -46,14 +47,14 @@ SRC_RPM_IMAGE_DIR ?= dist/rpmbuild/SRPMS
 RPTR_BUILD_DIR ?= $(PWD)/dist/bos-rptr-rpmbuild
 RPTR_SPEC_NAME ?= bos-reporter
 RPTR_SPEC_FILE ?= ${RPTR_SPEC_NAME}.spec
-RPTR_SOURCE_NAME ?= ${RPTR_SPEC_NAME}-${RPM_VERSION}
+RPTR_SOURCE_NAME ?= ${RPTR_SPEC_NAME}-${RPM_VERSION}-${RPM_RELEASE}
 RPTR_SOURCE_PATH := ${RPTR_BUILD_DIR}/SOURCES/${RPTR_SOURCE_NAME}.tar.bz2
 
 # Test RPM variables
 TEST_BUILD_DIR ?= $(PWD)/dist/bos-test-rpmbuild
 TEST_SPEC_NAME ?= bos-crayctldeploy-test
 TEST_SPEC_FILE ?= ${TEST_SPEC_NAME}.spec
-TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}
+TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}-${RPM_RELEASE}
 TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
 
 all : runbuildprep lint image chart rptr_rpm test_rpm
@@ -99,6 +100,7 @@ rptr_rpm_prepare:
 		mkdir -p $(RPTR_BUILD_DIR)/SPECS \
 				 $(RPTR_BUILD_DIR)/SOURCES
 		cp $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/
+		cat $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/bos-reporter.spec
 
 image:
 		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .

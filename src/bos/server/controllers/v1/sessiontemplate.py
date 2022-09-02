@@ -28,15 +28,15 @@ import connexion
 import json
 import wget
 import os
-from connexion.lifecycle import ConnexionResponse
 
+from bos.server import redis_db_utils as dbutils
 from bos.server.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
-from bos.server.dbclient import BosEtcdClient
 from bos.server.utils import _canonize_xname
-from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, put_v2_sessiontemplate, delete_v2_sessiontemplate
+from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, delete_v2_sessiontemplate
 
 LOGGER = logging.getLogger('bos.server.controllers.v1.sessiontemplate')
-BASEKEY = "/sessionTemplate"
+DB = dbutils.get_wrapper(db='session_templates')
+
 
 EXAMPLE_BOOT_SET = {
     "type": "your-boot-type",
@@ -78,6 +78,7 @@ def sanitize_xnames(st_json):
     return st_json
 
 
+@dbutils.redis_error_handler
 def create_v1_sessiontemplate():  # noqa: E501
     """POST /v1/sessiontemplate
 
@@ -150,7 +151,7 @@ def create_v1_sessiontemplate():  # noqa: E501
            result in an HTTP 409 Conflict. TBD.
         """
         sessiontemplate_name = st_json['name']
-        put_v2_sessiontemplate(sessiontemplate_name)
+        DB.put(sessiontemplate_name, st_json)
         return sessiontemplate_name, 201
 
     if sessiontemplate.name:
@@ -161,7 +162,8 @@ def create_v1_sessiontemplate():  # noqa: E501
            This could also be changed to result in an HTTP 409 Conflict. TBD.
         """
         LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
-        put_v2_sessiontemplate(sessiontemplate.name)
+        st_json = connexion.request.get_json()
+        DB.put(sessiontemplate.name, st_json)
         return sessiontemplate.name, 201
 
 

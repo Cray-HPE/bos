@@ -31,7 +31,7 @@ import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.capmc as capmc
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, DesiredConfigurationSetInCFS, DesiredConfigurationIsNone, OR
+from bos.operators.filters import BOSQuery, HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger('bos.operators.power_on')
@@ -64,7 +64,7 @@ class PowerOnOperator(BaseOperator):
         except Exception as e:
             raise Exception("An error was encountered while setting BSS information: {}".format(e)) from e
         try:
-            set_cfs(components, enabled=False)
+            set_cfs(components, enabled=False, clear_state=True)
         except Exception as e:
             raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
         component_ids = [component['id'] for component in components]
