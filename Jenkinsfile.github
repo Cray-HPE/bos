@@ -100,7 +100,6 @@ pipeline {
                     }
                 }
             }
-        }
 
         stage('Publish ') {
             parallel {
