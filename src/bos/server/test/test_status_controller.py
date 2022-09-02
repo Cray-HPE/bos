@@ -329,7 +329,7 @@ class MockResponse():
 
     @staticmethod
     def get_json():
-        return copy.deepcoy(example_boot_set)
+        return copy.deepcopy(example_boot_set)
 
 
 class MockResponse1():
