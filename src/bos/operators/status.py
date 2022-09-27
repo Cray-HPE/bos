@@ -71,7 +71,7 @@ class StatusOperator(BaseOperator):
         components = self.bos_client.components.get_components(enabled=True)
         component_ids = [component['id'] for component in components]
         power_states, _failed_nodes = get_power_states(component_ids)
-        cfs_states = self._get_cfs_components(','.join(component_ids))
+        cfs_states = self._get_cfs_components()
         updated_components = []
         if components:
             # Recreate these filters to pull in the latest options values
@@ -90,8 +90,14 @@ class StatusOperator(BaseOperator):
         self.bos_client.components.update_components(updated_components)
 
     @staticmethod
-    def _get_cfs_components(component_ids):
-        cfs_data = get_cfs_components(ids=component_ids)
+    def _get_cfs_components():
+        """
+        Gets all the components from CFS.
+        We used to get only the components of interest, but that caused an HTTP request
+        that was longer than uwsgi could handle when the number of nodes was very large.
+        Requesting all components means none need to be specified in the request.
+        """
+        cfs_data = get_cfs_components()
         cfs_states = {}
         for component in cfs_data:
             cfs_states[component['id']] = component
