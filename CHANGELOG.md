@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2022-09-28
+### Added
+- Query CFS for all components' status, not select components
+
 ## [2.0.0] - 2022-08-17
 ### Added
 - Support for Alpine3.16/python10
