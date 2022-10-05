@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.2] - 2022-10-05
+### Fixed
+- Fixed v2 extended status error reporting
+
 ## [2.0.1] - 2022-09-28
 ### Added
 - Query CFS for all components' status, not select components
