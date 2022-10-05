@@ -286,7 +286,7 @@ def _get_v2_session_status(session_id, session=None):
             component_errors_data[component.get('error')].add(component.get('id'))
     component_errors = {}
     for error, components in component_errors_data.items():
-        component_list = ','.join(components[:MAX_COMPONENTS_IN_ERROR_DETAILS])
+        component_list = ','.join(list(components)[:MAX_COMPONENTS_IN_ERROR_DETAILS])
         if len(components) > MAX_COMPONENTS_IN_ERROR_DETAILS:
             component_list += '...'
         component_errors[error] = {'count': len(components), 'list': component_list}
