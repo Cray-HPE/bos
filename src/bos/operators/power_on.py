@@ -99,6 +99,7 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in parameters.items():
             kernel, kernel_parameters, initrd = key
             try:
+                LOGGER.debug("!!!!!!!!!!!!!Setting BSS information")
                 resp = bss.set_bss(node_set=nodes, kernel_params=kernel_parameters,
                                    kernel=kernel, initrd=initrd)
                 resp.raise_for_status()
@@ -107,7 +108,11 @@ class PowerOnOperator(BaseOperator):
                              "nodes: {nodes}. Error: {err}")
             else:
                 token = resp.headers['bss-referral-token']
-                record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                try:
+                    record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                except Exception as err:
+                    LOGGER.debug(f"!!!!!!!!!!!!!Done broke:{err}")
+                    raise
 
                 for node in nodes:
                     bss_tokens.append({"id": node,

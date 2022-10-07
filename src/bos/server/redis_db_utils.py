@@ -92,8 +92,12 @@ class DBWrapper():
     def put(self, key, new_data):
         """Put data in to the database, replacing any old data."""
         datastr = json.dumps(new_data)
+        LOGGER.debug(f"!!!!!!!!!!!!!New data:{new_data}")
         self.client.set(key, datastr)
-        return self.get(key)
+        LOGGER.debug(f"!!!!!!!!!!!!!New data:{datastr}")
+        data = self.get(key)
+        LOGGER.debug(f"!!!!!!!!!!!!!New data:{data}")
+        return data
 
     def patch(self, key, new_data, data_handler=None):
         """Patch data in the database."""
