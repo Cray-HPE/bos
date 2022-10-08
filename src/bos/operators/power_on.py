@@ -74,12 +74,15 @@ class PowerOnOperator(BaseOperator):
             raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
         return components
 
-    def _set_bss(self, components):
+    def _set_bss(self, components, retries=5):
         """
         Set the boot artifacts (kernel, kernel parameters, and initrd) in BSS.
         Receive a BSS_REFERRAL_TOKEN from BSS.
         Map the token to the boot artifacts.
         Update each node's desired state with the token.
+        
+        Because the connection to the BSS tokens database can be lost due to 
+        infrequent use, retry up to retries number of times.
         """
         parameters = defaultdict(set)
         sessions = {}
@@ -107,7 +110,17 @@ class PowerOnOperator(BaseOperator):
                              "nodes: {nodes}. Error: {err}")
             else:
                 token = resp.headers['bss-referral-token']
-                record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                attempts = 0
+                while attempts <= retries:
+                    try:
+                        record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                        break
+                    except Exception as err:
+                        attempts += 1
+                        LOGGER.error(f"An error occurred attempting to record the BSS token: {err}")
+                        if attempts > retries:
+                            raise
+                        LOGGER.info("Retrying to record the BSS token.")
 
                 for node in nodes:
                     bss_tokens.append({"id": node,
