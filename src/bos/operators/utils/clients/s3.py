@@ -183,7 +183,7 @@ class S3Object:
           S3 Object
           
         Raises:
-          boto3.execptions.ClientError -- when it cannot read from S3        
+          boto3.exceptions.ClientError -- when it cannot read from S3        
         """
 
         s3 = s3_client()
@@ -222,7 +222,7 @@ class S3BootArtifacts(S3Object):
           Manifest file in JSON format
           
         Raises:
-          boto3.execptions.ClientError -- when it cannot read from S3        
+          boto3.exceptions.ClientError -- when it cannot read from S3        
         """
 
         if self._manifest_json:

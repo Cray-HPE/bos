@@ -334,7 +334,7 @@ components:
         A boot set defines a collection of nodes and the information about the
         boot artifacts and parameters to be sent to each node over the specified
         network to enable these nodes to boot. When multiple boot sets are used
-        in a session template, the boot_ordinal and shtudown_ordinal indicate
+        in a session template, the boot_ordinal and shutdown_ordinal indicate
         the order in which boot sets need to be acted upon. Boot sets sharing
         the same ordinal number will be addressed at the same time.
       type: object

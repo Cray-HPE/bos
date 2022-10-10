@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Query CFS for all components' status, not select components
 
 ## [2.0.3] - 2022-10-08
 ### Fixed
@@ -34,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed to use the internal HPE network.
 - Remove length restriction from v1 sessiontemplate names
 - Updated v1/v2 migration of sessiontemplates to retain a v1 copy
+- Spelling corrections.
 
 ## [1.2.6] - 2022-06-23
 ### Added
