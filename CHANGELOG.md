@@ -7,9 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.4] - 2022-10-11
+### Fixed
+- Increased timeout values for v2
+
 ## [2.0.3] - 2022-10-08
 ### Fixed
 - Added a retry when the BOS power-on operator records the BSS tokens
+
 ## [2.0.2] - 2022-10-05
 ### Fixed
 - Fixed v2 extended status error reporting
