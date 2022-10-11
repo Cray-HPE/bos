@@ -9,12 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Query CFS for all components' status, not select components
 
+## [2.0.3] - 2022-10-08
+### Fixed
+- Added a retry when the BOS power-on operator records the BSS tokens
 ## [2.0.2] - 2022-10-05
 ### Fixed
 - Fixed v2 extended status error reporting
 
 ## [2.0.1] - 2022-09-28
-### Added
+### Fixed
 - Query CFS for all components' status, not select components
 
 ## [2.0.0] - 2022-08-17
