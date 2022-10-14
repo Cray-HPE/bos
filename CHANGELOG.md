@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Query CFS for all components' status, not select components
 
+## [2.0.5] - 2022-10-14
+### Fixed
+- Fixed staged shutdowns for v2
+
 ## [2.0.4] - 2022-10-11
 ### Fixed
 - Increased timeout values for v2
