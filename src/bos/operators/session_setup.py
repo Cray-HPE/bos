@@ -32,7 +32,7 @@ from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFac
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
-from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
+from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 
 LOGGER = logging.getLogger('bos.operators.session_setup')
 
@@ -195,7 +195,7 @@ class Session:
         stage = self.session_data.get("stage", False)
         data = {"id": component_id}
         if stage:
-            data["staged_state"] = self._generate_desired_state(boot_set)
+            data["staged_state"] = self._generate_desired_state(boot_set, staged=True)
             data["staged_state"]["session"] = self.name
         else:
             data["desired_state"] = self._generate_desired_state(boot_set)
@@ -208,10 +208,12 @@ class Session:
         data['error'] = ''
         return data
 
-    def _generate_desired_state(self, boot_set):
+    def _generate_desired_state(self, boot_set, staged=False):
         if self.operation_type == "shutdown":
-            state = EMPTY_DESIRED_STATE
-            return state
+            if staged:
+                return EMPTY_STAGED_STATE
+            else:
+                return EMPTY_DESIRED_STATE
         else:
             state = self._get_state_from_boot_set(boot_set)
             return state
