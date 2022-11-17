@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Query CFS for all components' status, not select components
+- Authenticate to CSM's artifactory
 
 ## [2.0.5] - 2022-10-14
 ### Fixed
