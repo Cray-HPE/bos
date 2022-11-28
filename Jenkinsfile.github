@@ -19,6 +19,7 @@ pipeline {
         RPTR_SPEC_FILE = "bos-reporter.spec"
         TEST_SPEC_FILE = "bos-crayctldeploy-test.spec"
         IS_STABLE = getBuildIsStable()
+	DOCKER_BUILDKIT = "1"
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
         PUBLISH_SP2 = "sle-15sp2"
         PUBLISH_SP3 = "sle-15sp3"        

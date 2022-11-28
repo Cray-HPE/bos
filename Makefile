@@ -32,6 +32,10 @@ CHART_VERSION ?= $(shell head -1 .chart_version)
 
 HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
 
+ifneq ($(wildcard ${HOME}/.netrc),)
+	DOCKER_ARGS ?= --secret id=netrc,src=${HOME}/.netrc
+endif
+
 # Common RPM variables
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 
