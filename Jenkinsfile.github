@@ -173,13 +173,14 @@ pipeline {
 	                sh "make rpm_build_source_clean"
 	            }
 	     }
-		     
-		stage("Test RPM Build") {
+
+       stage("Test RPM Build") {
 	        steps {
 	        	sh "make test_rpm_prepare"
-	            sh "make test_rpm"
-            }
-        }
+			sh "make test_rpm"
+       		    }
+	}		  
+ 
 
         stage("Test RPM Publish") {
 	            steps {
@@ -190,6 +191,6 @@ pipeline {
 	                sh "make rpm_build_clean"
 	                sh "make rpm_build_source_clean"
 	            }
-	     }
-    }
+	}
+    }	     	
 }
