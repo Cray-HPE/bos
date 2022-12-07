@@ -42,6 +42,7 @@ pipeline {
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
         RPTR_SPEC_FILE = "bos-reporter.spec"
         IS_STABLE = getBuildIsStable()
+	DOCKER_BUILDKIT = "1"
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
         PUBLISH_SP2 = "sle-15sp2"
         PUBLISH_SP3 = "sle-15sp3"
@@ -100,6 +101,7 @@ pipeline {
                     }
                 }
             }
+
         stage('Publish ') {
             parallel {
                 stage('Image and Chart') {

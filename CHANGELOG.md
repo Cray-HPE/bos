@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.6] - 2022-11-30
+### Added
+- Query CFS for all components' status, not select components
+- Authenticate to CSM's artifactory
+
 ## [2.0.5] - 2022-10-14
 ### Fixed
 - Fixed staged shutdowns for v2
@@ -43,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Changed to use the internal HPE network.
 - Remove length restriction from v1 sessiontemplate names
 - Updated v1/v2 migration of sessiontemplates to retain a v1 copy
+- Spelling corrections.
 
 ## [1.2.6] - 2022-06-23
 ### Added

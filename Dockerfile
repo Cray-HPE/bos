@@ -58,7 +58,7 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
     apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     apk -U upgrade --no-cache && \
     pip3 install --no-cache-dir -U pip
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
 RUN cd lib && pip3 install --no-cache-dir .
 
 # Testing image
@@ -67,7 +67,7 @@ WORKDIR /app
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
 RUN apk add --no-cache --repository https://arti.hpc.amslabs.hpecorp.net/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
-RUN cd /app && pip3 install --no-cache-dir -r test-requirements.txt
+RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && pip3 install --no-cache-dir -r test-requirements.txt
 CMD [ "./docker_test_entry.sh" ]
 
 # Codestyle reporting
