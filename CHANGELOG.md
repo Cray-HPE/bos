@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Query CFS for all components' status, not select components
 - Authenticate to CSM's artifactory
+### Changed
+- Allow users to omit rootfs=<value> so that they may specify the exact desired value in sessiontemplate parameters.
 
 ## [2.0.5] - 2022-10-14
 ### Fixed
