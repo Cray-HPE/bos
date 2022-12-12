@@ -1,5 +1,5 @@
 # Dockerfile for Cray Boot Orchestration Service (BOS)
-# Copyright 2019-2021 Hewlett Packard Enterprise Development LP
+# Copyright 2019-2022 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -55,8 +55,8 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
 	apk update && \
     apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     apk -U upgrade --no-cache && \
-    pip3 install --no-cache-dir -U pip && \
-    pip3 install --no-cache-dir -r requirements.txt
+    pip3 install --no-cache-dir -U pip
+RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
 COPY src/ /app/lib
 RUN cd /app/lib && pip3 install --no-cache-dir .
 
@@ -66,8 +66,8 @@ WORKDIR /app/
 COPY src/server/bos/test lib/server/bos/test/
 COPY docker_test_entry.sh .
 COPY test-requirements.txt .
-RUN apk add --no-cache --repository https://arti.dev.cray.com/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
-RUN pip3 install --no-cache-dir -r test-requirements.txt
+RUN apk add --no-cache --repository https://arti.hpc.amslabs.hpecorp.net/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
+RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && pip3 install --no-cache-dir -r test-requirements.txt
 CMD [ "./docker_test_entry.sh" ]
 
 # Codestyle reporting

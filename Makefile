@@ -32,6 +32,10 @@ CHART_VERSION ?= $(shell head -1 .chart_version)
 
 HELM_UNITTEST_IMAGE ?= quintush/helm-unittest:3.3.0-0.2.5
 
+ifneq ($(wildcard ${HOME}/.netrc),)
+	DOCKER_ARGS ?= --secret id=netrc,src=${HOME}/.netrc
+endif
+
 # Common RPM variables
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 
@@ -48,24 +52,15 @@ RPTR_SPEC_FILE ?= ${RPTR_SPEC_NAME}.spec
 RPTR_SOURCE_NAME ?= ${RPTR_SPEC_NAME}-${RPM_VERSION}
 RPTR_SOURCE_PATH := ${RPTR_BUILD_DIR}/SOURCES/${RPTR_SOURCE_NAME}.tar.bz2
 
-# Test RPM variables
-TEST_BUILD_DIR ?= $(PWD)/dist/bos-test-rpmbuild
-TEST_SPEC_NAME ?= bos-crayctldeploy-test
-TEST_SPEC_FILE ?= ${TEST_SPEC_NAME}.spec
-TEST_SOURCE_NAME ?= ${TEST_SPEC_NAME}-${RPM_VERSION}
-TEST_SOURCE_PATH := ${TEST_BUILD_DIR}/SOURCES/${TEST_SOURCE_NAME}.tar.bz2
-
-all : runbuildprep lint image chart rptr_rpm test_rpm
+all : runbuildprep lint image chart rptr_rpm
 local: cms_meta_tools runbuildprep image chart_setup chart_package
 chart: chart_setup chart_package chart_test
 rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
-test_rpm: test_rpm_package_source test_rpm_build_source test_rpm_build
 
 clone_input_files:
 		cp ${CHART_PATH}/${NAME}/Chart.yaml.in ${CHART_PATH}/${NAME}/Chart.yaml
 		cp ${CHART_PATH}/${NAME}/values.yaml.in ${CHART_PATH}/${NAME}/values.yaml
 		cp bos-reporter.spec.in bos-reporter.spec
-		cp bos-crayctldeploy-test.spec.in bos-crayctldeploy-test.spec
 		cp src/setup.py.in src/setup.py
 		cp api/openapi.yaml.in api/openapi.yaml
 
@@ -87,11 +82,6 @@ lint:
 rpm_prepare:
 		mkdir -p $(RPM_IMAGE_DIR) \
 				 $(SRC_RPM_IMAGE_DIR)
-test_rpm_prepare:
-		rm -rf $(TEST_BUILD_DIR)
-		mkdir -p $(TEST_BUILD_DIR)/SPECS \
-				 $(TEST_BUILD_DIR)/SOURCES
-		cp $(TEST_SPEC_FILE) $(TEST_BUILD_DIR)/SPECS/
 
 rptr_rpm_prepare:
 		rm -rf $(RPTR_BUILD_DIR)
@@ -124,25 +114,11 @@ rptr_rpm_build:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(RPTR_SPEC_FILE) --define "_topdir $(RPTR_BUILD_DIR)"
 		cp $(RPTR_BUILD_DIR)/RPMS/x86_64/*.rpm $(RPM_IMAGE_DIR)
 
-test_rpm_package_source:
-		tar --transform 'flags=r;s,^,/$(TEST_SOURCE_NAME)/,' -cvjf $(TEST_SOURCE_PATH) \
-			./${TEST_SPEC_FILE} \
-			./ct-tests \
-			./LICENSE
-
 rpm_build_clean:
 		rm -rf $(RPM_IMAGE_DIR)/*
 
 rpm_build_source_clean:
 		rm -rf $(SRC_RPM_IMAGE_DIR)/*
-
-test_rpm_build_source:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -vv -ts $(TEST_SOURCE_PATH) --define "_topdir $(TEST_BUILD_DIR)"
-		cp $(TEST_BUILD_DIR)/SRPMS/*.rpm $(SRC_RPM_IMAGE_DIR)
-
-test_rpm_build:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -vv -ba $(TEST_SPEC_FILE) --define "_topdir $(TEST_BUILD_DIR)"
-		cp $(TEST_BUILD_DIR)/RPMS/x86_64/*.rpm $(RPM_IMAGE_DIR)
 
 # Note from Mitch Harding regarding the use of separate BUILD_DIRs for the two RPMs in this repo.
 # 
