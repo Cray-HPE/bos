@@ -17,7 +17,6 @@ pipeline {
         REPORTER_NAME = "bos-reporter"
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
         RPTR_SPEC_FILE = "bos-reporter.spec"
-        TEST_SPEC_FILE = "bos-crayctldeploy-test.spec"
         IS_STABLE = getBuildIsStable()
 	DOCKER_BUILDKIT = "1"
         BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
@@ -53,19 +52,9 @@ pipeline {
         }
 
         stage("Add RPM Metadata") {
-            parallel {
-                stage('bos-reporter') {
-                    steps {
-                        echo "RPM build metadata is ${env.BUILD_METADATA}"
-                        runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
-                    }
-                }
-
-                stage('bos tests') {
-                    steps {
-                        runLibraryScript("addRpmMetaData.sh", env.TEST_SPEC_FILE)
-                    }
-                }
+            steps {
+                echo "RPM build metadata is ${env.BUILD_METADATA}"
+                runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
             }
         }
 
@@ -173,24 +162,5 @@ pipeline {
 	                sh "make rpm_build_source_clean"
 	            }
 	     }
-
-       stage("Test RPM Build") {
-	        steps {
-	        	sh "make test_rpm_prepare"
-			sh "make test_rpm"
-       		    }
-	}		  
- 
-
-        stage("Test RPM Publish") {
-	            steps {
-	                script {
-	                    publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", arch: "x86_64", isStable: env.IS_STABLE)
-	                    publishCsmRpms(component: env.TEST_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", arch: "src", isStable: env.IS_STABLE)
-	                }
-	                sh "make rpm_build_clean"
-	                sh "make rpm_build_source_clean"
-	            }
-	}
     }	     	
 }
