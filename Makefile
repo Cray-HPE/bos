@@ -110,6 +110,7 @@ image:
 		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
 
 chart_package:
+		helm repo list
 		helm dep up ${CHART_PATH}/${NAME}
 		helm package ${CHART_PATH}/${NAME} -d ${CHART_PATH}/.packaged --app-version ${DOCKER_VERSION} --version ${CHART_VERSION}
 
