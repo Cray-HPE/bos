@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2020-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -111,7 +111,7 @@ class Metadata(object):
         This method is expected to be overridden.
 
         Returns:
-          True or False  
+          True or False
         """
         return False
 
@@ -122,15 +122,12 @@ class Metadata(object):
         This method is expected to be overridden.
 
         Returns:
-          An error count (integer)  
+          An error count (integer)
         """
         return 0
 
 
 class MetadataSession(Metadata):
-    DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S.%f"
-    A_LONG_TIME_AGO = datetime.datetime(year=1970, month=1, day=1)
-
     def __init__(self, session, start=None):
         self.session = session
         self._boot_sets = []
@@ -139,7 +136,7 @@ class MetadataSession(Metadata):
     @property
     def boot_sets(self):
         """
-        Loads all of the Boot Sets in the session from the database. 
+        Loads all of the Boot Sets in the session from the database.
         This will only get the Boot Sets one time and cache them.
         """
         if not self.session.boot_sets:
@@ -157,12 +154,7 @@ class MetadataSession(Metadata):
         Returns:
           complete (bool): True if the Session is in progress. False if it is not.
         """
-        in_progress = False
-        for bs in self.boot_sets:
-            if bs.metadata.in_progress:
-                in_progress = True
-                break
-        return in_progress
+        return not self.complete
 
     @property
     def error_count(self):
@@ -175,29 +167,10 @@ class MetadataSession(Metadata):
             count += bs.metadata.error_count
         return count
 
-    @property
-    def start_date(self):
-        try:
-            return datetime.datetime(self.metadata.start_time, self.DATETIME_FORMAT)
-        except:  # noqa: E722
-            return self.A_LONG_TIME_AGO
-
-    @property
-    def end_date(self):
-        try:
-            return datetime.datetime(self.metadata.stop_time, self.DATETIME_FORMAT)
-        except:  # noqa: E722
-            return self.A_LONG_TIME_AGO
 
     @property
     def complete(self):
-        """
-        We operationally define completion as any session that is started sooner than
-        it has stopped. This means that it is imperative that BOA marks the end time of
-        the session for this logic to make sense. In short, your status records are only
-        as accurate as you can keep them.
-        """
-        return self.start_date > self.end_date
+        return bool(self.stop_time)
 
 
 class MetadataBootSet(Metadata):
@@ -269,7 +242,7 @@ class MetadataPhase(Metadata):
     def complete(self):
         """
         The Phase is complete if there are no nodes in the not_started or in_progress
-        categories. Is that true? What about in the failed state? 
+        categories. Is that true? What about in the failed state?
 
         Returns:
           complete (bool): True if the Boot Set is complete. False if it is not.
@@ -283,7 +256,7 @@ class MetadataPhase(Metadata):
     @property
     def error_count(self):
         """
-        The number of nodes that have failed in a phase. 
+        The number of nodes that have failed in a phase.
         """
         return len(self.boot_set.get_category(self.phase.name, 'failed').node_list)
 
@@ -293,7 +266,7 @@ class BootSet(BootSetStatus):
     A Boot Set operates on one or more nodes. This operation will have one or more phases.
     This records the status for a Boot Set.
 
-    The BootSet is a composite of the BootSetStatus and various useful methods. 
+    The BootSet is a composite of the BootSetStatus and various useful methods.
     I did not make it a subclass of BootSetStatus because I need to convert it back to
     the BootSetStatus when I return it. It is easier to return just an attribute of
     this class rather than attempting to strip out the methods.
@@ -352,7 +325,7 @@ class BootSet(BootSetStatus):
 
     def save(self):
         """
-        Save the Boot Set 
+        Save the Boot Set
         """
         with BosEtcdClient() as bec:
             key = "{}/{}/status/{}".format(BASEKEY, self.session, self.name)
@@ -397,14 +370,14 @@ class BootSet(BootSetStatus):
 
     def update_nodes(self, phase, source, destination, nodes):
         """
-        Update a phase's status. This involves moving a node from one category 
+        Update a phase's status. This involves moving a node from one category
         to another.
 
         Args:
           phase (string): The phase we are updating
           source (string): The category the node started in
           destination (string): The category the node moved to
-          nodes (set): The nodes moving 
+          nodes (set): The nodes moving
         """
         try:
 
@@ -595,7 +568,7 @@ class SessionStatus(SessionStatusModel):
 
     def save(self):
         """
-        Save the Session 
+        Save the Session
         """
         with BosEtcdClient() as bec:
             key = "{}/{}/status".format(BASEKEY, self.id)
@@ -673,7 +646,7 @@ def create_v1_session_status(session_id):
 
 def create_v1_boot_set_status(session_id, boot_set_name):
     """
-    Create a Status for Boot Set 
+    Create a Status for Boot Set
 
     Args:
         session (string): Session ID
