@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Fixed
 - Fixed inconsistent indentation in Jenkinsfile.
+- Linting of openapi spec (no content changes)
 ### Removed
 - Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
 - Remove now-unused remnants of the former dynamic versioning system used in the repository.
