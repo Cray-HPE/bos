@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,7 +28,7 @@ from requests import HTTPError
 
 from bos.common.values import Action, Status
 import bos.operators.utils.clients.bss as bss
-import bos.operators.utils.clients.capmc as capmc
+import bos.operators.utils.clients.pcs as pcs
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
@@ -39,7 +39,7 @@ LOGGER = logging.getLogger('bos.operators.power_on')
 
 class PowerOnOperator(BaseOperator):
     """
-    The Power-On Operator tells capmc to power-on nodes if:
+    The Power-On Operator tells pcs to power-on nodes if:
     - Enabled in the BOS database and the status is power_on_pending
     - Enabled in HSM
     """
@@ -69,7 +69,7 @@ class PowerOnOperator(BaseOperator):
             raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
         component_ids = [component['id'] for component in components]
         try:
-            capmc.power(component_ids, state='on')
+            pcs.power_on(component_ids)
         except Exception as e:
             raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
         return components
@@ -80,8 +80,8 @@ class PowerOnOperator(BaseOperator):
         Receive a BSS_REFERRAL_TOKEN from BSS.
         Map the token to the boot artifacts.
         Update each node's desired state with the token.
-        
-        Because the connection to the BSS tokens database can be lost due to 
+
+        Because the connection to the BSS tokens database can be lost due to
         infrequent use, retry up to retries number of times.
         """
         parameters = defaultdict(set)
@@ -131,3 +131,5 @@ class PowerOnOperator(BaseOperator):
 
 if __name__ == '__main__':
     main(PowerOnOperator)
+
+

@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,7 @@
 import logging
 
 from bos.common.values import Action, Status
-import bos.operators.utils.clients.capmc as capmc
+import bos.operators.utils.clients.pcs as pcs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
 
@@ -54,9 +54,11 @@ class GracefulPowerOffOperator(BaseOperator):
 
     def _act(self, components):
         component_ids = [component['id'] for component in components]
-        capmc.power(component_ids, state='off', force=False)
+        pcs.soft_off(component_ids)
         return components
 
 
 if __name__ == '__main__':
     main(GracefulPowerOffOperator)
+
+
