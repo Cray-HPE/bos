@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,7 @@
 import logging
 
 from bos.common.values import Action, Status
-import bos.operators.utils.clients.capmc as capmc
+import bos.operators.utils.clients.pcs as pcs
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
@@ -35,7 +35,7 @@ LOGGER = logging.getLogger('bos.operators.power_off_forceful')
 
 class ForcefulPowerOffOperator(BaseOperator):
     """
-    The Forceful Power-Off Operator tells capmc to power-off nodes if:
+    The Forceful Power-Off Operator tells pcs to power-off nodes if:
     - Enabled in the BOS database and the status is power_off_gracefully of power_off_forcefully
     - Enabled in HSM
     """
@@ -58,9 +58,10 @@ class ForcefulPowerOffOperator(BaseOperator):
 
     def _act(self, components):
         component_ids = [component['id'] for component in components]
-        capmc.power(component_ids, state='off', force=True)
+        pcs.force_off(nodes=component_ids)
         return components
 
 
 if __name__ == '__main__':
     main(ForcefulPowerOffOperator)
+
