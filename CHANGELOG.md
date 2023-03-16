@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Native PCS support
+### Changed
+- Updated chart to use new bitnami etcd base chart
 ### Removed
 - CAPMC support
 ### Fixed
