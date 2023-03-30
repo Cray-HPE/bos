@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Native PCS support
+- Multi-tenancy support for sessions, templates and components
 ### Removed
 - CAPMC support
 ### Fixed

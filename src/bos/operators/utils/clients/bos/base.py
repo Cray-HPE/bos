@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,8 @@ import logging
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.operators.utils import PROTOCOL, requests_retry_session
+from bos.common.tenant_utils import get_tenant_header
+from bos.common.utils import PROTOCOL, requests_retry_session
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
 
@@ -55,8 +56,8 @@ def log_call_errors(func):
 
 
 class BaseBosEndpoint(object):
-    """ 
-    This base class provides generic access to the BOS API. 
+    """
+    This base class provides generic access to the BOS API.
     The individual endpoint needs to be overridden for a specific endpoint.
     """
     ENDPOINT = ''
@@ -116,6 +117,79 @@ class BaseBosEndpoint(object):
         """Delete information for multiple BOS items"""
         session = requests_retry_session()
         response = session.delete(self.base_url, params=kwargs)
+        response.raise_for_status()
+        if response.text:
+            return json.loads(response.text)
+        else:
+            return None
+
+
+class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
+    """
+    This base class provides generic access to the BOS API for tenant aware endpoints.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+
+    @log_call_errors
+    def get_item(self, item_id, tenant):
+        """Get information for a single BOS item"""
+        url = self.base_url + '/' + item_id
+        session = requests_retry_session()
+        response = session.get(url, headers=get_tenant_header(tenant))
+        response.raise_for_status()
+        item = json.loads(response.text)
+        return item
+
+    @log_call_errors
+    def get_items(self, **kwargs):
+        """Get information for all BOS items"""
+        session = requests_retry_session()
+        headers = None
+        if "tenant" in kwargs:
+            headers = get_tenant_header(kwargs["tenant"])
+            del kwargs["tenant"]
+        response = session.get(self.base_url, params=kwargs, headers=headers)
+        response.raise_for_status()
+        items = json.loads(response.text)
+        return items
+
+    @log_call_errors
+    def update_item(self, item_id, tenant, data):
+        """Update information for a single BOS item"""
+        url = self.base_url + '/' + item_id
+        session = requests_retry_session()
+        response = session.patch(url, json=data, headers=get_tenant_header(tenant))
+        response.raise_for_status()
+        item = json.loads(response.text)
+        return item
+
+    @log_call_errors
+    def update_items(self, tenant, data):
+        """Update information for multiple BOS items"""
+        session = requests_retry_session()
+        response = session.patch(self.base_url, json=data, headers=get_tenant_header(tenant))
+        response.raise_for_status()
+        items = json.loads(response.text)
+        return items
+
+    @log_call_errors
+    def put_items(self, tenant, data):
+        """Put information for multiple BOS Items"""
+        session = requests_retry_session()
+        response = session.put(self.base_url, json=data, headers=get_tenant_header(tenant))
+        response.raise_for_status()
+        items = json.loads(response.text)
+        return items
+
+    @log_call_errors
+    def delete_items(self, **kwargs):
+        """Delete information for multiple BOS items"""
+        session = requests_retry_session()
+        headers = None
+        if "tenant" in kwargs:
+            headers = get_tenant_header(kwargs["tenant"])
+            del kwargs["tenant"]
+        response = session.delete(self.base_url, params=kwargs, headers=headers)
         response.raise_for_status()
         if response.text:
             return json.loads(response.text)

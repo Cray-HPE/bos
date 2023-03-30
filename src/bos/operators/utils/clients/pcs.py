@@ -30,7 +30,7 @@ import requests
 import json
 from collections import defaultdict
 
-from bos.operators.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-power-control'
 POWER_CONTROL_VERSION = 'v1'
