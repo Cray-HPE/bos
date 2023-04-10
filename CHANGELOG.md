@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Fixed
+- Fixed inconsistent indentation in Jenkinsfile.
+### Removed
+- Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
+- Remove now-unused remnants of the former dynamic versioning system used in the repository.
+
 ## [2.1.0] - 2023-3-16
 ### Added
 - Native PCS support
