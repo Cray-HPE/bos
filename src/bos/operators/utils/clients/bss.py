@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,7 @@ from requests.exceptions import HTTPError
 import logging
 import json
 
-from bos.operators.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'

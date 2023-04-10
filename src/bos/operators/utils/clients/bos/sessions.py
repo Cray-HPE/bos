@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,26 +23,22 @@
 #
 import logging
 
-from .base import BaseBosEndpoint
+from .base import BaseBosTenantAwareEndpoint
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions')
 
 
-class SessionEndpoint(BaseBosEndpoint):
+class SessionEndpoint(BaseBosTenantAwareEndpoint):
     ENDPOINT = __name__.lower().split('.')[-1]
 
-    def get_session(self, session_id):
-        return self.get_item(session_id)
+    def get_session(self, session_id, tenant):
+        return self.get_item(session_id, tenant)
 
     def get_sessions(self, **kwargs):
         return self.get_items(**kwargs)
 
-    def update_session(self, session_id, data):
-        return self.update_item(session_id, data)
-
-    def update_sessions(self, data):
-        return self.update_items(data)
+    def update_session(self, session_id, tenant, data):
+        return self.update_item(session_id, tenant, data)
 
     def delete_sessions(self, **kwargs):
         return self.delete_items(**kwargs)
-
