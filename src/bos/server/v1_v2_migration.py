@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,7 +27,7 @@ import logging
 import os
 
 from bos.server.dbclient import BosEtcdClient
-from bos.operators.utils import requests_retry_session
+from bos.common.utils import requests_retry_session
 import bos.server.redis_db_utils as dbutils
 
 LOGGER = logging.getLogger('bos.server.v1_v2_migration')
@@ -46,7 +46,7 @@ def MissingName():
 
 def pod_ip():
     """
-    Find the IP address for the pod that corresponds to the correct the labels, 
+    Find the IP address for the pod that corresponds to the correct the labels,
     specifically 'cray-bos' and the version number of this version of BOS.
     """
     pod_ip = None
@@ -69,15 +69,15 @@ def pod_ip():
 def convert_v1_to_v2(v1_st):
     """
     Convert a v1 session template to a v2 session template.
-    Prune extraneous v1 attributes. 
-    
+    Prune extraneous v1 attributes.
+
     Input:
       v1_st: A v1 session template
-    
+
     Returns:
       v2_st: A v2 session template
       name: The name of the session template
-    
+
     Raises:
       MissingName: If the session template's name is missing, then raise this
                    exception.

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,7 +24,11 @@
 import datetime
 import re
 from dateutil.parser import parse
+import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
+PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M|re.S)
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.
@@ -54,3 +58,21 @@ def duration_to_timedelta(timestamp: str):
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)
+
+
+def requests_retry_session(retries=10, backoff_factor=0.5,
+                           status_forcelist=(500, 502, 503, 504),
+                           session=None, protocol=PROTOCOL):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    # Must mount to http://
+    # Mounting to only http will not work!
+    session.mount("%s://" % protocol, adapter)
+    return session
