@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Multi-tenancy support for sessions, templates and components
+- DisasterRecovery values for the etcd chart
 ### Fixed
 - Fixed inconsistent indentation in Jenkinsfile.
 ### Removed
