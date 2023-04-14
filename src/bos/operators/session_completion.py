@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -55,7 +55,7 @@ class SessionCompletionOperator(BaseOperator):
         for session in sessions:
             components = self._get_incomplete_components(session["name"])
             if not components:
-                self._mark_session_complete(session["name"])
+                self._mark_session_complete(session["name"], session.get("tenant"))
 
     def _get_incomplete_sessions(self):
         return self.bos_client.sessions.get_sessions(status = 'running')
@@ -65,11 +65,11 @@ class SessionCompletionOperator(BaseOperator):
         components += self.bos_client.components.get_components(staged_session = session_id)
         return components
 
-    def _mark_session_complete(self, session_id):
-        self.bos_client.sessions.update_session(session_id, {'status': {'status': 'complete',
+    def _mark_session_complete(self, session_id, tenant):
+        self.bos_client.sessions.update_session(session_id, tenant, {'status': {'status': 'complete',
                                                                         'end_time': get_current_timestamp()}})
         # This call causes the session status to saved in the database.
-        self.bos_client.session_status.post_session_status(session_id)
+        self.bos_client.session_status.post_session_status(session_id, tenant)
         LOGGER.info('Session {} is complete'.format(session_id))
 
 

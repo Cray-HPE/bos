@@ -659,6 +659,12 @@ components:
           maxLength: 45
           pattern: "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"
           readOnly: true
+        tenant:
+          type: string
+          description: >
+            Name of the tenant that owns the session.  Only used in environments
+            with multi-tenancy enabled.
+          readOnly: true
         description:
           type: string
           description: |
@@ -835,6 +841,12 @@ components:
           type: string
           description: >
             Name of the session.
+        tenant:
+          type: string
+          description: >
+            Name of the tenant that owns the session.  Only used in environments
+            with multi-tenancy enabled.
+          readOnly: true
         operation:
           type: string
           enum: ['boot', 'reboot', 'shutdown']
@@ -884,19 +896,19 @@ components:
         Detailed information on the phases of a session.
       properties:
         percent_complete:
-          type: number 
+          type: number
           description: |
             The percent of components currently in a completed/stable state
         percent_powering_on:
-          type: number 
+          type: number
           description: |
             The percent of components currently in the powering-on phase
         percent_powering_off:
-          type: number 
+          type: number
           description: |
             The percent of components currently in the powering-off phase
         percent_configuring:
-          type: number 
+          type: number
           description: |
             The percent of components currently in the configuring phase
       additionalProperties: false
@@ -935,19 +947,19 @@ components:
         phases:
           $ref: '#/components/schemas/V2SessionExtendedStatusPhases'
         percent_successful:
-          type: number 
+          type: number
           description: |
             The percent of components currently in a successful state
         percent_failed:
-          type: number 
+          type: number
           description: |
             The percent of components currently in a failed state
         percent_staged:
-          type: number 
+          type: number
           description: |
             The percent of components currently still staged for this session
         error_summary:
-          type: object 
+          type: object
           description: |
             A summary of the errors currently listed by all components
         timing:
@@ -978,7 +990,7 @@ components:
         bss_token:
           type: string
           description: >
-            A token received from the node identifying the boot artifacts. 
+            A token received from the node identifying the boot artifacts.
             For BOS use-only, users should not set this field. It will be overwritten.
         last_updated:
           type: string
@@ -1000,7 +1012,7 @@ components:
         bss_token:
           type: string
           description: >
-            A token received from BSS identifying the boot artifacts. 
+            A token received from BSS identifying the boot artifacts.
             For BOS use-only, users should not set this field. It will be overwritten.
         last_updated:
           type: string
@@ -1185,7 +1197,7 @@ components:
           description: The maximum amount of time a component's actual state is considered valid (in hours). 0h disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
         disable_components_on_completion:
           type: boolean
-          description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 
+          description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes.
         discovery_frequency:
           type: integer
           description: How frequently the BOS discovery agent syncs new components from HSM. (in seconds)
@@ -1981,7 +1993,7 @@ paths:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
         400:
-          $ref: '#/components/responses/BadRequest'        
+          $ref: '#/components/responses/BadRequest'
     delete:
       summary: Delete a session template
       description: Delete a session template.
