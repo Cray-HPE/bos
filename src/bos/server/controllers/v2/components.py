@@ -238,7 +238,7 @@ def patch_v2_components_dict(data):
     if "id" in patch:
         del patch["id"]
     patch = _set_auto_fields(patch)
-    id_list = _apply_tenant_limit(id_list)
+    id_list, _ = _apply_tenant_limit(id_list)
     for component_id in id_list:
         response.append(DB.patch(component_id, patch, _update_handler))
     return response, 200
@@ -319,8 +319,9 @@ def post_v2_apply_staged():
     try:
         data = connexion.request.get_json()
         xnames = data.get("xnames", [])
-        xnames = _apply_tenant_limit(xnames)
-        for xname in xnames:
+        allowed_xnames, rejected_xnames = _apply_tenant_limit(xnames)
+        response["ignored"] = rejected_xnames
+        for xname in allowed_xnames:
             try:
                 if _apply_staged(xname, clear_staged):
                     response["succeeded"].append(xname)
@@ -340,8 +341,12 @@ def _apply_tenant_limit(component_list):
     tenant = get_tenant_from_header()
     if tenant:
         tenant_components = get_tenant_component_set(tenant)
-        component_list = list(set(component_list.union(tenant_components)))
-    return component_list
+        component_set = set(component_list)
+        allowed_components = component_set.intersection(tenant_components)
+        rejected_components = component_set.difference(tenant_components)
+        return list(allowed_components), list(rejected_components)
+    else:
+        return component_list, []
 
 
 def _is_valid_tenant_component(component_id):
