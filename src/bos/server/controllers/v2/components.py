@@ -52,20 +52,16 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
-    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
-                                      phase=phase, status=status)
     tenant = get_tenant_from_header()
-    if tenant:
-        tenant_components = get_tenant_component_set(tenant)
-        limited_response = [component for component in response if component["id"] in tenant_components]
-        response = limited_response
+    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
+                                      phase=phase, status=status, tenant=tenant)
     for component in response:
         del_timestamp(component)
     return response, 200
 
 
 def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
-                           phase=None, status=None):
+                           phase=None, status=None, tenant=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -84,6 +80,10 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
     response = [_set_status(r) for r in response if r]
     if enabled is not None or session is not None or staged_session is not None or phase is not None or status is not None:
         response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
+    if tenant:
+        tenant_components = get_tenant_component_set(tenant)
+        limited_response = [component for component in response if component["id"] in tenant_components]
+        response = limited_response
     return response
 
 
