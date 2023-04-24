@@ -29,6 +29,7 @@ import json
 import wget
 import os
 
+from bos.common.tenant_utils import no_v1_multi_tenancy_support
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
 from bos.server.utils import _canonize_xname
@@ -78,6 +79,7 @@ def sanitize_xnames(st_json):
     return st_json
 
 
+@no_v1_multi_tenancy_support
 @dbutils.redis_error_handler
 def create_v1_sessiontemplate():  # noqa: E501
     """POST /v1/sessiontemplate
@@ -167,6 +169,7 @@ def create_v1_sessiontemplate():  # noqa: E501
         return sessiontemplate.name, 201
 
 
+@no_v1_multi_tenancy_support
 def get_v1_sessiontemplates():  # noqa: E501
     """
     GET /v1/sessiontemplates
@@ -177,6 +180,7 @@ def get_v1_sessiontemplates():  # noqa: E501
     return get_v2_sessiontemplates()
 
 
+@no_v1_multi_tenancy_support
 def get_v1_sessiontemplate(session_template_id):
     """
     GET /v1/sessiontemplate
@@ -196,6 +200,7 @@ def get_v1_sessiontemplatetemplate():
     return EXAMPLE_SESSION_TEMPLATE, 200
 
 
+@no_v1_multi_tenancy_support
 def delete_v1_sessiontemplate(session_template_id):
     """
     DELETE /v1/sessiontemplate

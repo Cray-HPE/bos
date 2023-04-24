@@ -98,3 +98,15 @@ def tenant_error_handler(func):
                 status=400, title='Invalid tenant',
                 detail=str(e))
     return wrapper
+
+
+def no_v1_multi_tenancy_support(func):
+    """Decorator for returning errors if the endpoint doesn't support mutli-tenancy"""
+
+    def wrapper(*args, **kwargs):
+        if get_tenant_from_header():
+            return connexion.problem(
+                status=400, title="Multi-tenancy not supported",
+                detail=str("BOS v1 endpoints do not support multi-tenancy and a tenant was specified in the header"))
+        return func(*args, **kwargs)
+    return wrapper

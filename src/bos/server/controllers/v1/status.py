@@ -30,6 +30,7 @@ import logging
 import pickle
 import flask
 
+from bos.common.tenant_utils import no_v1_multi_tenancy_support
 from bos.server.dbclient import BosEtcdClient
 from bos.server.models.v1_session_status import V1SessionStatus as SessionStatusModel
 from bos.server.models.v1_boot_set_status import V1BootSetStatus as BootSetStatus
@@ -618,6 +619,7 @@ class Session(SessionStatus):
     pass
 
 
+@no_v1_multi_tenancy_support
 def create_v1_session_status(session_id):
     """
     Create a Status for the Session
@@ -644,6 +646,7 @@ def create_v1_session_status(session_id):
     return session_status, status
 
 
+@no_v1_multi_tenancy_support
 def create_v1_boot_set_status(session_id, boot_set_name):
     """
     Create a Status for Boot Set
@@ -673,6 +676,7 @@ def create_v1_boot_set_status(session_id, boot_set_name):
     return bs, status
 
 
+@no_v1_multi_tenancy_support
 def update_v1_session_status(session_id):
     """
     Update an existing session's status
@@ -690,6 +694,7 @@ def update_v1_session_status(session_id):
     return session_status, 200
 
 
+@no_v1_multi_tenancy_support
 def update_v1_session_status_by_bootset(session_id, boot_set_name):
     """
     Update an existing status for a Boot Set
@@ -726,6 +731,7 @@ def update_v1_session_status_by_bootset(session_id, boot_set_name):
         bs.save()
 
 
+@no_v1_multi_tenancy_support
 def get_v1_session_status(session_id):
     """
     List the Boot Sets in the Session, so they can be queried individually.
@@ -740,6 +746,7 @@ def get_v1_session_status(session_id):
     return session, status
 
 
+@no_v1_multi_tenancy_support
 def get_v1_session_status_by_bootset(session_id,
                                      boot_set_name):
     try:
@@ -751,6 +758,7 @@ def get_v1_session_status_by_bootset(session_id,
     return bs, status
 
 
+@no_v1_multi_tenancy_support
 def get_v1_session_status_by_bootset_and_phase(session_id,
                                                boot_set_name,
                                                phase_name):
@@ -758,6 +766,7 @@ def get_v1_session_status_by_bootset_and_phase(session_id,
     return bs.get_phase(phase_name)
 
 
+@no_v1_multi_tenancy_support
 def get_v1_session_status_by_bootset_and_phase_and_category(session_id,
                                                             boot_set_name,
                                                             phase_name,
@@ -766,6 +775,7 @@ def get_v1_session_status_by_bootset_and_phase_and_category(session_id,
     return bs.get_category(phase_name, category_name)
 
 
+@no_v1_multi_tenancy_support
 def delete_v1_session_status(session_id):
     if SessionStatus.delete(session_id):
         return 204
@@ -773,6 +783,7 @@ def delete_v1_session_status(session_id):
         return 404
 
 
+@no_v1_multi_tenancy_support
 def delete_v1_boot_set_status(session_id, boot_set_name):
     if BootSet.delete(session_id, boot_set_name):
         return 204
