@@ -286,8 +286,9 @@ def _get_v2_session_status(session_key, session=None):
     if not session:
         session = DB.get(session_key)
     session_id = session.get("name", {})
-    components = get_v2_components_data(session=session_id)
-    staged_components = get_v2_components_data(staged_session=session_id)
+    tenant_id = session.get("tenant")
+    components = get_v2_components_data(session=session_id, tenant=tenant_id)
+    staged_components = get_v2_components_data(staged_session=session_id, tenant=tenant_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
         component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components])
