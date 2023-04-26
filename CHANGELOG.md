@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+- v1 endpoints now thrown an error when a tenant is specified
+- v2 calls to create resources now throw an error when the tenant is invalid
+- Updated database keys to prevent collisions and added migration to the new database key format
 
 ## [2.1.1] - 2023-05-02
 ### Added
