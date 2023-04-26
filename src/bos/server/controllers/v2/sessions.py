@@ -29,7 +29,7 @@ import logging
 import uuid
 from connexion.lifecycle import ConnexionResponse
 
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
 from bos.common.utils import get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
@@ -47,6 +47,7 @@ BASEKEY = "/sessions"
 MAX_COMPONENTS_IN_ERROR_DETAILS = 10
 
 
+@reject_invalid_tenant
 @dbutils.redis_error_handler
 def post_v2_session():  # noqa: E501
     """POST /v2/session
