@@ -57,9 +57,12 @@ def get_new_tenant_header(tenant):
 
 
 def get_tenant_aware_key(key, tenant):
-    if tenant:
-        return f"{tenant}_{key}"
-    return key
+    if not tenant:
+        # This standardizes the no tenant case.
+        tenant = ""
+    # Uses % because it's not allowed in session template names.  Otherwise collisions could occur:
+    #     e.g. for tenant=1, key=2-3 and tenant=1-2, key=3 would produce the same result if the connecting character was -.
+    return f"{tenant}%{key}"
 
 
 def get_tenant_data(tenant, session=None):
