@@ -87,8 +87,16 @@ def get_tenant_component_set(tenant: str) -> set:
     return set().union(*components)
 
 
+def validate_tenant_exists(tenant: str) -> bool:
+    try:
+        get_tenant_data(tenant)
+        return True
+    except InvalidTenantException:
+        return False
+
+
 def tenant_error_handler(func):
-    """Decorator for returning errors if the tenant doesn't exist"""
+    """Decorator for returning errors if there is an exception when calling tapms"""
 
     def wrapper(*args, **kwargs):
         try:
@@ -100,8 +108,21 @@ def tenant_error_handler(func):
     return wrapper
 
 
+def reject_invalid_tenant(func):
+    """Decorator for preemptively validating the tenant exists"""
+
+    def wrapper(*args, **kwargs):
+        tenant = get_tenant_from_header()
+        if tenant and not validate_tenant_exists(tenant):
+            return connexion.problem(
+                status=400, title="Invalid tenant",
+                detail=str("The provided tenant does not exist"))
+        return func(*args, **kwargs)
+    return wrapper
+
+
 def no_v1_multi_tenancy_support(func):
-    """Decorator for returning errors if the endpoint doesn't support mutli-tenancy"""
+    """Decorator for returning errors if the endpoint doesn't support multi-tenancy"""
 
     def wrapper(*args, **kwargs):
         if get_tenant_from_header():
