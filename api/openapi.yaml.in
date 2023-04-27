@@ -1459,7 +1459,7 @@ paths:
              schema:
                $ref: '#/components/schemas/V1SessionTemplate'
       responses:
-        200:
+        201:
           $ref: '#/components/responses/V1SessionTemplateDetails'
         400:
           $ref: '#/components/responses/BadRequest'
