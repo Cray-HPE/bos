@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   possible failure status code (409)
 - Updated API spec for DELETE to `/v1/session/{session_id}/status` to include possible 404 status response
 - Updated API spec for POST to `/v1/session/{session_id}/status/{boot_set_name}` to include possible 409 status response
+- Updated API spec for PATCH to `/v2/sessiontemplates/{session_template_id}` to include possible 404 status response
 ### Removed
 - Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
 - Remove now-unused remnants of the former dynamic versioning system used in the repository.
