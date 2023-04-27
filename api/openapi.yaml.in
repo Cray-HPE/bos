@@ -1683,6 +1683,8 @@ paths:
           $ref: '#/components/responses/ResourceDeleted'
         400:
           $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
   /v1/session/{session_id}/status/{boot_set_name}:
     parameters:
       - name: session_id
