@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated POST to `/v1/session/{session_id}/status/{boot_set_name}` to include possible 409 status response
   - Updated PATCH to `/v2/sessiontemplates/{session_template_id}` to include possible 404 status response
   - Updated GET to `/` to reflect that a list of versions is returned
+- Ensure that DELETE requests to `/v1/sessiontemplate/{session_template_id}` return a meaningful status code
 ### Removed
 - Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
 - Remove now-unused remnants of the former dynamic versioning system used in the repository.
