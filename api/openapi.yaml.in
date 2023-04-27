@@ -2005,6 +2005,8 @@ paths:
           $ref: '#/components/responses/V2SessionTemplateDetails'
         400:
           $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
     delete:
       summary: Delete a session template
       description: Delete a session template.
