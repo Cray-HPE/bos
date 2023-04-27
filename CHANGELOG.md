@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated API spec for POST to `/v1/sessiontemplate` to reflect actual success status code (201)
 - Updated API spec for POST to `/v1/session` to include possible 404 status response
 - Updated API spec for POST to `/v1/session` to reflect actual success status code (201)
+- Updated API spec for POST to `/v1/session/{session_id}/status` to reflect actual success status code (200) and
+  possible failure status code (409).
 ### Removed
 - Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
 - Remove now-unused remnants of the former dynamic versioning system used in the repository.
