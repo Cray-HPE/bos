@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -203,4 +203,4 @@ def delete_v1_sessiontemplate(session_template_id):
     Delete the session template by session template ID
     """
     LOGGER.debug("delete_v1_sessiontemplate by ID: %s", session_template_id)
-    delete_v2_sessiontemplate(session_template_id)
+    return delete_v2_sessiontemplate(session_template_id)

@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DisasterRecovery values for the etcd chart
 ### Fixed
 - Fixed inconsistent indentation in Jenkinsfile.
+- Ensure that DELETE requests to `/v1/sessiontemplate/{session_template_id}` return a meaningful status code
 ### Removed
 - Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
 - Remove now-unused remnants of the former dynamic versioning system used in the repository.
