@@ -1414,8 +1414,14 @@ paths:
         - version
       x-openapi-router-controller: bos.server.controllers.base
       responses:
-        200:
-          $ref: '#/components/responses/Version'
+        200:          
+          description: A collection of Versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Version'
 # See Version guidance is in
 # https://connect.us.cray.com/confluence/display/SMA/Shasta+RESTful+Service+Design#ShastaRESTfulServiceDesign-Versioning
 #
