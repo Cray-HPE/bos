@@ -1553,6 +1553,8 @@ paths:
           $ref: '#/components/responses/V1SessionDetails'
         400:
           $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
     get:
       summary: List sessions
       description: |

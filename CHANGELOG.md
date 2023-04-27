@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - DisasterRecovery values for the etcd chart
 ### Fixed
 - Fixed inconsistent indentation in Jenkinsfile.
-- Updated API spec for POST to /v1/sessiontemplate to reflect actual success status code (201)
+- Updated API spec for POST to `/v1/sessiontemplate` to reflect actual success status code (201)
+- Updated API spec for POST to `/v1/session` to include possible 404 status response
 ### Removed
 - Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
 - Remove now-unused remnants of the former dynamic versioning system used in the repository.
