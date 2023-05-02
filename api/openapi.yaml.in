@@ -659,6 +659,12 @@ components:
           maxLength: 45
           pattern: "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"
           readOnly: true
+        tenant:
+          type: string
+          description: >
+            Name of the tenant that owns the session.  Only used in environments
+            with multi-tenancy enabled.
+          readOnly: true
         description:
           type: string
           description: |
@@ -835,6 +841,12 @@ components:
           type: string
           description: >
             Name of the session.
+        tenant:
+          type: string
+          description: >
+            Name of the tenant that owns the session.  Only used in environments
+            with multi-tenancy enabled.
+          readOnly: true
         operation:
           type: string
           enum: ['boot', 'reboot', 'shutdown']
@@ -884,19 +896,19 @@ components:
         Detailed information on the phases of a session.
       properties:
         percent_complete:
-          type: number 
+          type: number
           description: |
             The percent of components currently in a completed/stable state
         percent_powering_on:
-          type: number 
+          type: number
           description: |
             The percent of components currently in the powering-on phase
         percent_powering_off:
-          type: number 
+          type: number
           description: |
             The percent of components currently in the powering-off phase
         percent_configuring:
-          type: number 
+          type: number
           description: |
             The percent of components currently in the configuring phase
       additionalProperties: false
@@ -935,19 +947,19 @@ components:
         phases:
           $ref: '#/components/schemas/V2SessionExtendedStatusPhases'
         percent_successful:
-          type: number 
+          type: number
           description: |
             The percent of components currently in a successful state
         percent_failed:
-          type: number 
+          type: number
           description: |
             The percent of components currently in a failed state
         percent_staged:
-          type: number 
+          type: number
           description: |
             The percent of components currently still staged for this session
         error_summary:
-          type: object 
+          type: object
           description: |
             A summary of the errors currently listed by all components
         timing:
@@ -978,7 +990,7 @@ components:
         bss_token:
           type: string
           description: >
-            A token received from the node identifying the boot artifacts. 
+            A token received from the node identifying the boot artifacts.
             For BOS use-only, users should not set this field. It will be overwritten.
         last_updated:
           type: string
@@ -1000,7 +1012,7 @@ components:
         bss_token:
           type: string
           description: >
-            A token received from BSS identifying the boot artifacts. 
+            A token received from BSS identifying the boot artifacts.
             For BOS use-only, users should not set this field. It will be overwritten.
         last_updated:
           type: string
@@ -1185,7 +1197,7 @@ components:
           description: The maximum amount of time a component's actual state is considered valid (in hours). 0h disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
         disable_components_on_completion:
           type: boolean
-          description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes. 
+          description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes.
         discovery_frequency:
           type: integer
           description: How frequently the BOS discovery agent syncs new components from HSM. (in seconds)
@@ -1363,6 +1375,12 @@ components:
           schema:
             $ref: '#/components/schemas/V2Options'
     # Errors
+    AlreadyExists:
+      description: The resource to be created already exists
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
     BadRequest:
       description: Bad Request
       content:
@@ -1396,8 +1414,14 @@ paths:
         - version
       x-openapi-router-controller: bos.server.controllers.base
       responses:
-        200:
-          $ref: '#/components/responses/Version'
+        200:          
+          description: A collection of Versions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Version'
 # See Version guidance is in
 # https://connect.us.cray.com/confluence/display/SMA/Shasta+RESTful+Service+Design#ShastaRESTfulServiceDesign-Versioning
 #
@@ -1447,7 +1471,7 @@ paths:
              schema:
                $ref: '#/components/schemas/V1SessionTemplate'
       responses:
-        200:
+        201:
           $ref: '#/components/responses/V1SessionTemplateDetails'
         400:
           $ref: '#/components/responses/BadRequest'
@@ -1537,10 +1561,12 @@ paths:
              schema:
                $ref: '#/components/schemas/V1Session'
       responses:
-        200:
+        201:
           $ref: '#/components/responses/V1SessionDetails'
         400:
           $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
     get:
       summary: List sessions
       description: |
@@ -1627,10 +1653,12 @@ paths:
              schema:
                $ref: '#/components/schemas/V1SessionStatus'
       responses:
-        204:
+        200:
           $ref: '#/components/responses/V1SessionStatus'
         400:
           $ref: '#/components/responses/BadRequest'
+        409:
+          $ref: '#/components/responses/AlreadyExists'
     patch:
       summary: Update the session status
       description: |
@@ -1664,6 +1692,8 @@ paths:
           $ref: '#/components/responses/ResourceDeleted'
         400:
           $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
   /v1/session/{session_id}/status/{boot_set_name}:
     parameters:
       - name: session_id
@@ -1717,6 +1747,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/V1BootSetStatus'
+        409:
+          $ref: '#/components/responses/AlreadyExists'
     patch:
       summary: Update the status.
       description: |
@@ -1981,7 +2013,9 @@ paths:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
         400:
-          $ref: '#/components/responses/BadRequest'        
+          $ref: '#/components/responses/BadRequest'
+        404:
+          $ref: '#/components/responses/ResourceNotFound'
     delete:
       summary: Delete a session template
       description: Delete a session template.

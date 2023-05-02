@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,7 @@ import connexion
 import logging
 
 from bos.common.utils import get_current_timestamp
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, tenant_error_handler
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.options import get_v2_options_data
@@ -35,6 +36,7 @@ DB = dbutils.get_wrapper(db='components')
 SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 
+@tenant_error_handler
 @dbutils.redis_error_handler
 def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None):
     """Used by the GET /components API operation
@@ -50,15 +52,16 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
+    tenant = get_tenant_from_header()
     response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
-                                      phase=phase, status=status)
+                                      phase=phase, status=status, tenant=tenant)
     for component in response:
         del_timestamp(component)
     return response, 200
 
 
 def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
-                           phase=None, status=None):
+                           phase=None, status=None, tenant=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -77,6 +80,10 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
     response = [_set_status(r) for r in response if r]
     if enabled is not None or session is not None or staged_session is not None or phase is not None or status is not None:
         response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
+    if tenant:
+        tenant_components = get_tenant_component_set(tenant)
+        limited_response = [component for component in response if component["id"] in tenant_components]
+        response = limited_response
     return response
 
 
@@ -166,6 +173,7 @@ def put_v2_components():
     return response, 200
 
 
+@tenant_error_handler
 @dbutils.redis_error_handler
 def patch_v2_components():
     """Used by the PATCH /components API operation"""
@@ -186,7 +194,7 @@ def patch_v2_components_list(data):
         components = []
         for component_data in data:
             component_id = component_data['id']
-            if component_id not in DB:
+            if component_id not in DB or not _is_valid_tenant_component(component_id):
                 return connexion.problem(
                     status=404, title="Component could not found.",
                     detail="Component {} could not be found".format(component_id))
@@ -230,16 +238,18 @@ def patch_v2_components_dict(data):
     if "id" in patch:
         del patch["id"]
     patch = _set_auto_fields(patch)
+    id_list, _ = _apply_tenant_limit(id_list)
     for component_id in id_list:
         response.append(DB.patch(component_id, patch, _update_handler))
     return response, 200
 
 
+@tenant_error_handler
 @dbutils.redis_error_handler
 def get_v2_component(component_id):
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /components/id invoked get_component")
-    if component_id not in DB:
+    if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
@@ -264,11 +274,12 @@ def put_v2_component(component_id):
     return DB.put(component_id, data), 200
 
 
+@tenant_error_handler
 @dbutils.redis_error_handler
 def patch_v2_component(component_id):
     """Used by the PATCH /components/{component_id} API operation"""
     LOGGER.debug("PATCH /components/id invoked patch_component")
-    if component_id not in DB:
+    if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
@@ -284,17 +295,19 @@ def patch_v2_component(component_id):
     return DB.patch(component_id, data, _update_handler), 200
 
 
+@tenant_error_handler
 @dbutils.redis_error_handler
 def delete_v2_component(component_id):
     """Used by the DELETE /components/{component_id} API operation"""
     LOGGER.debug("DELETE /components/id invoked delete_component")
-    if component_id not in DB:
+    if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
     return DB.delete(component_id), 204
 
 
+@tenant_error_handler
 @dbutils.redis_error_handler
 def post_v2_apply_staged():
     """Used by the POST /applystaged API operation"""
@@ -306,7 +319,9 @@ def post_v2_apply_staged():
     try:
         data = connexion.request.get_json()
         xnames = data.get("xnames", [])
-        for xname in xnames:
+        allowed_xnames, rejected_xnames = _apply_tenant_limit(xnames)
+        response["ignored"] = rejected_xnames
+        for xname in allowed_xnames:
             try:
                 if _apply_staged(xname, clear_staged):
                     response["succeeded"].append(xname)
@@ -320,6 +335,28 @@ def post_v2_apply_staged():
             status=400, title="Error parsing the data provided.",
             detail=str(err))
     return response, 200
+
+
+def _apply_tenant_limit(component_list):
+    tenant = get_tenant_from_header()
+    if tenant:
+        tenant_components = get_tenant_component_set(tenant)
+        component_set = set(component_list)
+        allowed_components = component_set.intersection(tenant_components)
+        rejected_components = component_set.difference(tenant_components)
+        return list(allowed_components), list(rejected_components)
+    else:
+        return component_list, []
+
+
+def _is_valid_tenant_component(component_id):
+    tenant = get_tenant_from_header()
+    if tenant:
+        tenant_components = get_tenant_component_set(tenant)
+        return component_id in tenant_components
+    else:
+        # For an empty tenant, all components are valid
+        return True
 
 
 def _apply_staged(component_id, clear_staged=False):
@@ -403,7 +440,7 @@ def _populate_boot_artifacts(data):
     token, then those boot artifacts will be overwritten.
     If there are boot artifacts and no BSS token, then
     they will not be overwritten. Further, if the boot
-    artifacts are provided and the BSS token is unknown, 
+    artifacts are provided and the BSS token is unknown,
     the boot artifacts will not be overwritten.
     """
     try:

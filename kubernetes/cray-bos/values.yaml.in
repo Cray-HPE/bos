@@ -185,6 +185,12 @@ cray-etcd-base:
       requests:
         cpu: 10m
         memory: 64Mi
+    disasterRecovery:
+      cronjob:
+        snapshotsDir: "/snapshots/cray-bos-bitnami-etcd"
+        schedule: "0 */1 * * *"
+        historyLimit: 1
+        snapshotHistoryLimit: 24
 
 deploymentDefaults:
   service:
