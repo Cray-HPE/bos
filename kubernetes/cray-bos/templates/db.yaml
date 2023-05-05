@@ -131,8 +131,11 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: {{ .Values.operators.poweron.Values.fullnameOverride}}
+    {{/* BOS migration hook */}}
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: "{{ include "cray-service.name" . }}-migration"
     {{/* Redis database port */}}
     ports:
     - protocol: TCP
       port: 6379
-          
