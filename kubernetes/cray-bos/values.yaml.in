@@ -16,6 +16,7 @@ database:
     tag: 5.0-alpine3.12
   storageClass: ceph-cephfs-external
   accessMode: ReadWriteMany
+
 cray-service:
   podLabels:
     app.kubernetes.io/version: 0.0.0-app-version
@@ -74,7 +75,7 @@ cray-service:
         valueFrom:
           secretKeyRef:
             name: "bos-s3-credentials"
-            key: secret_key      
+            key: secret_key
       # Default configuration for the number of retries is
       # 30 minutes (5s x 360 ~ 1800s or 30 minutes).
       # This value is placed in the boa-job-template config map.
@@ -148,28 +149,51 @@ cray-service:
     enabled: true
     prefix: /apis/bos
     uri: /
-  etcdCluster:
+  etcdWaitContainer: true
+
+cray-etcd-base:
+  nameOverride: cray-bos
+  etcd:
     enabled: true
-    pvc:
+    fullnameOverride: "cray-bos-bitnami-etcd"
+    persistence:
       storage: 8Gi
-    compactionMode: revision
-    compactionRetention: "100000"
-    snapshotMax: "1"
-    snapshotCount: "5000000"
-    heartbeatInterval: "4200"
-    enforceAntiAffinity: "21000"
+    extraEnvVars:
+      - name: ETCD_HEARTBEAT_INTERVAL
+        value: "4200"
+      - name: ETCD_ELECTION_TIMEOUT
+        value: "21000"
+      - name: ETCD_MAX_SNAPSHOTS
+        value: "1"
+      - name: ETCD_QUOTA_BACKEND_BYTES
+        value: "10737418240"
+      - name: ETCD_SNAPSHOT_COUNT
+        value: "5000000"
+      - name: ETCD_SNAPSHOT_HISTORY_LIMIT
+        value: "24"
+    autoCompactionMode: revision
+    autoCompactionRetention: "100000"
+    extraVolumes:
+    - configMap:
+        defaultMode: 420
+        name: cray-bos-bitnami-etcd-config
+      name: etcd-config
     resources:
       limits:
-        cpu:     4
-        memory:  8Gi
+        cpu: 4
+        memory: 8Gi
       requests:
         cpu: 10m
         memory: 64Mi
+    disasterRecovery:
+      cronjob:
+        snapshotsDir: "/snapshots/cray-bos-bitnami-etcd"
+        schedule: "0 */1 * * *"
+        historyLimit: 1
+        snapshotHistoryLimit: 24
 
 deploymentDefaults:
   service:
-    enabled: False
-  etcdCluster:
     enabled: False
   sqlCluster:
     enabled: False

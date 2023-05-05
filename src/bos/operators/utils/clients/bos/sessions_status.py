@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,8 @@ import json
 import logging
 
 from .base import BASE_ENDPOINT, log_call_errors
-from bos.operators.utils import requests_retry_session
+from bos.common.tenant_utils import get_new_tenant_header
+from bos.common.utils import requests_retry_session
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions_status')
 
@@ -37,24 +38,24 @@ class SessionStatusEndpoint(object):
         self.base_url = "%s/%s" % (BASE_ENDPOINT, self.ENDPOINT)
 
     @log_call_errors
-    def get_session_status(self, session_id):
+    def get_session_status(self, session_id, tenant):
         """Get information for a single BOS item"""
         url = self.base_url + '/' + session_id + '/status'
         session = requests_retry_session()
-        response = session.get(url)
+        response = session.get(url, headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         item = json.loads(response.text)
         return item
 
     @log_call_errors
-    def post_session_status(self, session_id):
+    def post_session_status(self, session_id, tenant):
         """
         Post information for a single BOS Session status.
         This basically saves the BOS Session status to the database.
         """
         session = requests_retry_session()
         url = self.base_url + '/' + session_id + '/status'
-        response = session.post(url)
+        response = session.post(url, headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         items = json.loads(response.text)
         return items

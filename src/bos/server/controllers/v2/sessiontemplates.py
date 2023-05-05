@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,6 +24,7 @@
 import logging
 import connexion
 
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
 from bos.server import redis_db_utils as dbutils
 from bos.server.utils import _canonize_xname
@@ -74,6 +75,7 @@ def _sanitize_xnames(st_json):
     return st_json
 
 
+@reject_invalid_tenant
 @dbutils.redis_error_handler
 def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     """PUT /v2/sessiontemplate
@@ -112,8 +114,11 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
             detail=str(err))
 
     template_data = _sanitize_xnames(template_data)
+    tenant = get_tenant_from_header()
     template_data['name'] = session_template_id
-    return DB.put(session_template_id, template_data), 200
+    template_data['tenant'] = tenant
+    template_key = get_tenant_aware_key(session_template_id, tenant)
+    return DB.put(template_key, template_data), 200
 
 
 @dbutils.redis_error_handler
@@ -124,7 +129,7 @@ def get_v2_sessiontemplates():  # noqa: E501
     List all sessiontemplates
     """
     LOGGER.debug("get_sessiontemplates: Fetching sessions.")
-    response = DB.get_all()
+    response = _get_filtered_templates(tenant=get_tenant_from_header())
     return response, 200
 
 
@@ -136,11 +141,12 @@ def get_v2_sessiontemplate(session_template_id):
     Get the session template by session template ID
     """
     LOGGER.debug("get_sessiontemplate by ID: %s", session_template_id)  # noqa: E501
-    if session_template_id not in DB:
+    template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
+    if template_key not in DB:
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
             detail="Sessiontemplate {} could not be found".format(session_template_id))
-    template = DB.get(session_template_id)
+    template = DB.get(template_key)
     return template, 200
 
 
@@ -162,11 +168,12 @@ def delete_v2_sessiontemplate(session_template_id):
     Delete the session template by session template ID
     """
     LOGGER.debug("delete_sessiontemplate by ID: %s", session_template_id)
-    if session_template_id not in DB:
+    template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
+    if template_key not in DB:
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
             detail="Sessiontemplate {} could not be found".format(session_template_id))
-    return DB.delete(session_template_id), 204
+    return DB.delete(template_key), 204
 
 
 @dbutils.redis_error_handler
@@ -177,8 +184,8 @@ def patch_v2_sessiontemplate(session_template_id):
     Patch the session template by session template ID
     """
     LOGGER.debug("PATCH /v2/sessiontemplate invoked patch_sessiontemplate with ID: %s", session_template_id)
-
-    if session_template_id not in DB:
+    template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
+    if template_key not in DB:
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
             detail="Sessiontemplate {} could not be found".format(session_template_id))
@@ -216,14 +223,14 @@ def patch_v2_sessiontemplate(session_template_id):
     template_data = _sanitize_xnames(template_data)
     template_data['name'] = session_template_id
 
-    return DB.patch(session_template_id, template_data), 200
+    return DB.patch(template_key, template_data), 200
 
 
 @dbutils.redis_error_handler
 def validate_v2_sessiontemplate(session_template_id: str):
     """
     Validate a V2 session template. Look for missing elements or errors that would prevent
-    a session from being launched using this template. 
+    a session from being launched using this template.
     """
     data, status_code = get_v2_sessiontemplate(session_template_id)
 
@@ -239,3 +246,15 @@ def validate_v2_sessiontemplate(session_template_id: str):
     # is invalid.
     return msg, 200
 
+
+def _get_filtered_templates(tenant):
+    response = DB.get_all()
+    if any([tenant]):
+        response = [r for r in response if _matches_filter(r, tenant)]
+    return response
+
+
+def _matches_filter(data, tenant):
+    if tenant and tenant != data.get("tenant"):
+        return False
+    return True

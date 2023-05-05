@@ -28,7 +28,7 @@ from etcd3.client import Etcd3Client
 from etcd3.exceptions import ConnectionFailedError, ConnectionTimeoutError
 
 LOGGER = logging.getLogger(__name__)
-DB_HOST = os.getenv('ETCD_HOST', 'cray-bos-etcd-client')
+DB_HOST = os.getenv('ETCD_HOST', 'cray-bos-bitnami-etcd')
 DB_PORT = int(os.getenv('ETCD_PORT', 2379))
 
 
@@ -40,7 +40,7 @@ class BosEtcdClient(Etcd3Client):
 
     Please note: Even though this extends the Etcd3Client implementation, the underlying
     watch and lock implementation pieces that are provided by the underlying etcd client
-    code are not expected to be resilient to connection failures. We do not use these 
+    code are not expected to be resilient to connection failures. We do not use these
     in the BOS API, so it isn't an issue.
     """
 

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,7 @@ from collections import defaultdict
 import logging
 from requests.exceptions import HTTPError, ConnectionError
 
-from bos.operators.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)

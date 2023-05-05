@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -36,6 +36,7 @@ from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
+from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 
 LOGGER = logging.getLogger('bos.operators.session_setup')
 
@@ -92,6 +93,10 @@ class Session:
         return self.session_data.get('name')
 
     @property
+    def tenant(self):
+        return self.session_data.get('tenant')
+
+    @property
     def operation_type(self):
         return self.session_data.get('operation')
 
@@ -99,7 +104,7 @@ class Session:
     def template(self):
         if not self._template:
             template_name = self.session_data.get('template_name')
-            self._template = self.bos_client.session_templates.get_session_template(template_name)
+            self._template = self.bos_client.session_templates.get_session_template(template_name, self.tenant)
         return self._template
 
     def setup(self):
@@ -149,6 +154,7 @@ class Session:
         if not include_disabled:
             hsmfilter = HSMState(enabled=True)
             nodes = set(hsmfilter._filter(list(nodes)))
+        nodes = self._apply_tenant_limit(nodes)
         if not nodes:
             self._log(LOGGER.warning, "No nodes were found to act on.")
         return nodes
@@ -179,9 +185,20 @@ class Session:
         nodes = nodes.intersection(limit_node_set)
         return nodes
 
+    def _apply_tenant_limit(self, nodes):
+        tenant = self.session_data.get("tenant")
+        if not tenant:
+            return nodes
+        try:
+            tenant_limit = get_tenant_component_set(tenant)
+        except InvalidTenantException as e:
+            raise SessionSetupException(str(e)) from e
+        nodes = nodes.intersection(tenant_limit)
+        return nodes
+
     def _mark_running(self, component_ids):
         self.bos_client.sessions.update_session(
-            self.name, {'status': {'status': 'running'}, "components": ",".join(component_ids)})
+            self.name, self.tenant, {'status': {'status': 'running'}, "components": ",".join(component_ids)})
         self._log(LOGGER.info, 'Session is running')
 
     def _mark_failed(self, err):
@@ -190,9 +207,9 @@ class Session:
           err (string): The error that prevented the session from running
         """
         self.bos_client.sessions.update_session(
-            self.name, {'status': {'error': err}})
+            self.name, self.tenant, {'status': {'error': err}})
         sco = SessionCompletionOperator()
-        sco._mark_session_complete(self.name)
+        sco._mark_session_complete(self.name, self.tenant)
         self._log(LOGGER.info, f'Session {self.name} has failed.')
 
     def _log(self, logger, message):

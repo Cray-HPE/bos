@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -33,7 +33,8 @@ import logging
 import os
 
 from . import RootfsProvider
-from .. import PROTOCOL, ServiceNotReady, requests_retry_session
+from .. import ServiceNotReady
+from bos.common.utils import PROTOCOL, requests_retry_session
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-cps'

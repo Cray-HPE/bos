@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,22 +23,22 @@
 #
 import logging
 
-from .base import BaseBosEndpoint
+from .base import BaseBosTenantAwareEndpoint
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.session_templates')
 
 
-class SessionTemplateEndpoint(BaseBosEndpoint):
+class SessionTemplateEndpoint(BaseBosTenantAwareEndpoint):
     ENDPOINT = 'sessiontemplates'
 
-    def get_session_template(self, session_template_id):
-        return self.get_item(session_template_id)
+    def get_session_template(self, session_template_id, tenant):
+        return self.get_item(session_template_id, tenant)
 
     def get_session_templates(self, **kwargs):
         return self.get_items(**kwargs)
 
-    def update_session_template(self, session_template_id, data):
-        return self.update_item(session_template_id, data)
+    def update_session_template(self, session_template_id, tenant, data):
+        return self.update_item(session_template_id, tenant, data)
 
     def update_session_templates(self, data):
-        return self.update_items(data)
+        raise Exception("Session templates don't support a bulk update")

@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,12 +24,12 @@
 #
 import logging
 
-from bos.common.values  import Phase, Status, Action, EMPTY_ACTUAL_STATE
+from bos.common.values import Phase, Status, Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
-from bos.operators.utils.clients.capmc import status as get_power_states
+from bos.operators.utils.clients.pcs import node_to_powerstate
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 
 LOGGER = logging.getLogger('bos.operators.status')
@@ -70,7 +70,7 @@ class StatusOperator(BaseOperator):
         """ A single pass of detecting and acting on components  """
         components = self.bos_client.components.get_components(enabled=True)
         component_ids = [component['id'] for component in components]
-        power_states, _failed_nodes = get_power_states(component_ids)
+        power_states = node_to_powerstate(component_ids)
         cfs_states = self._get_cfs_components()
         updated_components = []
         if components:
@@ -111,12 +111,13 @@ class StatusOperator(BaseOperator):
         if power_state and cfs_component:
             phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
         else:
-            # If the component cannot be found in capmc or cfs
+            # If the component cannot be found in pcs or cfs
             phase = Phase.none
             override = Status.on_hold
             action_failed = False
-            if not power_state:
-                error = 'Component information was not returned by capmc'
+            disable = True
+            if not power_state or power_state == 'undefined':
+                error = 'Component information was not returned by pcs'
             elif not cfs_component:
                 error = 'Component information was not returned by cfs'
 
@@ -163,7 +164,7 @@ class StatusOperator(BaseOperator):
         """
         Calculate a component's status based on its current state, power state, and
         CFS state.
-        
+
         Disabling for successful completion should return an empty phase
         Disabling for a failure should return the phase that failed
         Override is used for status information that cannot be determined using only
@@ -225,3 +226,5 @@ class StatusOperator(BaseOperator):
 
 if __name__ == '__main__':
     main(StatusOperator)
+
+

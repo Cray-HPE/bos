@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,6 +29,7 @@ import logging
 import uuid
 from connexion.lifecycle import ConnexionResponse
 
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
 from bos.common.utils import get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
@@ -46,6 +47,7 @@ BASEKEY = "/sessions"
 MAX_COMPONENTS_IN_ERROR_DETAILS = 10
 
 
+@reject_invalid_tenant
 @dbutils.redis_error_handler
 def post_v2_session():  # noqa: E501
     """POST /v2/session
@@ -82,19 +84,21 @@ def post_v2_session():  # noqa: E501
         return msg, 400
 
     # -- Setup Record --
-    session = _create_session(session_create)
-    if session.name in DB:
+    tenant = get_tenant_from_header()
+    session = _create_session(session_create, tenant)
+    session_key =  get_tenant_aware_key(session.name, tenant)
+    if session_key in DB:
         return connexion.problem(
             detail="A session with the name {} already exists".format(session.name),
             status=409,
             title="Conflicting session name"
         )
     session_data = session.to_dict()
-    response = DB.put(session_data['name'], session_data)
+    response = DB.put(session_key, session_data)
     return response, 201
 
 
-def _create_session(session_create):
+def _create_session(session_create, tenant):
     initial_status = {
         'status': 'pending',
         'start_time': get_current_timestamp(),
@@ -109,6 +113,8 @@ def _create_session(session_create):
         'status': initial_status,
         'include_disabled': session_create.include_disabled
     }
+    if tenant:
+        body["tenant"] = tenant
     return Session.from_dict(body)
 
 
@@ -121,7 +127,8 @@ def patch_v2_session(session_id):
     Returns:
       Session Dictionary, Status Code
     """
-    if session_id not in DB:
+    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    if session_key not in DB:
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -129,7 +136,7 @@ def patch_v2_session(session_id):
     if not connexion.request.is_json:
         return "Post must be in JSON format", 400
     data = connexion.request.get_json()
-    component = DB.patch(session_id, data)
+    component = DB.patch(session_key, data)
     return component, 200
 
 
@@ -142,11 +149,12 @@ def get_v2_session(session_id):  # noqa: E501
     Return:
       Session Dictionary, Status Code
     """
-    if session_id not in DB:
+    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    if session_key not in DB:
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
-    session = DB.get(session_id)
+    session = DB.get(session_key)
     return session, 200
 
 
@@ -157,7 +165,9 @@ def get_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
     List all sessions
     """
     LOGGER.info("Called get v2 sessions")
-    response = _get_filtered_sessions(min_age=min_age, max_age=max_age, status=status)
+    response = _get_filtered_sessions(tenant=get_tenant_from_header(),
+                                      min_age=min_age, max_age=max_age,
+                                      status=status)
     return response, 200
 
 
@@ -167,19 +177,22 @@ def delete_v2_session(session_id):  # noqa: E501
 
     Delete the session by session id
     """
-    if session_id not in DB:
+    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    if session_key not in DB:
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
-    if session_id in STATUS_DB:
-        STATUS_DB.delete(session_id)
-    return DB.delete(session_id), 204
+    if session_key in STATUS_DB:
+        STATUS_DB.delete(session_key)
+    return DB.delete(session_key), 204
 
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
     try:
-        sessions = _get_filtered_sessions(min_age=min_age, max_age=max_age,
+        tenant = get_tenant_from_header()
+        sessions = _get_filtered_sessions(tenant=get_tenant_from_header(),
+                                          min_age=min_age, max_age=max_age,
                                           status=status)
         for session in sessions:
             session_name = session['name']
@@ -204,15 +217,16 @@ def get_v2_session_status(session_id):  # noqa: E501
     Return:
       Session Status Dictionary, Status Code
     """
-    if session_id not in DB:
+    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    if session_key not in DB:
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
-    session = DB.get(session_id)
-    if session.get("status", {}).get("status") == "complete" and session_id in STATUS_DB:
+    session = DB.get(session_key)
+    if session.get("status", {}).get("status") == "complete" and session_key in STATUS_DB:
         # If the session is complete and the status is saved, return the status from completion time
-        return STATUS_DB.get(session_id), 200
-    return _get_v2_session_status(session_id, session), 200
+        return STATUS_DB.get(session_key), 200
+    return _get_v2_session_status(session_key, session), 200
 
 
 @dbutils.redis_error_handler
@@ -224,14 +238,15 @@ def save_v2_session_status(session_id):  # noqa: E501
     Return:
       Session Status Dictionary, Status Code
     """
-    if session_id not in DB:
+    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    if session_key not in DB:
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
-    return STATUS_DB.put(session_id, _get_v2_session_status(session_id)), 200
+    return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
-def _get_filtered_sessions(min_age, max_age, status):
+def _get_filtered_sessions(tenant, min_age, max_age, status):
     response = DB.get_all()
     min_start = None
     max_start = None
@@ -247,12 +262,14 @@ def _get_filtered_sessions(min_age, max_age, status):
         except Exception as e:
             LOGGER.warning('Unable to parse age: {}'.format(max_age))
             raise ParsingException(e) from e
-    if any([min_start, max_start, status]):
-        response = [r for r in response if _matches_filter(r, min_start, max_start, status)]
+    if any([min_start, max_start, status, tenant]):
+        response = [r for r in response if _matches_filter(r, tenant, min_start, max_start, status)]
     return response
 
 
-def _matches_filter(data, min_start, max_start, status):
+def _matches_filter(data, tenant, min_start, max_start, status):
+    if tenant and tenant != data.get("tenant"):
+        return False
     session_status = data.get('status', {})
     if status and status != session_status.get('status'):
         return False
@@ -267,11 +284,13 @@ def _matches_filter(data, min_start, max_start, status):
     return True
 
 
-def _get_v2_session_status(session_id, session=None):
+def _get_v2_session_status(session_key, session=None):
     if not session:
-        session = DB.get(session_id)
-    components = get_v2_components_data(session=session_id)
-    staged_components = get_v2_components_data(staged_session=session_id)
+        session = DB.get(session_key)
+    session_id = session.get("name", {})
+    tenant_id = session.get("tenant")
+    components = get_v2_components_data(session=session_id, tenant=tenant_id)
+    staged_components = get_v2_components_data(staged_session=session_id, tenant=tenant_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
         component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components])

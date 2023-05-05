@@ -24,10 +24,10 @@ OTHER DEALINGS IN THE SOFTWARE.
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: "{{ include "cray-service.name" . }}-session-template-migration-psp"
+  name: "{{ include "cray-service.name" . }}-migration-psp"
 subjects:
 - kind: ServiceAccount
-  name: "{{ include "cray-service.name" . }}-session-template-migration"
+  name: "{{ include "cray-service.name" . }}-migration"
   namespace: "services"
 roleRef:
   apiGroup: rbac.authorization.k8s.io

@@ -5,11 +5,45 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-### Added
+## Unreleased
+### Changed
+- v1 endpoints now thrown an error when a tenant is specified
+- v2 calls to create resources now throw an error when the tenant is invalid
+- Updated database keys to prevent collisions and added migration to the new database key format
 - 'include_disabled' option to decide whether disabled nodes should be part of a BOS session 
 
-## [2.0.9] - 2023-1-12
+## [2.1.1] - 2023-05-02
+### Added
+- Multi-tenancy support for sessions, templates and components
+- DisasterRecovery values for the etcd chart
+### Fixed
+- Fixed inconsistent indentation in Jenkinsfile.
+- Updated API spec so that it accurately describes the actual implementation:
+  - Updated POST to `/v1/sessiontemplate` to reflect actual success status code (201)
+  - Updated POST to `/v1/session` to include possible 404 status response
+  - Updated POST to `/v1/session` to reflect actual success status code (201)
+  - Updated POST to `/v1/session/{session_id}/status` to reflect actual success status code (200) and
+    possible failure status code (409)
+  - Updated DELETE to `/v1/session/{session_id}/status` to include possible 404 status response
+  - Updated POST to `/v1/session/{session_id}/status/{boot_set_name}` to include possible 409 status response
+  - Updated PATCH to `/v2/sessiontemplates/{session_template_id}` to include possible 404 status response
+  - Updated GET to `/` to reflect that a list of versions is returned
+- Ensure that DELETE requests to `/v1/sessiontemplate/{session_template_id}` return a meaningful status code
+### Removed
+- Remove obsolete non-functional test files and packaging. Remove references to same from Makefile and other build files.
+- Remove now-unused remnants of the former dynamic versioning system used in the repository.
+
+## [2.1.0] - 2023-03-16
+### Added
+- Native PCS support
+### Changed
+- Updated chart to use new bitnami etcd base chart
+### Removed
+- CAPMC support
+### Fixed
+- Linting of openapi spec (no content changes)
+
+## [2.0.9] - 2023-01-12
 ### Fixed
 - Fixed the complete and in_progress fields for session status
 

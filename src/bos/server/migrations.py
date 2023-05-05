@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,11 +27,12 @@ import logging
 import os
 
 from bos.server.dbclient import BosEtcdClient
-from bos.operators.utils import requests_retry_session
+from bos.common.utils import requests_retry_session
+from bos.common.tenant_utils import get_tenant_aware_key
 import bos.server.redis_db_utils as dbutils
 
-LOGGER = logging.getLogger('bos.server.v1_v2_migration')
-DB = dbutils.get_wrapper(db='session_templates')
+
+LOGGER = logging.getLogger('bos.server.migration')
 BASEKEY = "/sessionTemplate"
 
 PROTOCOL = 'http'
@@ -46,7 +47,7 @@ def MissingName():
 
 def pod_ip():
     """
-    Find the IP address for the pod that corresponds to the correct the labels, 
+    Find the IP address for the pod that corresponds to the correct the labels,
     specifically 'cray-bos' and the version number of this version of BOS.
     """
     pod_ip = None
@@ -69,15 +70,15 @@ def pod_ip():
 def convert_v1_to_v2(v1_st):
     """
     Convert a v1 session template to a v2 session template.
-    Prune extraneous v1 attributes. 
-    
+    Prune extraneous v1 attributes.
+
     Input:
       v1_st: A v1 session template
-    
+
     Returns:
       v2_st: A v2 session template
       name: The name of the session template
-    
+
     Raises:
       MissingName: If the session template's name is missing, then raise this
                    exception.
@@ -166,6 +167,30 @@ def migrate_v1_to_v2_session_templates():
                                                        response.reason))
                 LOGGER.error("Error specifics: {}".format(response.text))
 
+# Multi-tenancy key migrations
+
+def migrate_database(db):
+    response = db.get_keys()
+    for old_key in response:
+        data = db.get(old_key)
+        name = data.get("name")
+        tenant = data.get("tenant")
+        new_key = get_tenant_aware_key(name, tenant)
+        if new_key != old_key:
+            LOGGER.info(f"Migrating {name} to new database key structure")
+            db.put(new_key, data)
+            db.delete(old_key)
+
+
+def migrate_to_tenant_aware_keys():
+    migrate_database(dbutils.get_wrapper(db='session_templates'))
+    migrate_database(dbutils.get_wrapper(db='sessions'))
+
+
+def perform_migrations():
+    migrate_v1_to_v2_session_templates()
+    migrate_to_tenant_aware_keys()
+
 
 if __name__ == "__main__":
-    migrate_v1_to_v2_session_templates()
+    perform_migrations()
