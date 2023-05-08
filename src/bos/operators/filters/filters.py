@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -166,7 +166,7 @@ class BootArtifactStatesMatch(LocalFilter):
         Filter out kernel parameters that dynamically change from session to session and
         should not be used for comparison.
         * spire_join_token
-        
+
         Returns:
         A parameter string without the dynamic parameters or None if the string is None
         """
@@ -187,7 +187,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         component_ids = ','.join([component['id'] for component in components])
         cfs_components = get_cfs_components(ids=component_ids)
         self.cfs_components_dict = {component['id']: component for component in cfs_components}
-        matches = super()._filter(components)
+        matches = LocalFilter._filter(self, components)
         # Clear this, so there are no lingering side-effects of running this method.
         self.cfs_components_dict = {}
         return matches

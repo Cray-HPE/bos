@@ -111,6 +111,7 @@ def _create_session(session_create, tenant):
         'stage': session_create.stage,
         'components': '',
         'status': initial_status,
+        'include_disabled': session_create.include_disabled
     }
     if tenant:
         body["tenant"] = tenant
