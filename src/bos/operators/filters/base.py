@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -59,7 +59,7 @@ class IDFilter(BaseFilter, ABC):
     """ A class for filters that take and return lists of component ids """
     def filter(self, components: List[dict]) -> List[dict]:
         component_ids = [component['id'] for component in components]
-        results = super().filter(components=component_ids)
+        results = BaseFilter.filter(self, components=component_ids)
         LOGGER.debug('{} filter found the following components: {}'.format(
             type(self).__name__,
             ','.join(results)
@@ -70,7 +70,7 @@ class IDFilter(BaseFilter, ABC):
 class DetailsFilter(BaseFilter, ABC):
     """ A class for filters that take and return lists of detailed component information """
     def filter(self, components: List[dict]) -> List[dict]:
-        results = super().filter(components=components)
+        results = BaseFilter.filter(self, components=components)
         LOGGER.debug('{} filter found the following components: {}'.format(
             type(self).__name__,
             ','.join([component.get('id', '') for component in results])

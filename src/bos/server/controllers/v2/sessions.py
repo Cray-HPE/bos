@@ -107,6 +107,7 @@ def _create_session(session_create):
         'stage': session_create.stage,
         'components': '',
         'status': initial_status,
+        'include_disabled': session_create.include_disabled
     }
     return Session.from_dict(body)
 

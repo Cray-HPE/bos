@@ -24,8 +24,11 @@
 #
 import logging
 from botocore.exceptions import ClientError
+from typing import Set
+
 
 from bos.operators.base import BaseOperator, main
+from bos.operators.filters.filters import HSMState
 from bos.operators.utils.clients.hsm import Inventory
 from bos.operators.utils.clients.s3 import S3Object, S3ObjectNotFound
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
@@ -122,7 +125,7 @@ class Session:
             self.bos_client.components.update_components(data)
         return list(set(all_component_ids))
 
-    def _get_boot_set_component_list(self, boot_set):
+    def _get_boot_set_component_list(self, boot_set) -> Set[str]:
         nodes = set()
         # Populate from nodelist
         for node_name in boot_set.get('node_list', []):
@@ -141,6 +144,11 @@ class Session:
             nodes |= self.inventory.roles[role_name]
         # Filter to nodes defined by limit
         nodes = self._apply_limit(nodes)
+        # Exclude disabled nodes
+        include_disabled = self.session_data.get("include_disabled", False)
+        if not include_disabled:
+            hsmfilter = HSMState(enabled=True)
+            nodes = set(hsmfilter._filter(list(nodes)))
         if not nodes:
             self._log(LOGGER.warning, "No nodes were found to act on.")
         return nodes
