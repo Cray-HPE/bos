@@ -28,6 +28,7 @@ Group: System/Management
 Version: @RPM_VERSION@
 Release: @RPM_RELEASE@
 Source: %{name}-@RPM_VERSION@-@RPM_RELEASE@.tar.bz2
+BuildArch: noarch
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: python-rpm-macros

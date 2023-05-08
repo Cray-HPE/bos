@@ -140,7 +140,7 @@ pipeline {
         stage("SLES15SP2 RPM Publish") {
             steps {
                 script {
-                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP2, arch: "x86_64", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/noarch/*.rpm", os: env.PUBLISH_SP2, arch: "noarch", isStable: env.IS_STABLE)
                     publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP2, arch: "src", isStable: env.IS_STABLE)
 	             }
                 sh "make rpm_build_clean"
@@ -165,7 +165,7 @@ pipeline {
         stage("SLES15SP3 RPM Publish") {
             steps {
                 script {
-                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP3, arch: "x86_64", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/noarch/*.rpm", os: env.PUBLISH_SP3, arch: "noarch", isStable: env.IS_STABLE)
                     publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP3, arch: "src", isStable: env.IS_STABLE)
 	            }
                 sh "make rpm_build_clean"
@@ -189,7 +189,7 @@ pipeline {
         stage("SLES15SP4 RPM Publish") {
             steps {
                 script {
-                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/x86_64/*.rpm", os: env.PUBLISH_SP4, arch: "x86_64", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/noarch/*.rpm", os: env.PUBLISH_SP4, arch: "noarch", isStable: env.IS_STABLE)
                     publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP4, arch: "src", isStable: env.IS_STABLE)
                 }
                 sh "make rpm_build_clean"
