@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Fixed
+- Fixed a window during power-on operations which could lead to an incorrect status in larger systems
+
 ### Changed
 - v1 endpoints now thrown an error when a tenant is specified
 - v2 calls to create resources now throw an error when the tenant is invalid
