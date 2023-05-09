@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.0.12] - 2023-05-12
+### Fixed
+- Fixed a window during power-on operations which could lead to an incorrect status in larger systems
+
 ## [2.0.11] - 2023-05-10
 ### Fixed
 - Fixed inconsistent indentation in Jenkinsfile.
