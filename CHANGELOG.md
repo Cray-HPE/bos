@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updating `x86_64` RPM builds to type `noarch` for ARM required work CASMCMS-8517
 
-## [2.1.1] - 2023-05-02
+## [2.2.0] - 2023-05-10
 ### Added
 - Multi-tenancy support for sessions, templates and components
 - DisasterRecovery values for the etcd chart
