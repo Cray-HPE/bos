@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [2.0.11] - 2023-05-10
 ### Fixed
 - Fixed inconsistent indentation in Jenkinsfile.
 - Linting of openapi spec (no content changes)
@@ -28,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - 'include_disabled' option to decide whether disabled nodes should be part of a BOS session 
 
-## [2.0.9] - 2023-1-12
+## [2.0.9] - 2023-01-12
 ### Fixed
 - Fixed the complete and in_progress fields for session status
 
