@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -59,6 +59,7 @@ class PowerOnOperator(BaseOperator):
         ]
 
     def _act(self, components):
+        self._preset_last_action(components)
         try:
             self._set_bss(components)
         except Exception as e:
