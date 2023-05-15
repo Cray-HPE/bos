@@ -111,12 +111,15 @@ components:
       description: Version data
       type: object
       properties:
-        major:
-          type: integer
-        minor:
-          type: integer
-        patch:
-          type: integer
+        major: 
+          type: string
+          pattern: "^(0|[1-9][0-9]*)$"
+        minor: 
+          type: string
+          pattern: "^(0|[1-9][0-9]*)$"
+        patch: 
+          type: string
+          pattern: "^(0|[1-9][0-9]*)$"
         links:
           type: array
           items:
@@ -158,9 +161,9 @@ components:
       description: Link to other resources
       type: object
       properties:
-        rel:
-          type: string
         href:
+          type: string
+        rel:
           type: string
       additionalProperties: false
     # V1
@@ -325,6 +328,7 @@ components:
         id:
           type: string
           description: Session ID
+          format: uuid
         links:
           type: array
           items:
@@ -475,6 +479,21 @@ components:
             $ref: '#/components/schemas/Link'
       required: [name]
       additionalProperties: false
+    V1SessionLink:
+      description: Link to other resources
+      type: object
+      properties:
+        href:
+          type: string
+        jobId:
+          type: string
+        rel:
+          type: string
+          enum: ['session', 'status']
+        type:
+          type: string
+          enum: ['GET']
+      additionalProperties: false
     V1Session:
       description: |
         A Session object
@@ -532,7 +551,7 @@ components:
           type: array
           readOnly: true
           items:
-            $ref: '#/components/schemas/Link'
+            $ref: '#/components/schemas/V1SessionLink'
       required: [operation]
       additionalProperties: false
     V1NodeChangeList:
