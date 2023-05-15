@@ -161,9 +161,9 @@ components:
       description: Link to other resources
       type: object
       properties:
-        rel:
-          type: string
         href:
+          type: string
+        rel:
           type: string
       additionalProperties: false
     # V1
@@ -478,6 +478,21 @@ components:
             $ref: '#/components/schemas/Link'
       required: [name]
       additionalProperties: false
+    V1SessionLink:
+      description: Link to other resources
+      type: object
+      properties:
+        href:
+          type: string
+        jobId:
+          type: string
+        rel:
+          type: string
+          enum: ['session', 'status']
+        type:
+          type: string
+          enum: ['GET']
+      additionalProperties: false
     V1Session:
       description: |
         A Session object
@@ -535,7 +550,7 @@ components:
           type: array
           readOnly: true
           items:
-            $ref: '#/components/schemas/Link'
+            $ref: '#/components/schemas/V1SessionLink'
       required: [operation]
       additionalProperties: false
     V1NodeChangeList:
