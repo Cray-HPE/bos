@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `Version` definition to reflect actual type of `major`, `minor`, and `patch` fields.
   - Created `V1SessionLink` definition to reflect that the `links` field for BOS v1 sessions can have
     two additional fields that don't show up in any other BOS link objects.
+  - Specify that the BOS v1 session ID is in UUID format.
 
 ## [2.0.12] - 2023-05-12
 ### Fixed
