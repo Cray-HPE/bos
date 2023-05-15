@@ -111,12 +111,15 @@ components:
       description: Version data
       type: object
       properties:
-        major:
-          type: integer
-        minor:
-          type: integer
-        patch:
-          type: integer
+        major: 
+          type: string
+          pattern: "^(0|[1-9][0-9]*)$"
+        minor: 
+          type: string
+          pattern: "^(0|[1-9][0-9]*)$"
+        patch: 
+          type: string
+          pattern: "^(0|[1-9][0-9]*)$"
         links:
           type: array
           items:
