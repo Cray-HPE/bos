@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Fixed
 - Fixed a window during power-on operations which could lead to an incorrect status in larger systems
+- Updated API spec so that it accurately describes the actual implementation:
+  - Updated `Version` definition to reflect actual type of `major`, `minor`, and `patch` fields.
+  - Created `V1SessionLink` definition to reflect that the `links` field for BOS v1 sessions can have
+    two additional fields that don't show up in any other BOS link objects.
+  - Specify that the BOS v1 session ID is in UUID format.
 
 ### Changed
 - v1 endpoints now thrown an error when a tenant is specified
