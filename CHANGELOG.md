@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Fixed
 - Fixed a window during power-on operations which could lead to an incorrect status in larger systems
+- Updated API spec so that it accurately describes the actual implementation:
+  - Updated `Version` definition to reflect actual type of `major`, `minor`, and `patch` fields.
 
 ### Changed
 - v1 endpoints now thrown an error when a tenant is specified
