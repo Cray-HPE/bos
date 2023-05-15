@@ -24,7 +24,7 @@
 import logging
 import connexion
 
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
 from bos.server import redis_db_utils as dbutils
 from bos.server.utils import _canonize_xname
@@ -75,6 +75,7 @@ def _sanitize_xnames(st_json):
     return st_json
 
 
+@reject_invalid_tenant
 @dbutils.redis_error_handler
 def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     """PUT /v2/sessiontemplate

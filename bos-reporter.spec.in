@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,6 +28,7 @@ Group: System/Management
 Version: @RPM_VERSION@
 Release: @RPM_RELEASE@
 Source: %{name}-@RPM_VERSION@-@RPM_RELEASE@.tar.bz2
+BuildArch: noarch
 Vendor: HPE
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}
 BuildRequires: python-rpm-macros

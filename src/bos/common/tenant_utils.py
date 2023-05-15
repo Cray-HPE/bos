@@ -57,9 +57,12 @@ def get_new_tenant_header(tenant):
 
 
 def get_tenant_aware_key(key, tenant):
-    if tenant:
-        return f"{tenant}_{key}"
-    return key
+    if not tenant:
+        # This standardizes the no tenant case.
+        tenant = ""
+    # Uses % because it's not allowed in session template names.  Otherwise collisions could occur:
+    #     e.g. for tenant=1, key=2-3 and tenant=1-2, key=3 would produce the same result if the connecting character was -.
+    return f"{tenant}%{key}"
 
 
 def get_tenant_data(tenant, session=None):
@@ -87,8 +90,16 @@ def get_tenant_component_set(tenant: str) -> set:
     return set().union(*components)
 
 
+def validate_tenant_exists(tenant: str) -> bool:
+    try:
+        get_tenant_data(tenant)
+        return True
+    except InvalidTenantException:
+        return False
+
+
 def tenant_error_handler(func):
-    """Decorator for returning errors if the tenant doesn't exist"""
+    """Decorator for returning errors if there is an exception when calling tapms"""
 
     def wrapper(*args, **kwargs):
         try:
@@ -97,4 +108,29 @@ def tenant_error_handler(func):
             return connexion.problem(
                 status=400, title='Invalid tenant',
                 detail=str(e))
+    return wrapper
+
+
+def reject_invalid_tenant(func):
+    """Decorator for preemptively validating the tenant exists"""
+
+    def wrapper(*args, **kwargs):
+        tenant = get_tenant_from_header()
+        if tenant and not validate_tenant_exists(tenant):
+            return connexion.problem(
+                status=400, title="Invalid tenant",
+                detail=str("The provided tenant does not exist"))
+        return func(*args, **kwargs)
+    return wrapper
+
+
+def no_v1_multi_tenancy_support(func):
+    """Decorator for returning errors if the endpoint doesn't support multi-tenancy"""
+
+    def wrapper(*args, **kwargs):
+        if get_tenant_from_header():
+            return connexion.problem(
+                status=400, title="Multi-tenancy not supported",
+                detail=str("BOS v1 endpoints do not support multi-tenancy and a tenant was specified in the header"))
+        return func(*args, **kwargs)
     return wrapper

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -37,6 +37,7 @@ from kubernetes import client, config, utils
 from kubernetes.config.config_exception import ConfigException
 from kubernetes.client.rest import ApiException
 
+from bos.common.tenant_utils import no_v1_multi_tenancy_support
 from bos.server.controllers.v1.sessiontemplate import get_v1_sessiontemplate
 from bos.server.controllers.v1.status import BootSetDoesNotExist, create_v1_session_status
 from bos.server.dbclient import BosEtcdClient, DB_HOST, DB_PORT
@@ -46,6 +47,7 @@ LOGGER = logging.getLogger('bos.server.controllers.v1.session')
 BASEKEY = "/session"
 
 
+@no_v1_multi_tenancy_support
 def create_v1_session():  # noqa: E501
     """POST /v1/session
     Creates a new boot session. # noqa: E501
@@ -206,6 +208,7 @@ def create_v1_session():  # noqa: E501
     return return_json_data, 201
 
 
+@no_v1_multi_tenancy_support
 def get_v1_sessions():  # noqa: E501
     """GET /v1/session
 
@@ -222,6 +225,7 @@ def get_v1_sessions():  # noqa: E501
         return list(sessions), 200
 
 
+@no_v1_multi_tenancy_support
 def get_v1_session(session_id):  # noqa: E501
     """GET /v1/session
     Get the session by session ID
@@ -276,6 +280,7 @@ def get_v1_session(session_id):  # noqa: E501
     return session, 200
 
 
+@no_v1_multi_tenancy_support
 def delete_v1_session(session_id):  # noqa: E501
     """DELETE /v1/session
 

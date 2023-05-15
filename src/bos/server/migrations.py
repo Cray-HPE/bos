@@ -28,10 +28,11 @@ import os
 
 from bos.server.dbclient import BosEtcdClient
 from bos.common.utils import requests_retry_session
+from bos.common.tenant_utils import get_tenant_aware_key
 import bos.server.redis_db_utils as dbutils
 
-LOGGER = logging.getLogger('bos.server.v1_v2_migration')
-DB = dbutils.get_wrapper(db='session_templates')
+
+LOGGER = logging.getLogger('bos.server.migration')
 BASEKEY = "/sessionTemplate"
 
 PROTOCOL = 'http'
@@ -166,6 +167,30 @@ def migrate_v1_to_v2_session_templates():
                                                        response.reason))
                 LOGGER.error("Error specifics: {}".format(response.text))
 
+# Multi-tenancy key migrations
+
+def migrate_database(db):
+    response = db.get_keys()
+    for old_key in response:
+        data = db.get(old_key)
+        name = data.get("name")
+        tenant = data.get("tenant")
+        new_key = get_tenant_aware_key(name, tenant)
+        if new_key != old_key:
+            LOGGER.info(f"Migrating {name} to new database key structure")
+            db.put(new_key, data)
+            db.delete(old_key)
+
+
+def migrate_to_tenant_aware_keys():
+    migrate_database(dbutils.get_wrapper(db='session_templates'))
+    migrate_database(dbutils.get_wrapper(db='sessions'))
+
+
+def perform_migrations():
+    migrate_v1_to_v2_session_templates()
+    migrate_to_tenant_aware_keys()
+
 
 if __name__ == "__main__":
-    migrate_v1_to_v2_session_templates()
+    perform_migrations()

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.3.0] - 2023-05-10
+### Changed
+- v1 endpoints now thrown an error when a tenant is specified
+- v2 calls to create resources now throw an error when the tenant is invalid
+- Updated database keys to prevent collisions and added migration to the new database key format
+- 'include_disabled' option to decide whether disabled nodes should be part of a BOS session 
+- Updating `x86_64` RPM builds to type `noarch` for ARM required work CASMCMS-8517
+
 ## [2.2.0] - 2023-05-10
 ### Added
 - Multi-tenancy support for sessions, templates and components

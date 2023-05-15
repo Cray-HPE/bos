@@ -42,7 +42,7 @@ endif
 BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
 
 # We copy the built RPMs to these directories to simplify publishing them
-RPM_IMAGE_DIR ?= dist/rpmbuild/RPMS/x86_64
+RPM_IMAGE_DIR ?= dist/rpmbuild/RPMS/noarch
 SRC_RPM_IMAGE_DIR ?= dist/rpmbuild/SRPMS
 
 # bos-reporter RPM variables
@@ -112,7 +112,7 @@ rptr_rpm_build_source:
 
 rptr_rpm_build:
 		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(RPTR_SPEC_FILE) --define "_topdir $(RPTR_BUILD_DIR)"
-		cp $(RPTR_BUILD_DIR)/RPMS/x86_64/*.rpm $(RPM_IMAGE_DIR)
+		cp $(RPTR_BUILD_DIR)/RPMS/noarch/*.rpm $(RPM_IMAGE_DIR)
 
 rpm_build_clean:
 		rm -rf $(RPM_IMAGE_DIR)/*

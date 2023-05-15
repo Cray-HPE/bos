@@ -1,7 +1,7 @@
 {{/*
 MIT License
 
-(C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+(C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -25,7 +25,7 @@ OTHER DEALINGS IN THE SOFTWARE.
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name:  "{{ include "cray-service.name" . }}-session-template-migration"
+  name:  "{{ include "cray-service.name" . }}-migration"
   labels:
     app.kubernetes.io/managed-by: "{{ include "cray-service.name" . }}"
     app.kubernetes.io/instance: "{{ include "cray-service.name" . }}"
@@ -34,8 +34,8 @@ metadata:
   annotations:
     "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation 
-    
+    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
+
 
 spec:
   template:
@@ -44,18 +44,19 @@ spec:
       labels:
         app.kubernetes.io/managed-by:  "{{ include "cray-service.name" . }}"
         app.kubernetes.io/instance:  "{{ include "cray-service.name" . }}"
+        app.kubernetes.io/name:  "{{ include "cray-service.name" . }}-migration"
         helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}"
       annotations:
         traffic.sidecar.istio.io/excludeOutboundPorts: "2379,2380,6379"
-        "proxy.istio.io/config": '{ "holdApplicationUntilProxyStarts": true }'        
+        "proxy.istio.io/config": '{ "holdApplicationUntilProxyStarts": true }'
     spec:
-      serviceAccountName: "{{ include "cray-service.name" . }}-session-template-migration"
+      serviceAccountName: "{{ include "cray-service.name" . }}-migration"
       restartPolicy: Never
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
         runAsGroup: 65534
-      
+
       initContainers:
       - name: cray-bos-wait-for-etcd
         image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.19.15
@@ -80,14 +81,14 @@ spec:
                 echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , will retry"
               sleep 3
               fi
-            done      
+            done
       containers:
-      - name: v1-v2-session-template-migration  
+      - name: bos-migrations
         image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}:{{ .Chart.AppVersion}}
         command:
           - python3
           - "-m"
-          - "bos.server.v1_v2_migration"
+          - "bos.server.migrations"
         env:
         - name: APP_VERSION
           value: 0.0.0-app-version
@@ -101,4 +102,4 @@ spec:
         - name: http
           containerPort: 9000
           protocol: TCP
-          
+

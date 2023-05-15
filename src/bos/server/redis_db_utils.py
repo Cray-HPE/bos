@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -81,12 +81,17 @@ class DBWrapper():
     def get_all(self):
         """Get an array of data for all keys."""
         data = []
-        keys = self.client.keys()
-        if keys:
-            for key in keys:
-                datastr = self.client.get(key)
-                single_data = json.loads(datastr)
-                data.append(single_data)
+        for key in self.client.scan_iter():
+            datastr = self.client.get(key)
+            single_data = json.loads(datastr)
+            data.append(single_data)
+        return data
+
+    def get_keys(self):
+        """Get an array of all keys"""
+        data = []
+        for key in self.client.scan_iter():
+            data.append(key)
         return data
 
     def put(self, key, new_data):
