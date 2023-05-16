@@ -38,8 +38,7 @@ EXAMPLE_BOOT_SET = {
     "type": "your-boot-type",
     "etag": "your_boot_image_etag",
     "kernel_parameters": "your-kernel-parameters",
-    "cfs": {"configuration": "bootset_specific_cfs_override"},
-    "network": "nmn",
+    "cfs": {"configuration": "bootset-specific-cfs-override"},
     "node_list": [
         "xname1", "xname2", "xname3"],
     "path": "your-boot-path",
