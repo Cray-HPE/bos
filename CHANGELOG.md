@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     two additional fields that don't show up in any other BOS link objects.
   - Specify that the BOS v1 session ID is in UUID format.
 - Return valid BOS v2 session template on GET request to `/v2/sessiontemplatetemplate`.
+- Failed components are no longer reported in the session status phase percentages.
 
 ## [2.3.0] - 2023-05-10
 ### Changed
