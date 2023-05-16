@@ -274,7 +274,7 @@ def _get_v2_session_status(session_id, session=None):
     staged_components = get_v2_components_data(staged_session=session_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
-        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components if c.get('enabled')])
+        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components if (c.get('enabled') and c.get('status').get('status_override') != Status.on_hold)])
         component_phase_counts['successful'] = len([c for c in components if c.get('status', {}).get('status') == Status.stable])
         component_phase_counts['failed'] = len([c for c in components if c.get('status', {}).get('status') == Status.failed])
         component_phase_counts['staged'] = len(staged_components)

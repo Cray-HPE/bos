@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Failed components are no longer reported in the session status phase percentages.
+- Components requiring phase updates are no longer reported in the session status phase percentages.
 
 ## [2.0.31] - 03-12-2024
 ### Fixed
