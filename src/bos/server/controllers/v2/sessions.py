@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -274,7 +274,7 @@ def _get_v2_session_status(session_id, session=None):
     staged_components = get_v2_components_data(staged_session=session_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
-        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components])
+        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components if c.get('enabled')])
         component_phase_counts['successful'] = len([c for c in components if c.get('status', {}).get('status') == Status.stable])
         component_phase_counts['failed'] = len([c for c in components if c.get('status', {}).get('status') == Status.failed])
         component_phase_counts['staged'] = len(staged_components)
