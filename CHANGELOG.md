@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Formatting and language linting of API spec to correct minor errors, omissions, and inconsistencies.
 - Correct API spec to use valid ECMA 262 regular expression syntax, as dictated by the OpenAPI requirements.
 - Fixed minor errors and did minor linting of repository [`README.md`](README.md).
+- Failed components are no longer reported in the session status phase percentages.
 
 ## [2.3.0] - 2023-05-10
 ### Changed
