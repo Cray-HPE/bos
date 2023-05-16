@@ -274,7 +274,7 @@ def _get_v2_session_status(session_id, session=None):
     staged_components = get_v2_components_data(staged_session=session_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
-        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components if c.get('enabled')])
+        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components if (c.get('enabled') and c.get('status').get('status_override') != Status.on_hold)])
         component_phase_counts['successful'] = len([c for c in components if c.get('status', {}).get('status') == Status.stable])
         component_phase_counts['failed'] = len([c for c in components if c.get('status', {}).get('status') == Status.failed])
         component_phase_counts['staged'] = len(staged_components)
@@ -302,14 +302,14 @@ def _get_v2_session_status(session_id, session=None):
         'status': session_status.get('status', ''),
         'managed_components_count': num_managed_components,
         'phases': {
-            'percent_complete': component_phase_percents.get('successful', 0) + component_phase_percents.get('failed', 0),
-            'percent_powering_on': component_phase_percents.get(Phase.powering_on, 0),
-            'percent_powering_off': component_phase_percents.get(Phase.powering_off, 0),
-            'percent_configuring': component_phase_percents.get(Phase.configuring, 0),
+            'percent_complete': round(component_phase_percents.get('successful', 0) + component_phase_percents.get('failed', 0), 2),
+            'percent_powering_on': round(component_phase_percents.get(Phase.powering_on, 0), 2),
+            'percent_powering_off': round(component_phase_percents.get(Phase.powering_off, 0), 2),
+            'percent_configuring': round(component_phase_percents.get(Phase.configuring, 0), 2),
         },
-        'percent_staged': component_phase_percents.get('staged', 0),
-        'percent_successful': component_phase_percents.get('successful', 0),
-        'percent_failed': component_phase_percents.get('failed', 0),
+        'percent_staged': round(component_phase_percents.get('staged', 0), 2),
+        'percent_successful': round(component_phase_percents.get('successful', 0), 2),
+        'percent_failed': round(component_phase_percents.get('failed', 0), 2),
         'error_summary': component_errors,
         'timing': {
             'start_time': start_time,
