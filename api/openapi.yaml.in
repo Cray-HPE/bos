@@ -816,11 +816,6 @@ components:
           items:
             $ref: '#/components/schemas/Link'
       additionalProperties: false
-    V2SessionTemplateArray:
-      description: An array of session templates.
-      type: array
-      items:
-        $ref: '#/components/schemas/V2SessionTemplate'
     V2SessionTemplateValidation:
       description: |
         Message describing errors or incompleteness in a Session Template.
@@ -1351,6 +1346,14 @@ components:
           description: The default maximum number attempts per node for failed actions.
           example: 1
       additionalProperties: true
+    # Schemas that combine objects of different versions
+    SessionTemplateArray:
+      description: An array of session templates.
+      type: array
+      items:
+        anyOf:
+          - $ref: '#/components/schemas/V1SessionTemplate'
+          - $ref: '#/components/schemas/V2SessionTemplate'
   requestBodies:
     V2sessionCreateRequest:
       description: The information to create a session
@@ -1458,12 +1461,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionTemplate'
-    V2SessionTemplateDetailsArray:
-      description: Session template details
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/V2SessionTemplateArray'
     V2SessionTemplateValidation:
       description: Session template validity details
       content:
@@ -1512,6 +1509,21 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Options'
+    # Responses that may contain V1 or V2 objects
+    SessionTemplateDetails:
+      description: Session template details
+      content:
+        application/json:
+          schema:
+            anyOf:
+              - $ref: '#/components/schemas/V1SessionTemplate'
+              - $ref: '#/components/schemas/V2SessionTemplate'
+    SessionTemplateDetailsArray:
+      description: Session template details array
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SessionTemplateArray'
     # Errors
     AlreadyExists:
       description: The resource to be created already exists
@@ -1623,13 +1635,7 @@ paths:
       operationId: get_v1_sessiontemplates
       responses:
         200:
-          description: A collection of SessionTemplates
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/V1SessionTemplate'
+          $ref: '#/components/responses/SessionTemplateDetailsArray'
   /v1/sessiontemplate/{session_template_id}:
     parameters:
       - name: session_template_id
@@ -1650,7 +1656,7 @@ paths:
       operationId: get_v1_sessiontemplate
       responses:
         200:
-          $ref: '#/components/responses/V1SessionTemplateDetails'
+          $ref: '#/components/responses/SessionTemplateDetails'
         404:
           $ref: '#/components/responses/ResourceNotFound'
     delete:
@@ -2066,7 +2072,7 @@ paths:
       operationId: get_v2_sessiontemplates
       responses:
         200:
-          $ref: '#/components/responses/V2SessionTemplateDetailsArray'
+          $ref: '#/components/responses/SessionTemplateDetailsArray'
   /v2/sessiontemplatesvalid/{session_template_id}:
     parameters:
       - name: session_template_id
@@ -2112,7 +2118,7 @@ paths:
       operationId: get_v2_sessiontemplate
       responses:
         200:
-          $ref: '#/components/responses/V2SessionTemplateDetails'
+          $ref: '#/components/responses/SessionTemplateDetails'
         404:
           $ref: '#/components/responses/ResourceNotFound'
     put:
