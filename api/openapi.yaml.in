@@ -111,13 +111,13 @@ components:
       description: Version data
       type: object
       properties:
-        major: 
+        major:
           type: string
           pattern: "^(0|[1-9][0-9]*)$"
-        minor: 
+        minor:
           type: string
           pattern: "^(0|[1-9][0-9]*)$"
-        patch: 
+        patch:
           type: string
           pattern: "^(0|[1-9][0-9]*)$"
         links:
@@ -248,7 +248,7 @@ components:
           description: |
             Name of the Phase Category
           example: "Succeeded"
-          pattern: '^(?i)not_started|in_progress|succeeded|failed|excluded$'
+          pattern: '(?i)^not_started|in_progress|succeeded|failed|excluded$'
         node_list:
           $ref: '#/components/schemas/V1NodeList'
     V1PhaseStatus:
@@ -267,7 +267,7 @@ components:
           description: |
             Name of the Phase
           example: "Boot"
-          pattern: '^(?i)boot|configure|shutdown$'
+          pattern: '(?i)^boot|configure|shutdown$'
         metadata:
           $ref: '#/components/schemas/V1GenericMetadata'
         categories:
@@ -381,7 +381,7 @@ components:
           description: |
             The network over which the node will boot from.
             Choices:  NMN -- Node Management Network
-            pattern: '^(?i)nmn$'
+            pattern: '(?i)^nmn$'
         node_list:
           type: array
           items:
@@ -523,7 +523,7 @@ components:
 
                 Shutdown     Gracefully power down nodes that are on.
 
-          pattern: '^(?i)boot|configure|reboot|shutdown$'
+          pattern: '(?i)^boot|configure|reboot|shutdown$'
         templateUuid:
           type: string
           description: DEPRECATED - use templateName
@@ -1442,7 +1442,7 @@ paths:
         - version
       x-openapi-router-controller: bos.server.controllers.base
       responses:
-        200:          
+        200:
           description: A collection of Versions
           content:
             application/json:
