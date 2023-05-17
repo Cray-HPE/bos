@@ -111,13 +111,13 @@ components:
       properties:
         major:
           type: string
-          pattern: "^(0|[1-9][0-9]*)$"
+          pattern: '^(0|[1-9][0-9]*)$'
         minor:
           type: string
-          pattern: "^(0|[1-9][0-9]*)$"
+          pattern: '^(0|[1-9][0-9]*)$'
         patch:
           type: string
-          pattern: "^(0|[1-9][0-9]*)$"
+          pattern: '^(0|[1-9][0-9]*)$'
         links:
           type: array
           items:
@@ -248,8 +248,9 @@ components:
           type: string
           description: |
             Name of the Phase Category
+            not_started, in_progress, succeeded, failed, or excluded
           example: "Succeeded"
-          pattern: '^(?i)not_started|in_progress|succeeded|failed|excluded$'
+          pattern: '^([nN][oO][tT]_[sS][tT][aA][rR][tT][eE][dD]|[iI][nN]_[pP][rR][oO][gG][rR][eE][sS][sS]|[sS][uU][cC][cC][eE][eE][dD][eE][dD]|[fF][aA][iI][lL][eE][dD]|[eE][xX][cC][lL][uU][dD][eE][dD])$'
         node_list:
           $ref: '#/components/schemas/V1NodeList'
     V1PhaseStatus:
@@ -267,8 +268,9 @@ components:
           type: string
           description: |
             Name of the Phase
+            boot, configure, or shutdown
           example: "Boot"
-          pattern: '^(?i)boot|configure|shutdown$'
+          pattern: '^([bB][oO][oO][tT]|[cC][oO][nN][fF][iI][gG][uU][rR][eE]|[sS][hH][uU][tT][dD][oO][wW][nN])$'
         metadata:
           $ref: '#/components/schemas/V1GenericMetadata'
         categories:
@@ -382,7 +384,7 @@ components:
           description: |
             The network over which the node will boot.
             Choices:  NMN -- Node Management Network
-          pattern: '^(?i)nmn$'
+          pattern: '^[nN][mM][nN]$'
         node_list:
           type: array
           items:
@@ -443,7 +445,7 @@ components:
           description: Name of the SessionTemplate. The length of the name is restricted to 45 characters.
           example: "cle-1.0.0"
           minLength: 1
-          pattern: "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
         description:
           type: string
           description: |
@@ -524,7 +526,7 @@ components:
 
                 Shutdown     Gracefully power down nodes that are on.
 
-          pattern: '^(?i)boot|configure|reboot|shutdown$'
+          pattern: '^([bB][oO][oO][tT]|[cC][oO][nN][fF][iI][gG][uU][rR][eE]|[rR][eE][bB][oO][oO][tT]|[sS][hH][uU][tT][dD][oO][wW][nN])$'
         templateUuid:
           type: string
           description: DEPRECATED - use templateName
@@ -590,13 +592,13 @@ components:
         properties:
           update_type:
             description: The type of update data
-            pattern: "NodeChangeList"
+            pattern: '^NodeChangeList$'
             type: string
           phase:
             description: |
-              The phase that this data belongs to. If  blank, it belongs to
-              the Boot Set itself, which only applies to the GenericMetadata type.
-            pattern: "(?i)shutdown|boot|configure"
+              The phase that this data belongs to (boot, shutdown, or configure). If blank,
+              it belongs to the Boot Set itself, which only applies to the GenericMetadata type.
+            pattern: '^($|[sS][hH][uU][tT][dD][oO][wW][nN]$|[bB][oO][oO][tT]$|[cC][oO][nN][fF][iI][gG][uU][rR][eE]$)'
             type: string
           data:
             $ref: '#/components/schemas/V1NodeChangeList'
@@ -610,13 +612,13 @@ components:
         properties:
           update_type:
             description: The type of update data
-            pattern: "NodeErrorsList"
+            pattern: '^NodeErrorsList$'
             type: string
           phase:
             description: |
-              The phase that this data belongs to. If  blank, it belongs to
-              the Boot Set itself, which only applies to the GenericMetadata type.
-            pattern: "(?i)shutdown|boot|configure"
+              The phase that this data belongs to (boot, shutdown, or configure). If blank,
+              it belongs to the Boot Set itself, which only applies to the GenericMetadata type.
+            pattern: '^($|[sS][hH][uU][tT][dD][oO][wW][nN]$|[bB][oO][oO][tT]$|[cC][oO][nN][fF][iI][gG][uU][rR][eE]$)'
             type: string
           data:
             $ref: '#/components/schemas/V1NodeErrorsList'
@@ -630,13 +632,13 @@ components:
         properties:
           update_type:
             description: The type of update data
-            pattern: "GenericMetadata"
+            pattern: '^GenericMetadata$'
             type: string
           phase:
             description: |
-              The phase that this data belongs to. If the phase is boot_set, it belongs to
-              the Boot Set itself, which only applies to the GenericMetadata type.
-            pattern: '(?i)shutdown|boot|configure|boot_set'
+              The phase that this data belongs to (boot, shutdown, or configure). If blank,
+              it belongs to the Boot Set itself, which only applies to the GenericMetadata type.
+            pattern: '^($|[sS][hH][uU][tT][dD][oO][wW][nN]$|[bB][oO][oO][tT]$|[cC][oO][nN][fF][iI][gG][uU][rR][eE]$)'
             type: string
           data:
             $ref: '#/components/schemas/V1GenericMetadata'
@@ -675,7 +677,7 @@ components:
           # These validation parameters are restricted by Kubernetes naming conventions.
           minLength: 1
           maxLength: 45
-          pattern: "[a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*"
+          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
           readOnly: true
         tenant:
           type: string
