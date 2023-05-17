@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Fixed
 - Return valid BOS v2 session template on GET request to `/v2/sessiontemplatetemplate`.
+- Formatting and language linting of API spec to correct minor errors, omissions, and inconsistencies.
 
 ## [2.0.13] - 2023-05-15
 ### Fixed
