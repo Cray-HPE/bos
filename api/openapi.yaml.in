@@ -381,7 +381,7 @@ components:
           description: |
             The network over which the node will boot from.
             Choices:  NMN -- Node Management Network
-            pattern: '(?i)^nmn$'
+          pattern: '(?i)^nmn$'
         node_list:
           type: array
           items:
