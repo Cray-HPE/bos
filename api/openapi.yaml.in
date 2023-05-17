@@ -500,7 +500,65 @@ components:
       additionalProperties: false
     V1Session:
       description: |
-        A Session object
+        A Session object specified by templateName
+
+        ## Link Relationships
+
+        * self : The session object
+      type: object
+      properties:
+        operation:
+          type: string
+          description: >
+            A Session represents an operation on a SessionTemplate.
+            The creation of a session effectively results in the creation
+            of a Kubernetes Boot Orchestration Agent (BOA) job to perform the
+            duties required to complete the operation.
+
+            Operation -- An operation to perform on nodes in this session.
+
+                Boot         Boot nodes that are off.
+
+                Configure    Reconfigure the nodes using the Configuration Framework
+                             Service (CFS).
+
+                Reboot       Gracefully power down nodes that are on and then power
+                             them back up.
+
+                Shutdown     Gracefully power down nodes that are on.
+
+          pattern: '^([bB][oO][oO][tT]|[cC][oO][nN][fF][iI][gG][uU][rR][eE]|[rR][eE][bB][oO][oO][tT]|[sS][hH][uU][tT][dD][oO][wW][nN])$'
+        templateUuid:
+          type: string
+          description: DEPRECATED - use templateName. This field is ignored if templateName is also set.
+          example: "my-session-template"
+        templateName:
+          type: string
+          description: The name of the Session Template
+          example: "my-session-template"
+        job:
+          type: string
+          maxLength: 64
+          readOnly: true
+          description: >
+            The identity of the Kubernetes job that is created to handle the session.
+          example: "boa-07877de1-09bb-4ca8-a4e5-943b1262dbf0"
+        limit:
+          type: string
+          description: >
+            A comma-separated of nodes, groups, or roles to which the session
+            will be limited. Components are treated as OR operations unless
+            preceded by "&" for AND or "!" for NOT.
+        links:
+          type: array
+          readOnly: true
+          items:
+            $ref: '#/components/schemas/V1SessionLink'
+      required: [operation, templateName]
+      additionalProperties: false
+    V1SessionByTemplateUuid:
+      description: |
+        A Session object specified by templateUuid (DEPRECATED -- use templateName)
 
         ## Link Relationships
 
@@ -532,10 +590,6 @@ components:
           type: string
           description: DEPRECATED - use templateName
           example: "my-session-template"
-        templateName:
-          type: string
-          description: The name of the Session Template
-          example: "my-session-template"
         job:
           type: string
           maxLength: 64
@@ -554,7 +608,7 @@ components:
           readOnly: true
           items:
             $ref: '#/components/schemas/V1SessionLink'
-      required: [operation]
+      required: [operation, templateUuid]
       additionalProperties: false
     V1NodeChangeList:
       type: object
@@ -1574,7 +1628,9 @@ paths:
          content:
            application/json:
              schema:
-               $ref: '#/components/schemas/V1Session'
+               oneOf:
+                 - $ref: '#/components/schemas/V1Session'
+                 - $ref: '#/components/schemas/V1SessionByTemplateUuid'
       responses:
         201:
           $ref: '#/components/responses/V1SessionDetails'
