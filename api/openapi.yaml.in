@@ -279,6 +279,11 @@ components:
             $ref: '#/components/schemas/V1PhaseCategoryStatus'
         errors:
           $ref: '#/components/schemas/V1NodeErrorsList'
+    V1SessionId:
+      type: string
+      description: Unique BOS v1 session identifier.
+      format: uuid
+      example: "8deb0746-b18c-427c-84a8-72ec6a28642c"
     V1BootSetStatus:
       type: object
       description: |
@@ -296,9 +301,7 @@ components:
           description: Name of the Boot Set
           example: "Boot-Set"
         session:
-          type: string
-          description: Session ID
-          example: "Session-ID"
+          $ref: '#/components/schemas/V1SessionId'
         metadata:
           $ref: '#/components/schemas/V1GenericMetadata'
         phases:
@@ -329,9 +332,7 @@ components:
              type: string
            minItems: 1
         id:
-          type: string
-          description: Session ID
-          format: uuid
+          $ref: '#/components/schemas/V1SessionId'
         links:
           type: array
           items:
@@ -1582,22 +1583,22 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     get:
-      summary: List sessions
+      summary: List session IDs
       description: |
-        List all sessions, including those in progress and those complete.
+        List IDs of all sessions, including those in progress and those complete.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.session
       operationId: get_v1_sessions
       responses:
         200:
-          description: A collection of Sessions
+          description: A collection of Session IDs
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/V1Session'
+                  $ref: '#/components/schemas/V1SessionId'
   /v1/session/{session_id}:
     get:
       summary: Get session details by ID

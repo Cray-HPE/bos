@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Fixed
+- Updated API spec so that it accurately describes the actual implementation:
+  - Specify that a GET to `/v1/session` returns a list of session IDs, not sessions.
 - Return valid BOS v2 session template on GET request to `/v2/sessiontemplatetemplate`.
 - Formatting and language linting of API spec to correct minor errors, omissions, and inconsistencies.
 - Correct API spec to use valid ECMA 262 regular expression syntax, as dictated by the OpenAPI requirements.
