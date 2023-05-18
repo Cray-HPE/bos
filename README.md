@@ -9,8 +9,8 @@ orchestration agents (BOA) which fulfill boot-related requests.
 *Image Management Service* (IMS) owns record keeping, building and staging of
 images used with a boot orchestration service Boot Set.
 
-*Artifact Repository Service* (ARS) owns organization, upload, and serving of
-files, including package repositories, root filesystems, kernels, and initrds.
+*Simple Storage Service* (S3) owns organization, upload, and serving of
+files, including root filesystems, kernels, and initrds.
 
 *Boot Script Service* (BSS) BSS holds per hardware associations for what to boot
 next. Nodes consult BSS for their target artifacts and boot parameters when nodes
@@ -72,8 +72,8 @@ shutting down the nodes rather than booting them, you can edit
 the file /root/k8s/manual.yaml and the change the operation.
 
 The manual.yaml file looks like this.
-```
-# less manual.yaml
+
+```yaml
 kind: Job
 apiVersion: batch/v1
 metadata:
