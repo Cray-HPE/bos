@@ -153,6 +153,7 @@ def create_v1_sessiontemplate():  # noqa: E501
            result in an HTTP 409 Conflict. TBD.
         """
         sessiontemplate_name = st_json['name']
+        st_json["tenant"] = ""  # Tenants are not used in v1, but v1 and v2 share template storage
         DB.put(sessiontemplate_name, st_json)
         return sessiontemplate_name, 201
 
@@ -165,6 +166,7 @@ def create_v1_sessiontemplate():  # noqa: E501
         """
         LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
         st_json = connexion.request.get_json()
+        st_json["tenant"] = ""  # Tenants are not used in v1, but v1 and v2 share template storage
         DB.put(sessiontemplate.name, st_json)
         return sessiontemplate.name, 201
 
