@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+- Updated BOS server setup file from Python 3.6 to Python 3.11
 ### Fixed
 - Fixed a window during power-on operations which could lead to an incorrect status in larger systems
 - Updated API spec so that it accurately describes the actual implementation:
