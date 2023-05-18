@@ -24,6 +24,7 @@
 
 import connexion
 import logging
+import hashlib
 from requests.exceptions import HTTPError
 from bos.common.utils import requests_retry_session, PROTOCOL
 
@@ -61,11 +62,11 @@ def get_new_tenant_header(tenant):
 
 def get_tenant_aware_key(key, tenant):
     if not tenant:
-        # This standardizes the no tenant case.
+        # The no tenant case should already be standardized, but this adds some safety.
         tenant = ""
-    # Uses % because it's not allowed in session template names.  Otherwise collisions could occur:
-    #     e.g. for tenant=1, key=2-3 and tenant=1-2, key=3 would produce the same result if the connecting character was -.
-    return f"{tenant}%{key}"
+    tenant_hash = hashlib.sha1(tenant.encode()).hexdigest()
+    key_hash = hashlib.sha1(key.encode()).hexdigest()
+    return f"{tenant_hash}-{key_hash}"
 
 
 def get_tenant_data(tenant, session=None):

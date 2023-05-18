@@ -33,6 +33,7 @@ from bos.common.tenant_utils import no_v1_multi_tenancy_support
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
 from bos.server.utils import _canonize_xname
+from bos.common.tenant_utils import get_tenant_aware_key
 from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, delete_v2_sessiontemplate
 
 LOGGER = logging.getLogger('bos.server.controllers.v1.sessiontemplate')
@@ -166,8 +167,10 @@ def create_v1_sessiontemplate():  # noqa: E501
         """
         LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
         st_json = connexion.request.get_json()
-        st_json["tenant"] = ""  # Tenants are not used in v1, but v1 and v2 share template storage
-        DB.put(sessiontemplate.name, st_json)
+        # Tenants are not used in v1, but v1 and v2 share template storage
+        st_json["tenant"] = ""
+        template_key = get_tenant_aware_key(sessiontemplate.name, "")
+        DB.put(template_key, st_json)
         return sessiontemplate.name, 201
 
 
