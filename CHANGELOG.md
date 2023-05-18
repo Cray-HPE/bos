@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Changed
 - Updated BOS server setup file from Python 3.6 to Python 3.11
+- Updated from BOA 1.3 to 1.4
 ### Fixed
 - Fixed a window during power-on operations which could lead to an incorrect status in larger systems
 - Updated API spec so that it accurately describes the actual implementation:
