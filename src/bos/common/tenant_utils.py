@@ -40,9 +40,12 @@ class InvalidTenantException(Exception):
 
 
 def get_tenant_from_header():
+    tenant = ""
     if TENANT_HEADER in connexion.request.headers:
-        return connexion.request.headers[TENANT_HEADER]
-    return None
+        tenant = connexion.request.headers[TENANT_HEADER]
+        if not tenant:
+            tenant = ""
+    return tenant
 
 
 def add_tenant_to_headers(tenant, headers=None):
