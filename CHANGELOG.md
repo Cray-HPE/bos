@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Changed
 - Pin Alpine version to 3.18 in Dockerfile
+- Updated BOS server setup file from Python 3.6 to Python 3.11
 
 ## [2.0.14] - 2023-05-18
 ### Fixed
