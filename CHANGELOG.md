@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.0.16] - 2023-05-19
+### Fixed
+- Merge definitions of `V1Session` and `V1SessionByTemplateName`, to avoid server error
+  creating sessions using `templateUuid`.
+
 ## [2.0.15] - 2023-05-18
 ### Changed
 - Pin Alpine version to 3.18 in Dockerfile
