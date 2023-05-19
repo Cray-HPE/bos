@@ -34,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Components requiring phase updates are no longer reported in the session status phase percentages.
 - Fixed the "tenant" field so that all of the values for no tenant are represented by an empty string.
 - Fixed the database key generation so that collisions between tenants can't occur
+- Fixed component patching issues when patching actual_state during on-going changes to component state.
 
 ## [2.3.0] - 2023-05-10
 ### Changed
