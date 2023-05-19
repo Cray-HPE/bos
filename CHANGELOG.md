@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Fixed
+- Merge definitions of `V1Session` and `V1SessionByTemplateName`, to avoid server error
+  creating sessions using `templateUuid`.
 
 ## [2.0.15] - 2023-05-18
 ### Changed

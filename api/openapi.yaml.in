@@ -594,34 +594,6 @@ components:
           $ref: '#/components/schemas/V1TemplateName'
     V1Session:
       description: |
-        A Session object
-
-        ## Link Relationships
-
-        * self : The session object
-      type: object
-      properties:
-        operation:
-          $ref: '#/components/schemas/V1Operation'
-        templateName:
-          $ref: '#/components/schemas/V1TemplateName'
-        job:
-          $ref: '#/components/schemas/V1BoaKubernetesJob'
-        limit:
-          type: string
-          description: >
-            A comma-separated of nodes, groups, or roles to which the session
-            will be limited. Components are treated as OR operations unless
-            preceded by "&" for AND or "!" for NOT.
-        links:
-          type: array
-          readOnly: true
-          items:
-            $ref: '#/components/schemas/V1SessionLink'
-      required: [operation, templateName]
-      additionalProperties: false
-    V1SessionByTemplateName:
-      description: |
         A Session object specified by templateName
 
         ## Link Relationships
@@ -1703,7 +1675,7 @@ paths:
            application/json:
              schema:
                oneOf:
-                 - $ref: '#/components/schemas/V1SessionByTemplateName'
+                 - $ref: '#/components/schemas/V1Session'
                  - $ref: '#/components/schemas/V1SessionByTemplateUuid'
       responses:
         201:
