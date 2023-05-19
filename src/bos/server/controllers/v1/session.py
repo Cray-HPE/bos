@@ -56,16 +56,22 @@ def create_v1_session():  # noqa: E501
 
     :rtype: Session
     """
-    if connexion.request.is_json:
-        LOGGER.debug("connexion.request.is_json")
-        LOGGER.debug("type=%s", type(connexion.request.get_json()))
-        LOGGER.debug("Received: %s", connexion.request.get_json())
-        session = Session.from_dict(connexion.request.get_json())  # noqa: E501
-    else:
+    if not connexion.request.is_json:
         return "Post must be in JSON format", 400
+    LOGGER.debug("connexion.request.is_json")
+    received_object = connexion.request.get_json()
+    LOGGER.debug("type=%s", type(received_object))
+    LOGGER.debug("Received: %s", received_object)
+    # Check if the session is using a templateUuid
+    if "templateUuid" in received_object:
+        # templateUuid is only used if templateName is not specified.
+        # Either way, delete templateUuid from the session object, because we
+        # no longer include that field when creating V1Session objects.
+        template_uuid = received_object.pop("templateUuid")
+        if "templateName" not in received_object:
+            received_object["templateName"] = template_uuid
+    session = Session.from_dict(connexion.request.get_json())  # noqa: E501       
     template_name = session.template_name
-    if not template_name:
-        template_name = session.template_uuid
     if not template_name:
         msg = "templateName is a required parameter"
         LOGGER.error(msg)
