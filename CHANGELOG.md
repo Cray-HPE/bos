@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Return valid BOS v2 session template on GET request to `/v2/sessiontemplatetemplate`.
 - Formatting and language linting of API spec to correct minor errors, omissions, and inconsistencies.
 - Correct API spec to use valid ECMA 262 regular expression syntax, as dictated by the OpenAPI requirements.
+- Fixed minor errors and did minor linting of repository [`README.md`](README.md).
 
 ## [2.3.0] - 2023-05-10
 ### Changed
