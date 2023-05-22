@@ -24,7 +24,7 @@
 # Dockerfile for Cray Boot Orchestration Service (BOS)
 
 # Upstream Build Args
-ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v6.4.0
+ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v6.6.0
 ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 # Generate Code
