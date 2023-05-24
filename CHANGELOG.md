@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated from BOA 1.3 to 1.4
 - For POST requests to `/v1/session` that include a `templateUuid` field, convert that field to a `templateName` field (if
   that field is not also specified) and delete the `templateUuid` field, before creating  a `V1Session` object.
+- Updated to using v6.6.0 of `openapi-generator` (up from v6.4.0)
 ### Fixed
 - Fixed a window during power-on operations which could lead to an incorrect status in larger systems
 - Updated API spec so that it accurately describes the actual implementation:
