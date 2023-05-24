@@ -278,10 +278,33 @@ def patch_v2_component(component_id):
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
+    if "actual_state" in data and not validate_actual_state_change_is_allowed(component_id):
+        return connexion.problem(
+            status=409, title="Actual state can not be updated.",
+            detail="BOS is currently changing the state of the node,"
+                   " and the actual state can not be accurately recorded")
     if "id" in data:
         del data["id"]
     data = _set_auto_fields(data)
     return DB.patch(component_id, data, _update_handler), 200
+
+
+def validate_actual_state_change_is_allowed(component_id):
+        current_data = DB.get(component_id)
+        if not current_data["enabled"]:
+            # This component is not being managed on by BOS
+            return True
+        if _calculate_status(current_data) == Status.stable:
+            # BOS believes the component is in the correct state
+            return True
+        if current_data["last_action"]["action"] == Action.power_on:
+            # BOS just powered-on the component and is waiting for the new state to be reported
+            return True
+        # The component is being actively changed by BOS, and is going to be powered off or
+        #   is in a state where the next action hasn't been determined.  Allowing the actual
+        #   state to be updated can interfere with BOS' ability to determine the next action.
+        #   e.g. When the actual_state is deleted by the setup operator to trigger a reboot
+        return False
 
 
 @dbutils.redis_error_handler
