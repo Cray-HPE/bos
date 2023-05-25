@@ -1515,6 +1515,12 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
+    UpdateConflict:
+      description: The update was not allowed due to a conflict.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ProblemDetails'
     ServiceUnavailable:
       description: Service Unavailable
       content:
@@ -2476,6 +2482,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         404:
           $ref: '#/components/responses/ResourceNotFound'
+        409:
+          $ref: '#/components/responses/UpdateConflict'
     delete:
       tags:
         - v2
