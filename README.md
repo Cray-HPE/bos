@@ -1,16 +1,18 @@
-# About
+# Boot Orchestration Service (BOS)
+
 This is the Boot Orchestration Service (BOS) API. It is responsible
 for stateful changes to boot orchestration sessions, and launching boot
 orchestration agents (BOA) which fulfill boot-related requests.
 
 ## Related Software
+
 *Boot Orchestration Agent* (BOA) handles boot requests submitted to the BOS API.
 
 *Image Management Service* (IMS) owns record keeping, building and staging of
 images used with a boot orchestration service Boot Set.
 
-*Artifact Repository Service* (ARS) owns organization, upload, and serving of
-files, including package repositories, root filesystems, kernels, and initrds.
+*Simple Storage Service* (S3) owns organization, upload, and serving of
+files, including root filesystems, kernels, and initrds.
 
 *Boot Script Service* (BSS) BSS holds per hardware associations for what to boot
 next. Nodes consult BSS for their target artifacts and boot parameters when nodes
@@ -21,12 +23,12 @@ aggregates status from one or more ansible instances against
 nodes (Node Personalization) or Images (Image Customization).
 
 ## Terminology
+
 * Operation -- an operation to perform on some nodes
   * Boot -- Boot nodes that are off
   * Reboot -- Gracefully power down nodes that are on and then power them back up
   * Shutdown -- Gracefully power down nodes that are on
   * Reconfigure -- Reconfigure the nodes using the Configuration Framework Service (CFS)  (Currently, not supported.)
-
 * Boot Set -- A collection of nodes that you want to perform an operation upon.  It contains
   * A list of nodes
   * The following applies to booting or rebooting:
@@ -35,25 +37,27 @@ nodes (Node Personalization) or Images (Image Customization).
     * Kernel parameters: The kernel parameters to use to boot the nodes
     * rootfs_provider_passthrough: Additional kernel parameters that will be appended to the 'rootfs=\<protocol>' kernel parameter
     * cfs: The Configuration Framework Service (CFS) configuration name to associate with a particular boot set.
-
 * Session Template -- A collection of one or more Boot Sets and some associated data
-  * boot_sets: One or more Boot Sets as described above
-  * enable_cfs: Whether to enable the Configuration Framework Service (CFS); Choices: true/false
+  * `boot_sets`: One or more Boot Sets as described above
+  * `enable_cfs`: Whether to enable the Configuration Framework Service (CFS); Choices: true/false
   * cfs: The configuration framework service configuration options to use for all boot sets that don't already define their own.
-
 * Session -- Performs an Operation (action) on a Session Template.  The creation of
-a Session results in the creation of one or more Kubernetes BOA jobs which interact
-with other Shasta subsystems to perform the requested operation.
+  a Session results in the creation of one or more Kubernetes BOA jobs which interact
+  with other Shasta subsystems to perform the requested operation.
 
 ## Launching a Boot Session
-Once the bos Ansible role has been run, then you can launch a Boot Session with
+
+Once the `bos` Ansible role has been run, then you can launch a Boot Session with
+
 ```
 kubectl apply -f /root/k8s/manual.yaml
 ```
+
 Because a Boot Session is a Kubernetes job, and only one Kubernetes job with a
 given name can exist at a time, the previous job must be deleted.  Thus, if
 the Boot Session has been launched previously, then its job will first need to
 be deleted and then relaunched.
+
 ```
 kubectl delete -f /root/k8s/manual.yaml
 kubectl apply -f /root/k8s/manual.yaml
@@ -61,19 +65,21 @@ kubectl apply -f /root/k8s/manual.yaml
 
 If you forget to delete the job and attempt to launch the Boot Session, you
 will encounter an inscrutable error like this
+
 ```
 # kubectl apply -f manual.yaml
 The Job "boa-dynamic" is invalid: spec.template: Invalid value: core.PodTemplateSpec{ObjectMeta:v1.ObjectMeta{Name:"", GenerateName:"", Namespace:"", SelfLink:"", UID:"", ResourceVersion:"", Generation:0, CreationTimestamp:v1.Time{Time:time.Time{wall:0x0, ext:0, loc:(*time.Location)(nil)}}, DeletionTimestamp:(*v1.Time)(nil), DeletionGracePeriodSeconds:(*int64)(nil), Labels:map[string]string{"controller-uid":"42d9903a-7343-11e9-a1a2-a4bf0138e991", "job-name":"boa-dynamic"}, Annotations:map[string]string(nil), OwnerReferences:[]v1.OwnerReference(nil), Initializers:(*v1.Initializers)(nil), Finalizers:[]string(nil), ClusterName:""}, Spec:core.PodSpec{Volumes:[]core.Volume{core.Volume{Name:"boot-session", VolumeSource:core.VolumeSource{HostPath:(*core.HostPathVolumeSource)(nil), EmptyDir:(*core.EmptyDirVolumeSource)(nil), GCEPersistentDisk:(*core.GCEPersistentDiskVolumeSource)(nil), AWSElasticBlockStore:(*core.AWSElasticBlockStoreVolumeSource)(nil), GitRepo:(*core.GitRepoVolumeSource)(nil), Secret:(*core.SecretVolumeSource)(nil), NFS:(*core.NFSVolumeSource)(nil), ISCSI:(*core.ISCSIVolumeSource)(nil), Glusterfs:(*core.GlusterfsVolumeSource)(nil), PersistentVolumeClaim:(*core.PersistentVolumeClaimVolumeSource)(nil), RBD:(*core.RBDVolumeSource)(nil), Quobyte:(*core.QuobyteVolumeSource)(nil), FlexVolume:(*core.FlexVolumeSource)(nil), Cinder:(*core.CinderVolumeSource)(nil), CephFS:(*core.CephFSVolumeSource)(nil), Flocker:(*core.FlockerVolumeSource)(nil), DownwardAPI:(*core.DownwardAPIVolumeSource)(nil), FC:(*core.FCVolumeSource)(nil), AzureFile:(*core.AzureFileVolumeSource)(nil), ConfigMap:(*core.ConfigMapVolumeSource)(0xc00b6ca280), VsphereVolume:(*core.VsphereVirtualDiskVolumeSource)(nil), AzureDisk:(*core.AzureDiskVolumeSource)(nil), PhotonPersistentDisk:(*core.PhotonPersistentDiskVolumeSource)(nil), Projected:(*core.ProjectedVolumeSource)(nil), PortworxVolume:(*core.PortworxVolumeSource)(nil), ScaleIO:(*core.ScaleIOVolumeSource)(nil), StorageOS:(*core.StorageOSVolumeSource)(nil)}}}, InitContainers:[]core.Container(nil), Containers:[]core.Container{core.Container{Name:"boa-dynamic", Image:"sms.local:5000/jasons/cray-boa:latest", Command:[]string(nil), Args:[]string(nil), WorkingDir:"", Ports:[]core.ContainerPort(nil), EnvFrom:[]core.EnvFromSource(nil), Env:[]core.EnvVar{core.EnvVar{Name:"NAMESPACE", Value:"default", ValueFrom:(*core.EnvVarSource)(nil)}, core.EnvVar{Name:"OPERATION", Value:"shutdown", ValueFrom:(*core.EnvVarSource)(nil)}}, Resources:core.ResourceRequirements{Limits:core.ResourceList(nil), Requests:core.ResourceList(nil)}, VolumeMounts:[]core.VolumeMount{core.VolumeMount{Name:"boot-session", ReadOnly:false, MountPath:"/mnt/boot_session", SubPath:"", MountPropagation:(*core.MountPropagationMode)(nil)}}, VolumeDevices:[]core.VolumeDevice(nil), LivenessProbe:(*core.Probe)(nil), ReadinessProbe:(*core.Probe)(nil), Lifecycle:(*core.Lifecycle)(nil), TerminationMessagePath:"/dev/termination-log", TerminationMessagePolicy:"File", ImagePullPolicy:"Always", SecurityContext:(*core.SecurityContext)(nil), Stdin:false, StdinOnce:false, TTY:false}}, RestartPolicy:"Never", TerminationGracePeriodSeconds:(*int64)(0xc005979df8), ActiveDeadlineSeconds:(*int64)(nil), DNSPolicy:"ClusterFirst", NodeSelector:map[string]string(nil), ServiceAccountName:"", AutomountServiceAccountToken:(*bool)(nil), NodeName:"", SecurityContext:(*core.PodSecurityContext)(0xc002407ce0), ImagePullSecrets:[]core.LocalObjectReference(nil), Hostname:"", Subdomain:"", Affinity:(*core.Affinity)(nil), SchedulerName:"default-scheduler", Tolerations:[]core.Toleration(nil), HostAliases:[]core.HostAlias(nil), PriorityClassName:"", Priority:(*int32)(nil), DNSConfig:(*core.PodDNSConfig)(nil), ReadinessGates:[]core.PodReadinessGate(nil), RuntimeClassName:(*string)(nil), EnableServiceLinks:(*bool)(nil)}}: field is immutable
 ```
+
 In that case, simply delete the job first and then relaunch it.
 
 If you want to change the operation that is run on the nodes, such as
 shutting down the nodes rather than booting them, you can edit
-the file /root/k8s/manual.yaml and the change the operation.
+the file `/root/k8s/manual.yaml` and the change the operation.
 
-The manual.yaml file looks like this.
-```
-# less manual.yaml
+The `manual.yaml` file looks like this.
+
+```yaml
 kind: Job
 apiVersion: batch/v1
 metadata:
@@ -102,9 +108,7 @@ spec:
 
 ## Testing
 
-### Unit tests
-
-#### Run unit tests and codestyle checkers with Docker
+### Run unit tests and codestyle checkers with Docker
 
 ```
 $ ./run_unittests
@@ -114,9 +118,9 @@ $ ./run_codestylecheck
 
 ### CT Tests
 
-See cms-tools repo for details on running CT tests for this service.
+See [`cms-tools`](https://github.com/Cray-HPE/cms-tools) repository for details on running CT tests for this service.
 
-#### Run API tests with docker
+### Run API tests with Docker
 
 ```
 $ docker build . -t bos-api-testing --target api-testing
@@ -129,45 +133,50 @@ $ docker run --rm \
 ## Generating the server
 
 The OpenAPI specification automatically generates server code as a function of
-building the docker image, however, it may be desirable to generate the server code
-while writing and testing code locally, outside of the docker image itself. This
-is helpful when the openapi code in question generates stubbed content, to be later
+building the Docker image, however, it may be desirable to generate the server code
+while writing and testing code locally, outside of the Docker image itself. This
+is helpful when the OpenAPI code in question generates stubbed content, to be later
 filled in by the application developer.
 
-_NOTE_: Generated code that does not have Cray authored additions should not be
-checked in for this repository. The .gitignore file has patterns that match
+_NOTE_: Generated code that does not have Cray-authored additions should not be
+checked in for this repository. The [`.gitignore`](.gitignore) file has patterns that match
 generated code to help prevent this kind of check-in.
 
 To manually update the server code into your local checkout, run the following command:
 
 ```
 $ cd $REPO
-$ ./regenerate-server.sh
+$ ./regenerate_server.sh
 ```
 
 ## Dependency: cray-boa
-cray-bos uses the cray-boa image built by the boa repo.
+
+`cray-bos` uses the `cray-boa` image built by the [`boa`](https://github.com/Cray-HPE/boa) repository.
 We specify which major and minor version of the image we want with the 
-[update_external_versions.conf](update_external_versions.conf) file.
-At build time the [runBuildPrep.sh](runBuildPrep.sh) script calls a utility
+[`update_external_versions.conf`](update_external_versions.conf) file.
+At build time the [`runBuildPrep.sh`](runBuildPrep.sh) script calls a utility
 which finds the latest version with that major and minor number.
 
 When creating a new release branch, be sure to update this file to specify the
 desired major and minor number of the image for the new release.
 
 ## Build Helpers
-This repo uses some build helper scripts from the 
-[cms-meta-tools](https://github.com/Cray-HPE/cms-meta-tools) repo. See that repo for more details.
+
+This repository uses some build helper scripts from the 
+[`cms-meta-tools`](https://github.com/Cray-HPE/cms-meta-tools) repository. See that repository for more details.
 
 ## Local Builds
+
 If you wish to perform a local build, you will first need to clone or copy the contents of the
-cms-meta-tools repo to `./cms_meta_tools` in the same directory as the `Makefile`.
+`cms-meta-tools` repository to `./cms_meta_tools` in the same directory as the `Makefile`.
 
 ## Versioning
+
 We use gitflow and gitversion following SemVer; these changes are keyed off of our Changelog, which is
 maintained using the [Changelog format](https://keepachangelog.com/en/1.0.0).
 
 ## Copyright and License
+
 This project is copyrighted by Hewlett Packard Enterprise Development LP and is under the MIT
 license. See the [LICENSE](LICENSE) file for details.
 

@@ -189,6 +189,26 @@ class BaseOperator(ABC):
             data.append(patch)
         self.bos_client.components.update_components(data)
 
+    def _preset_last_action(self, components: List[dict]) -> None:
+        # This is done to eliminate the window between performing an action and marking the nodes as acted
+        # e.g. nodes could be powered-on without the correct power-on last action, causing status problems
+        if not self.name:
+            return
+        data = []
+        for component in components:
+            patch = {
+                'id': component['id'],
+                'error': component['error']
+            }
+            if self.name:
+                last_action_data = {
+                    'action': self.name,
+                    'failed': False
+                }
+                patch['last_action'] = last_action_data
+            data.append(patch)
+        self.bos_client.components.update_components(data)
+
     def _update_database_for_failure(self, components: List[dict]) -> None:
         """
         Updates the BOS database for all components the operator believes have failed

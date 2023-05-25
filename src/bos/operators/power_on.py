@@ -59,6 +59,7 @@ class PowerOnOperator(BaseOperator):
         ]
 
     def _act(self, components):
+        self._preset_last_action(components)
         try:
             self._set_bss(components)
         except Exception as e:

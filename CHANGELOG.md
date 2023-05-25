@@ -5,7 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [2.4.0] - 2023-05-24
+### Changed
+- Updated BOS server setup file from Python 3.6 to Python 3.11
+- Updated from BOA 1.3 to 1.4
+- For POST requests to `/v1/session` that include a `templateUuid` field, convert that field to a `templateName` field (if
+  that field is not also specified) and delete the `templateUuid` field, before creating  a `V1Session` object.
+- Updated to using v6.6.0 of `openapi-generator` (up from v6.4.0)
+### Fixed
+- Fixed a window during power-on operations which could lead to an incorrect status in larger systems
+- Updated API spec so that it accurately describes the actual implementation:
+  - Updated `Version` definition to reflect actual type of `major`, `minor`, and `patch` fields.
+  - Created `V1SessionLink` definition to reflect that the `links` field for BOS v1 sessions can have
+    two additional fields that don't show up in any other BOS link objects.
+  - Specify that the BOS v1 session ID is in UUID format.
+  - Specify that a GET to `/v1/session` returns a list of session IDs, not sessions.
+  - Specify that creating a BOS v1 session requires `operation` to be specified and one or both of
+    `templateName` and `templateUuid` (although if both are specified, the latter is ignored).
+  - Make the spec accurately reflect what is returned when creating a BOS v1 session and when doing a GET
+    of a BOS v1 session.
+  - Indicate that GET of a session template or list of session templates can return v1 or v2 templates,
+    regardless of which endpoint is used.
+- Return valid BOS v2 session template on GET request to `/v2/sessiontemplatetemplate`.
+- Formatting and language linting of API spec to correct minor errors, omissions, and inconsistencies.
+- Correct API spec to use valid ECMA 262 regular expression syntax, as dictated by the OpenAPI requirements.
+- Fixed minor errors and did minor linting of repository [`README.md`](README.md).
+- Failed components are no longer reported in the session status phase percentages.
+- Components requiring phase updates are no longer reported in the session status phase percentages.
+- Fixed the "tenant" field so that all of the values for no tenant are represented by an empty string.
+- Fixed the database key generation so that collisions between tenants can't occur
+- Fixed component patching issues when patching actual_state during on-going changes to component state.
 
 ## [2.3.0] - 2023-05-10
 ### Changed
