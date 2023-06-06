@@ -450,10 +450,18 @@ components:
             template parameters.
         name:
           type: string
-          description: Name of the SessionTemplate. The length of the name is restricted to 45 characters.
-          example: "cle-1.0.0"
           minLength: 1
-          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
+          description: |
+            Name of the Session Template.
+            
+            It is recommended to use names which meet the following restrictions:
+            * Maximum length of 127 characters.
+            * Use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Begin and end with a letter or digit.
+            
+            These restrictions are not enforced in this version of BOS, but will be
+            enforced in a future version.
+          example: "cle-1.0.0"
         description:
           type: string
           description: |
@@ -522,6 +530,7 @@ components:
        type: string
        description: The name of the Session Template
        example: "my-session-template"
+       minLength: 1
     V1TemplateUuid:
       type: string
       description: DEPRECATED - use templateName. This field is ignored if templateName is also set.
@@ -787,13 +796,19 @@ components:
       properties:
         name:
           type: string
-          description: Name of the SessionTemplate. The length of the name is restricted to 45 characters.
-          example: "cle-1.0.0"
-          # These validation parameters are restricted by Kubernetes naming conventions.
           minLength: 1
-          maxLength: 45
-          pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
           readOnly: true
+          description: |
+            Name of the Session Template.
+            
+            It is recommended to use names which meet the following restrictions:
+            * Maximum length of 127 characters.
+            * Use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Begin and end with a letter or digit.
+            
+            These restrictions are not enforced in this version of BOS, but will be
+            enforced in a future version.
+          example: "cle-1.0.0"
         tenant:
           type: string
           description: >
@@ -826,6 +841,11 @@ components:
       description: |
         Message describing errors or incompleteness in a Session Template.
       type: string
+    V2TemplateName:
+       type: string
+       description: The name of the Session Template
+       example: "my-session-template"
+       minLength: 1
     V2SessionCreate:
       description: |
         A Session Creation object
@@ -853,9 +873,7 @@ components:
                 Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
         template_name:
-          type: string
-          description: The name of the Session Template
-          example: "my-session-template"
+          $ref: '#/components/schemas/V2TemplateName'
         limit:
           type: string
           description: >
@@ -995,9 +1013,7 @@ components:
                 Reboot               Applies the template to the components guarantees a reboot.
                 Shutdown             Power down nodes that are on.
         template_name:
-          type: string
-          description: The name of the Session Template
-          example: "my-session-template"
+          $ref: '#/components/schemas/V2TemplateName'
         limit:
           type: string
           description: >

@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2023-06-06
+### Fixed
+- Fix bug that accidentally started enforcing restrictions on session template names.
+  This fix updated the API spec in two ways:
+  - Relaxed the stated restrictions on session template names.
+  - Changed the restrictions to recommendations (noting that they are not currently
+    enforced, but will be enforced in a future BOS version).
+
 ## [2.4.0] - 2023-05-24
 ### Changed
 - Updated BOS server setup file from Python 3.6 to Python 3.11
