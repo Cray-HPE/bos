@@ -17,77 +17,87 @@ info:
     ## Resources
 
 
-    ### /sessiontemplate
+    ### Session Template
 
-    A session template sets the operational context of which nodes to operate on for
+    A Session Template sets the operational context of which nodes to operate on for
     any given set of nodes. It is largely comprised of one or more boot
     sets and their associated software configuration.
 
-    A boot set defines a list of nodes, the image you want to boot/reboot the nodes with,
+    A Boot Set defines a list of nodes, the image you want to boot/reboot the nodes with,
     kernel parameters to use to boot the nodes, and additional configuration management
     framework actions to apply during node bring up.
 
-    ### /session
+    ### Session
 
-    A BOS session applies a provided action to the nodes defined in a session
-    template.
-
-    ## Workflow
+    A BOS Session applies a provided action to the nodes defined in a Session Template.
 
 
-    ### Create a New Session
+    ## Workflow: Create a New Session
 
+    1. Choose the Session Template to use.
 
-    #### GET /sessiontemplate
+      Session Templates which do not belong to a tenant are uniquely identified by their
+      names. All Session Templates that belong to a given tenant are uniquely identified
+      by their names, but may share names with Session Templates that belong to other
+      tenants or that do not belong to a tenant.
 
-    List available session templates.
-    Note the *name* which uniquely identifies each session template.
-    This value can be used to create a new session later,
-    if specified in the request body of POST /session.
+      a. List available Session Templates.
 
-    #### POST /sessiontemplate
+        GET /v1/sessiontemplate or /v2/sessiontemplates
 
-    If no session template pre-exists that satisfies requirements,
-    then create a new session template. *name* uniquely identifies the
-    session template.
-    This value can be used to create a new session later,
-    if specified in the request body of POST /session.
+      b. Create a new Session Template if desired.
 
-    #### POST /session
+        POST /v1/sessiontemplate or PUT /v2/sessiontemplate/{template_name}
 
-    Specify template_name and an
-    operation to create a new session.
-    The template_name corresponds to the session template *name*.
-    A new session is launched as a result of this call.
+        If no Session Template exists that satisfies requirements,
+        then create a new Session Template.
+        This Session Template can be used to create a new Session later.
 
-    A limit can also be specified to narrow the scope of the session. The limit
-    can consist of nodes, groups, or roles in a comma-separated list.
-    Multiple groups are treated as separated by OR, unless "&" is added to
-    the start of the component, in which case this becomes an AND.  Components
-    can also be preceded by "!" to exclude them.
+    2. Create the Session.
 
-    Note, the response from a successful session launch contains *links*.
-    Within *links*, *href* is a string that uniquely identifies the session.
-    *href* is constructed using the session template name and a generated UUID.
-    Use the entire *href* string as the path parameter *session_id*
-    to uniquely identify a session in for the /session/{session_id}
-    endpoint.
+      POST /v1/session or /v2/sessions
 
-    #### GET /session/{session_id}
+      Specify template_name and an operation to create a new Session.
+      The template_name corresponds to the Session Template *name*.
+      A new Session is launched as a result of this call (in the case of
+      /v2/sessions, the option to stage but not begin the Session also exists).
 
-    Get session details by session ID.
+      A limit can also be specified to narrow the scope of the Session. The limit
+      can consist of nodes, groups, or roles in a comma-separated list.
+      Multiple groups are treated as separated by OR, unless "&" is added to
+      the start of the component, in which case this becomes an AND.  Components
+      can also be preceded by "!" to exclude them.
 
-    List all in progress and completed sessions.
+      Note, the response from a successful Session launch contains *links*.
+      Within *links*, *href* is a string that uniquely identifies the Session.
+      *href* is constructed using the Session Template name and a generated UUID.
+      Use the entire *href* string as the path parameter *session_id*
+      to uniquely identify a Session.
+
+    3. Get details on the Session.
+
+      GET /v1/session/{session_id} or /v2/sessions/{session_id}
 
 
     ## Interactions with Other APIs
 
+    ### Configuration Framework Service (CFS)
 
-    BOS works in concert with Image Management Service (IMS) to access boot images,
-    and if *enable_cfs* is true then
-    BOS will invoke CFS to configure the compute nodes.
+    If *enable_cfs* is true in a Session Template, then BOS will invoke CFS to
+    configure the target nodes during *boot*, *reboot*, or *configure*
+    operations. The *configure* operation is only available in BOS v1 Sessions;
+    if desiring to only perform a CFS configuration on a set of nodes, it is
+    recommended to use CFS directly.
 
-    All boot images specified via the session template must be available via IMS.
+    ### Hardware State Manager (HSM)
+
+    In some situations BOS checks HSM to determine if a node has been disabled.
+
+    ### Image Management Service (IMS)
+
+    BOS works in concert with IMS to access boot images.
+    All boot images specified via the Session Template must be available via IMS.
+
 
 servers:
 - url: https://api-gw-service-nmn.local/apis/bos
@@ -172,25 +182,29 @@ components:
     V1CfsParameters:
       type: object
       description: |
-        CFS Parameters is the collection of parameters that are passed to the Configuration
+        This is the collection of parameters that are passed to the Configuration
         Framework Service when configuration is enabled.
       properties:
         clone_url:
           type: string
+          deprecated: true
           description: |
-            The clone url for the repository providing the configuration. (DEPRECATED)
+            The clone URL for the repository providing the configuration. (DEPRECATED)
         branch:
           type: string
+          deprecated: true
           description: |
             The name of the branch containing the configuration that you want to
             apply to the nodes. Mutually exclusive with commit. (DEPRECATED)
         commit:
           type: string
+          deprecated: true
           description: |
             The commit ID of the configuration that you want to
             apply to the nodes. Mutually exclusive with branch. (DEPRECATED)
         playbook:
           type: string
+          deprecated: true
           description: |
             The name of the playbook to run for configuration. The file path must be specified
             relative to the base directory of the config repo. (DEPRECATED)
@@ -252,11 +266,11 @@ components:
     V1PhaseCategoryStatus:
       type: object
       description: |
-        A list of the nodes in a given category within a phase.
+        A list of the nodes in a given category within a Phase.
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The phase category status object
 
       properties:
         name:
@@ -271,7 +285,7 @@ components:
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The phase status object
 
       properties:
         name:
@@ -291,7 +305,7 @@ components:
           $ref: '#/components/schemas/V1NodeErrorsList'
     V1SessionId:
       type: string
-      description: Unique BOS v1 session identifier.
+      description: Unique BOS v1 Session identifier.
       format: uuid
       example: "8deb0746-b18c-427c-84a8-72ec6a28642c"
     V1BootSetStatus:
@@ -301,8 +315,8 @@ components:
 
         ## Link Relationships
 
-        * self : The session object
-        * phase : A phase of the boot set
+        * self : The Boot Set Status object
+        * phase : A phase of the Boot Set
 
       properties:
         name:
@@ -325,10 +339,11 @@ components:
     V1SessionStatus:
       type: object
       description: |
-        The status for a Boot Session. It is a list of all of the Boot Set Statuses in the session.
+        The status for a Session. It is a list of all of the Boot Set Statuses in the Session.
+
         ## Link Relationships
 
-        * self : The session object
+        * self : The Session status object
         * boot sets: URL to access the Boot Set status
 
       properties:
@@ -336,7 +351,7 @@ components:
           $ref: '#/components/schemas/V1GenericMetadata'
         boot_sets:
            description: |
-             The boot sets in the Session
+             The Boot Sets in the Session
            type: array
            items:
              type: string
@@ -349,11 +364,11 @@ components:
             $ref: '#/components/schemas/Link'
     V1BootSet:
       description: |
-        A boot set defines a collection of nodes and the information about the
+        A Boot Set defines a collection of nodes and the information about the
         boot artifacts and parameters to be sent to each node over the specified
-        network to enable these nodes to boot. When multiple boot sets are used
-        in a session template, the boot_ordinal and shutdown_ordinal indicate
-        the order in which boot sets need to be acted upon. Boot sets sharing
+        network to enable these nodes to boot. When multiple Boot Sets are used
+        in a Session Template, the boot_ordinal and shutdown_ordinal indicate
+        the order in which Boot Sets need to be acted upon. Boot Sets sharing
         the same ordinal number will be addressed at the same time.
       type: object
       properties:
@@ -365,13 +380,13 @@ components:
           type: integer
           minimum: 0
           description: |
-            The boot ordinal. This will establish the order for boot set operations.
-            Boot sets boot in order from the lowest to highest boot_ordinal.
+            The boot ordinal. This will establish the order for Boot Set operations.
+            Boot Sets boot in order from the lowest to highest boot_ordinal.
         shutdown_ordinal:
           type: integer
           minimum: 0
           description: |
-            The shutdown ordinal. This will establish the order for boot set
+            The shutdown ordinal. This will establish the order for Boot Set
             shutdown operations. Sets shutdown from low to high shutdown_ordinal.
         path:
           type: string
@@ -433,23 +448,19 @@ components:
       type: object
       description: |
         A Session Template object represents a collection of resources and metadata.
-        A session template is used to create a Session which when combined with an
-        action (i.e. boot, reconfigure, reboot, shutdown) will create a Kubernetes BOA job
+        A Session Template is used to create a Session which when combined with an
+        action (i.e. boot, configure, reboot, shutdown) will create a Kubernetes BOA job
         to complete the required tasks for the operation.
-
-        A Session Template can be created from a JSON structure.  It will return
-        a SessionTemplate name if successful.
-        This name is required when creating a Session.
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The Session Template object
       properties:
         templateUrl:
           type: string
           description: |
-            The URL to the resource providing the session template data.
-            Specify either a templateURL, or the other session
+            The URL to the resource providing the Session Template data.
+            Specify either a templateURL, or the other Session
             template parameters.
         name:
           type: string
@@ -468,13 +479,15 @@ components:
         description:
           type: string
           description: |
-            An optional description for the session template.
+            An optional description for the Session Template.
         cfs_url:
           type: string
+          deprecated: true
           description: |
-            The url for the repository providing the configuration. DEPRECATED
+            The URL for the repository providing the configuration. DEPRECATED
         cfs_branch:
           type: string
+          deprecated: true
           description: |
             The name of the branch containing the configuration that you want to
             apply to the nodes.  DEPRECATED.
@@ -482,7 +495,6 @@ components:
           type: boolean
           description: |
             Whether to enable the Configuration Framework Service (CFS).
-            Choices: true/false
           default: true
         cfs:
           $ref: '#/components/schemas/V1CfsParameters'
@@ -505,17 +517,17 @@ components:
       type: string
       maxLength: 64
       readOnly: true
-      description: The identity of the Kubernetes job that is created to handle the session.
+      description: The identity of the Kubernetes job that is created to handle the Session.
       example: "boa-07877de1-09bb-4ca8-a4e5-943b1262dbf0"
     V1Operation:
       type: string
       description: >
-        A Session represents an operation on a SessionTemplate.
-        The creation of a session effectively results in the creation
+        A Session represents an operation on a Session Template.
+        The creation of a Session effectively results in the creation
         of a Kubernetes Boot Orchestration Agent (BOA) job to perform the
         duties required to complete the operation.
 
-        Operation -- An operation to perform on nodes in this session.
+        Operation -- An operation to perform on nodes in this Session.
 
             Boot         Boot nodes that are off.
 
@@ -538,6 +550,7 @@ components:
       type: string
       description: DEPRECATED - use templateName. This field is ignored if templateName is also set.
       example: "my-session-template"
+      deprecated: true
     V1SessionLink:
       description: Link to other resources
       type: object
@@ -555,7 +568,7 @@ components:
       additionalProperties: false
     V1SessionStatusUri:
       type: string
-      description: URI to the status for this session
+      description: URI to the status for this Session
       format: uri
       example: "/v1/session/90730844-094d-45a5-9b90-d661d14d9444/status"
     V1SessionDetails:
@@ -583,7 +596,8 @@ components:
     V1SessionDetailsByTemplateUuid:
       description: |
         Details about a Session using templateUuid instead of templateName.
-        DEPRECATED -- these will only exist from sessions created before templateUuid was deprecated.
+        DEPRECATED -- these will only exist from Sessions created before templateUuid was deprecated.
+      deprecated: true
       type: object
       properties:
         complete:
@@ -610,7 +624,7 @@ components:
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The Session object
       type: object
       properties:
         operation:
@@ -622,7 +636,7 @@ components:
         limit:
           type: string
           description: >
-            A comma-separated of nodes, groups, or roles to which the session
+            A comma-separated list of nodes, groups, or roles to which the Session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         links:
@@ -638,7 +652,7 @@ components:
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The Session object
       type: object
       properties:
         operation:
@@ -652,7 +666,7 @@ components:
         limit:
           type: string
           description: >
-            A comma-separated of nodes, groups, or roles to which the session
+            A comma-separated list of nodes, groups, or roles to which the Session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         links:
@@ -668,7 +682,8 @@ components:
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The Session object
+      deprecated: true
       type: object
       properties:
         operation:
@@ -680,7 +695,7 @@ components:
         limit:
           type: string
           description: >
-            A comma-separated of nodes, groups, or roles to which the session
+            A comma-separated list of nodes, groups, or roles to which the Session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         links:
@@ -773,9 +788,9 @@ components:
     V2CfsParameters:
       type: object
       description: |
-        CFS Parameters is the collection of parameters that are passed to the Configuration
+        This is the collection of parameters that are passed to the Configuration
         Framework Service when configuration is enabled. Can be set as the global value for
-        a Session Template, or individually within a boot set.
+        a Session Template, or individually within a Boot Set.
       properties:
         configuration:
           type: string
@@ -786,16 +801,12 @@ components:
       type: object
       description: |
         A Session Template object represents a collection of resources and metadata.
-        A session template is used to create a Session which applies the data to
-        group of components.
-
-        A Session Template can be created from a JSON structure.  It will return
-        a SessionTemplate name if successful.
-        This name is required when creating a Session.
+        A Session Template is used to create a Session which applies the data to
+        group of Components.
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The Session Template object
       properties:
         name:
           type: string
@@ -815,18 +826,17 @@ components:
         tenant:
           type: string
           description: >
-            Name of the tenant that owns the session.  Only used in environments
+            Name of the tenant that owns the Session Template.  Only used in environments
             with multi-tenancy enabled.
           readOnly: true
         description:
           type: string
           description: |
-            An optional description for the session template.
+            An optional description for the Session Template.
         enable_cfs:
           type: boolean
           description: |
             Whether to enable the Configuration Framework Service (CFS).
-            Choices: true/false
           default: true
         cfs:
           $ref: '#/components/schemas/V2CfsParameters'
@@ -856,7 +866,7 @@ components:
       properties:
         name:
           type: string
-          description: Name of the session. A UUID name is generated if a name is not provided.
+          description: Name of the Session. A UUID name is generated if a name is not provided.
           example: "session-20190728032600"
           # These validation parameters are restricted by Kubernetes naming conventions.
           minLength: 1
@@ -867,61 +877,61 @@ components:
           enum: ['boot', 'reboot', 'shutdown']
           description: >
             A Session represents a desired state that is being applied to a group
-            of components.  Sessions run until all components it manages have
-            either been disabled due to completion, or until all components are
-            managed by other newer sessions.
+            of Components.  Sessions run until all Components it manages have
+            either been disabled due to completion, or until all Components are
+            managed by other newer Sessions.
 
-            Operation -- An operation to perform on nodes in this session.
-                Boot                 Applies the template to the components and boots/reboots if necessary.
-                Reboot               Applies the template to the components guarantees a reboot.
-                Shutdown             Power down nodes that are on.
+            Operation -- An operation to perform on Components in this Session.
+                Boot                 Applies the Template to the Components and boots/reboots if necessary.
+                Reboot               Applies the Template to the Components; guarantees a reboot.
+                Shutdown             Power down Components that are on.
         template_name:
           $ref: '#/components/schemas/V2TemplateName'
         limit:
           type: string
           description: >
-            A comma-separated of nodes, groups, or roles to which the session
+            A comma-separated list of nodes, groups, or roles to which the Session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         stage:
           type: boolean
           description: >
-            Set to stage a session which will not immediately change the state of any components.
-            The "applystaged" endpoint can be called at a later time to trigger the start of this session.
+            Set to stage a Session which will not immediately change the state of any Components.
+            The "applystaged" endpoint can be called at a later time to trigger the start of this Session.
           default: false
         include_disabled:
           type: boolean
           description: >
-            Set to include nodes that have been disabled as indicated in the Hardware State Manager (HSM)
+            Set to include nodes that have been disabled as indicated in the Hardware State Manager (HSM).
           default: false
       required: [operation, template_name]
       additionalProperties: false
     V2SessionStatus:
       type: object
       description: |
-        Information on the status of a session.
+        Information on the status of a Session.
       properties:
         start_time:
           type: string
           description: |
-            When the session was created.
+            When the Session was created.
         end_time:
           type: string
           description: |
-            When the session completed.
+            When the Session completed.
         status:
           type: string
           enum: ['pending', 'running', 'complete']
           description: |
-            The status of a session.
+            The status of a Session.
         error:
           type: string
           description: |
-            Error which prevented the session from running
+            Error which prevented the Session from running
       additionalProperties: false
     V2BootSet:
       description: |
-        A boot set is a collection of nodes defined by an explicit list, their functional
+        A Boot Set is a collection of nodes defined by an explicit list, their functional
         role, and their logical groupings. This collection of nodes is associated with one
         set of boot artifacts and optional additional records for configuration and root
         filesystem provisioning.
@@ -989,17 +999,17 @@ components:
 
         ## Link Relationships
 
-        * self : The session object
+        * self : The Session object
       type: object
       properties:
         name:
           type: string
           description: >
-            Name of the session.
+            Name of the Session.
         tenant:
           type: string
           description: >
-            Name of the tenant that owns the session.  Only used in environments
+            Name of the tenant that owns the Session.  Only used in environments
             with multi-tenancy enabled.
           readOnly: true
         operation:
@@ -1007,117 +1017,117 @@ components:
           enum: ['boot', 'reboot', 'shutdown']
           description: >
             A Session represents a desired state that is being applied to a group
-            of components.  Sessions run until all components it manages have
-            either been disabled due to completion, or until all components are
-            managed by other newer sessions.
+            of Components.  Sessions run until all Components it manages have
+            either been disabled due to completion, or until all Components are
+            managed by other newer Sessions.
 
-            Operation -- An operation to perform on nodes in this session.
-                Boot                 Applies the template to the components and boots/reboots if necessary.
-                Reboot               Applies the template to the components guarantees a reboot.
-                Shutdown             Power down nodes that are on.
+            Operation -- An operation to perform on Components in this Session.
+                Boot                 Applies the Template to the Components and boots/reboots if necessary.
+                Reboot               Applies the Template to the Components; guarantees a reboot.
+                Shutdown             Power down Components that are on.
         template_name:
           $ref: '#/components/schemas/V2TemplateName'
         limit:
           type: string
           description: >
-            A comma-separated of nodes, groups, or roles to which the session
+            A comma-separated list of nodes, groups, or roles to which the Session
             will be limited. Components are treated as OR operations unless
             preceded by "&" for AND or "!" for NOT.
         stage:
           type: boolean
           description: >
-            Set to stage a session which will not immediately change the state of any components.
-            The "applystaged" endpoint can be called at a later time to trigger the start of this session.
+            Set to stage a Session which will not immediately change the state of any Components.
+            The "applystaged" endpoint can be called at a later time to trigger the start of this Session.
         components:
           type: string
           description: >
             A comma-separated list of nodes, representing the initial list of nodes
-            the session should operate against.  The list will remain even if
-            other sessions have taken over management of the nodes.
+            the Session should operate against.  The list will remain even if
+            other Sessions have taken over management of the nodes.
         include_disabled:
           type: boolean
           description: >
-            Set to include nodes that have been disabled as indicated in the Hardware State Manager (HSM)
+            Set to include nodes that have been disabled as indicated in the Hardware State Manager (HSM).
         status:
           $ref: '#/components/schemas/V2SessionStatus'
       additionalProperties: false
     V2SessionArray:
-      description: An array of sessions.
+      description: An array of Sessions.
       type: array
       items:
         $ref: '#/components/schemas/V2Session'
     V2SessionExtendedStatusPhases:
       type: object
       description: |
-        Detailed information on the phases of a session.
+        Detailed information on the phases of a Session.
       properties:
         percent_complete:
           type: number
           description: |
-            The percent of components currently in a completed/stable state
+            The percent of Components currently in a completed/stable state
         percent_powering_on:
           type: number
           description: |
-            The percent of components currently in the powering-on phase
+            The percent of Components currently in the powering-on phase
         percent_powering_off:
           type: number
           description: |
-            The percent of components currently in the powering-off phase
+            The percent of Components currently in the powering-off phase
         percent_configuring:
           type: number
           description: |
-            The percent of components currently in the configuring phase
+            The percent of Components currently in the configuring phase
       additionalProperties: false
     V2SessionExtendedStatusTiming:
       type: object
       description: |
-        Detailed information on the timing of a session.
+        Detailed information on the timing of a Session.
       properties:
         start_time:
           type: string
           description: |
-            When the session was created.
+            When the Session was created.
         end_time:
           type: string
           description: |
-            When the session completed.
+            When the Session completed.
         duration:
           type: string
           description: |
-            The current duration of the on-going session or final duration of the completed session.
+            The current duration of the ongoing Session or final duration of the completed Session.
       additionalProperties: false
     V2SessionExtendedStatus:
       type: object
       description: |
-        Detailed information on the status of a session.
+        Detailed information on the status of a Session.
       properties:
         status:
           type: string
           enum: ['pending', 'running', 'complete']
           description: |
-            The status of a session.
+            The status of a Session.
         managed_components_count:
           type: integer
           description: |
-            The count of components currently managed by this session
+            The count of Components currently managed by this Session
         phases:
           $ref: '#/components/schemas/V2SessionExtendedStatusPhases'
         percent_successful:
           type: number
           description: |
-            The percent of components currently in a successful state
+            The percent of Components currently in a successful state
         percent_failed:
           type: number
           description: |
-            The percent of components currently in a failed state
+            The percent of Components currently in a failed state
         percent_staged:
           type: number
           description: |
-            The percent of components currently still staged for this session
+            The percent of Components currently still staged for this Session
         error_summary:
           type: object
           description: |
-            A summary of the errors currently listed by all components
+            A summary of the errors currently listed by all Components
         timing:
           $ref: '#/components/schemas/V2SessionExtendedStatusTiming'
       additionalProperties: false
@@ -1138,7 +1148,7 @@ components:
       additionalProperties: false
     V2ComponentActualState:
       description: |
-        The desired boot artifacts and configuration for a component
+        The desired boot artifacts and configuration for a Component
       type: object
       properties:
         boot_artifacts:
@@ -1157,7 +1167,7 @@ components:
       additionalProperties: false
     V2ComponentDesiredState:
       description: |
-        The desired boot artifacts and configuration for a component
+        The desired boot artifacts and configuration for a Component
       type: object
       properties:
         boot_artifacts:
@@ -1179,7 +1189,7 @@ components:
       additionalProperties: false
     V2ComponentStagedState:
       description: |
-        The desired boot artifacts and configuration for a component
+        The desired boot artifacts and configuration for a Component
       type: object
       properties:
         boot_artifacts:
@@ -1189,7 +1199,7 @@ components:
           description: A CFS configuration ID.
         session:
           type: string
-          description: A session which can be triggered at a later time against this component.
+          description: A Session which can be triggered at a later time against this Component.
         last_updated:
           type: string
           description: The date/time when the state was last updated in RFC 3339 format.
@@ -1210,7 +1220,7 @@ components:
           readOnly: true
         action:
           type: string
-          description: A description of the most recent operator/action to impact the component.
+          description: A description of the most recent operator/action to impact the Component.
         failed:
           type: boolean
           description: Denotes if the last action failed to accomplish its task
@@ -1231,15 +1241,15 @@ components:
           description: How many attempts have been made to power-off forcefully since the last time the node was in the desired state.
       additionalProperties: false
     V2ComponentStatus:
-      description: Status information for the component
+      description: Status information for the Component
       type: object
       properties:
         phase:
           type: string
-          description: The current phase of the component in the boot process.
+          description: The current phase of the Component in the boot process.
         status:
           type: string
-          description: The current status of the component.  More detailed than phase.
+          description: The current status of the Component.  More detailed than phase.
           readOnly: true
         status_override:
           type: string
@@ -1247,12 +1257,12 @@ components:
       additionalProperties: false
     V2Component:
       description: |
-        The current and desired artifacts state for a component.
+        The current and desired artifacts state for a Component.
       type: object
       properties:
         id:
           type: string
-          description: The component's ID. e.g. xname for hardware components
+          description: The Component's ID. e.g. xname for hardware Components
         actual_state:
           $ref: '#/components/schemas/V2ComponentActualState'
         desired_state:
@@ -1267,13 +1277,13 @@ components:
           $ref: '#/components/schemas/V2ComponentStatus'
         enabled:
           type: boolean
-          description: A flag indicating if actions should be taken for this component.
+          description: A flag indicating if actions should be taken for this Component.
         error:
           type: string
-          description: A description of the most recent error to impact the component.
+          description: A description of the most recent error to impact the Component.
         session:
           type: string
-          description: The session responsible for the component's current state
+          description: The Session responsible for the Component's current state
         retry_policy:
           type: integer
           description: |
@@ -1282,22 +1292,22 @@ components:
           example: 1
       additionalProperties: false
     V2ComponentArray:
-      description: An array of component states.
+      description: An array of Component states.
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
     V2ComponentsFilter:
-      description: Information for patching multiple components.
+      description: Information for patching multiple Components.
       type: object
       properties:
         ids:
           type: string
-          description: A comma-separated list of component IDs
+          description: A comma-separated list of Component IDs
         session:
           type: string
-          description: A session name.  All components part of this session will be patched.
+          description: A Session name.  All Components part of this Session will be patched.
     V2ComponentsUpdate:
-      description: Information for patching multiple components.
+      description: Information for patching multiple Components.
       type: object
       properties:
         patch:
@@ -1307,32 +1317,32 @@ components:
       required: [patch, filters]
     V2ApplyStagedComponents:
       description: |
-        A list of components that should have their staged session applied.
+        A list of Components that should have their staged Session applied.
       type: object
       properties:
         xnames:
-          description: The list of component xnames
+          description: The list of Component xnames
           type: array
           items:
             type: string
       additionalProperties: false
     V2ApplyStagedStatus:
       description: |
-        A list of components that should have their staged session applied.
+        A list of Components that should have their staged Session applied.
       type: object
       properties:
         succeeded:
-          description: The list of component xnames
+          description: The list of Component xnames
           type: array
           items:
             type: string
         failed:
-          description: The list of component xnames
+          description: The list of Component xnames
           type: array
           items:
             type: string
         ignored:
-          description: The list of component xnames
+          description: The list of Component xnames
           type: array
           items:
             type: string
@@ -1344,19 +1354,23 @@ components:
       properties:
         cleanup_completed_session_ttl:
           type: string
-          description: Delete complete sessions that are older than cleanup_completed_session_ttl (in hours). 0h disables cleanup behavior.
+          description: Delete complete Sessions that are older than cleanup_completed_session_ttl (in hours). 0h disables cleanup behavior.
         clear_stage:
           type: boolean
-          description: Allows components staged information to be cleared when the requested staging action has been started. Defaults to false.
+          description: Allows a Component's staged information to be cleared when the requested staging action has been started. Defaults to false.
         component_actual_state_ttl:
           type: string
-          description: The maximum amount of time a component's actual state is considered valid (in hours). 0h disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
+          description: |
+            The maximum amount of time a Component's actual state is considered valid (in hours). 0h disables cleanup behavior for newly booted nodes
+            and instructs bos-state-reporter to report once instead of periodically.
         disable_components_on_completion:
           type: boolean
-          description: Allows for BOS components to be marked as disabled after a session has been completed. If false, BOS will continue to maintain the state of the nodes declaratively, even after a session finishes.
+          description: |
+            Allows for BOS Components to be marked as disabled after a Session has been completed. If false, BOS will continue to maintain the state
+            of the nodes declaratively, even after a Session finishes.
         discovery_frequency:
           type: integer
-          description: How frequently the BOS discovery agent syncs new components from HSM. (in seconds)
+          description: How frequently the BOS discovery agent syncs new Components from HSM. (in seconds)
         logging_level:
           type: string
           description: The logging level for all BOS services
@@ -1371,7 +1385,7 @@ components:
           description: How long BOS will wait for a node to power off before forcefully powering off (in seconds)
         polling_frequency:
           type: integer
-          description: How frequently the BOS operators check component state for needed actions. (in seconds)
+          description: How frequently the BOS operators check Component state for needed actions. (in seconds)
         default_retry_policy:
           type: integer
           description: The default maximum number attempts per node for failed actions.
@@ -1379,7 +1393,7 @@ components:
       additionalProperties: true
     # Schemas that combine objects of different versions
     SessionTemplateArray:
-      description: An array of session templates.
+      description: An array of Session Templates.
       type: array
       items:
         anyOf:
@@ -1387,28 +1401,28 @@ components:
           - $ref: '#/components/schemas/V2SessionTemplate'
   requestBodies:
     V2sessionCreateRequest:
-      description: The information to create a session
+      description: The information to create a Session
       required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionCreate'
     V2componentUpdateRequest:
-      description: The state for a single component
+      description: The state for a single Component
       required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Component'
     V2componentsPutRequest:
-      description: The state for an array of components
+      description: The state for an array of Components
       required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2ComponentArray'
     V2componentsUpdateRequest:
-      description: The state for an array of components
+      description: The state for an array of Components
       required: true
       content:
         application/json:
@@ -1424,14 +1438,14 @@ components:
           schema:
             $ref: '#/components/schemas/V2Options'
     V2sessionUpdateRequest:
-      description: The state for a single session
+      description: The state for a single Session
       required: true
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Session'
     V2applyStagedRequest:
-      description: A list of xnames that should have their staged session applied.
+      description: A list of xnames that should have their staged Session applied.
       required: true
       content:
         application/json:
@@ -1480,20 +1494,20 @@ components:
           schema:
             $ref: '#/components/schemas/V1SessionStatus'
     V1SessionTemplateDetails:
-      description: Session template details
+      description: Session Template details
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V1SessionTemplate'
     # V2
     V2SessionTemplateDetails:
-      description: Session template details
+      description: Session Template details
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionTemplate'
     V2SessionTemplateValidation:
-      description: Session template validity details
+      description: Session Template validity details
       content:
         application/json:
           schema:
@@ -1517,19 +1531,19 @@ components:
           schema:
             $ref: '#/components/schemas/V2SessionExtendedStatus'
     V2componentDetails:
-      description: A single component state
+      description: A single Component state
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Component'
     V2componentDetailsArray:
-      description: A collection of component states
+      description: A collection of Component states
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/V2ComponentArray'
     V2applyStagedResponse:
-      description: A list of xnames that should have their staged session applied.
+      description: A list of xnames that should have their staged Session applied.
       content:
         application/json:
           schema:
@@ -1542,7 +1556,7 @@ components:
             $ref: '#/components/schemas/V2Options'
     # Responses that may contain V1 or V2 objects
     SessionTemplateDetails:
-      description: Session template details
+      description: Session Template details
       content:
         application/json:
           schema:
@@ -1550,7 +1564,7 @@ components:
               - $ref: '#/components/schemas/V1SessionTemplate'
               - $ref: '#/components/schemas/V2SessionTemplate'
     SessionTemplateDetailsArray:
-      description: Session template details array
+      description: Session Template details array
       content:
         application/json:
           schema:
@@ -1666,14 +1680,14 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     post:
-      summary: Create session template
+      summary: Create Session Template
       tags:
         - sessiontemplate
       x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
       operationId: create_v1_sessiontemplate
-      description: Create a new session template.
+      description: Create a new Session Template.
       requestBody:
-         description: A JSON object for creating a session template
+         description: A JSON object for creating a Session Template
          required: true
          content:
            application/json:
@@ -1685,10 +1699,9 @@ paths:
         400:
           $ref: '#/components/responses/BadRequestOrMultiTenancyNotSupported'
     get:
-      summary: List session templates
+      summary: List Session Templates
       description: |
-        List all session templates. Session templates are
-        uniquely identified by the name.
+        List all Session Templates.
       tags:
         - sessiontemplate
       x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
@@ -1715,11 +1728,11 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: Get session template by ID
+      summary: Get Session Template by ID
       description: |
-        Get session template by session template ID.
-        The session template ID corresponds to the *name*
-        of the session template.
+        Get Session Template by Session Template ID.
+        The Session Template ID corresponds to the *name*
+        of the Session Template.
       tags:
         - sessiontemplate
       x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
@@ -1732,8 +1745,8 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     delete:
-      summary: Delete a session template
-      description: Delete a session template.
+      summary: Delete a Session Template
+      description: Delete a Session Template.
       tags:
         - sessiontemplate
       x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
@@ -1747,11 +1760,11 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v1/sessiontemplatetemplate:
     get:
-      summary: Get an example session template.
+      summary: Get an example Session Template.
       description: |
-        Returns a skeleton of a session template, which can be
+        Returns a skeleton of a Session Template, which can be
         used as a starting point for users creating their own
-        session templates.
+        Session Templates.
       tags:
         - sessiontemplate
       x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
@@ -1770,11 +1783,11 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     post:
-      summary: Create a session
+      summary: Create a Session
       description: |
-        The creation of a session performs the operation
+        The creation of a Session performs the operation
         specified in the SessionCreateRequest
-        on the boot set(s) defined in the session template.
+        on the Boot Sets defined in the Session Template.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.session
@@ -1796,9 +1809,9 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     get:
-      summary: List session IDs
+      summary: List Session IDs
       description: |
-        List IDs of all sessions, including those in progress and those complete.
+        List IDs of all Sessions, including those in progress and those complete.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.session
@@ -1816,8 +1829,8 @@ paths:
           $ref: '#/components/responses/MultiTenancyNotSupported'
   /v1/session/{session_id}:
     get:
-      summary: Get session details by ID
-      description: Get session details by session ID.
+      summary: Get Session details by ID
+      description: Get Session details by Session ID.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.session
@@ -1830,8 +1843,8 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     delete:
-      summary: Delete session by ID
-      description: Delete session by session ID.
+      summary: Delete Session by ID
+      description: Delete Session by Session ID.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.session
@@ -1875,9 +1888,9 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: A list of the statuses for the different boot sets.
+      summary: A list of the statuses for the different Boot Sets.
       description: |
-        A list of the statuses for the different boot sets.
+        A list of the statuses for the different Boot Sets.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.status
@@ -1890,15 +1903,15 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     post:
-      summary: Create the initial session status
+      summary: Create the initial Session status
       description: |
-        Creates the initial session status.
+        Creates the initial Session status.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: create_v1_session_status
       requestBody:
-         description: A JSON object for creating the status for a session
+         description: A JSON object for creating the status for a Session
          required: true
          content:
            application/json:
@@ -1912,15 +1925,15 @@ paths:
         409:
           $ref: '#/components/responses/AlreadyExists'
     patch:
-      summary: Update the session status
+      summary: Update the Session status
       description: |
-        Update the session status. You can update the start or stop times.
+        Update the Session status. You can update the start or stop times.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: update_v1_session_status
       requestBody:
-        description: A JSON object for updating the status for a session
+        description: A JSON object for updating the status for a Session
         required: true
         content:
           application/json:
@@ -1934,7 +1947,7 @@ paths:
         404:
           $ref: '#/components/responses/BadRequest'
     delete:
-      summary: Delete the session status
+      summary: Delete the Session status
       description: |
         Deletes an existing Session status
       tags:
@@ -1958,7 +1971,7 @@ paths:
           type: string
       - name: boot_set_name
         in: path
-        description: Boot set name
+        description: Boot Set name
         required: true
         schema:
           type: string
@@ -1971,8 +1984,8 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: Get the status for a boot set.
-      description: Get the status for a boot set.
+      summary: Get the status for a Boot Set.
+      description: Get the status for a Boot Set.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.status
@@ -2019,14 +2032,13 @@ paths:
       summary: Update the status.
       description: |
         This will change the status for one or more nodes within
-        the boot set.
+        the Boot Set.
       tags:
         - session
-        # - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: update_v1_session_status_by_bootset
       requestBody:
-         description: A JSON object for updating the status for a session
+         description: A JSON object for updating the status for a Session
          required: true
          content:
            application/json:
@@ -2069,7 +2081,7 @@ paths:
           type: string
       - name: boot_set_name
         in: path
-        description: Boot set name
+        description: Boot Set name
         required: true
         schema:
           type: string
@@ -2088,8 +2100,8 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: Get the status for a specific boot set and phase.
-      description: Get the status for a specific boot set and phase.
+      summary: Get the status for a specific Boot Set and phase.
+      description: Get the status for a specific Boot Set and phase.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.status
@@ -2115,7 +2127,7 @@ paths:
           type: string
       - name: boot_set_name
         in: path
-        description: Boot set name
+        description: Boot Set name
         required: true
         schema:
           type: string
@@ -2140,8 +2152,8 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: Get the status for a specific boot set, phase, and category.
-      description: Get the status for a specific boot set, phase, and category.
+      summary: Get the status for a specific Boot Set, phase, and category.
+      description: Get the status for a specific Boot Set, phase, and category.
       tags:
         - session
       x-openapi-router-controller: bos.server.controllers.v1.status
@@ -2209,17 +2221,16 @@ paths:
         description: >
           Tenant name.
 
-          Requests with a non-empty tenant name will restict the context of the operation to session templates owned by that tenant.
+          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
         required: false
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: List session templates
+      summary: List Session Templates
       description: |
-        List all session templates. Session templates are
-        uniquely identified by the name.
+        List all Session Templates.
       tags:
         - v2
         - sessiontemplates
@@ -2241,18 +2252,18 @@ paths:
         description: >
           Tenant name.
 
-          Requests with a non-empty tenant name will restict the context of the operation to session templates owned by that tenant.
+          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
         required: false
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: Validate the session template by ID
+      summary: Validate the Session Template by ID
       description: |
-        Validate session template by session template ID.
-        The session template ID corresponds to the *name*
-        of the session template.
+        Validate Session Template by Session Template ID.
+        The Session Template ID corresponds to the *name*
+        of the Session Template.
       tags:
         - v2
         - sessiontemplatess
@@ -2276,18 +2287,18 @@ paths:
         description: >
           Tenant name.
 
-          Requests with a non-empty tenant name will restict the context of the operation to session templates owned by that tenant.
+          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
         required: false
         schema:
           $ref: '#/components/schemas/TenantName'
     get:
-      summary: Get session template by ID
+      summary: Get Session Template by ID
       description: |
-        Get session template by session template ID.
-        The session template ID corresponds to the *name*
-        of the session template.
+        Get Session Template by Session Template ID.
+        The Session Template ID corresponds to the *name*
+        of the Session Template.
       tags:
         - v2
         - sessiontemplatess
@@ -2299,15 +2310,15 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     put:
-      summary: Create session template
+      summary: Create Session Template
       tags:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: put_v2_sessiontemplate
-      description: Create a new session template.
+      description: Create a new Session Template.
       requestBody:
-         description: A JSON object for creating a session template
+         description: A JSON object for creating a Session Template
          required: true
          content:
            application/json:
@@ -2319,15 +2330,15 @@ paths:
         400:
           $ref: '#/components/responses/BadRequest'
     patch:
-      summary: Update a session template
+      summary: Update a Session Template
       tags:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: patch_v2_sessiontemplate
-      description: Update an existing session template.
+      description: Update an existing Session Template.
       requestBody:
-        description: A JSON object for updating a session template
+        description: A JSON object for updating a Session Template
         required: true
         content:
           application/json:
@@ -2341,8 +2352,8 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     delete:
-      summary: Delete a session template
-      description: Delete a session template.
+      summary: Delete a Session Template
+      description: Delete a Session Template.
       tags:
         - v2
         - sessiontemplates
@@ -2355,11 +2366,11 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/sessiontemplatetemplate:
     get:
-      summary: Get an example session template.
+      summary: Get an example Session Template.
       description: |
-        Returns a skeleton of a session template, which can be
+        Returns a skeleton of a Session Template, which can be
         used as a starting point for users creating their own
-        session templates.
+        Session Templates.
       tags:
         - v2
         - sessiontemplates
@@ -2376,7 +2387,7 @@ paths:
           Tenant name.
 
           Requests with a non-empty tenant name will restict the context of the operation to:
-          * Sessions and session templates owned by that tenant, and
+          * Sessions and Session Templates owned by that tenant, and
           * Components to which that tenant has access.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
@@ -2384,11 +2395,11 @@ paths:
         schema:
           $ref: '#/components/schemas/TenantName'
     post:
-      summary: Create a session
+      summary: Create a Session
       description: |
-        The creation of a session performs the operation
+        The creation of a Session performs the operation
         specified in the SessionCreateRequest
-        on the boot set(s) defined in the session template.
+        on the Boot Sets defined in the Session Template.
       tags:
         - v2
         - sessions
@@ -2402,9 +2413,9 @@ paths:
         400:
           $ref: '#/components/responses/BadRequest'
     get:
-      summary: List sessions
+      summary: List Sessions
       description: |
-        List all sessions, including those in progress and those complete.
+        List all Sessions, including those in progress and those complete.
       tags:
         - v2
         - sessions
@@ -2416,53 +2427,53 @@ paths:
             type: string
           in: query
           description: >-
-            Return only sessions older than the given age.  Age is given in the format "1d" or "6h"
+            Return only Sessions older than the given age.  Age is given in the format "1d" or "6h"
         - name: max_age
           schema:
             type: string
           in: query
           description: >-
-            Return only sessions younger than the given age.  Age is given in the format "1d" or "6h"
+            Return only Sessions younger than the given age.  Age is given in the format "1d" or "6h"
         - name: status
           schema:
             type: string
             enum: ['pending', 'running', 'complete']
           in: query
           description: >-
-            Return only sessions with the given status.
+            Return only Sessions with the given status.
       responses:
         200:
           $ref: '#/components/responses/V2SessionDetailsArray'
     delete:
-      summary: Delete multiple sessions.
+      summary: Delete multiple Sessions.
       tags:
         - v2
         - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: delete_v2_sessions
       description: |
-        Delete multiple sessions.  If filters are provided, only sessions matching
-        all filters will be deleted.  By default only completed sessions will be deleted.
+        Delete multiple Sessions.  If filters are provided, only Sessions matching
+        all filters will be deleted.  By default only completed Sessions will be deleted.
       parameters:
         - name: min_age
           schema:
             type: string
           in: query
           description: >-
-            Return only sessions older than the given age.  Age is given in the format "1d" or "6h"
+            Return only Sessions older than the given age.  Age is given in the format "1d" or "6h"
         - name: max_age
           schema:
             type: string
           in: query
           description: >-
-            Return only sessions younger than the given age.  Age is given in the format "1d" or "6h"
+            Return only Sessions younger than the given age.  Age is given in the format "1d" or "6h"
         - name: status
           schema:
             enum: ['pending', 'running', 'complete']
             type: string
           in: query
           description: >-
-            Return only sessions with the given status.
+            Return only Sessions with the given status.
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
@@ -2470,8 +2481,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
   /v2/sessions/{session_id}:
     get:
-      summary: Get session details by ID
-      description: Get session details by session ID.
+      summary: Get Session details by ID
+      description: Get Session details by Session ID.
       tags:
         - v2
         - sessions
@@ -2483,12 +2494,12 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     patch:
-      summary: Update a single session
+      summary: Update a single Session
       tags:
         - v2
         - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
-      description: Update the state for a given session in the BOS database
+      description: Update the state for a given Session in the BOS database
       operationId: patch_v2_session
       requestBody:
         $ref: '#/components/requestBodies/V2sessionUpdateRequest'
@@ -2500,8 +2511,8 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     delete:
-      summary: Delete session by ID
-      description: Delete session by session ID.
+      summary: Delete Session by ID
+      description: Delete Session by Session ID.
       tags:
         - v2
         - sessions
@@ -2525,7 +2536,7 @@ paths:
           Tenant name.
 
           Requests with a non-empty tenant name will restict the context of the operation to:
-          * Sessions and session templates owned by that tenant, and
+          * Sessions and Session Templates owned by that tenant, and
           * Components to which that tenant has access.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
@@ -2534,8 +2545,8 @@ paths:
           $ref: '#/components/schemas/TenantName'
   /v2/sessions/{session_id}/status:
     get:
-      summary: Get session extended status information by ID
-      description: Get session extended status information by ID
+      summary: Get Session extended status information by ID
+      description: Get Session extended status information by ID
       tags:
         - v2
         - sessions
@@ -2547,13 +2558,13 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     post:
-      summary: Saves the current session to database
+      summary: Saves the current Session to database
       tags:
         - v2
         - sessions
         - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.sessions
-      description: Saves the current session to database.  For use at session completion.
+      description: Saves the current Session to database.  For use at Session completion.
       operationId: save_v2_session_status
       responses:
         200:
@@ -2573,7 +2584,7 @@ paths:
           Tenant name.
 
           Requests with a non-empty tenant name will restict the context of the operation to:
-          * Sessions and session templates owned by that tenant, and
+          * Sessions and Session Templates owned by that tenant, and
           * Components to which that tenant has access.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
@@ -2582,13 +2593,13 @@ paths:
           $ref: '#/components/schemas/TenantName'
   /v2/components:
     get:
-      summary: Retrieve the state of a collection of components
+      summary: Retrieve the state of a collection of Components
       tags:
         - v2
         - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       description: >-
-        Retrieve the full collection of components in the form of a
+        Retrieve the full collection of Components in the form of a
         ComponentArray. Full results can also be filtered by query
         parameters. Only the first filter parameter of each type is
         used and the parameters are applied in an AND fashion.
@@ -2601,52 +2612,52 @@ paths:
             type: string
           in: query
           description: >-
-            Retrieve the components with the given ID
-            (e.g. xname for hardware components). Can be chained
-            for selecting groups of components.
+            Retrieve the Components with the given ID
+            (e.g. xname for hardware Components). Can be chained
+            for selecting groups of Components.
         - name: session
           schema:
             type: string
           in: query
           description: >-
-            Retrieve the components with the given session ID.
+            Retrieve the Components with the given Session ID.
         - name: staged_session
           schema:
             type: string
           in: query
           description: >-
-            Retrieve the components with the given staged session ID.
+            Retrieve the Components with the given staged Session ID.
         - name: enabled
           schema:
             type: boolean
           in: query
           description: >-
-            Retrieve the components with the "enabled" state.
+            Retrieve the Components with the "enabled" state.
         - name: phase
           schema:
             type: string
           in: query
           description: >-
-            Retrieve the components in the given phase.
+            Retrieve the Components in the given phase.
         - name: status
           schema:
             type: string
           in: query
           description: >-
-            Retrieve the components with the given status.
+            Retrieve the Components with the given status.
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'
         400:
           $ref: '#/components/responses/BadRequest'
     put:
-      summary: Add or Replace a collection of components
+      summary: Add or Replace a collection of Components
       tags:
         - v2
         - components
         - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a collection of components in the BOS database
+      description: Update the state for a collection of Components in the BOS database
       operationId: put_v2_components
       requestBody:
         $ref: '#/components/requestBodies/V2componentsPutRequest'
@@ -2656,13 +2667,13 @@ paths:
         400:
           $ref: '#/components/responses/BadRequest'
     patch:
-      summary: Update a collection of components
+      summary: Update a collection of Components
       tags:
         - v2
         - components
         - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a collection of components in the BOS database
+      description: Update the state for a collection of Components in the BOS database
       operationId: patch_v2_components
       requestBody:
         $ref: '#/components/requestBodies/V2componentsUpdateRequest'
@@ -2679,7 +2690,7 @@ paths:
         description: >
           Tenant name.
 
-          Requests with a non-empty tenant name will restict the context of the operation to components to which that tenant has access.
+          Requests with a non-empty tenant name will restict the context of the operation to Components to which that tenant has access.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
         required: false
@@ -2687,12 +2698,12 @@ paths:
           $ref: '#/components/schemas/TenantName'
   /v2/components/{component_id}:
     get:
-      summary: Retrieve the state of a single component
+      summary: Retrieve the state of a single Component
       tags:
         - v2
         - components
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Retrieve the current and desired state of a single component
+      description: Retrieve the current and desired state of a single Component
       operationId: get_v2_component
       responses:
         200:
@@ -2702,12 +2713,12 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     put:
-      summary: Add or Replace a single component
+      summary: Add or Replace a single Component
       tags:
         - v2
         - components
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a given component in the BOS database
+      description: Update the state for a given Component in the BOS database
       operationId: put_v2_component
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
@@ -2717,12 +2728,12 @@ paths:
         400:
           $ref: '#/components/responses/BadRequest'
     patch:
-      summary: Update a single component
+      summary: Update a single Component
       tags:
         - v2
         - components
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a given component in the BOS database
+      description: Update the state for a given Component in the BOS database
       operationId: patch_v2_component
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
@@ -2740,9 +2751,9 @@ paths:
         - v2
         - components
         - cli_ignore
-      summary: Delete a single component
+      summary: Delete a single Component
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Delete the given component
+      description: Delete the given Component
       operationId: delete_v2_component
       responses:
         204:
@@ -2752,7 +2763,7 @@ paths:
     parameters:
       - name: component_id
         in: path
-        description: Component ID. e.g. xname for hardware components
+        description: Component ID. e.g. xname for hardware Components
         required: true
         schema:
           type: string
@@ -2761,7 +2772,7 @@ paths:
         description: >
           Tenant name.
 
-          Requests with a non-empty tenant name will restict the context of the operation to components to which that tenant has access.
+          Requests with a non-empty tenant name will restict the context of the operation to Components to which that tenant has access.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
         required: false
@@ -2769,11 +2780,11 @@ paths:
           $ref: '#/components/schemas/TenantName'
   /v2/applystaged:
     post:
-      summary: Start a staged session for the specified components
+      summary: Start a staged Session for the specified Components
       description: |
-        Given a list of xnames, this will trigger the start of any sessions
-        staged for those components.  Components without a staged session
-        will be ignored, and a list all components that are acted on will
+        Given a list of xnames, this will trigger the start of any Sessions
+        staged for those Components.  Components without a staged Session
+        will be ignored, and a list all Components that are acted on will
         be returned in the response.
       tags:
         - v2
@@ -2793,7 +2804,7 @@ paths:
         description: >
           Tenant name.
 
-          Requests with a non-empty tenant name will restict the context of the operation to components to which that tenant has access.
+          Requests with a non-empty tenant name will restict the context of the operation to Components to which that tenant has access.
 
           Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
         required: false

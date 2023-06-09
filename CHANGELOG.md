@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
-- Updated the API spec to document the header option required for tenant-specific operations.
-  Documented which v1 endpoint operations reject tenanted requests, and how they reject them.
+- Updated the API spec to:
+ - Document the header option required for tenant-specific operations.
+ - Document which v1 endpoint operations reject tenanted requests, and how they reject them.
+ - Make use of the OpenAPI `deprecated` tag in places where it previously was only indicated in the text description. 
+### Fixed
+- Corrected many small errors and inconsistencies in the API spec description text fields.
 
 ## [2.4.1] - 2023-06-06
 ### Fixed
