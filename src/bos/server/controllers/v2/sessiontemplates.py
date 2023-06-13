@@ -26,6 +26,8 @@ import connexion
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
+from bos.server.models.v2_session_template_example_properties import V2SessionTemplateExampleProperties \
+                                                              as SessionTemplateExampleProperties  # noqa: E501
 from bos.server import redis_db_utils as dbutils
 from bos.server.utils import _canonize_xname
 from .boot_set import validate_boot_sets
@@ -33,6 +35,13 @@ from .boot_set import validate_boot_sets
 LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
 DB = dbutils.get_wrapper(db='session_templates')
 BASEKEY = "/sessionTemplates"
+
+# These are examples returned by the /v2/sessiontemplatetemplate endpoint.
+# The intention is that a CLI user will save them to a file, edit them, and then
+# create a template via the CLI using the --file argument. When creating v2 session
+# templates, the template name is not provided as part of the template body -- it
+# is provided as a separate parameter. Because of this, this example template
+# deliberately omits the "name" field.
 
 EXAMPLE_BOOT_SET = {
     "type": "your-boot-type",
@@ -50,9 +59,9 @@ EXAMPLE_SESSION_TEMPLATE = {
         "name_your_boot_set": EXAMPLE_BOOT_SET},
     "cfs": {
         "configuration": "default-sessiontemplate-cfs-config"},
-    "enable_cfs": True,
-    "name": "name-your-template"}
+    "enable_cfs": True }
 
+SESSION_TEMPLATE_TEMPLATE = SessionTemplateExampleProperties.from_dict(EXAMPLE_SESSION_TEMPLATE)
 
 def _sanitize_xnames(st_json):
     """
@@ -156,7 +165,7 @@ def get_v2_sessiontemplatetemplate():
 
     Get the example session template
     """
-    return EXAMPLE_SESSION_TEMPLATE, 200
+    return SESSION_TEMPLATE_TEMPLATE, 200
 
 
 @dbutils.redis_error_handler
