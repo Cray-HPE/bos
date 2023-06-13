@@ -507,6 +507,29 @@ components:
             $ref: '#/components/schemas/Link'
       required: [name]
       additionalProperties: false
+    V1SessionTemplateExampleProperties:
+      type: object
+      description: |
+        A Session Template with some fields omitted. This is what is provided when
+        getting an example Session Template from BOS.
+      properties:
+        description:
+          type: string
+          description: |
+            An optional description for the Session Template.
+        enable_cfs:
+          type: boolean
+          description: |
+            Whether to enable the Configuration Framework Service (CFS).
+          default: true
+        cfs:
+          $ref: '#/components/schemas/V1CfsParameters'
+        boot_sets:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/V1BootSet'
+      required: [boot_sets, cfs, description, enable_cfs]
+      additionalProperties: false
     V1BoaKubernetesJob:
       type: string
       maxLength: 64
@@ -810,6 +833,29 @@ components:
           items:
             $ref: '#/components/schemas/Link'
       additionalProperties: false
+    V2SessionTemplateExampleProperties:
+      type: object
+      description: |
+        A Session Template with some fields omitted. This is what is provided when
+        getting an example Session Template from BOS.
+      properties:
+        description:
+          type: string
+          description: |
+            An optional description for the Session Template.
+        enable_cfs:
+          type: boolean
+          description: |
+            Whether to enable the Configuration Framework Service (CFS).
+          default: true
+        cfs:
+          $ref: '#/components/schemas/V2CfsParameters'
+        boot_sets:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/V2BootSet'
+      additionalProperties: false
+      required: [description, enable_cfs, cfs, boot_sets]
     V2SessionTemplateValidation:
       description: |
         Message describing errors or incompleteness in a Session Template.
@@ -1453,6 +1499,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V1SessionTemplate'
+    V1SessionTemplateTemplate:
+      description: Example Session Template properties
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V1SessionTemplateExampleProperties'
     # V2
     V2SessionTemplateDetails:
       description: Session Template details
@@ -1460,6 +1512,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionTemplate'
+    V2SessionTemplateTemplate:
+      description: Example Session Template properties
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2SessionTemplateExampleProperties'
     V2SessionTemplateValidation:
       description: Session Template validity details
       content:
@@ -1688,7 +1746,7 @@ paths:
       operationId: get_v1_sessiontemplatetemplate
       responses:
         200:
-          $ref: '#/components/responses/V1SessionTemplateDetails'
+          $ref: '#/components/responses/V1SessionTemplateTemplate'
   /v1/session:
     post:
       summary: Create a Session
@@ -2192,7 +2250,7 @@ paths:
       operationId: get_v2_sessiontemplatetemplate
       responses:
         200:
-          $ref: '#/components/responses/V2SessionTemplateDetails'
+          $ref: '#/components/responses/V2SessionTemplateTemplate'
   /v2/sessions:
     post:
       summary: Create a Session

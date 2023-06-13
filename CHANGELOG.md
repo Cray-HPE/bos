@@ -11,6 +11,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only indicated in the text description. 
 ### Fixed
 - Corrected many small errors and inconsistencies in the API spec description text fields.
+### Changed
+- Improve the behavior of the session template template endpoints:
+  - Omit `name` field in response from v2 endpoint. When creating session templates using the CLI, the name field is
+    not included in the body of the session template, and the template template endpoints are expected to be used
+    by administrators who are using the CLI.
+  - Add the `description` field to the responses of both v1 and v2 endpoints.
+  - Update the API spec to reflect the above, and to be more precise about exactly what is being returned.
+  - Modify the server code to use the models from the API spec to ensure that the response matches what the spec promises.
 
 ## [2.0.18] - 2023-05-30
 ### Fixed
