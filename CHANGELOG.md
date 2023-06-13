@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   only indicated in the text description. 
 ### Fixed
 - Corrected many small errors and inconsistencies in the API spec description text fields.
+- Updated API spec so that it accurately describes the actual implementation:
+  - Successfully creating a V1 session template returns the name of that template.
 
 ## [2.0.18] - 2023-05-30
 ### Fixed
