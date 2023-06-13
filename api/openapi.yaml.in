@@ -438,6 +438,20 @@ components:
             the 'rootfs=<protocol>' kernel parameter
       additionalProperties: false
       required: [path, type]
+    V1SessionTemplateName:
+          type: string
+          minLength: 1
+          description: |
+            Name of the Session Template.
+            
+            It is recommended to use names which meet the following restrictions:
+            * Maximum length of 127 characters.
+            * Use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Begin and end with a letter or digit.
+            
+            These restrictions are not enforced in this version of BOS, but will be
+            enforced in a future version.
+          example: "cle-1.0.0"    
     V1SessionTemplate:
       type: object
       description: |
@@ -457,19 +471,7 @@ components:
             Specify either a templateURL, or the other Session
             template parameters.
         name:
-          type: string
-          minLength: 1
-          description: |
-            Name of the Session Template.
-            
-            It is recommended to use names which meet the following restrictions:
-            * Maximum length of 127 characters.
-            * Use only letters, digits, periods (.), dashes (-), and underscores (_).
-            * Begin and end with a letter or digit.
-            
-            These restrictions are not enforced in this version of BOS, but will be
-            enforced in a future version.
-          example: "cle-1.0.0"
+          $ref: '#/components/schemas/V1SessionTemplateName'
         description:
           type: string
           description: |
@@ -1453,6 +1455,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V1SessionTemplate'
+    V1SessionTemplateName:
+      description: Session Template name
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V1SessionTemplateName'    
     # V2
     V2SessionTemplateDetails:
       description: Session Template details
@@ -1626,7 +1634,7 @@ paths:
                $ref: '#/components/schemas/V1SessionTemplate'
       responses:
         201:
-          $ref: '#/components/responses/V1SessionTemplateDetails'
+          $ref: '#/components/responses/V1SessionTemplateName'
         400:
           $ref: '#/components/responses/BadRequest'
     get:
