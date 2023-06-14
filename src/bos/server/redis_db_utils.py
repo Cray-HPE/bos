@@ -22,6 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import connexion
+import functools
 import json
 import logging
 import redis
@@ -137,7 +138,7 @@ class DBWrapper():
 
 def redis_error_handler(func):
     """Decorator for returning better errors if Redis is unreachable"""
-
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             if 'body' in kwargs:
