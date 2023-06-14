@@ -979,7 +979,6 @@ components:
               are treated as being of type X86.
           default: X86
           enum: [X86, ARM, Other, Unknown]
-          required: false
         rootfs_provider:
           type: string
           description: |
