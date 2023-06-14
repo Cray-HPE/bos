@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the API spec to document the header option required for tenant-specific operations.
   Documented which v1 endpoint operations reject tenanted requests, and how they reject them.
 
+## [2.4.2] - 2023-06-14
+### Fixed
+- Fixed python decorators to preserve function signatures
+
 ## [2.4.1] - 2023-06-06
 ### Fixed
 - Fix bug that accidentally started enforcing restrictions on session template names.

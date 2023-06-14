@@ -23,6 +23,7 @@
 #
 
 import connexion
+import functools
 import logging
 import hashlib
 from requests.exceptions import HTTPError
@@ -104,7 +105,7 @@ def validate_tenant_exists(tenant: str) -> bool:
 
 def tenant_error_handler(func):
     """Decorator for returning errors if there is an exception when calling tapms"""
-
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -117,7 +118,7 @@ def tenant_error_handler(func):
 
 def reject_invalid_tenant(func):
     """Decorator for preemptively validating the tenant exists"""
-
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         tenant = get_tenant_from_header()
         if tenant and not validate_tenant_exists(tenant):
@@ -130,7 +131,7 @@ def reject_invalid_tenant(func):
 
 def no_v1_multi_tenancy_support(func):
     """Decorator for returning errors if the endpoint doesn't support multi-tenancy"""
-
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if get_tenant_from_header():
             return connexion.problem(
