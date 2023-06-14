@@ -31,9 +31,9 @@ from bos.common.utils import requests_retry_session, PROTOCOL
 LOGGER = logging.getLogger('bos.common.tenant_utils')
 
 TENANT_HEADER = "Cray-Tenant-Name"
-SERVICE_NAME = 'cray-tapms-server.tapms-operator.svc.cluster.local:2875/apis/tapms/v1' ## CASMPET-6433 will simplify this endpoint
+SERVICE_NAME = 'cray-tapms/v1alpha2'
 BASE_ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
-TENANT_ENDPOINT = "%s/tenant" % BASE_ENDPOINT ## CASMPET-6433 will change this from tenant to tenants
+TENANT_ENDPOINT = "%s/tenants" % BASE_ENDPOINT ## CASMPET-6433 will change this from tenant to tenants
 
 
 class InvalidTenantException(Exception):
