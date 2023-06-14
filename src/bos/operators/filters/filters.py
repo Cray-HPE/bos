@@ -76,7 +76,7 @@ class BOSQuery(DetailsFilter):
 
 
 class HSMState(IDFilter):
-    """ Returns all components that are in desired enabled state """
+    """ Returns all components that are in specified state """
 
     def __init__(self, enabled: bool=None, ready: bool=None) -> None:
         super().__init__()
@@ -90,6 +90,18 @@ class HSMState(IDFilter):
                     if (component['State'] == 'Ready') is self.ready]
         return [component['ID'] for component in components['Components']]
 
+    def filter_by_arch(self, components, arch):
+        """
+        Given a list of component names, query HSM for state information pertaining to arch. Components that match one
+        of the arch values specified are returned as a list of component IDs. HSM components that do not have arch
+        information are considered to be of type 'Unknown' for reasons of compatibility.
+        args:
+          components: a list of xnames
+          arch: an iterable of valid arch names we hope to filter by; typically a set
+        """
+        components = get_hsm_components(components, enabled=self.enabled)
+        return [component['ID'] for component in components['Components']
+                if component.get('Arch', 'Unknown') in arch]
 
 class NOT(LocalFilter):
     """ Returns the opposite of the given filter.  Use on local filters only."""

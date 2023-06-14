@@ -147,6 +147,10 @@ class Session:
                 self._log(LOGGER.warning, f"No hardware matching role {role_name}")
                 continue
             nodes |= self.inventory.roles[role_name]
+        # Filter out any nodes that do not match the boot set architecture desired; boot sets that do not have a
+        # specified arch are considered 'X86' nodes.
+        arch = boot_set.get('arch', 'X86')
+        nodes = self._apply_arch(nodes, arch)
         # Filter to nodes defined by limit
         nodes = self._apply_limit(nodes)
         # Exclude disabled nodes
@@ -158,6 +162,23 @@ class Session:
         if not nodes:
             self._log(LOGGER.warning, "No nodes were found to act on.")
         return nodes
+
+    def _apply_arch(self, nodes, arch):
+        """
+        Removes any node from <nodes> that does not match arch. Nodes in HSM that do not have the arch field, and nodes
+        that have the arch field flagged as undefined are assumed to be of type 'X86'. String value of arch directly
+        corresponds to those values in HSM components; this string is case-sensitive ('ARM' works, 'arm' does not).
+        Similarly, we cannot query HSM using an all-caps approach because of 'Other' and 'Unknown' would then never
+        match.
+
+        Because nodes may not have a known architecture, all nodes that are of unknown architecture count as being of
+        type X86.
+        """
+        valid_archs = set(arch)
+        if arch == 'X86':
+            valid_archs.add('Unknown')
+        hsm_filter = HSMState(enabled=True)
+        return list(hsm_filter.filter_by_arch((nodes, valid_archs)))
 
     def _apply_limit(self, nodes):
         session_limit = self.session_data.get('limit')
