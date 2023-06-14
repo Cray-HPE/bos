@@ -973,10 +973,10 @@ components:
             The node groups list. Allows actions against associated nodes by logical groupings. Logical groups are user-defined groups in SMD.
         arch:
           type: string
-          description: |
-          The node architecture to target. Filters nodes that are not part of matching architecture from being targeted by boot actions. This value
-          should correspond to HSM component 'Arch' field exactly. For reasons of backwards compatibility, all HSM nodes that are of type Unknown
-          are treated as being of type X86.
+          description: >
+              The node architecture to target. Filters nodes that are not part of matching architecture from being targeted by boot actions. This value
+              should correspond to HSM component 'Arch' field exactly. For reasons of backwards compatibility, all HSM nodes that are of type Unknown
+              are treated as being of type X86.
           default: X86
           enum: [X86, ARM, Other, Unknown]
           required: false
