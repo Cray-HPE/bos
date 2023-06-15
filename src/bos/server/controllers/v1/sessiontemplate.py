@@ -28,6 +28,7 @@ import connexion
 import json
 import wget
 import os
+from contextlib import contextmanager
 
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
@@ -56,6 +57,22 @@ EXAMPLE_SESSION_TEMPLATE = {
     "cfs": {
         "configuration": "desired-cfs-config"},
     "enable_cfs": True}
+
+
+@contextmanager
+def set_cwd(temporary_cwd):
+    """Changes the current working directory within the context
+
+    temporary_cwd: The path to use as the working directory
+
+    Yields: None
+    """
+    original_directory = os.getcwd()
+    try:
+        os.chdir(temporary_cwd)
+        yield
+    finally:
+        os.chdir(original_directory)
 
 
 def sanitize_xnames(st_json):
@@ -121,7 +138,10 @@ def create_v1_sessiontemplate():  # noqa: E501
         """
         sessionTemplateFile = ""
         try:
-            sessionTemplateFile = wget.download(sessiontemplate.template_url)
+            # The app runs as non-root and does not have write permission to the /app directory
+            with set_cwd("/tmp"):
+                # Ensure that the returned filename includes the full path
+                sessionTemplateFile = os.path.abspath(wget.download(sessiontemplate.template_url))
             LOGGER.debug("Downloaded: %s", sessionTemplateFile)
         except Exception as err:
             return connexion.problem(
