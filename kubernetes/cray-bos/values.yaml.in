@@ -154,7 +154,7 @@ cray-service:
 cray-etcd-base:
   nameOverride: cray-bos
   etcd:
-    enabled: false
+    enabled: true
     fullnameOverride: "cray-bos-bitnami-etcd"
     persistence:
       storage: 8Gi
