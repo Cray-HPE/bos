@@ -451,12 +451,6 @@ components:
 
         * self : The session object
       properties:
-        templateUrl:
-          type: string
-          description: |
-            The URL to the resource providing the session template data.
-            Specify either a templateURL, or the other session
-            template parameters.
         name:
           type: string
           minLength: 1
