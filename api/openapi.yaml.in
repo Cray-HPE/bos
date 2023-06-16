@@ -107,31 +107,66 @@ servers:
 components:
   schemas:
     # Version-agnostic schemas
+    AgeString:
+      type: string
+      description: Age in minutes (e.g. "3m"), hours (e.g. "5h"), days (e.g. "10d"), or weeks (e.g. "2w").
+      example: 3d
+      format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
+      minLength: 1
+      # This allows for over 10 years using the smallest units (minutes)
+      maxLength: 8
+    BootArtifactPath:
+      type: string
+      description: |
+        A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.        
+
+        It is recommended that this should be 1-4095 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
+    BootKernelParameters:
+      type: string
+      description: |
+        The kernel parameters to use to boot the nodes.
+
+        Linux kernel parameters may never exceed 4096 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_limit=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
     BootSetEtag:
       type: string
       description: |
         This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
+
+        ETags are defined as being 1-65536 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       example: "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
-    BootSetKernelParameters:
-      type: string
-      description: |
-        The kernel parameters to use to boot the nodes.
-      example: "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_limit=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
     BootSetName:
       type: string
       description: |
         The Boot Set name.
+
+        It is recommended that:        
+        * Boot Set names should be 1-127 characters in length.
+        * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
+        * Boot Set names should begin and end with a letter or digit.
+
+        These restrictions are not enforced in this version of BOS, but they are
+        targeted to start being enforced in an upcoming BOS version.
       example: "compute"
-    BootSetPath:
-      type: string
-      description: |
-        A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
-        It will be processed based on the type attribute.
-      example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
     BootSetRootfsProvider:
       type: string
       description: |
         The root file system provider.
+
+        It is recommended that this should be 1-511 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       example: "cpss3"
     BootSetRootfsProviderPassthrough:
       type: string
@@ -139,16 +174,31 @@ components:
         The root file system provider passthrough.
         These are additional kernel parameters that will be appended to
         the 'rootfs=<protocol>' kernel parameter
+
+        Linux kernel parameters may never exceed 4096 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       example: "dvs:api-gw-service-nmn.local:300:nmn0"
     BootSetType:
       type: string
       description: |
         The MIME type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
+
+        It is recommended that this should be 1-127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       example: "s3"
     CfsConfiguration:
       type: string
       description: |
         The name of configuration to be applied.
+
+        It is recommended that this should be 1-127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       example: "compute-23.4.0"
     EnableCfs:
       type: boolean
@@ -186,31 +236,64 @@ components:
         $ref: '#/components/schemas/Link'
     NodeList:
       type: array
-      description: Node list.
+      description: |
+        Node list.
+        
+        It is recommended that this list should be 1-65535 items in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       minItems: 1
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
       items:
         type: string
         description: |
           Hardware component name (xname).
+
+          It is recommended that this should be 1-127 characters in length.
+
+          This restriction is not enforced in this version of BOS, but it is
+          targeted to start being enforced in an upcoming BOS version.
         example: "x3001c0s39b0n0"
     NodeGroupList:
       type: array
-      description: Node group list. Allows actions against associated nodes by logical groupings.
+      description: |
+        Node group list. Allows actions against associated nodes by logical groupings.
+
+        It is recommended that this list should be 1-4095 items in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       minItems: 1
       items:
         type: string
         description: |
           Name of a user-defined logical group in the Hardware State Manager (HSM).
+
+          It is recommended that this should be 1-127 characters in length.
+
+          This restriction is not enforced in this version of BOS, but it is
+          targeted to start being enforced in an upcoming BOS version.
     NodeRoleList:
       type: array
-      description: Node role list. Allows actions against nodes with associated roles.
+      description: |
+        Node role list. Allows actions against nodes with associated roles.
+
+        It is recommended that this list should be 1-1023 items in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       minItems: 1
       example: ["Compute", "Application"]
       items:
         type: string
         description: |
           Name of a role that is defined in the Hardware State Manager (HSM).
+
+          It is recommended that this should be 1-127 characters in length.
+
+          This restriction is not enforced in this version of BOS, but it is
+          targeted to start being enforced in an upcoming BOS version.
         example: "Compute"
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
@@ -251,10 +334,20 @@ components:
         A comma-separated list of nodes, groups, or roles to which the Session
         will be limited. Components are treated as OR operations unless
         preceded by "&" for AND or "!" for NOT.
+
+        It is recommended that this should be 1-65535 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     SessionTemplateDescription:
       type: string
       description: |
         An optional description for the Session Template.
+
+        It is recommended that this should be 1-1023 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     SessionTemplateName:
       type: string
       description: |
@@ -271,7 +364,13 @@ components:
       example: "cle-1.0.0"
     TenantName:
       type: string
-      description: Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
+      description: |
+        Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
+
+        It is recommended that this should be no more than 127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       example: "vcluster-my-tenant1"
     Version:
       description: Version data
@@ -297,6 +396,11 @@ components:
       description: |
         The name of the branch containing the configuration that you want to
         apply to the nodes. Mutually exclusive with commit. (DEPRECATED)
+
+        It is recommended that this should be 1-1023 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     V1CfsConfiguration:
       $ref: '#/components/schemas/CfsConfiguration'
     V1CfsUrl:
@@ -304,6 +408,11 @@ components:
       deprecated: true
       description: |
         The clone URL for the repository providing the configuration. (DEPRECATED)
+
+        It is recommended that this should be 1-4096 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     V1CfsParameters:
       type: object
       description: |
@@ -320,12 +429,23 @@ components:
           description: |
             The commit ID of the configuration that you want to
             apply to the nodes. Mutually exclusive with branch. (DEPRECATED)
+
+            git commit hashes are hexadecimal strings with a length of 40 characters (although
+            fewer characters may be sufficient to uniquely identify a commit in some cases).
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.            
         playbook:
           type: string
           deprecated: true
           description: |
             The name of the playbook to run for configuration. The file path must be specified
             relative to the base directory of the config repository. (DEPRECATED)
+
+            It is recommended that this should be 1-255 characters in length.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         configuration:
           $ref: '#/components/schemas/V1CfsConfiguration'
       additionalProperties: false
@@ -470,13 +590,13 @@ components:
         links:
           $ref: '#/components/schemas/LinkList'
     V1BootSetPath:
-      $ref: '#/components/schemas/BootSetPath'
+      $ref: '#/components/schemas/BootArtifactPath'
     V1BootSetType:
       $ref: '#/components/schemas/BootSetType'
     V1BootSetEtag:
       $ref: '#/components/schemas/BootSetEtag'
     V1BootSetKernelParameters:
-      $ref: '#/components/schemas/BootSetKernelParameters'
+      $ref: '#/components/schemas/BootKernelParameters'
     V1NodeGroupList:
       $ref: '#/components/schemas/NodeGroupList'
     V1NodeRoleList:
@@ -527,12 +647,22 @@ components:
           description: |
             The boot ordinal. This will establish the order for Boot Set operations.
             Boot Sets boot in order from the lowest to highest boot_ordinal.
+
+            It is recommended that this should have a maximum value of 65535.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         shutdown_ordinal:
           type: integer
           minimum: 0
           description: |
             The shutdown ordinal. This will establish the order for Boot Set
             shutdown operations. Sets shutdown from low to high shutdown_ordinal.
+
+            It is recommended that this should have a maximum value of 65535.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
       additionalProperties: false
       required: [path, type]
     V1SessionTemplateName:
@@ -551,6 +681,7 @@ components:
 
         These restrictions are not enforced in this version of BOS, but they are
         targeted to start being enforced in an upcoming BOS version.
+      minLength: 1
       example: "my-session-template"
       deprecated: true
     V1SessionTemplateDescription:
@@ -585,10 +716,25 @@ components:
           type: string
           description: |
             The machine partition to operate on.
+
+            It is recommended that this should be 1-255 characters in length.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         boot_sets:
           type: object
           description: |
             Mapping from Boot Set names to Boot Sets.
+
+            It is recommended that:
+            * At least one Boot Set should be defined, because a Session Template with no
+              Boot Sets is not functional.
+            * Boot Set names should be 1-127 characters in length.
+            * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names should begin and end with a letter or digit.
+
+            These restrictions are not enforced in this version of BOS, but they are
+            targeted to start being enforced in an upcoming BOS version.
           additionalProperties:
             $ref: '#/components/schemas/V1BootSet'
         links:
@@ -910,6 +1056,16 @@ components:
           type: object
           description: |
             Mapping from Boot Set names to Boot Sets.
+
+            It is recommended that:
+            * At least one Boot Set should be defined, because a Session Template with no
+              Boot Sets is not functional.
+            * Boot Set names should be 1-127 characters in length.
+            * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names should begin and end with a letter or digit.
+
+            These restrictions are not enforced in this version of BOS, but they are
+            targeted to start being enforced in an upcoming BOS version.
           additionalProperties:
             $ref: '#/components/schemas/V2BootSet'
         links:
@@ -996,13 +1152,13 @@ components:
     V2BootSetName:
       $ref: '#/components/schemas/BootSetName'
     V2BootSetPath:
-      $ref: '#/components/schemas/BootSetPath'
+      $ref: '#/components/schemas/BootArtifactPath'
     V2BootSetType:
       $ref: '#/components/schemas/BootSetType'
     V2BootSetEtag:
       $ref: '#/components/schemas/BootSetEtag'
     V2BootSetKernelParameters:
-      $ref: '#/components/schemas/BootSetKernelParameters'
+      $ref: '#/components/schemas/BootKernelParameters'
     V2NodeList:
       $ref: '#/components/schemas/NodeList'
     V2NodeGroupList:
@@ -1161,15 +1317,32 @@ components:
       type: object
       properties:
         kernel:
-          type: string
-          description: An md5sum hash of the kernel ID
+          $ref: '#/components/schemas/BootArtifactPath'
         kernel_parameters:
-          type: string
-          description: Kernel parameters
+          $ref: '#/components/schemas/BootKernelParameters'
         initrd:
-          type: string
-          description: Initrd ID
+          $ref: '#/components/schemas/BootArtifactPath'
       additionalProperties: false
+    V2ComponentBssToken:
+          type: string
+          description: |
+            A token received from the node identifying the boot artifacts.
+            For BOS use-only, users should not set this field. It will be overwritten.
+          maxLength: 65535
+    V2ComponentId:
+      type: string
+      description: |
+        The Component's ID. (e.g. xname for hardware Components)
+
+        It is recommended that this should be 1-127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+    V2ComponentIdList:
+      description: A list of Component IDs (xnames)
+      type: array
+      items:
+        $ref: '#/components/schemas/V2ComponentId'
     V2ComponentLastUpdated:
       type: string
       description: The date/time when the state was last updated in RFC 3339 format.
@@ -1184,10 +1357,7 @@ components:
         boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         bss_token:
-          type: string
-          description: |
-            A token received from the node identifying the boot artifacts.
-            For BOS use-only, users should not set this field. It will be overwritten.
+          $ref: '#/components/schemas/V2ComponentBssToken'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -1201,10 +1371,7 @@ components:
         configuration:
           $ref: '#/components/schemas/V2CfsConfiguration'
         bss_token:
-          type: string
-          description: |
-            A token received from BSS identifying the boot artifacts.
-            For BOS use-only, users should not set this field. It will be overwritten.
+          $ref: '#/components/schemas/V2ComponentBssToken'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -1274,8 +1441,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          description: The Component's ID. e.g. xname for hardware Components
+          $ref: '#/components/schemas/V2ComponentId'
         actual_state:
           $ref: '#/components/schemas/V2ComponentActualState'
         desired_state:
@@ -1302,6 +1468,8 @@ components:
             The maximum number attempts per action when actions fail.
             Defaults to the global default_retry_policy if not set
           example: 1
+          minimum: 0
+          maximum: 1048576
       additionalProperties: false
     V2ComponentArray:
       description: An array of Component states.
@@ -1316,7 +1484,13 @@ components:
       properties:
         ids:
           type: string
-          description: A comma-separated list of Component IDs
+          description: |
+            A comma-separated list of Component IDs.
+
+            It is recommended that this should be 1-65535 characters in length.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         session:
           $ref: '#/components/schemas/V2SessionName'
     V2ComponentsUpdate:
@@ -1334,35 +1508,23 @@ components:
       type: object
       properties:
         xnames:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
       additionalProperties: false
     V2ApplyStagedStatus:
       description: |
-        A list of Components that should have their staged Session applied.
+        Mapping from Component staged Session statuses to Components with that status.
       type: object
       properties:
         succeeded:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
         failed:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
         ignored:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
       additionalProperties: false
     V2Options:
       description: |
-        Options for the boot orchestration service.
+        Options for the Boot Orchestration Service.
       type: object
       properties:
         cleanup_completed_session_ttl:
@@ -2326,7 +2488,7 @@ paths:
         description: Session Template ID
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/V2SessionTemplateName'
       - name: Cray-Tenant-Name
         in: header
         description: |
@@ -2469,20 +2631,19 @@ paths:
       parameters:
         - name: min_age
           schema:
-            type: string
+            $ref: '#/components/schema/AgeString'
           in: query
           description: |-
             Return only Sessions older than the given age.  Age is given in the format "1d" or "6h"
         - name: max_age
           schema:
-            type: string
+            $ref: '#/components/schema/AgeString'
           in: query
           description: |-
             Return only Sessions younger than the given age.  Age is given in the format "1d" or "6h"
         - name: status
           schema:
-            type: string
-            enum: ['pending', 'running', 'complete']
+            $ref: '#/components/schema/V2SessionStatusLabel'
           in: query
           description: |-
             Return only Sessions with the given status.
@@ -2502,20 +2663,19 @@ paths:
       parameters:
         - name: min_age
           schema:
-            type: string
+            $ref: '#/components/schema/AgeString'
           in: query
           description: |-
             Return only Sessions older than the given age.  Age is given in the format "1d" or "6h"
         - name: max_age
           schema:
-            type: string
+            $ref: '#/components/schema/AgeString'
           in: query
           description: |-
             Return only Sessions younger than the given age.  Age is given in the format "1d" or "6h"
         - name: status
           schema:
-            enum: ['pending', 'running', 'complete']
-            type: string
+            $ref: '#/components/schema/V2SessionStatusLabel'
           in: query
           description: |-
             Return only Sessions with the given status.
@@ -2654,7 +2814,7 @@ paths:
       parameters:
         - name: ids
           schema:
-            type: string
+            $ref: '#/components/schemas/V2ComponentId'
           in: query
           description: |-
             Retrieve the Components with the given ID
@@ -2811,7 +2971,7 @@ paths:
         description: Component ID. e.g. xname for hardware Components
         required: true
         schema:
-          type: string
+          $ref: '#/components/schemas/V2ComponentId'
       - name: Cray-Tenant-Name
         in: header
         description: |
