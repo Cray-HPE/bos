@@ -26,7 +26,6 @@
 import logging
 import connexion
 import json
-import wget
 import os
 
 from bos.common.tenant_utils import no_v1_multi_tenancy_support
@@ -100,9 +99,10 @@ def create_v1_sessiontemplate():  # noqa: E501
     try:
         """Convert the JSON request data into a SessionTemplate object.
            Any exceptions caught here would be generated from the model
-           (i.e. bos.server.models.session_template).
-           An example is an exception for a session template name that
-           does not confirm to Kubernetes naming convention.
+           (i.e. bos.server.models.session_template). Examples are
+           an exception for a session template missing the required name
+           field, or an exception for a session template name that does not
+           confirm to Kubernetes naming convention.
            In this case return 400 with a description of the specific error.
         """
         sessiontemplate = SessionTemplate.from_dict(connexion.request.get_json())
@@ -111,67 +111,17 @@ def create_v1_sessiontemplate():  # noqa: E501
             status=400, title="The session template could not be created.",
             detail=str(err))
 
-    if sessiontemplate.template_url:
-        """If a template URL was provided in the body treat this as a reference
-           to a JSON session template structure which needs to be read and
-           stored.
-        """
-        LOGGER.debug("create_v1_sessiontemplate template_url: %s", sessiontemplate.template_url)
-
-        """Downloads the content locally into a file named after the uri.
-           An optional 'out' parameter can be specified as the base dir
-           for the file
-        """
-        sessionTemplateFile = ""
-        try:
-            sessionTemplateFile = wget.download(sessiontemplate.template_url)
-            LOGGER.debug("Downloaded: %s", sessionTemplateFile)
-        except Exception as err:
-            return connexion.problem(
-                status=400,
-                title="Error while getting content from '{}'".format(
-                    sessiontemplate.template_url),
-                detail=str(err))
-
-        # Read in the session template file
-        with open(sessionTemplateFile, 'r') as f:
-            st_json = json.load(f)
-            if 'name' not in st_json.keys() or st_json['name'] == "":
-                return connexion.problem(
-                    status=400, title="Bad request",
-                    detail="The Session Template '{}' "
-                           "is missing the required \'name\' attribute."
-                    .format(sessiontemplate.template_url))
-            json_st_str = json.dumps(sanitize_xnames(st_json))
-        LOGGER.debug("Removing temporary local file: '%s'", sessionTemplateFile)
-        os.remove(sessionTemplateFile)
-
-        # Create a Session Template from the content.
-        """Store the Session Template content.
-           For now overwrite any existing template by name w/o warning.
-           Later this can be changed (detected and blocked) when we
-           support patching operations. This could also be changed to
-           result in an HTTP 409 Conflict. TBD.
-        """
-        sessiontemplate_name = st_json['name']
-        st_json["tenant"] = ""  # Tenants are not used in v1, but v1 and v2 share template storage
-        DB.put(sessiontemplate_name, st_json)
-        return sessiontemplate_name, 201
-
-    if sessiontemplate.name:
-        """If a template name has been provided in the body, treat this as
-           a complete JSON session template record and store it.
-           For now overwrite any existing template by name w/o warning.
-           Later this can be changed when we support patching operations.
-           This could also be changed to result in an HTTP 409 Conflict. TBD.
-        """
-        LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
-        st_json = connexion.request.get_json()
-        # Tenants are not used in v1, but v1 and v2 share template storage
-        st_json["tenant"] = ""
-        template_key = get_tenant_aware_key(sessiontemplate.name, "")
-        DB.put(template_key, st_json)
-        return sessiontemplate.name, 201
+    """For now overwrite any existing template by name w/o warning.
+       Later this can be changed when we support patching operations.
+       This could also be changed to result in an HTTP 409 Conflict. TBD.
+    """
+    LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
+    st_json = connexion.request.get_json()
+    # Tenants are not used in v1, but v1 and v2 share template storage
+    st_json["tenant"] = ""
+    template_key = get_tenant_aware_key(sessiontemplate.name, "")
+    DB.put(template_key, st_json)
+    return sessiontemplate.name, 201
 
 
 @no_v1_multi_tenancy_support
