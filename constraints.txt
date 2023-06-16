@@ -43,4 +43,3 @@ tenacity==8.2.2
 urllib3==1.26.15
 websocket-client==1.5.1
 Werkzeug==2.2.3
-wget==3.2
