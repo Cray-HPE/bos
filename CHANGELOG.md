@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.21] - 2023-06-22
 ### Added
-- Updated the API spec to add example values for some fields
+- Updated the API spec to:
+  - Add example values for some fields
+  - Add recommendations for limits on user-submitted string fields (noting that they are not currently
+    enforced, but will be enforced in a future BOS version).
 
 ## [2.0.20] - 2023-06-20
 ### Fixed
