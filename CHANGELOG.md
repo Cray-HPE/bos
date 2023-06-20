@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Add example values for some fields
   - Add recommendations for limits on user-submitted string fields (noting that they are not currently
     enforced, but will be enforced in a future BOS version).
+### Changed
+- Recfactored duplicated areas of API spec using references.
 
 ## [2.0.20] - 2023-06-20
 ### Fixed
