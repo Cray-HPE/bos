@@ -5,12 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.3] - 2023-06-21
+### Added
+- Support for sles-sp5
+
 ## Unreleased
 ### Added
 - Updated the API spec to:
  - Document the header option required for tenant-specific operations.
  - Document which v1 endpoint operations reject tenanted requests, and how they reject them.
- - Make use of the OpenAPI `deprecated` tag in places where it previously was only indicated in the text description. 
+ - Make use of the OpenAPI `deprecated` tag in places where it previously was only indicated in the text description.
 ### Fixed
 - Corrected many small errors and inconsistencies in the API spec description text fields.
 - Updated API spec so that it accurately describes the actual implementation:
@@ -66,7 +70,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - v1 endpoints now thrown an error when a tenant is specified
 - v2 calls to create resources now throw an error when the tenant is invalid
 - Updated database keys to prevent collisions and added migration to the new database key format
-- 'include_disabled' option to decide whether disabled nodes should be part of a BOS session 
+- 'include_disabled' option to decide whether disabled nodes should be part of a BOS session
 - Updating `x86_64` RPM builds to type `noarch` for ARM required work CASMCMS-8517
 
 ## [2.2.0] - 2023-05-10
