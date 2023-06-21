@@ -96,10 +96,12 @@ class HSMState(IDFilter):
         of the arch values specified are returned as a list of component IDs. HSM components that do not have arch
         information are considered to be of type 'Unknown' for reasons of compatibility.
         args:
-          components: a list of xnames
-          arch: an iterable of valid arch names we hope to filter by; typically a set
+          components: a set of xnames
+          arch: a set containing HSM archs as represented by strings
+        returns:
+          A list of xnames all matching one of the archs requested
         """
-        components = get_hsm_components(nodes, enabled=self.enabled)
+        components = get_hsm_components(list(nodes), enabled=self.enabled)
         return [component['ID'] for component in components['Components']
                 if component.get('Arch', 'Unknown') in arch]
 

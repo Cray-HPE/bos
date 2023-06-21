@@ -176,12 +176,14 @@ class Session:
         args:
           nodes: an iterator of nodes by xnames that correspond to components in HSM.
           arch: A string representing a corresponding ARCH from HSM.
+        returns:
+          A set representing the subset of nodes that match arch, or the logical arch from HSM.
         """
-        valid_archs = set(arch)
+        valid_archs = set([arch])
         if arch == 'X86':
             valid_archs.add('Unknown')
         hsm_filter = HSMState(enabled=True)
-        return list(hsm_filter.filter_by_arch(list(nodes), valid_archs))
+        return set(hsm_filter.filter_by_arch(nodes, valid_archs))
 
     def _apply_limit(self, nodes):
         session_limit = self.session_data.get('limit')
