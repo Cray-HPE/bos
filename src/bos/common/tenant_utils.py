@@ -23,6 +23,7 @@
 #
 
 import connexion
+import functools
 import logging
 import hashlib
 from requests.exceptions import HTTPError
@@ -31,9 +32,9 @@ from bos.common.utils import requests_retry_session, PROTOCOL
 LOGGER = logging.getLogger('bos.common.tenant_utils')
 
 TENANT_HEADER = "Cray-Tenant-Name"
-SERVICE_NAME = 'cray-tapms-server.tapms-operator.svc.cluster.local:2875/apis/tapms/v1' ## CASMPET-6433 will simplify this endpoint
+SERVICE_NAME = 'cray-tapms/v1alpha2'
 BASE_ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
-TENANT_ENDPOINT = "%s/tenant" % BASE_ENDPOINT ## CASMPET-6433 will change this from tenant to tenants
+TENANT_ENDPOINT = "%s/tenants" % BASE_ENDPOINT ## CASMPET-6433 will change this from tenant to tenants
 
 
 class InvalidTenantException(Exception):
@@ -104,7 +105,7 @@ def validate_tenant_exists(tenant: str) -> bool:
 
 def tenant_error_handler(func):
     """Decorator for returning errors if there is an exception when calling tapms"""
-
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
@@ -117,7 +118,7 @@ def tenant_error_handler(func):
 
 def reject_invalid_tenant(func):
     """Decorator for preemptively validating the tenant exists"""
-
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         tenant = get_tenant_from_header()
         if tenant and not validate_tenant_exists(tenant):
@@ -130,7 +131,7 @@ def reject_invalid_tenant(func):
 
 def no_v1_multi_tenancy_support(func):
     """Decorator for returning errors if the endpoint doesn't support multi-tenancy"""
-
+    @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if get_tenant_from_header():
             return connexion.problem(

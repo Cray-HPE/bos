@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated the API spec to document the header option required for tenant-specific operations.
   Documented which v1 endpoint operations reject tenanted requests, and how they reject them.
 - Added arch support for boot set operations. Boot sets now filter effective nodes within their boot set to match HSM arch information.
+- Updated the API spec to:
+ - Document the header option required for tenant-specific operations.
+ - Document which v1 endpoint operations reject tenanted requests, and how they reject them.
+ - Make use of the OpenAPI `deprecated` tag in places where it previously was only indicated in the text description. 
+### Fixed
+- Corrected many small errors and inconsistencies in the API spec description text fields.
+- Updated API spec so that it accurately describes the actual implementation:
+  - Successfully creating a V1 session template returns the name of that template.
+### Removed
+- `templateUrl` option when creating BOS v1 templates.
+
+## [2.4.2] - 2023-06-14
+### Fixed
+- Fixed python decorators to preserve function signatures
 
 ## [2.4.1] - 2023-06-06
 ### Fixed
