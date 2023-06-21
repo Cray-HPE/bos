@@ -173,12 +173,15 @@ class Session:
 
         Because nodes may not have a known architecture, all nodes that are of unknown architecture count as being of
         type X86.
+        args:
+          nodes: an iterator of nodes by xnames that correspond to components in HSM.
+          arch: A string representing a corresponding ARCH from HSM.
         """
         valid_archs = set(arch)
         if arch == 'X86':
             valid_archs.add('Unknown')
         hsm_filter = HSMState(enabled=True)
-        return list(hsm_filter.filter_by_arch(nodes, valid_archs))
+        return list(hsm_filter.filter_by_arch(list(nodes), valid_archs))
 
     def _apply_limit(self, nodes):
         session_limit = self.session_data.get('limit')
