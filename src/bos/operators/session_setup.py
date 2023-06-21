@@ -178,7 +178,7 @@ class Session:
         if arch == 'X86':
             valid_archs.add('Unknown')
         hsm_filter = HSMState(enabled=True)
-        return list(hsm_filter.filter_by_arch((nodes, valid_archs)))
+        return list(hsm_filter.filter_by_arch(nodes, valid_archs))
 
     def _apply_limit(self, nodes):
         session_limit = self.session_data.get('limit')
