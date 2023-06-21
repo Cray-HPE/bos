@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Updated the API spec to document the header option required for tenant-specific operations.
+  Documented which v1 endpoint operations reject tenanted requests, and how they reject them.
+- Added arch support for boot set operations. Boot sets now filter effective nodes within their boot set to match HSM arch information.
 - Updated the API spec to:
  - Document the header option required for tenant-specific operations.
  - Document which v1 endpoint operations reject tenanted requests, and how they reject them.
