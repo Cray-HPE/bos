@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## Unreleased
 ### Added
 - Updated the API spec to document the header option required for tenant-specific operations.
@@ -20,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Successfully creating a V1 session template returns the name of that template.
 ### Removed
 - `templateUrl` option when creating BOS v1 templates.
+
+## [2.4.3] - 2023-06-20
+### Fixed
+- Fixed actual state clearup operation
 
 ## [2.4.2] - 2023-06-14
 ### Fixed
