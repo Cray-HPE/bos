@@ -7,6 +7,7 @@ ansible/bos_deploy.retry
 .tox
 tox.log
 .coverage
+.idea
 gitInfo.txt
 api/openapi.yaml
 bos.egg-info
