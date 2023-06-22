@@ -5,12 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.4.3] - 2023-06-21
-### Added
-- Support for sles-sp5
-
 ## Unreleased
 ### Added
+- Support for SLES SP5 for bos-reporter RPM.
 - Updated the API spec to:
  - Document the header option required for tenant-specific operations.
  - Document which v1 endpoint operations reject tenanted requests, and how they reject them.
