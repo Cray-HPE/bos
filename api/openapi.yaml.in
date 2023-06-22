@@ -1030,6 +1030,14 @@ components:
           $ref: '#/components/schemas/V2NodeRoleList'
         node_groups:
           $ref: '#/components/schemas/V2NodeGroupList'
+        arch:
+          type: string
+          description: >
+              The node architecture to target. Filters nodes that are not part of matching architecture from being targeted by boot actions. This value
+              should correspond to HSM component 'Arch' field exactly. For reasons of backwards compatibility, all HSM nodes that are of type Unknown
+              are treated as being of type X86.
+          default: X86
+          enum: [X86, ARM, Other, Unknown]
         rootfs_provider:
           $ref: '#/components/schemas/V2BootSetRootfsProvider'
         rootfs_provider_passthrough:
