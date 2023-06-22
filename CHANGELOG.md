@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ## [Unreleased]
+
+## [2.5.0] - 2023-06-22
 ### Added
 - Support for SLES SP5 for bos-reporter RPM.
 - Added arch support for boot set operations. Boot sets now filter effective nodes within their boot set to match HSM arch information.
@@ -14,8 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
  - Document the header option required for tenant-specific operations.
  - Document which v1 endpoint operations reject tenanted requests, and how they reject them.
  - Make use of the OpenAPI `deprecated` tag in places where it previously was only indicated in the text description.
- - Added examples for some fields
- - Added recommendations for limits on user-submitted string fields (noting that they are not currently
+ - Add example values for some fields
+ - Add recommendations for limits on user-submitted string fields (noting that they are not currently
    enforced, but will be enforced in a future BOS version).
 ### Changed
 - Recfactored duplicated areas of API spec using references.
