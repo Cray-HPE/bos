@@ -47,6 +47,7 @@ pipeline {
         PUBLISH_SP2 = "sle-15sp2"
         PUBLISH_SP3 = "sle-15sp3"
         PUBLISH_SP4 = "sle-15sp4"
+        PUBLISH_SP5 = "sle-15sp5"
     }
 
     stages {
@@ -196,6 +197,29 @@ pipeline {
                 sh "make rpm_build_source_clean"
             }
         }
+        stage("SLES15SP5 RPM Build") {
+            agent {
+                docker {
+                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp5_build_environment:latest"
+                    reuseNode true
+                    // Support docker in docker for clamav scan
+                    args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
+                }
+            }
+            steps {
+                sh "make rptr_rpm_prepare"
+                sh "make rptr_rpm"
+            }
+        }
+        stage("SLES15SP5 RPM Publish") {
+            steps {
+                script {
+                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/noarch/*.rpm", os: env.PUBLISH_SP5, arch: "noarch", isStable: env.IS_STABLE)
+                    publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: env.PUBLISH_SP5, arch: "src", isStable: env.IS_STABLE)
+                }
+                sh "make rpm_build_clean"
+                sh "make rpm_build_source_clean"
+            }
+        }
     }
 }
-
