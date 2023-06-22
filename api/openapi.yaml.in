@@ -107,41 +107,120 @@ servers:
 components:
   schemas:
     # Version-agnostic schemas
+    AgeString:
+      type: string
+      description: Age in minutes (e.g. "3m"), hours (e.g. "5h"), days (e.g. "10d"), or weeks (e.g. "2w").
+      example: 3d
+      format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
+      minLength: 1
+      # This allows for over 10 years using the smallest units (minutes)
+      maxLength: 8
+    BootInitrdPath:
+      type: string
+      description: |
+        A path to the initrd to use for booting.
+
+        It is recommended that this should be no more than 4095 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/initrd"
+    BootKernelPath:
+      type: string
+      description: |
+        A path to the kernel to use for booting.
+
+        It is recommended that this should be no more than 4095 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/kernel"
+    BootManifestPath:
+      type: string
+      description: |
+        A path identifying the metadata describing the components of the boot image.
+        This could be a URI, URL, etc, depending on the type of the Boot Set.
+
+        It is recommended that this should be 1-4095 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
+    BootKernelParameters:
+      type: string
+      description: |
+        The kernel parameters to use to boot the nodes.
+
+        Linux kernel parameters may never exceed 4096 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_limit=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
     BootSetEtag:
       type: string
       description: |
         This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
-    BootSetKernelParameters:
-      type: string
-      description: |
-        The kernel parameters to use to boot the nodes.
+
+        ETags are defined as being 1-65536 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
     BootSetName:
       type: string
       description: |
         The Boot Set name.
-    BootSetPath:
-      type: string
-      description: |
-        A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
-        It will be processed based on the type attribute.
+
+        It is recommended that:
+        * Boot Set names should be 1-127 characters in length.
+        * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
+        * Boot Set names should begin and end with a letter or digit.
+
+        These restrictions are not enforced in this version of BOS, but they are
+        targeted to start being enforced in an upcoming BOS version.
+      example: "compute"
     BootSetRootfsProvider:
       type: string
       description: |
         The root file system provider.
+
+        It is recommended that this should be 1-511 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "cpss3"
     BootSetRootfsProviderPassthrough:
       type: string
       description: |
         The root file system provider passthrough.
         These are additional kernel parameters that will be appended to
         the 'rootfs=<protocol>' kernel parameter
+
+        Linux kernel parameters may never exceed 4096 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "dvs:api-gw-service-nmn.local:300:nmn0"
     BootSetType:
       type: string
       description: |
         The MIME type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
+
+        It is recommended that this should be 1-127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "s3"
     CfsConfiguration:
       type: string
       description: |
         The name of configuration to be applied.
+
+        It is recommended that this should be no more than 127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "compute-23.4.0"
     EnableCfs:
       type: boolean
       description: |
@@ -178,32 +257,65 @@ components:
         $ref: '#/components/schemas/Link'
     NodeList:
       type: array
-      description: Node list.
+      description: |
+        Node list.
+
+        It is recommended that this list should be 1-65535 items in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       minItems: 1
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
       items:
         type: string
         description: |
           Hardware component name (xname).
-        example: x3001c0s39b0n0
+
+          It is recommended that this should be 1-127 characters in length.
+
+          This restriction is not enforced in this version of BOS, but it is
+          targeted to start being enforced in an upcoming BOS version.
+        example: "x3001c0s39b0n0"
     NodeGroupList:
       type: array
-      description: Node group list. Allows actions against associated nodes by logical groupings.
+      description: |
+        Node group list. Allows actions against associated nodes by logical groupings.
+
+        It is recommended that this list should be 1-4095 items in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       minItems: 1
       items:
         type: string
         description: |
           Name of a user-defined logical group in the Hardware State Manager (HSM).
+
+          It is recommended that this should be 1-127 characters in length.
+
+          This restriction is not enforced in this version of BOS, but it is
+          targeted to start being enforced in an upcoming BOS version.
     NodeRoleList:
       type: array
-      description: Node role list. Allows actions against nodes with associated roles.
+      description: |
+        Node role list. Allows actions against nodes with associated roles.
+
+        It is recommended that this list should be 1-1023 items in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
       minItems: 1
       example: ["Compute", "Application"]
       items:
         type: string
         description: |
           Name of a role that is defined in the Hardware State Manager (HSM).
-        example: Compute
+
+          It is recommended that this should be 1-127 characters in length.
+
+          This restriction is not enforced in this version of BOS, but it is
+          targeted to start being enforced in an upcoming BOS version.
+        example: "Compute"
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
       type: object
@@ -243,10 +355,20 @@ components:
         A comma-separated list of nodes, groups, or roles to which the Session
         will be limited. Components are treated as OR operations unless
         preceded by "&" for AND or "!" for NOT.
+
+        It is recommended that this should be 1-65535 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     SessionTemplateDescription:
       type: string
       description: |
         An optional description for the Session Template.
+
+        It is recommended that this should be 1-1023 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     SessionTemplateName:
       type: string
       description: |
@@ -263,7 +385,14 @@ components:
       example: "cle-1.0.0"
     TenantName:
       type: string
-      description: Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
+      description: |
+        Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
+
+        It is recommended that this should be no more than 127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "vcluster-my-tenant1"
     Version:
       description: Version data
       type: object
@@ -288,13 +417,21 @@ components:
       description: |
         The name of the branch containing the configuration that you want to
         apply to the nodes. Mutually exclusive with commit. (DEPRECATED)
-    V1CfsConfiguration:
-      $ref: '#/components/schemas/CfsConfiguration'
+
+        It is recommended that this should be 1-1023 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     V1CfsUrl:
       type: string
       deprecated: true
       description: |
         The clone URL for the repository providing the configuration. (DEPRECATED)
+
+        It is recommended that this should be 1-4096 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
     V1CfsParameters:
       type: object
       description: |
@@ -311,14 +448,25 @@ components:
           description: |
             The commit ID of the configuration that you want to
             apply to the nodes. Mutually exclusive with branch. (DEPRECATED)
+
+            git commit hashes are hexadecimal strings with a length of 40 characters (although
+            fewer characters may be sufficient to uniquely identify a commit in some cases).
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         playbook:
           type: string
           deprecated: true
           description: |
             The name of the playbook to run for configuration. The file path must be specified
             relative to the base directory of the config repository. (DEPRECATED)
+
+            It is recommended that this should be 1-255 characters in length.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         configuration:
-          $ref: '#/components/schemas/V1CfsConfiguration'
+          $ref: '#/components/schemas/CfsConfiguration'
       additionalProperties: false
     V1CompleteMetadata:
       type: boolean
@@ -357,8 +505,6 @@ components:
         stop_time:
           $ref: '#/components/schemas/V1StopTimeMetadata'
       additionalProperties: false
-    V1NodeList:
-      $ref: '#/components/schemas/NodeList'
     V1PhaseCategoryName:
       type: string
       description: |
@@ -379,7 +525,7 @@ components:
         name:
           $ref: '#/components/schemas/V1PhaseCategoryName'
         node_list:
-          $ref: '#/components/schemas/V1NodeList'
+          $ref: '#/components/schemas/NodeList'
     V1PhaseStatus:
       type: object
       description: |
@@ -411,8 +557,6 @@ components:
       description: Unique BOS v1 Session identifier.
       format: uuid
       example: "8deb0746-b18c-427c-84a8-72ec6a28642c"
-    V1BootSetName:
-      $ref: '#/components/schemas/BootSetName'
     V1BootSetStatus:
       type: object
       description: |
@@ -425,7 +569,7 @@ components:
 
       properties:
         name:
-          $ref: '#/components/schemas/V1BootSetName'
+          $ref: '#/components/schemas/BootSetName'
         session:
           $ref: '#/components/schemas/V1SessionId'
         metadata:
@@ -454,28 +598,12 @@ components:
              The Boot Sets in the Session
            type: array
            items:
-             $ref: '#/components/schemas/V1BootSetName'
+             $ref: '#/components/schemas/BootSetName'
            minItems: 1
         id:
           $ref: '#/components/schemas/V1SessionId'
         links:
           $ref: '#/components/schemas/LinkList'
-    V1BootSetPath:
-      $ref: '#/components/schemas/BootSetPath'
-    V1BootSetType:
-      $ref: '#/components/schemas/BootSetType'
-    V1BootSetEtag:
-      $ref: '#/components/schemas/BootSetEtag'
-    V1BootSetKernelParameters:
-      $ref: '#/components/schemas/BootSetKernelParameters'
-    V1NodeGroupList:
-      $ref: '#/components/schemas/NodeGroupList'
-    V1NodeRoleList:
-      $ref: '#/components/schemas/NodeRoleList'
-    V1BootSetRootfsProvider:
-      $ref: '#/components/schemas/BootSetRootfsProvider'
-    V1BootSetRootfsProviderPassthrough:
-      $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
     V1BootSet:
       description: |
         A Boot Set defines a collection of nodes and the information about the
@@ -487,25 +615,25 @@ components:
       type: object
       properties:
         name:
-          $ref: '#/components/schemas/V1BootSetName'
+          $ref: '#/components/schemas/BootSetName'
         path:
-          $ref: '#/components/schemas/V1BootSetPath'
+          $ref: '#/components/schemas/BootManifestPath'
         type:
-          $ref: '#/components/schemas/V1BootSetType'
+          $ref: '#/components/schemas/BootSetType'
         etag:
-          $ref: '#/components/schemas/V1BootSetEtag'
+          $ref: '#/components/schemas/BootSetEtag'
         kernel_parameters:
-          $ref: '#/components/schemas/V1BootSetKernelParameters'
+          $ref: '#/components/schemas/BootKernelParameters'
         node_list:
-          $ref: '#/components/schemas/V1NodeList'
+          $ref: '#/components/schemas/NodeList'
         node_roles_groups:
-          $ref: '#/components/schemas/V1NodeRoleList'
+          $ref: '#/components/schemas/NodeRoleList'
         node_groups:
-          $ref: '#/components/schemas/V1NodeGroupList'
+          $ref: '#/components/schemas/NodeGroupList'
         rootfs_provider:
-          $ref: '#/components/schemas/V1BootSetRootfsProvider'
+          $ref: '#/components/schemas/BootSetRootfsProvider'
         rootfs_provider_passthrough:
-          $ref: '#/components/schemas/V1BootSetRootfsProviderPassthrough'
+          $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
         network:
           type: string
           description: |
@@ -518,16 +646,24 @@ components:
           description: |
             The boot ordinal. This will establish the order for Boot Set operations.
             Boot Sets boot in order from the lowest to highest boot_ordinal.
+
+            It is recommended that this should have a maximum value of 65535.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         shutdown_ordinal:
           type: integer
           minimum: 0
           description: |
             The shutdown ordinal. This will establish the order for Boot Set
             shutdown operations. Sets shutdown from low to high shutdown_ordinal.
+
+            It is recommended that this should have a maximum value of 65535.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
       additionalProperties: false
       required: [path, type]
-    V1SessionTemplateName:
-      $ref: '#/components/schemas/SessionTemplateName'
     V1SessionTemplateUuid:
       type: string
       description: |
@@ -542,12 +678,9 @@ components:
 
         These restrictions are not enforced in this version of BOS, but they are
         targeted to start being enforced in an upcoming BOS version.
+      minLength: 1
       example: "my-session-template"
       deprecated: true
-    V1SessionTemplateDescription:
-      $ref: '#/components/schemas/SessionTemplateDescription'
-    V1EnableCfs:
-      $ref: '#/components/schemas/EnableCfs'
     V1SessionTemplate:
       type: object
       description: |
@@ -561,25 +694,40 @@ components:
         * self : The Session Template object
       properties:
         name:
-          $ref: '#/components/schemas/V1SessionTemplateName'
+          $ref: '#/components/schemas/SessionTemplateName'
         description:
-          $ref: '#/components/schemas/V1SessionTemplateDescription'
+          $ref: '#/components/schemas/SessionTemplateDescription'
         cfs_url:
           $ref: '#/components/schemas/V1CfsUrl'
         cfs_branch:
           $ref: '#/components/schemas/V1CfsBranch'
         enable_cfs:
-          $ref: '#/components/schemas/V1EnableCfs'
+          $ref: '#/components/schemas/EnableCfs'
         cfs:
           $ref: '#/components/schemas/V1CfsParameters'
         partition:
           type: string
           description: |
             The machine partition to operate on.
+
+            It is recommended that this should be 1-255 characters in length.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         boot_sets:
           type: object
           description: |
             Mapping from Boot Set names to Boot Sets.
+
+            It is recommended that:
+            * At least one Boot Set should be defined, because a Session Template with no
+              Boot Sets is not functional.
+            * Boot Set names should be 1-127 characters in length.
+            * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names should begin and end with a letter or digit.
+
+            These restrictions are not enforced in this version of BOS, but they are
+            targeted to start being enforced in an upcoming BOS version.
           additionalProperties:
             $ref: '#/components/schemas/V1BootSet'
         links:
@@ -655,7 +803,7 @@ components:
         stop_time:
           $ref: '#/components/schemas/V1StopTimeMetadata'
         templateName:
-          $ref: '#/components/schemas/V1SessionTemplateName'
+          $ref: '#/components/schemas/SessionTemplateName'
     V1SessionDetailsByTemplateUuid:
       description: |
         Details about a Session using templateUuid instead of templateName.
@@ -680,9 +828,7 @@ components:
         stop_time:
           $ref: '#/components/schemas/V1StopTimeMetadata'
         templateName:
-          $ref: '#/components/schemas/V1SessionTemplateName'
-    V1SessionLimit:
-      $ref: '#/components/schemas/SessionLimit'
+          $ref: '#/components/schemas/SessionTemplateName'
     V1SessionLinkList:
       type: array
       readOnly: true
@@ -700,11 +846,11 @@ components:
         operation:
           $ref: '#/components/schemas/V1Operation'
         templateName:
-          $ref: '#/components/schemas/V1SessionTemplateName'
+          $ref: '#/components/schemas/SessionTemplateName'
         job:
           $ref: '#/components/schemas/V1BoaKubernetesJob'
         limit:
-          $ref: '#/components/schemas/V1SessionLimit'
+          $ref: '#/components/schemas/SessionLimit'
         links:
           $ref: '#/components/schemas/V1SessionLinkList'
       required: [operation, templateName]
@@ -723,11 +869,11 @@ components:
         templateUuid:
           $ref: '#/components/schemas/V1SessionTemplateUuid'
         templateName:
-          $ref: '#/components/schemas/V1SessionTemplateName'
+          $ref: '#/components/schemas/SessionTemplateName'
         job:
           $ref: '#/components/schemas/V1BoaKubernetesJob'
         limit:
-          $ref: '#/components/schemas/V1SessionLimit'
+          $ref: '#/components/schemas/SessionLimit'
         links:
           $ref: '#/components/schemas/V1SessionLinkList'
       required: [operation, templateName]
@@ -749,7 +895,7 @@ components:
         job:
           $ref: '#/components/schemas/V1BoaKubernetesJob'
         limit:
-          $ref: '#/components/schemas/V1SessionLimit'
+          $ref: '#/components/schemas/SessionLimit'
         links:
           $ref: '#/components/schemas/V1SessionLinkList'
       required: [operation, templateUuid]
@@ -774,7 +920,7 @@ components:
         destination:
           $ref: '#/components/schemas/V1PhaseCategoryName'
         node_list:
-          $ref: '#/components/schemas/V1NodeList'
+          $ref: '#/components/schemas/NodeList'
       additionalProperties: false
       required: [phase, source, destination, node_list]
     V1NodeErrorsList:
@@ -784,7 +930,7 @@ components:
         This is an additive characterization. Nodes will be added to existing errors.
         This does not overwrite previously existing errors.
       additionalProperties:
-        $ref: '#/components/schemas/V1NodeList'
+        $ref: '#/components/schemas/NodeList'
     V1UpdateRequestNodeChange:
       description: |
         This is an element of the payload sent during an update request. It contains
@@ -847,8 +993,6 @@ components:
         Name of the tenant that owns this resource. Only used in environments
         with multi-tenancy enabled.
       readOnly: true
-    V2CfsConfiguration:
-      $ref: '#/components/schemas/CfsConfiguration'
     V2CfsParameters:
       type: object
       description: |
@@ -857,12 +1001,8 @@ components:
         a Session Template, or individually within a Boot Set.
       properties:
         configuration:
-          $ref: '#/components/schemas/V2CfsConfiguration'
+          $ref: '#/components/schemas/CfsConfiguration'
       additionalProperties: false
-    V2SessionTemplateDescription:
-      $ref: '#/components/schemas/SessionTemplateDescription'
-    V2EnableCfs:
-      $ref: '#/components/schemas/EnableCfs'
     V2SessionTemplate:
       type: object
       description: |
@@ -892,15 +1032,25 @@ components:
         tenant:
           $ref: '#/components/schemas/V2TenantName'
         description:
-          $ref: '#/components/schemas/V2SessionTemplateDescription'
+          $ref: '#/components/schemas/SessionTemplateDescription'
         enable_cfs:
-          $ref: '#/components/schemas/V2EnableCfs'
+          $ref: '#/components/schemas/EnableCfs'
         cfs:
           $ref: '#/components/schemas/V2CfsParameters'
         boot_sets:
           type: object
           description: |
             Mapping from Boot Set names to Boot Sets.
+
+            It is recommended that:
+            * At least one Boot Set should be defined, because a Session Template with no
+              Boot Sets is not functional.
+            * Boot Set names should be 1-127 characters in length.
+            * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names should begin and end with a letter or digit.
+
+            These restrictions are not enforced in this version of BOS, but they are
+            targeted to start being enforced in an upcoming BOS version.
           additionalProperties:
             $ref: '#/components/schemas/V2BootSet'
         links:
@@ -910,8 +1060,6 @@ components:
       description: |
         Message describing errors or incompleteness in a Session Template.
       type: string
-    V2SessionLimit:
-      $ref: '#/components/schemas/SessionLimit'
     V2SessionName:
       type: string
       description: Name of the Session.
@@ -933,8 +1081,6 @@ components:
             Boot                 Applies the Template to the Components and boots/reboots if necessary.
             Reboot               Applies the Template to the Components; guarantees a reboot.
             Shutdown             Power down Components that are on.
-    V2SessionTemplateName:
-      $ref: '#/components/schemas/SessionTemplateName'
     V2SessionCreate:
       description: |
         A Session Creation object. A UUID name is generated if a name is not provided.
@@ -945,9 +1091,9 @@ components:
         operation:
           $ref: '#/components/schemas/V2SessionOperation'
         template_name:
-          $ref: '#/components/schemas/V2SessionTemplateName'
+          $ref: '#/components/schemas/SessionTemplateName'
         limit:
-          $ref: '#/components/schemas/V2SessionLimit'
+          $ref: '#/components/schemas/SessionLimit'
         stage:
           type: boolean
           description: |
@@ -984,26 +1130,6 @@ components:
           description: |
             Error which prevented the Session from running
       additionalProperties: false
-    V2BootSetName:
-      $ref: '#/components/schemas/BootSetName'
-    V2BootSetPath:
-      $ref: '#/components/schemas/BootSetPath'
-    V2BootSetType:
-      $ref: '#/components/schemas/BootSetType'
-    V2BootSetEtag:
-      $ref: '#/components/schemas/BootSetEtag'
-    V2BootSetKernelParameters:
-      $ref: '#/components/schemas/BootSetKernelParameters'
-    V2NodeList:
-      $ref: '#/components/schemas/NodeList'
-    V2NodeGroupList:
-      $ref: '#/components/schemas/NodeGroupList'
-    V2NodeRoleList:
-      $ref: '#/components/schemas/NodeRoleList'
-    V2BootSetRootfsProvider:
-      $ref: '#/components/schemas/BootSetRootfsProvider'
-    V2BootSetRootfsProviderPassthrough:
-      $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
     V2BootSet:
       description: |
         A Boot Set is a collection of nodes defined by an explicit list, their functional
@@ -1013,23 +1139,23 @@ components:
       type: object
       properties:
         name:
-          $ref: '#/components/schemas/V2BootSetName'
+          $ref: '#/components/schemas/BootSetName'
         path:
-          $ref: '#/components/schemas/V2BootSetPath'
+          $ref: '#/components/schemas/BootManifestPath'
         cfs:
           $ref: '#/components/schemas/V2CfsParameters'
         type:
-          $ref: '#/components/schemas/V2BootSetType'
+          $ref: '#/components/schemas/BootSetType'
         etag:
-          $ref: '#/components/schemas/V2BootSetEtag'
+          $ref: '#/components/schemas/BootSetEtag'
         kernel_parameters:
-          $ref: '#/components/schemas/V2BootSetKernelParameters'
+          $ref: '#/components/schemas/BootKernelParameters'
         node_list:
-          $ref: '#/components/schemas/V2NodeList'
+          $ref: '#/components/schemas/NodeList'
         node_roles_groups:
-          $ref: '#/components/schemas/V2NodeRoleList'
+          $ref: '#/components/schemas/NodeRoleList'
         node_groups:
-          $ref: '#/components/schemas/V2NodeGroupList'
+          $ref: '#/components/schemas/NodeGroupList'
         arch:
           type: string
           description: >
@@ -1039,9 +1165,9 @@ components:
           default: X86
           enum: [X86, ARM, Other, Unknown]
         rootfs_provider:
-          $ref: '#/components/schemas/V2BootSetRootfsProvider'
+          $ref: '#/components/schemas/BootSetRootfsProvider'
         rootfs_provider_passthrough:
-          $ref: '#/components/schemas/V2BootSetRootfsProviderPassthrough'
+          $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
       additionalProperties: false
       required: [path, type]
     V2Session:
@@ -1060,9 +1186,9 @@ components:
         operation:
           $ref: '#/components/schemas/V2SessionOperation'
         template_name:
-          $ref: '#/components/schemas/V2SessionTemplateName'
+          $ref: '#/components/schemas/SessionTemplateName'
         limit:
-          $ref: '#/components/schemas/V2SessionLimit'
+          $ref: '#/components/schemas/SessionLimit'
         stage:
           type: boolean
           description: |
@@ -1160,15 +1286,32 @@ components:
       type: object
       properties:
         kernel:
-          type: string
-          description: An md5sum hash of the kernel ID
+          $ref: '#/components/schemas/BootKernelPath'
         kernel_parameters:
-          type: string
-          description: Kernel parameters
+          $ref: '#/components/schemas/BootKernelParameters'
         initrd:
-          type: string
-          description: Initrd ID
+          $ref: '#/components/schemas/BootInitrdPath'
       additionalProperties: false
+    V2ComponentBssToken:
+      type: string
+      description: |
+        A token received from the node identifying the boot artifacts.
+        For BOS use-only, users should not set this field. It will be overwritten.
+      maxLength: 65535
+    V2ComponentId:
+      type: string
+      description: |
+        The Component's ID. (e.g. xname for hardware Components)
+
+        It is recommended that this should be 1-127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+    V2ComponentIdList:
+      description: A list of Component IDs (xnames)
+      type: array
+      items:
+        $ref: '#/components/schemas/V2ComponentId'
     V2ComponentLastUpdated:
       type: string
       description: The date/time when the state was last updated in RFC 3339 format.
@@ -1183,10 +1326,7 @@ components:
         boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         bss_token:
-          type: string
-          description: |
-            A token received from the node identifying the boot artifacts.
-            For BOS use-only, users should not set this field. It will be overwritten.
+          $ref: '#/components/schemas/V2ComponentBssToken'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -1198,12 +1338,9 @@ components:
         boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         configuration:
-          $ref: '#/components/schemas/V2CfsConfiguration'
+          $ref: '#/components/schemas/CfsConfiguration'
         bss_token:
-          type: string
-          description: |
-            A token received from BSS identifying the boot artifacts.
-            For BOS use-only, users should not set this field. It will be overwritten.
+          $ref: '#/components/schemas/V2ComponentBssToken'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -1216,7 +1353,7 @@ components:
         boot_artifacts:
           $ref: '#/components/schemas/V2BootArtifacts'
         configuration:
-          $ref: '#/components/schemas/V2CfsConfiguration'
+          $ref: '#/components/schemas/CfsConfiguration'
         session:
           $ref: '#/components/schemas/V2SessionName'
         last_updated:
@@ -1273,8 +1410,7 @@ components:
       type: object
       properties:
         id:
-          type: string
-          description: The Component's ID. e.g. xname for hardware Components
+          $ref: '#/components/schemas/V2ComponentId'
         actual_state:
           $ref: '#/components/schemas/V2ComponentActualState'
         desired_state:
@@ -1301,6 +1437,8 @@ components:
             The maximum number attempts per action when actions fail.
             Defaults to the global default_retry_policy if not set
           example: 1
+          minimum: 0
+          maximum: 1048576
       additionalProperties: false
     V2ComponentArray:
       description: An array of Component states.
@@ -1315,7 +1453,13 @@ components:
       properties:
         ids:
           type: string
-          description: A comma-separated list of Component IDs
+          description: |
+            A comma-separated list of Component IDs.
+
+            It is recommended that this should be 1-65535 characters in length.
+
+            This restriction is not enforced in this version of BOS, but it is
+            targeted to start being enforced in an upcoming BOS version.
         session:
           $ref: '#/components/schemas/V2SessionName'
     V2ComponentsUpdate:
@@ -1333,35 +1477,23 @@ components:
       type: object
       properties:
         xnames:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
       additionalProperties: false
     V2ApplyStagedStatus:
       description: |
-        A list of Components that should have their staged Session applied.
+        Mapping from Component staged Session statuses to Components with that status.
       type: object
       properties:
         succeeded:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
         failed:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
         ignored:
-          description: The list of Component xnames
-          type: array
-          items:
-            type: string
+          $ref: '#/components/schemas/V2ComponentIdList'
       additionalProperties: false
     V2Options:
       description: |
-        Options for the boot orchestration service.
+        Options for the Boot Orchestration Service.
       type: object
       properties:
         cleanup_completed_session_ttl:
@@ -1494,12 +1626,20 @@ components:
             $ref: '#/components/schemas/V2ApplyStagedComponents'
 
   responses:
+    ResourceDeleted:
+      description: The resource was deleted.
     ServiceHealth:
       description: Service Health information
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/Healthz'
+    SessionTemplateName:
+      description: Session Template name
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SessionTemplateName'
     Version:
       description: |
         Get version details
@@ -1511,8 +1651,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Version'
-    ResourceDeleted:
-      description: The resource was deleted.
     # V1
     V1Session:
       description: Session
@@ -1540,12 +1678,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V1SessionTemplate'
-    V1SessionTemplateName:
-      description: Session Template name
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/V1SessionTemplateName'
     # V2
     V2SessionTemplateDetails:
       description: Session Template details
@@ -1667,6 +1799,100 @@ components:
         application/problem+json:
           schema:
             $ref: '#/components/schemas/ProblemDetails'
+
+  parameters:
+    BootSetNamePathParam:
+      name: boot_set_name
+      in: path
+      description: Boot Set name
+      required: true
+      schema:
+        type: string
+    TemplateIdPathParam:
+      name: session_template_id
+      in: path
+      description: Session Template name
+      required: true
+      schema:
+        $ref: '#/components/schemas/SessionTemplateName'
+    V1CategoryNamePathParam:
+      name: category_name
+      in: path
+      description: The category name
+      required: true
+      schema:
+        type: string
+    V1PhaseNamePathParam:
+      name: phase_name
+      in: path
+      description: The phase name
+      required: true
+      schema:
+        type: string
+    V1SessionIdPathParam:
+      name: session_id
+      in: path
+      description: Session ID
+      required: true
+      schema:
+        type: string
+    V1TenantHeaderParam:
+      name: Cray-Tenant-Name
+      in: header
+      description: |
+        Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
+        If this parameter is set to a non-empty string, the request will be rejected.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
+    V2ComponentIdPathParam:
+      name: component_id
+      in: path
+      description: Component ID. e.g. xname for hardware Components
+      required: true
+      schema:
+        $ref: '#/components/schemas/V2ComponentId'
+    V2SessionIdPathParam:
+      name: session_id
+      in: path
+      description: Session ID
+      required: true
+      schema:
+        type: string
+    V2SessionsMaxAgeQueryParam:
+      name: max_age
+      schema:
+        $ref: '#/components/schemas/AgeString'
+      in: query
+      description: |-
+        Only include Sessions younger than the given age.  Age is given in the format "1d" or "6h"
+    V2SessionsMinAgeQueryParam:
+      name: min_age
+      schema:
+        $ref: '#/components/schemas/AgeString'
+      in: query
+      description: |-
+        Only include Sessions older than the given age.  Age is given in the format "1d" or "6h"
+    V2SessionsStatusQueryParam:
+      name: status
+      schema:
+        $ref: '#/components/schemas/V2SessionStatusLabel'
+      in: query
+      description: |-
+        Only include Sessions with the given status.
+    V2TenantHeaderParam:
+      name: Cray-Tenant-Name
+      in: header
+      description: |
+        Tenant name.
+
+        Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
+
+        Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
+
 paths:
   /:
     get:
@@ -1704,11 +1930,11 @@ paths:
   /v1/healthz:
     get:
       summary: Get service health details
+      description: Get BOS health details.
       tags:
         - healthz
       x-openapi-router-controller: bos.server.controllers.v1.healthz
       operationId: v1_get_healthz
-      description: Get BOS health details.
       responses:
         200:
           $ref: '#/components/responses/ServiceHealth'
@@ -1718,21 +1944,14 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
   /v1/sessiontemplate:
     parameters:
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     post:
       summary: Create Session Template
+      description: Create a new Session Template.
       tags:
         - sessiontemplate
       x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
       operationId: create_v1_sessiontemplate
-      description: Create a new Session Template.
       requestBody:
          description: A JSON object for creating a Session Template
          required: true
@@ -1742,7 +1961,7 @@ paths:
                $ref: '#/components/schemas/V1SessionTemplate'
       responses:
         201:
-          $ref: '#/components/responses/V1SessionTemplateName'
+          $ref: '#/components/responses/SessionTemplateName'
         400:
           $ref: '#/components/responses/BadRequestOrMultiTenancyNotSupported'
     get:
@@ -1760,20 +1979,8 @@ paths:
           $ref: '#/components/responses/MultiTenancyNotSupported'
   /v1/sessiontemplate/{session_template_id}:
     parameters:
-      - name: session_template_id
-        in: path
-        description: Session Template ID
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/TemplateIdPathParam'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     get:
       summary: Get Session Template by ID
       description: |
@@ -1821,14 +2028,7 @@ paths:
           $ref: '#/components/responses/V1SessionTemplateDetails'
   /v1/session:
     parameters:
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     post:
       summary: Create a Session
       description: |
@@ -1875,6 +2075,9 @@ paths:
         400:
           $ref: '#/components/responses/MultiTenancyNotSupported'
   /v1/session/{session_id}:
+    parameters:
+      - $ref: '#/components/parameters/V1SessionIdPathParam'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     get:
       summary: Get Session details by ID
       description: Get Session details by Session ID.
@@ -1903,37 +2106,10 @@ paths:
           $ref: '#/components/responses/MultiTenancyNotSupported'
         404:
           $ref: '#/components/responses/ResourceNotFound'
-    parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
   /v1/session/{session_id}/status:
     parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V1SessionIdPathParam'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     get:
       summary: A list of the statuses for the different Boot Sets.
       description: |
@@ -2010,26 +2186,9 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v1/session/{session_id}/status/{boot_set_name}:
     parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: boot_set_name
-        in: path
-        description: Boot Set name
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V1SessionIdPathParam'
+      - $ref: '#/components/parameters/BootSetNamePathParam'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     get:
       summary: Get the status for a Boot Set.
       description: Get the status for a Boot Set.
@@ -2117,32 +2276,10 @@ paths:
           $ref: '#/components/responses/BadRequestOrMultiTenancyNotSupported'
   /v1/session/{session_id}/status/{boot_set_name}/{phase_name}:
     parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: boot_set_name
-        in: path
-        description: Boot Set name
-        required: true
-        schema:
-          type: string
-      - name: phase_name
-        in: path
-        description: The phase name
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V1SessionIdPathParam'
+      - $ref: '#/components/parameters/BootSetNamePathParam'
+      - $ref: '#/components/parameters/V1PhaseNamePathParam'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     get:
       summary: Get the status for a specific Boot Set and phase.
       description: Get the status for a specific Boot Set and phase.
@@ -2163,38 +2300,11 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v1/session/{session_id}/status/{boot_set_name}/{phase_name}/{category_name}:
     parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: boot_set_name
-        in: path
-        description: Boot Set name
-        required: true
-        schema:
-          type: string
-      - name: phase_name
-        in: path
-        description: The phase name
-        required: true
-        schema:
-          type: string
-      - name: category_name
-        in: path
-        description: The category name
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name. Multi-tenancy is not supported for most BOS v1 endpoints.
-          If this parameter is set to a non-empty string, the request will be rejected.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V1SessionIdPathParam'
+      - $ref: '#/components/parameters/BootSetNamePathParam'
+      - $ref: '#/components/parameters/V1PhaseNamePathParam'
+      - $ref: '#/components/parameters/V1CategoryNamePathParam'
+      - $ref: '#/components/parameters/V1TenantHeaderParam'
     get:
       summary: Get the status for a specific Boot Set, phase, and category.
       description: Get the status for a specific Boot Set, phase, and category.
@@ -2216,11 +2326,11 @@ paths:
   /v1/version:
     get:
       summary: Get API version
+      description: Return the API version
       tags:
         - version
       x-openapi-router-controller: bos.server.controllers.v1.base
       operationId: v1_get_version
-      description: Return the API version
       responses:
         200:
           $ref: '#/components/responses/Version'
@@ -2230,12 +2340,12 @@ paths:
   /v2:
     get:
       summary: Get API version
+      description: Return the API version
       tags:
         - v2
         - version
       x-openapi-router-controller: bos.server.controllers.v2.base
       operationId: get_v2
-      description: Return the API version
       responses:
         200:
           $ref: '#/components/responses/Version'
@@ -2244,13 +2354,12 @@ paths:
   /v2/healthz:
     get:
       summary: Get service health details
+      description: Get BOS health details.
       tags:
         - v2
         - healthz
       x-openapi-router-controller: bos.server.controllers.v2.healthz
       operationId: get_v2_healthz
-      description: |
-        Get BOS health details.
       responses:
         200:
          $ref: '#/components/responses/ServiceHealth'
@@ -2260,21 +2369,10 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
   /v2/sessiontemplates:
     parameters:
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: List Session Templates
-      description: |
-        List all Session Templates.
+      description: List all Session Templates.
       tags:
         - v2
         - sessiontemplates
@@ -2285,23 +2383,8 @@ paths:
           $ref: '#/components/responses/SessionTemplateDetailsArray'
   /v2/sessiontemplatesvalid/{session_template_id}:
     parameters:
-      - name: session_template_id
-        in: path
-        description: Session Template ID
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/TemplateIdPathParam'
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Validate the Session Template by ID
       description: |
@@ -2320,23 +2403,8 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/sessiontemplates/{session_template_id}:
     parameters:
-      - name: session_template_id
-        in: path
-        description: Session Template ID
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/TemplateIdPathParam'
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Get Session Template by ID
       description: |
@@ -2355,12 +2423,12 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
     put:
       summary: Create Session Template
+      description: Create a new Session Template.
       tags:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: put_v2_sessiontemplate
-      description: Create a new Session Template.
       requestBody:
          description: A JSON object for creating a Session Template
          required: true
@@ -2375,12 +2443,12 @@ paths:
           $ref: '#/components/responses/BadRequest'
     patch:
       summary: Update a Session Template
+      description: Update an existing Session Template.
       tags:
         - v2
         - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: patch_v2_sessiontemplate
-      description: Update an existing Session Template.
       requestBody:
         description: A JSON object for updating a Session Template
         required: true
@@ -2425,19 +2493,7 @@ paths:
           $ref: '#/components/responses/V2SessionTemplateDetails'
   /v2/sessions:
     parameters:
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to:
-          * Sessions and Session Templates owned by that tenant, and
-          * Components to which that tenant has access.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     post:
       summary: Create a Session
       description: |
@@ -2458,6 +2514,10 @@ paths:
           $ref: '#/components/responses/BadRequest'
     get:
       summary: List Sessions
+      parameters:
+        - $ref: '#/components/parameters/V2SessionsMinAgeQueryParam'
+        - $ref: '#/components/parameters/V2SessionsMaxAgeQueryParam'
+        - $ref: '#/components/parameters/V2SessionsStatusQueryParam'
       description: |
         List all Sessions, including those in progress and those complete.
       tags:
@@ -2465,65 +2525,32 @@ paths:
         - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_sessions
-      parameters:
-        - name: min_age
-          schema:
-            type: string
-          in: query
-          description: |-
-            Return only Sessions older than the given age.  Age is given in the format "1d" or "6h"
-        - name: max_age
-          schema:
-            type: string
-          in: query
-          description: |-
-            Return only Sessions younger than the given age.  Age is given in the format "1d" or "6h"
-        - name: status
-          schema:
-            type: string
-            enum: ['pending', 'running', 'complete']
-          in: query
-          description: |-
-            Return only Sessions with the given status.
       responses:
         200:
           $ref: '#/components/responses/V2SessionDetailsArray'
     delete:
       summary: Delete multiple Sessions.
+      parameters:
+        - $ref: '#/components/parameters/V2SessionsMinAgeQueryParam'
+        - $ref: '#/components/parameters/V2SessionsMaxAgeQueryParam'
+        - $ref: '#/components/parameters/V2SessionsStatusQueryParam'
+      description: |
+        Delete multiple Sessions.  If filters are provided, only Sessions matching
+        all filters will be deleted.  By default only completed Sessions will be deleted.
       tags:
         - v2
         - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: delete_v2_sessions
-      description: |
-        Delete multiple Sessions.  If filters are provided, only Sessions matching
-        all filters will be deleted.  By default only completed Sessions will be deleted.
-      parameters:
-        - name: min_age
-          schema:
-            type: string
-          in: query
-          description: |-
-            Return only Sessions older than the given age.  Age is given in the format "1d" or "6h"
-        - name: max_age
-          schema:
-            type: string
-          in: query
-          description: |-
-            Return only Sessions younger than the given age.  Age is given in the format "1d" or "6h"
-        - name: status
-          schema:
-            enum: ['pending', 'running', 'complete']
-            type: string
-          in: query
-          description: |-
-            Return only Sessions with the given status.
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
         400:
           $ref: '#/components/responses/BadRequest'
   /v2/sessions/{session_id}:
+    parameters:
+      - $ref: '#/components/parameters/V2SessionIdPathParam'
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Get Session details by ID
       description: Get Session details by Session ID.
@@ -2539,11 +2566,11 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
     patch:
       summary: Update a single Session
+      description: Update the state for a given Session in the BOS database
       tags:
         - v2
         - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
-      description: Update the state for a given Session in the BOS database
       operationId: patch_v2_session
       requestBody:
         $ref: '#/components/requestBodies/V2sessionUpdateRequest'
@@ -2567,27 +2594,10 @@ paths:
           $ref: '#/components/responses/ResourceDeleted'
         404:
           $ref: '#/components/responses/ResourceNotFound'
-    parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to:
-          * Sessions and Session Templates owned by that tenant, and
-          * Components to which that tenant has access.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
   /v2/sessions/{session_id}/status:
+    parameters:
+      - $ref: '#/components/parameters/V2SessionIdPathParam'
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Get Session extended status information by ID
       description: Get Session extended status information by ID
@@ -2615,45 +2625,15 @@ paths:
           $ref: '#/components/responses/V2SessionDetails'
         404:
           $ref: '#/components/responses/ResourceNotFound'
-    parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to:
-          * Sessions and Session Templates owned by that tenant, and
-          * Components to which that tenant has access.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
   /v2/components:
+    parameters:
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Retrieve the state of a collection of Components
-      tags:
-        - v2
-        - components
-      x-openapi-router-controller: bos.server.controllers.v2.components
-      description: |-
-        Retrieve the full collection of Components in the form of a
-        ComponentArray. Full results can also be filtered by query
-        parameters. Only the first filter parameter of each type is
-        used and the parameters are applied in an AND fashion.
-        If the collection is empty or the filters have no match, an
-        empty array is returned.
-      operationId: get_v2_components
       parameters:
         - name: ids
           schema:
-            type: string
+            $ref: '#/components/schemas/V2ComponentId'
           in: query
           description: |-
             Retrieve the Components with the given ID
@@ -2689,6 +2669,18 @@ paths:
           in: query
           description: |-
             Retrieve the Components with the given status.
+      description: |-
+        Retrieve the full collection of Components in the form of a
+        ComponentArray. Full results can also be filtered by query
+        parameters. Only the first filter parameter of each type is
+        used and the parameters are applied in an AND fashion.
+        If the collection is empty or the filters have no match, an
+        empty array is returned.
+      tags:
+        - v2
+        - components
+      x-openapi-router-controller: bos.server.controllers.v2.components
+      operationId: get_v2_components
       responses:
         200:
           $ref: '#/components/responses/V2componentDetailsArray'
@@ -2696,12 +2688,12 @@ paths:
           $ref: '#/components/responses/BadRequest'
     put:
       summary: Add or Replace a collection of Components
+      description: Update the state for a collection of Components in the BOS database
       tags:
         - v2
         - components
         - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a collection of Components in the BOS database
       operationId: put_v2_components
       requestBody:
         $ref: '#/components/requestBodies/V2componentsPutRequest'
@@ -2712,12 +2704,12 @@ paths:
           $ref: '#/components/responses/BadRequest'
     patch:
       summary: Update a collection of Components
+      description: Update the state for a collection of Components in the BOS database
       tags:
         - v2
         - components
         - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a collection of Components in the BOS database
       operationId: patch_v2_components
       requestBody:
         $ref: '#/components/requestBodies/V2componentsUpdateRequest'
@@ -2728,26 +2720,17 @@ paths:
           $ref: '#/components/responses/BadRequest'
         404:
           $ref: '#/components/responses/ResourceNotFound'
-    parameters:
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to Components to which that tenant has access.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
   /v2/components/{component_id}:
+    parameters:
+      - $ref: '#/components/parameters/V2ComponentIdPathParam'
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Retrieve the state of a single Component
+      description: Retrieve the current and desired state of a single Component
       tags:
         - v2
         - components
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Retrieve the current and desired state of a single Component
       operationId: get_v2_component
       responses:
         200:
@@ -2758,11 +2741,11 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
     put:
       summary: Add or Replace a single Component
+      description: Update the state for a given Component in the BOS database
       tags:
         - v2
         - components
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a given Component in the BOS database
       operationId: put_v2_component
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
@@ -2773,11 +2756,11 @@ paths:
           $ref: '#/components/responses/BadRequest'
     patch:
       summary: Update a single Component
+      description: Update the state for a given Component in the BOS database
       tags:
         - v2
         - components
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Update the state for a given Component in the BOS database
       operationId: patch_v2_component
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
@@ -2791,38 +2774,22 @@ paths:
         409:
           $ref: '#/components/responses/UpdateConflict'
     delete:
+      summary: Delete a single Component
+      description: Delete the given Component
       tags:
         - v2
         - components
         - cli_ignore
-      summary: Delete a single Component
       x-openapi-router-controller: bos.server.controllers.v2.components
-      description: Delete the given Component
       operationId: delete_v2_component
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
         404:
           $ref: '#/components/responses/ResourceNotFound'
-    parameters:
-      - name: component_id
-        in: path
-        description: Component ID. e.g. xname for hardware Components
-        required: true
-        schema:
-          type: string
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to Components to which that tenant has access.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
   /v2/applystaged:
+    parameters:
+      - $ref: '#/components/parameters/V2TenantHeaderParam'
     post:
       summary: Start a staged Session for the specified Components
       description: |
@@ -2842,37 +2809,25 @@ paths:
           $ref: '#/components/responses/V2applyStagedResponse'
         400:
           $ref: '#/components/responses/BadRequest'
-    parameters:
-      - name: Cray-Tenant-Name
-        in: header
-        description: |
-          Tenant name.
-
-          Requests with a non-empty tenant name will restict the context of the operation to Components to which that tenant has access.
-
-          Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
   /v2/options:
     get:
       summary: Retrieve the BOS service options
+      description: Retrieve the list of BOS service options.
       tags:
         - options
       x-openapi-router-controller: bos.server.controllers.v2.options
-      description: Retrieve the list of BOS service options.
       operationId: get_v2_options
       responses:
         200:
           $ref: '#/components/responses/V2options'
     patch:
       summary: Update BOS service options
+      description: Update one or more of the BOS service options.
       tags:
         - v2
         - options
       x-openapi-router-controller: bos.server.controllers.v2.options
       operationId: patch_v2_options
-      description: Update one or more of the BOS service options.
       requestBody:
         $ref: '#/components/requestBodies/V2optionsUpdateRequest'
       responses:
