@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     enforced, but will be enforced in a future BOS version).
 #### Changed
 - Recfactored duplicated areas of API spec using references.
+#### Removed
+- `templateUrl` option when creating BOS v1 templates.
 
 ## [2.0.21] - 2023-06-22
 ### Added
@@ -31,7 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.0.19] - 2023-06-15
 ### Added
 - Updated the API spec to make use of the OpenAPI `deprecated` tag in places where it previously was
-  only indicated in the text description. 
+  only indicated in the text description.
 ### Fixed
 - Corrected many small errors and inconsistencies in the API spec description text fields.
 - Updated API spec so that it accurately describes the actual implementation:
