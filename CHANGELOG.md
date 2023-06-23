@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     enforced, but will be enforced in a future BOS version).
 #### Changed
 - Recfactored duplicated areas of API spec using references.
+#### Fixed
+- Updated API spec so that it accurately describes the actual implementation:
+  - Successfully creating a V1 session template returns the name of that template.
 #### Removed
 - `templateUrl` option when creating BOS v1 templates.
 
