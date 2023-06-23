@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Reverted
+#### Added
+- Updated the API spec to:
+  - Add recommendations for limits on user-submitted string fields (noting that they are not currently
+    enforced, but will be enforced in a future BOS version).
 #### Changed
 - Recfactored duplicated areas of API spec using references.
 
