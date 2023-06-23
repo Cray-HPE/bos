@@ -176,7 +176,7 @@ components:
           type: string
           deprecated: true
           description: |
-            The clone url for the repository providing the configuration. (DEPRECATED)
+            The clone URL for the repository providing the configuration. (DEPRECATED)
         branch:
           type: string
           deprecated: true
@@ -457,12 +457,12 @@ components:
           minLength: 1
           description: |
             Name of the Session Template.
-            
+
             It is recommended to use names which meet the following restrictions:
             * Maximum length of 127 characters.
             * Use only letters, digits, periods (.), dashes (-), and underscores (_).
             * Begin and end with a letter or digit.
-            
+
             These restrictions are not enforced in this version of BOS, but will be
             enforced in a future version.
           example: "cle-1.0.0"
@@ -474,7 +474,7 @@ components:
           type: string
           deprecated: true
           description: |
-            The url for the repository providing the configuration. DEPRECATED
+            The URL for the repository providing the configuration. DEPRECATED
         cfs_branch:
           type: string
           deprecated: true
@@ -485,7 +485,6 @@ components:
           type: boolean
           description: |
             Whether to enable the Configuration Framework Service (CFS).
-            Choices: true/false
           default: true
         cfs:
           $ref: '#/components/schemas/V1CfsParameters'
@@ -781,12 +780,12 @@ components:
           readOnly: true
           description: |
             Name of the Session Template.
-            
+
             It is recommended to use names which meet the following restrictions:
             * Maximum length of 127 characters.
             * Use only letters, digits, periods (.), dashes (-), and underscores (_).
             * Begin and end with a letter or digit.
-            
+
             These restrictions are not enforced in this version of BOS, but will be
             enforced in a future version.
           example: "cle-1.0.0"
@@ -798,7 +797,6 @@ components:
           type: boolean
           description: |
             Whether to enable the Configuration Framework Service (CFS).
-            Choices: true/false
           default: true
         cfs:
           $ref: '#/components/schemas/V2CfsParameters'
@@ -1305,7 +1303,7 @@ components:
       additionalProperties: false
     V2Options:
       description: |
-        Options for the boot orchestration service.
+        Options for the Boot Orchestration Service.
       type: object
       properties:
         cleanup_completed_session_ttl:
@@ -1904,7 +1902,6 @@ paths:
         the boot set.
       tags:
         - session
-        # - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v1.status
       operationId: update_v1_session_status_by_bootset
       requestBody:
