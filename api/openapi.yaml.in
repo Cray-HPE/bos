@@ -174,20 +174,24 @@ components:
       properties:
         clone_url:
           type: string
+          deprecated: true
           description: |
             The clone url for the repository providing the configuration. (DEPRECATED)
         branch:
           type: string
+          deprecated: true
           description: |
             The name of the branch containing the configuration that you want to
             apply to the nodes. Mutually exclusive with commit. (DEPRECATED)
         commit:
           type: string
+          deprecated: true
           description: |
             The commit ID of the configuration that you want to
             apply to the nodes. Mutually exclusive with branch. (DEPRECATED)
         playbook:
           type: string
+          deprecated: true
           description: |
             The name of the playbook to run for configuration. The file path must be specified
             relative to the base directory of the config repo. (DEPRECATED)
@@ -468,10 +472,12 @@ components:
             An optional description for the session template.
         cfs_url:
           type: string
+          deprecated: true
           description: |
             The url for the repository providing the configuration. DEPRECATED
         cfs_branch:
           type: string
+          deprecated: true
           description: |
             The name of the branch containing the configuration that you want to
             apply to the nodes.  DEPRECATED.
@@ -533,6 +539,7 @@ components:
        minLength: 1
     V1TemplateUuid:
       type: string
+      deprecated: true
       description: DEPRECATED - use templateName. This field is ignored if templateName is also set.
       example: "my-session-template"
     V1SessionLink:
@@ -581,6 +588,7 @@ components:
       description: |
         Details about a Session using templateUuid instead of templateName.
         DEPRECATED -- these will only exist from sessions created before templateUuid was deprecated.
+      deprecated: true
       type: object
       properties:
         complete:
@@ -638,6 +646,7 @@ components:
         ## Link Relationships
 
         * self : The session object
+      deprecated: true
       type: object
       properties:
         operation:
