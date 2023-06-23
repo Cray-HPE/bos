@@ -223,6 +223,16 @@ components:
       description: |
         Whether to enable the Configuration Framework Service (CFS).
       default: true
+    HardwareComponentName:
+      type: string
+      description: |
+        Hardware component name (xname).
+
+        It is recommended that this should be 1-127 characters in length.
+
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: "x3001c0s39b0n0"
     Healthz:
       description: Service health status
       type: object
@@ -264,15 +274,19 @@ components:
       minItems: 1
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
       items:
-        type: string
-        description: |
-          Hardware component name (xname).
+        $ref: '#/components/schemas/HardwareComponentName'
+    NodeListEmptyOk:
+      type: array
+      description: |
+        Node list.
 
-          It is recommended that this should be 1-127 characters in length.
+        It is recommended that this list should be no more than 65535 items in length.
 
-          This restriction is not enforced in this version of BOS, but it is
-          targeted to start being enforced in an upcoming BOS version.
-        example: "x3001c0s39b0n0"
+        This restriction is not enforced in this version of BOS, but it is
+        targeted to start being enforced in an upcoming BOS version.
+      example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
+      items:
+        $ref: '#/components/schemas/HardwareComponentName'
     NodeGroupList:
       type: array
       description: |
@@ -512,7 +526,7 @@ components:
         name:
           $ref: '#/components/schemas/V1PhaseCategoryName'
         node_list:
-          $ref: '#/components/schemas/NodeList'
+          $ref: '#/components/schemas/NodeListEmptyOk'
     V1PhaseStatus:
       type: object
       description: |
@@ -886,7 +900,7 @@ components:
         destination:
           $ref: '#/components/schemas/V1PhaseCategoryName'
         node_list:
-          $ref: '#/components/schemas/NodeList'
+          $ref: '#/components/schemas/NodeListEmptyOk'
       additionalProperties: false
       required: [phase, source, destination, node_list]
     V1NodeErrorsList:
@@ -896,7 +910,7 @@ components:
         This is an additive characterization. Nodes will be added to existing errors.
         This does not overwrite previously existing errors.
       additionalProperties:
-        $ref: '#/components/schemas/NodeList'
+        $ref: '#/components/schemas/NodeListEmptyOk'
     V1UpdateRequestNodeChange:
       description: |
         This is an element of the payload sent during an update request. It contains
