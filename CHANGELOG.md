@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Added
+- Updated the API spec to:
+  - Make use of the OpenAPI `deprecated` tag in places where it previously was
+    only indicated in the text description.
+
 ## [2.0.22] - 2023-06-23
 ### Reverted
 #### Added
