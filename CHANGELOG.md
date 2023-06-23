@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Make use of the OpenAPI `deprecated` tag in places where it previously was
     only indicated in the text description.
  - Accurately reflect that successfully creating a V1 session template returns the name of that template.
+ - Add example values for some fields
 ### Removed
 - `templateUrl` option when creating BOS v1 templates.
 

@@ -199,6 +199,7 @@ components:
           type: string
           description: |
             The name of configuration to be applied.
+          example: "compute-23.4.0"
       additionalProperties: false
     V1CompleteMetadata:
       type: boolean
@@ -242,7 +243,8 @@ components:
         A list of node xnames.
       items:
         type: string
-        example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
+        example: "x3000c0s19b1n0"
+      example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
     V1PhaseCategoryName:
       type: string
       description: |
@@ -362,6 +364,7 @@ components:
           type: string
           description: |
             The Boot Set name.
+          example: "compute"
         boot_ordinal:
           type: integer
           minimum: 0
@@ -379,18 +382,24 @@ components:
           description: |
             A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
             It will be processed based on the type attribute.
+          example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
         type:
           type: string
           description: |
             The MIME type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
+          example: "s3"
         etag:
           type: string
           description: |
             This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
+          example: "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
         kernel_parameters:
           type: string
           description: |
             The kernel parameters to use to boot the nodes.
+          example: "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave
+_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_lim
+it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
         network:
           type: string
           description: |
@@ -401,6 +410,7 @@ components:
           type: array
           items:
             type: string
+            example: "x3001c0s39b0n0"
           minItems: 1
           description: |
             The node list. This is an explicit mapping against hardware xnames.
@@ -408,6 +418,7 @@ components:
           type: array
           items:
             type: string
+            example: "Compute"
           minItems: 1
           description: |
             The node roles list. Allows actions against nodes with associated roles. Roles are defined in SMD.
@@ -422,12 +433,14 @@ components:
           type: string
           description: |
             The root file system provider.
+          example: "cpss3"
         rootfs_provider_passthrough:
           type: string
           description: |
             The root file system provider passthrough.
             These are additional kernel parameters that will be appended to
             the 'rootfs=<protocol>' kernel parameter
+          example: "dvs:api-gw-service-nmn.local:300:nmn0"
       additionalProperties: false
       required: [path, type]
     V1SessionTemplateName:
@@ -757,6 +770,7 @@ components:
           type: string
           description: |
             The name of configuration to be applied.
+          example: "compute-23.4.0"
       additionalProperties: false
     V2SessionTemplate:
       type: object
@@ -900,29 +914,37 @@ components:
           type: string
           description: |
             The Boot Set name.
+          example: "compute"
         path:
           type: string
           description: |
             A path identifying the metadata describing the components of the boot image. This could be a URI, URL, etc.
             It will be processed based on the type attribute.
+          example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
         cfs:
           $ref: '#/components/schemas/V2CfsParameters'
         type:
           type: string
           description: |
             The MIME type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
+          example: "s3"
         etag:
           type: string
           description: |
             This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
+          example: "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
         kernel_parameters:
           type: string
           description: |
             The kernel parameters to use to boot the nodes.
+          example: "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave
+_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_lim
+it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
         node_list:
           type: array
           items:
             type: string
+            example: "x3001c0s39b0n0"
           minItems: 1
           description: |
             The node list. This is an explicit mapping against hardware xnames.
@@ -930,6 +952,7 @@ components:
           type: array
           items:
             type: string
+            example: "Compute"
           minItems: 1
           description: |
             The node roles list. Allows actions against nodes with associated roles. Roles are defined in SMD.
@@ -944,12 +967,14 @@ components:
           type: string
           description: |
             The root file system provider.
+          example: "cpss3"
         rootfs_provider_passthrough:
           type: string
           description: |
             The root file system provider passthrough.
             These are additional kernel parameters that will be appended to
             the 'rootfs=<protocol>' kernel parameter
+          example: "dvs:api-gw-service-nmn.local:300:nmn0"
       additionalProperties: false
       required: [path, type]
     V2Session:
