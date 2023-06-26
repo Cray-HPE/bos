@@ -5,13 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [2.0.23] - 2023-06-26
 ### Added
 - Updated the API spec to:
   - Make use of the OpenAPI `deprecated` tag in places where it previously was
     only indicated in the text description.
  - Accurately reflect that successfully creating a V1 session template returns the name of that template.
  - Add example values for some fields
+ - Add recommendations for limits on user-submitted string fields (noting that they are not currently
+   enforced, but will be enforced in a future BOS version).
 ### Removed
 - `templateUrl` option when creating BOS v1 templates.
 
