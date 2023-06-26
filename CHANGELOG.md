@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.2] - 2023-6-26
+### Changed
+- Added etcd_disable_prestop value for the etcd chart
+
 ## [2.5.1] - 2023-06-23
 ### Fixed
 - Update the API spec to reflect that node lists are permitted to be empty in some circumstances.
