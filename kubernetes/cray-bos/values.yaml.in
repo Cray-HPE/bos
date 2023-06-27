@@ -171,6 +171,8 @@ cray-etcd-base:
         value: "5000000"
       - name: ETCD_SNAPSHOT_HISTORY_LIMIT
         value: "24"
+      - name: ETCD_DISABLE_PRESTOP
+        value: "yes"
     autoCompactionMode: revision
     autoCompactionRetention: "100000"
     extraVolumes:
