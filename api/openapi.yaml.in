@@ -1093,8 +1093,10 @@ it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
             When the session was created.
         end_time:
           type: string
+          nullable: true
           description: |
             When the session completed.
+            A null value means the session has not ended.
         status:
           type: string
           enum: ['pending', 'running', 'complete']
@@ -1102,8 +1104,10 @@ it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
             The status of a session.
         error:
           type: string
+          nullable: true
           description: |
-            Error which prevented the session from running
+            Error which prevented the session from running.
+            A null value means the session has not encountered an error.
       additionalProperties: false
     V2BootSet:
       description: |
@@ -1346,8 +1350,10 @@ it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
             When the session was created.
         end_time:
           type: string
+          nullable: true
           description: |
             When the session completed.
+            A null value means the session has not ended.
         duration:
           type: string
           description: |
