@@ -1125,24 +1125,30 @@ components:
       type: string
       enum: ['pending', 'running', 'complete']
       description: The status of a Session.
-    V2SessionTime:
+    V2SessionStartTime:
       type: string
-      description: When the Session was created or completed.
+      description: When the Session was created.
+    V2SessionEndTime:
+      type: string
+      nullable: true
+      description: When the Session was completed. A null value means the Session has not ended.
     V2SessionStatus:
       type: object
       description: |
         Information on the status of a Session.
       properties:
         start_time:
-          $ref: '#/components/schemas/V2SessionTime'
+          $ref: '#/components/schemas/V2SessionStartTime'
         end_time:
-          $ref: '#/components/schemas/V2SessionTime'
+          $ref: '#/components/schemas/V2SessionEndTime'
         status:
           $ref: '#/components/schemas/V2SessionStatusLabel'
         error:
           type: string
+          nullable: true
           description: |
-            Error which prevented the Session from running
+            Error which prevented the Session from running.
+            A null value means the Session has not encountered an error.
       additionalProperties: false
     V2BootSet:
       description: |
@@ -1254,9 +1260,9 @@ components:
         Detailed information on the timing of a Session.
       properties:
         start_time:
-          $ref: '#/components/schemas/V2SessionTime'
+          $ref: '#/components/schemas/V2SessionStartTime'
         end_time:
-          $ref: '#/components/schemas/V2SessionTime'
+          $ref: '#/components/schemas/V2SessionEndTime'
         duration:
           type: string
           description: |

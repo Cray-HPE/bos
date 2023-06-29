@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.5.3] - 2023-06-29
+### Added
+- Marked BOS v2 session status `error` and `end_time` fields as `nullable` in API spec, because they begin
+  populated with null values (rather than empty string values). Added comment to description text for these
+  fields to explain this.
+
 ## [2.5.2] - 2023-6-26
 ### Changed
 - Added etcd_disable_prestop value for the etcd chart
