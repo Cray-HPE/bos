@@ -1005,7 +1005,10 @@ components:
       type: string
       description: |
         Name of the tenant that owns this resource. Only used in environments
-        with multi-tenancy enabled.
+        with multi-tenancy enabled. An empty string or null value means the resource
+        is not owned by a tenant. The absence of this field from a resource indicates
+        the same.
+      nullable: true
       readOnly: true
     V2CfsParameters:
       type: object
@@ -1908,7 +1911,7 @@ components:
 
         Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
 
-        Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
       required: false
       schema:
         $ref: '#/components/schemas/TenantName'
