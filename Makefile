@@ -61,6 +61,7 @@ clone_input_files:
 		cp ${CHART_PATH}/${NAME}/Chart.yaml.in ${CHART_PATH}/${NAME}/Chart.yaml
 		cp ${CHART_PATH}/${NAME}/values.yaml.in ${CHART_PATH}/${NAME}/values.yaml
 		cp bos-reporter.spec.in bos-reporter.spec
+		cp constraints.txt.in constraints.txt
 		cp src/setup.py.in src/setup.py
 		cp api/openapi.yaml.in api/openapi.yaml
 
