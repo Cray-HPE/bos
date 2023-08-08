@@ -7,7 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-## [2.5.6] - 2023-08-08
+## [2.5.6] - 08-08-2023
+### Changed
+- IsAlive attribute look-up.
 ### Added
 - Global read timeout values for all objects and operations which leverage requests_retry handler.
 - Heartbeat threads now exit when main thread is no longer alive.
