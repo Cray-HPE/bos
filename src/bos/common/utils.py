@@ -59,9 +59,28 @@ def duration_to_timedelta(timestamp: str):
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)
 
+class TimeoutHTTPAdapter(HTTPAdapter):
+    """
+    An HTTP Adapter that allows a session level timeout for both read and connect attributes. This prevents interruption
+    to reads that happen as a function of time or istio resets that causes our applications to sit and wait forever on
+    a half open socket.
+    """
+    def __init__(self, *args, **kwargs):
+        if "timeout" in kwargs:
+            self.timeout = kwargs["timeout"]
+            del kwargs["timeout"]
+        super().__init__(*args, **kwargs)
+
+    def send(self, request, **kwargs):
+        timeout = kwargs.get("timeout")
+        if timeout is None and hasattr(self, 'timeout'):
+            kwargs["timeout"] = self.timeout
+        return super().send(request, **kwargs)
+
 
 def requests_retry_session(retries=10, backoff_factor=0.5,
                            status_forcelist=(500, 502, 503, 504),
+                           connect_timeout=3, read_timeout=10,
                            session=None, protocol=PROTOCOL):
     session = session or requests.Session()
     retry = Retry(
@@ -71,7 +90,7 @@ def requests_retry_session(retries=10, backoff_factor=0.5,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
     )
-    adapter = HTTPAdapter(max_retries=retry)
+    adapter = TimeoutHTTPAdapter(max_retries=retry, timeout=(connect_timeout, read_timeout))
     # Must mount to http://
     # Mounting to only http will not work!
     session.mount("%s://" % protocol, adapter)
