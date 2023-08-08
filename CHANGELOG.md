@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## [2.5.6] - 2023-08-08
+### Added
+- Global read timeout values for all objects and operations which leverage requests_retry handler.
+- Heartbeat threads now exit when main thread is no longer alive.
+### Dependencies
+- Use `update_external_versions` to get latest patch version of `liveness` Python module.
+- Bumped depndency patch versions
+| Package                  | From    | To       |
+|--------------------------|---------|----------|
+| `boto3`                  | 1.26.92 | 1.26.165 |
+| `cachetools`             | 5.3.0   | 5.3.1    |
+| `click`                  | 8.1.3   | 8.1.6    |
+| `google-auth`            | 2.16.2  | 2.16.3   |
+| `MarkupSafe`             | 2.1.2   | 2.1.3    |
+| `protobuf`               | 4.22.1  | 4.22.5   |
+| `redis`                  | 4.5.1   | 4.5.5    |
+| `retrying`               | 1.3.3   | 1.3.4    |
+| `s3transfer`             | 0.6.0   | 0.6.1    |
+| `urllib3`                | 1.26.15 | 1.26.16  |
+| `websocket-client`       | 1.5.1   | 1.5.3    |
+
 ## [2.5.5] - 2023-08-07
 ### Fixed
 - Updated API spec to reflect the fact that BOS sometimes populates the `tenant` field with a null value.
