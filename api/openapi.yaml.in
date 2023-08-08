@@ -221,6 +221,10 @@ components:
         This restriction is not enforced in this version of BOS, but it is
         targeted to start being enforced in an upcoming BOS version.
       example: "compute-23.4.0"
+    EmptyString:
+      type: string
+      description: An empty string value.
+      enum: [ '' ]
     EnableCfs:
       type: boolean
       description: |
@@ -1378,7 +1382,9 @@ components:
         configuration:
           $ref: '#/components/schemas/CfsConfiguration'
         session:
-          $ref: '#/components/schemas/V2SessionName'
+          oneOf:
+            - $ref: '#/components/schemas/V2SessionName'
+            - $ref: '#/components/schemas/EmptyString'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -1453,7 +1459,9 @@ components:
           type: string
           description: A description of the most recent error to impact the Component.
         session:
-          $ref: '#/components/schemas/V2SessionName'
+          oneOf:
+            - $ref: '#/components/schemas/V2SessionName'
+            - $ref: '#/components/schemas/EmptyString'
         retry_policy:
           type: integer
           description: |
