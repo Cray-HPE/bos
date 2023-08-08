@@ -221,6 +221,10 @@ components:
         This restriction is not enforced in this version of BOS, but it is
         targeted to start being enforced in an upcoming BOS version.
       example: "compute-23.4.0"
+    EmptyString:
+      type: string
+      description: An empty string value.
+      enum: [ '' ]
     EnableCfs:
       type: boolean
       description: |
@@ -1005,7 +1009,10 @@ components:
       type: string
       description: |
         Name of the tenant that owns this resource. Only used in environments
-        with multi-tenancy enabled.
+        with multi-tenancy enabled. An empty string or null value means the resource
+        is not owned by a tenant. The absence of this field from a resource indicates
+        the same.
+      nullable: true
       readOnly: true
     V2CfsParameters:
       type: object
@@ -1375,7 +1382,9 @@ components:
         configuration:
           $ref: '#/components/schemas/CfsConfiguration'
         session:
-          $ref: '#/components/schemas/V2SessionName'
+          oneOf:
+            - $ref: '#/components/schemas/V2SessionName'
+            - $ref: '#/components/schemas/EmptyString'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -1450,7 +1459,9 @@ components:
           type: string
           description: A description of the most recent error to impact the Component.
         session:
-          $ref: '#/components/schemas/V2SessionName'
+          oneOf:
+            - $ref: '#/components/schemas/V2SessionName'
+            - $ref: '#/components/schemas/EmptyString'
         retry_policy:
           type: integer
           description: |
@@ -1908,7 +1919,7 @@ components:
 
         Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
 
-        Requests with an empty tenant name, or that omit this paarameter, will have no such context restrictions.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
       required: false
       schema:
         $ref: '#/components/schemas/TenantName'
