@@ -252,7 +252,7 @@ def _liveliness_heartbeat() -> NoReturn:
     period of time.
     """
     while True:
-        if not MAIN_THREAD.isAlive():
+        if not MAIN_THREAD.is_alive():
             # All hope abandon ye who enter here
             return
         Timestamp()
