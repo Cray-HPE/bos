@@ -1,12 +1,11 @@
 # Boot Orchestration Service (BOS)
 
-This is the Boot Orchestration Service (BOS) API. It is responsible
-for stateful changes to boot orchestration sessions, and launching boot
-orchestration agents (BOA) which fulfill boot-related requests.
+This is the Boot Orchestration Service (BOS) API. It includes a CRUD style
+database and a number of operators (implemented as individual deployments)
+that are designed to move registered components (typically hardware) from
+one expected state to another.
 
 ## Related Software
-
-*Boot Orchestration Agent* (BOA) handles boot requests submitted to the BOS API.
 
 *Image Management Service* (IMS) owns record keeping, building and staging of
 images used with a boot orchestration service Boot Set.
