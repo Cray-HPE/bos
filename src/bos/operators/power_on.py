@@ -28,16 +28,17 @@ from requests import HTTPError
 
 from bos.common.values import Action, Status
 import bos.operators.utils.clients.bss as bss
-import bos.operators.utils.clients.capmc as capmc
+from bos.operators.utils.clients.capmc import disable_based_on_error_xname_on_off, power
 from bos.operators.utils.clients.cfs import set_cfs
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import main
+from bos.operators.power_operator_base import PowerOperatorBase
 from bos.operators.filters import BOSQuery, HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger('bos.operators.power_on')
 
 
-class PowerOnOperator(BaseOperator):
+class PowerOnOperator(PowerOperatorBase):
     """
     The Power-On Operator tells capmc to power-on nodes if:
     - Enabled in the BOS database and the status is power_on_pending
@@ -59,6 +60,10 @@ class PowerOnOperator(BaseOperator):
         ]
 
     def _act(self, components):
+        """
+        Set up BSS and CFS prior to powering on the components.
+        Power on the components.
+        """
         self._preset_last_action(components)
         try:
             self._set_bss(components)
@@ -68,12 +73,7 @@ class PowerOnOperator(BaseOperator):
             set_cfs(components, enabled=False, clear_state=True)
         except Exception as e:
             raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
-        component_ids = [component['id'] for component in components]
-        try:
-            capmc.power(component_ids, state='on')
-        except Exception as e:
-            raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
-        return components
+        return self._power_components(components)
 
     def _set_bss(self, components, retries=5):
         """
@@ -81,8 +81,8 @@ class PowerOnOperator(BaseOperator):
         Receive a BSS_REFERRAL_TOKEN from BSS.
         Map the token to the boot artifacts.
         Update each node's desired state with the token.
-        
-        Because the connection to the BSS tokens database can be lost due to 
+
+        Because the connection to the BSS tokens database can be lost due to
         infrequent use, retry up to retries number of times.
         """
         parameters = defaultdict(set)
@@ -128,6 +128,18 @@ class PowerOnOperator(BaseOperator):
                                        "desired_state": {"bss_token": token},
                                        "session": sessions[node]})
         self.bos_client.components.update_components(bss_tokens)
+
+    def _my_power(self, component_ids):
+        """
+        Power on components.
+
+        Returns:
+          errors (dict): A class containing an error code, error message, and
+          a dictionary containing the nodes (keys) suffering from errors (values)
+          :rtype: CapmcXnameOnOffReturnedError
+        """
+
+        return power(component_ids, state='on')
 
 
 if __name__ == '__main__':
