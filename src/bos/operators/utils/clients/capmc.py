@@ -24,6 +24,7 @@
 import logging
 import requests
 import json
+import re
 from collections import defaultdict
 
 from bos.operators.utils import requests_retry_session, PROTOCOL
@@ -34,6 +35,12 @@ ENDPOINT = "%s://%s/capmc/%s" % (PROTOCOL, SERVICE_NAME, CAPMC_VERSION)
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.capmc')
 
+
+CAPMC_HANDLED_ERROR_STRINGS = ['invalid/duplicate xnames',
+                       'xnames not found',
+                       'disabled or not found',
+                       'xnames role blocked',
+                       'xnames role blocked/not found']
 
 class CapmcException(Exception):
     """
@@ -58,10 +65,10 @@ def status(nodes, filtertype = 'show_all', session = None):
       filtertype (str): Type of filter to use when sorting
 
     Returns:
-      status_dict (dict): Keys are different states; values are a literal set of nodes
+      node_status (dict): Keys are nodes; values are different power states or errors
       failed_nodes (set): A set of the nodes that had errors
-      errors (dict): A dictionary containing the nodes (values)
-                     suffering from errors (keys)
+      reasons_for_failure (dict): A dictionary containing the nodes (values)
+                                  suffering from errors (keys)
 
     Raises:
       HTTPError
@@ -75,24 +82,25 @@ def status(nodes, filtertype = 'show_all', session = None):
 
     response = session.post(endpoint, json = body)
     try:
-        response.raise_for_status()
-    except requests.exceptions.HTTPError as err:
-        LOGGER.error("Failed interacting with Cray Advanced Platform Monitoring and Control "
-                     "(CAPMC): %s", err)
-        LOGGER.error(response.text)
-        raise
-    try:
         json_response = json.loads(response.text)
     except json.JSONDecodeError as jde:
         errmsg = "CAPMC returned a non-JSON response: %s %s" % (response.text, jde)
         LOGGER.error(errmsg)
         raise
-    # Check for error state in the returned response and retry
-    if json_response['e']:
-        LOGGER.error("CAPMC responded with an error response code '%s': %s",
-                     json_response['e'], json_response)
 
-    failed_nodes, errors = parse_response(json_response)
+    failed_nodes = set()
+    reasons_for_failure = defaultdict(list)
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as err:
+        if response.status_code != 400:
+            LOGGER.error("Failed interacting with Cray Advanced Platform Monitoring and Control "
+                     "(CAPMC): %s", err)
+            LOGGER.error(response.text)
+            raise
+        else:
+            # Handle the 400 response code
+            failed_nodes, reasons_for_failure = parse_response(json_response)
 
     for key in ('e', 'err_msg'):
         try:
@@ -106,25 +114,68 @@ def status(nodes, filtertype = 'show_all', session = None):
         for node in nodes:
             node_status[node] = power_state
 
-    # Add in the nodes with errors.
-    node_status.update(errors)
-
-    return node_status, failed_nodes
+    return node_status, failed_nodes, reasons_for_failure
 
 
 def parse_response(response):
     """
-    Takes a CAPMC power action JSON response and process it for partial
-    communication errors. This function is used in booting as well as
-    shutdown, so it has been abstracted to one place in order to avoid
-    duplication.
+    Takes a CAPMC power action JSON response and processes it for errors.
+    This function is used in booting as well as shutdown, so it has been
+    abstracted to one place in order to avoid duplication.
 
     This function has the side effect of categorizing and logging errors
     by error condition encountered.
 
-    # Here is an example of what a partially successful shutdown looks like, since it isn't captured
-    # in the documentation particularly well.
-    # {"e":-1,"err_msg":"Errors encountered with 1/1 Xnames issued On","xnames":[{"xname":"x3000c0s19b3n0","e":-1,"err_msg":"NodeBMC Communication Error"}]}
+    ----------------------------------------------------------------------------------------
+    Here is an example of what a partially successful shutdown looks like, since it isn't captured
+    in the documentation particularly well. This is from the CAPMC backend.
+    {"e":-1,"err_msg":"Errors encountered with 1/1 Xnames issued On","xnames":[{"xname":"x3000c0s19b3n0","e":-1,"err_msg":"NodeBMC Communication Error"}]}
+
+    Here is CAPMC's error response format to requests to the get_xname_status endpoint when
+    the CAPMC front-end encounters an error.
+    They are reproduced here because, otherwise, it is only available in a Jira.
+
+    {"e": 400,
+     "err_msg": "invalid/duplicate xnames: [x1000c0s0b0n0,x1000c0s0b0n1]"}
+
+    e: 400
+    errMsg: "no request"
+    errMsg: some sort of decoding error
+    *    Retry with valid payload
+
+    e: 400
+    errMsg: "invalid filter string: abcd"
+    *    Retry with valid filter string
+
+    e: 400
+    errMsg: "unknown status source 'abcd'"
+    *    Retry with valid source or restriction removed
+
+    e: 400
+    errMsg: "invalid/duplicate xnames: [x1000c0s0b0n0]"
+    errMsg: "xnames not found: [x1000c8s8b8n0]"
+    errMsg: "disabled or not found: [x1000c0s0b0n0]"
+    errMsg: "xnames role blocked: [x1000c0s0b0n0]"
+    errMsg: "xnames role blocked/not found: [x1000c0s0b0n0]"
+    *    Retry with invalid and/or duplicate names removed
+
+    e: 400
+    errMsg: "No matching components found"
+    *    Retry with valid xname list or different filter options
+
+    e: 405
+    errMsg: "(PATCH) Not Allowed"
+    *    Retry with GET
+
+    e: 500
+    errMsg: "Error: " + request/unmarshal error string
+    errMst: "Connection to the secure store isn't ready. Can not get redfish credentials."
+    *    FATAL. CAPMC is unable to talk to a required service (HSM, VAULT)
+    ----------------------------------------------------------------------------------------
+
+    This function only returns failed nodes for the 400 errors that actually provide
+    failed nodes. Others, do not provide a list of failed nodes, so those errors are
+    merely logged but not otherwise handled.
 
     This function returns a set of nodes (in our case, almost always, xnames)
     that did not receive the requested call for action. Upstream calling
@@ -140,26 +191,34 @@ def parse_response(response):
     if 'e' not in response or response['e'] == 0:
         # All nodes received the requested action; happy path
         return failed_nodes, reasons_for_failure
-    LOGGER.warning("CAPMC responded with e code '%s'", response['e'])
-    if 'err_msg' in response:
-        LOGGER.warning("err_msg: %s", response['err_msg'])
-    if 'undefined' in response:
-        failed_nodes |= set(response['undefined'])
-    if 'xnames' in response:
-        for xname_dict in response['xnames']:
-            xname = xname_dict['xname']
-            err_msg = xname_dict['err_msg']
-            reasons_for_failure[err_msg].append(xname)
-        # Report back all reasons for failure
-        for err_msg, nodes in sorted(reasons_for_failure.items()):
-            node_count = len(nodes)
-            if node_count <= 5:
-                LOGGER.warning("\t%s: %s", err_msg, ', '.join(sorted(nodes)))
-            else:
-                LOGGER.warning("\t%s: %s nodes", err_msg, node_count)
-        # Collect all failed nodes.
-        for nodes in reasons_for_failure.values():
-            failed_nodes |= set(nodes)
+    LOGGER.error("CAPMC responded with an error response code '%s': %s",
+                 response['e'], response)
+    if response['e'] == -1:
+        if 'undefined' in response:
+            failed_nodes |= set(response['undefined'])
+        if 'xnames' in response:
+            for xname_dict in response['xnames']:
+                xname = xname_dict['xname']
+                err_msg = xname_dict['err_msg']
+                reasons_for_failure[err_msg].append(xname)
+            # Report back all reasons for failure
+            for err_msg, nodes in sorted(reasons_for_failure.items()):
+                node_count = len(nodes)
+                if node_count <= 5:
+                    LOGGER.warning("\t%s: %s", err_msg, ', '.join(sorted(nodes)))
+                else:
+                    LOGGER.warning("\t%s: %s nodes", err_msg, node_count)
+            # Collect all failed nodes.
+            for nodes in reasons_for_failure.values():
+                failed_nodes |= set(nodes)
+    elif response['e'] == 400:
+        for err_str in CAPMC_HANDLED_ERROR_STRINGS:
+            match = re.match(fr"{err_str}: +\[([\w,]+)\]", response['err_msg'])
+            if match:
+                current_failed_nodes = match.group(1).split(',')
+                failed_nodes |= set(current_failed_nodes)
+                reasons_for_failure[err_str] = current_failed_nodes
+
     return failed_nodes, reasons_for_failure
 
 
