@@ -175,7 +175,7 @@ def migrate_database(db):
         data = db.get(old_key)
         name = data.get("name")
         tenant = data.get("tenant")
-        new_key = get_tenant_aware_key(name, tenant)
+        new_key = get_tenant_aware_key(name, tenant).encode()
         if new_key != old_key:
             LOGGER.info(f"Migrating {name} to new database key structure")
             db.put(new_key, data)
