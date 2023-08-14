@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.6.2] - 08-14-2023
+### Fixed
+Fixed HSM query handling to prevent errors from querying with an empty list nodes.
+
 ## [2.6.1] - 08-10-2023
 ### Fixed
 Fixed database key migration when upgrading from newer versions of BOS.
