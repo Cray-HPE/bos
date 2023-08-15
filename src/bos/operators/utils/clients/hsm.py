@@ -80,6 +80,8 @@ def read_all_node_xnames():
 
 def get_components(node_list, enabled=None):
     """Get information for all list components HSM"""
+    if not node_list:
+        return []
     session = requests_retry_session()
     try:
         payload = {'ComponentIDs': node_list}
