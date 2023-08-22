@@ -38,6 +38,7 @@ Requires: python3-base
 Requires: python3-requests
 Requires: systemd
 Requires: cray-auth-utils
+Requires: spire-agent
 
 # Death to Fascist build policies
 %define _unpackaged_files_terminate_build 0
