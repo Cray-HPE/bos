@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+## [2.6.3] - 08-22-2023
+### Changed
+Updated `bos-reporter` spec file to reflect the fact that it should not be installed without `spire-agent` being present.
+
 ## [2.6.2] - 08-14-2023
 ### Fixed
 Fixed HSM query handling to prevent errors from querying with an empty list nodes.
