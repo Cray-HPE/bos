@@ -66,9 +66,8 @@ def status(nodes, filtertype = 'show_all', session = None):
 
     Returns:
       node_status (dict): Keys are nodes; values are different power states or errors
-      failed_nodes (set): A set of the nodes that had errors
-      reasons_for_failure (dict): A dictionary containing the nodes (values)
-                                  suffering from errors (keys)
+      reasons_for_failure (dict): A dictionary containing the nodes (keys)
+                                  suffering from errors (valuse)
 
     Raises:
       HTTPError
@@ -88,8 +87,8 @@ def status(nodes, filtertype = 'show_all', session = None):
         LOGGER.error(errmsg)
         raise
 
-    failed_nodes = set()
-    reasons_for_failure = defaultdict(list)
+
+    failures_by_node = defaultdict(list)
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError as err:
@@ -100,8 +99,16 @@ def status(nodes, filtertype = 'show_all', session = None):
             raise
         else:
             # Handle the 400 response code
-            failed_nodes, reasons_for_failure = parse_response(json_response)
+            failures_by_node = parse_response(json_response)
 
+    # Check for error state in the returned response and retry
+    if json_response['e'] == -1:
+        LOGGER.error("CAPMC responded with an error response code '%s': %s",
+                     json_response['e'], json_response)
+        # Handle the error
+        failures_by_node = parse_response(json_response)
+
+    # Remove the error elements leaving only the node's power status.
     for key in ('e', 'err_msg'):
         try:
             del json_response[key]
@@ -109,12 +116,12 @@ def status(nodes, filtertype = 'show_all', session = None):
             pass
 
     # Reorder JSON response into a dictionary where the nodes are the keys.
-    node_status = {}
+    node_power_status = {}
     for power_state, nodes in json_response.items():
         for node in nodes:
-            node_status[node] = power_state
+            node_power_status[node] = power_state
 
-    return node_status, failed_nodes, reasons_for_failure
+    return node_power_status, failures_by_node
 
 
 def parse_response(response):
@@ -174,7 +181,7 @@ def parse_response(response):
     ----------------------------------------------------------------------------------------
 
     This function only returns failed nodes for the 400 errors that actually provide
-    failed nodes. Others, do not provide a list of failed nodes, so those errors are
+    failed nodes. Other errors do not provide a list of failed nodes, so those errors are
     merely logged but not otherwise handled.
 
     This function returns a set of nodes (in our case, almost always, xnames)
@@ -182,44 +189,34 @@ def parse_response(response):
     functions may decide what to do with that information.
 
     Returns
-      failed_nodes (set): A set of the nodes that failed
-      reasons_for_failure (dict): A dictionary containing the nodes (values)
-                                  suffering from errors (keys)
+      failures_by_node (dict): A dictionary containing the nodes (keys)
+                                  suffering from errors (values)
     """
-    failed_nodes = set()
-    reasons_for_failure = defaultdict(list)
+    failures_by_node = defaultdict(list)
     if 'e' not in response or response['e'] == 0:
         # All nodes received the requested action; happy path
-        return failed_nodes, reasons_for_failure
+        return failures_by_node
     LOGGER.error("CAPMC responded with an error response code '%s': %s",
                  response['e'], response)
     if response['e'] == -1:
         if 'undefined' in response:
-            failed_nodes |= set(response['undefined'])
+            for node in response['undefined']:
+                failures_by_node[node] = 'undefined'
         if 'xnames' in response:
             for xname_dict in response['xnames']:
                 xname = xname_dict['xname']
                 err_msg = xname_dict['err_msg']
-                reasons_for_failure[err_msg].append(xname)
-            # Report back all reasons for failure
-            for err_msg, nodes in sorted(reasons_for_failure.items()):
-                node_count = len(nodes)
-                if node_count <= 5:
-                    LOGGER.warning("\t%s: %s", err_msg, ', '.join(sorted(nodes)))
-                else:
-                    LOGGER.warning("\t%s: %s nodes", err_msg, node_count)
-            # Collect all failed nodes.
-            for nodes in reasons_for_failure.values():
-                failed_nodes |= set(nodes)
+                failures_by_node[xname] = err_msg
     elif response['e'] == 400:
         for err_str in CAPMC_HANDLED_ERROR_STRINGS:
             match = re.match(fr"{err_str}: +\[([\w,]+)\]", response['err_msg'])
             if match:
                 current_failed_nodes = match.group(1).split(',')
-                failed_nodes |= set(current_failed_nodes)
-                reasons_for_failure[err_str] = current_failed_nodes
+                for node in current_failed_nodes:
+                    failures_by_node[node] = err_str
+                break
 
-    return failed_nodes, reasons_for_failure
+    return failures_by_node
 
 
 def power(nodes, state, force = True, session = None, cont = True, reason = "BOS: Powering nodes"):
@@ -239,9 +236,8 @@ def power(nodes, state, force = True, session = None, cont = True, reason = "BOS
         or more of the requested components fails their action.
 
     Returns:
-      failed (set): the nodes that failed to enter the desired power state
-      boot_errors (dict): A dictionary containing the nodes (values)
-                          suffering from errors (keys)
+      errors (dict): A dictionary containing the nodes (keys)
+                     suffering from errors (values)
 
     Raises:
       ValueError: if state is neither 'off' nor 'on'
@@ -264,8 +260,8 @@ def power(nodes, state, force = True, session = None, cont = True, reason = "BOS
     elif state == "off":
         json_response = call(power_endpoint, nodes, output_format, cont, reason, force = force)
 
-    failed_nodes, errors = parse_response(json_response)
-    return failed_nodes, errors
+    errors = parse_response(json_response)
+    return errors
 
 
 def node_type(nodes):

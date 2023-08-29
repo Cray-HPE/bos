@@ -71,7 +71,7 @@ class StatusOperator(BaseOperator):
         """ A single pass of detecting and acting on components  """
         components = self.bos_client.components.get_components(enabled=True)
         component_ids = [component['id'] for component in components]
-        power_states, failed_nodes, reasons_for_failure = get_power_states(component_ids)
+        power_states, node_failures = get_power_states(component_ids)
         cfs_states = self._get_cfs_components()
         updated_components = []
         if components:
@@ -80,8 +80,8 @@ class StatusOperator(BaseOperator):
             self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
         for component in components:
             updated_component = self._check_status(
-                component, power_states.get(component['id']), cfs_states.get(component['id']), failed_nodes,
-                reasons_for_failure)
+                component, power_states.get(component['id']), cfs_states.get(component['id']),
+                node_failures.get(component['id']))
             if updated_component:
                 updated_components.append(updated_component)
         if not updated_components:
@@ -92,12 +92,18 @@ class StatusOperator(BaseOperator):
         self.bos_client.components.update_components(updated_components)
 
     @staticmethod
-    def _get_cfs_components():
+    def _get_cfs_components() -> dict:
         """
         Gets all the components from CFS.
         We used to get only the components of interest, but that caused an HTTP request
         that was longer than uwsgi could handle when the number of nodes was very large.
         Requesting all components means none need to be specified in the request.
+
+        :return:  A dictionary containing the CFS components
+        :rtype: dict
+
+        The function returns a dictionary of CFS componets where the key is the component ID and
+        the values are the individual component data.
         """
         cfs_data = get_cfs_components()
         cfs_states = {}
@@ -105,15 +111,22 @@ class StatusOperator(BaseOperator):
             cfs_states[component['id']] = component
         return cfs_states
 
-    def _check_status(self, component, power_state, cfs_component, failed_nodes, reasons_for_failure):
+    def _check_status(self, component: V2Component, power_state: str, cfs_component: str, error: str) -> dict:
         """
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
+
+        :param V2Component component: A BOS component
+        :param str power_state: The component's power state
+        :param str cfs_component: The component's CFS state as seen in the Configuration Framework Service (CFS)
+        :param str error: The error the node is experiencing; This equals None if there is no error.
+
+        :return updated_component: The component's updated data
+        :rtype: dict
         """
         phase = Phase.none
         override = Status.on_hold
         disable = False
-        error = ''
         action_failed = False
 
         if power_state and cfs_component:
@@ -121,19 +134,13 @@ class StatusOperator(BaseOperator):
         else:
             # If the component cannot be found in capmc or cfs
             if not power_state:
-                error = 'Component information was not returned by capmc'
-                # Reorder reasons_for_failure by nodes
-                node_errors = {}
-                for error, nodes in reasons_for_failure.items():
-                    for node in nodes:
-                        node_errors[node] = error
-                if component['id'] in node_errors:
-                    error = node_errors[component['id']]
-                    disable = self.disable_based_on_error(error)
-                    if disable:
-                        override = None
+                if not error:
+                    error = 'Component information was not returned by CAPMC'
+                disable = self.disable_based_on_error(error)
+                if disable:
+                    override = None
             elif not cfs_component:
-                error = 'Component information was not returned by cfs'
+                error = 'Component information was not returned by CFS'
 
         updated_component = {
             'id': component['id'],
