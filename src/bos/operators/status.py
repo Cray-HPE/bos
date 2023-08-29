@@ -32,6 +32,7 @@ from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.capmc import status as get_power_states
 from bos.operators.utils.clients.capmc import CAPMC_HANDLED_ERROR_STRINGS
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
+from bos.server.models.v2_component import V2Component  # noqa: E501
 
 LOGGER = logging.getLogger('bos.operators.status')
 
