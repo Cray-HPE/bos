@@ -69,7 +69,7 @@ class CapmcReturnedError(ABC):
             self.error_code = response['e']
         if 'err_msg' in response:
             self.error_message = response['err_msg']
-        self.nodes_in_error = self.calculate_nodes_in_error()
+        self.calculate_nodes_in_error()
 
     @abstractmethod
     def calculate_nodes_in_error(self):
