@@ -321,8 +321,9 @@ def status(nodes, filtertype = 'show_all', session = None):
     except requests.exceptions.HTTPError:
         LOGGER.error("Failed interacting with Cray Advanced Platform "
                      "Monitoring and Control (CAPMC). "
-                     f"Error code: {xname_status_failures.error_code}"
-                     f"Error message: {xname_status_failures.error_message}")
+                     f"Error code: {xname_status_failures.error_code} "
+                     f"Error message: {xname_status_failures.error_message} "
+                     f"Entire response: {xname_status_failures.response}")
 
     # Remove the error elements leaving only the node's power status.
     for key in ('e', 'err_msg'):
