@@ -85,7 +85,7 @@ class CapmcReturnedError(ABC):
         with the appropriate error string dictionary for the type of call
         being issued to CAPMC.
         """
-        self._process_error_string(self, XNAME_COMMON_ERROR_STRINGS)
+        self._process_error_string(XNAME_COMMON_ERROR_STRINGS)
 
     def _process_error_string(self, error_string_dict):
         """
@@ -164,7 +164,7 @@ class CapmcXnameStatusReturnedError(CapmcReturnedError):
         Process the received error string against the XNAME_STATUS_ERROR_STRINGS
         dictionary.
         """
-        self._process_error_string(self, XNAME_STATUS_ERROR_STRINGS)
+        self._process_error_string(XNAME_STATUS_ERROR_STRINGS)
 
 class CapmcXnameOnOffReturnedError(CapmcReturnedError):
     """
@@ -260,7 +260,7 @@ class CapmcXnameOnOffReturnedError(CapmcReturnedError):
         Process the received error string against the XNAME_ON_OFF_ERROR_STRINGS
         dictionary.
         """
-        self._process_error_string(self, XNAME_ON_OFF_ERROR_STRINGS)
+        self._process_error_string(XNAME_ON_OFF_ERROR_STRINGS)
 
 
 class CapmcNodeError(object):
