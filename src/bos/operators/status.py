@@ -80,9 +80,13 @@ class StatusOperator(BaseOperator):
             self.boot_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_boot_wait_time)._match
             self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
         for component in components:
+            error_string = None
+            node_error = xname_status_failures.nodes_in_error.get(component['id'],{})
+            if node_error:
+                error_string = node_error.error_message
             updated_component = self._check_status(
                 component, power_states.get(component['id']), cfs_states.get(component['id']),
-                xname_status_failures.nodes_in_error.get(component['id']))
+                error_string)
             if updated_component:
                 updated_components.append(updated_component)
         if not updated_components:

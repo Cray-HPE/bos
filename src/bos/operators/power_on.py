@@ -77,7 +77,7 @@ class PowerOnOperator(BaseOperator):
                     for component in components:
                         if node == component['id']:
                             index = components.index(component)
-                            error = errors.nodes_in_error[node]
+                            error = errors.nodes_in_error[node].error_message
                             components[index]['error'] = error
                             components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
                             break
