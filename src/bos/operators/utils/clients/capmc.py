@@ -47,12 +47,12 @@ XNAME_COMMON_ERROR_STRINGS = ['invalid/duplicate xnames',
 
 
 XNAME_STATUS_ERROR_STRINGS = ['xnames not found']
-XNAME_STATUS_ERROR_STRINGS.append(XNAME_COMMON_ERROR_STRINGS)
+XNAME_STATUS_ERROR_STRINGS.extend(XNAME_COMMON_ERROR_STRINGS)
 
 XNAME_ON_OFF_ERROR_STRINGS = ["invalid xnames",
                               "Invalid Component IDs",
                               "components disabled"]
-XNAME_ON_OFF_ERROR_STRINGS.append(XNAME_COMMON_ERROR_STRINGS)
+XNAME_ON_OFF_ERROR_STRINGS.extend(XNAME_COMMON_ERROR_STRINGS)
 class CapmcReturnedError(ABC):
     """
     A base function for parsing the errors returned by CAPMC.
@@ -318,6 +318,8 @@ def status(nodes, filtertype = 'show_all', session = None):
         raise
 
     xname_status_failures = CapmcXnameStatusReturnedError(json_response)
+    LOGGER.debug("XNAME_STATUS_FAILURES: nodes_in_error: "
+                 f"{xname_status_failures.nodes_in_error}")
     try:
         response.raise_for_status()
     except requests.exceptions.HTTPError:
