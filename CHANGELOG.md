@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+### Changed
+- Added error checking for errors returned by CAPMC. Where possible, nodes are disabled when they can be
+  associated with an error. This error handling prevents the BOS V2 status operator from entering a
+  live-lock when it is dealing with nodes that are MISSING ore disabled in the Hardware State Manager.
 ## [2.0.25] - 2023-07-18
 ### Dependencies
 - Bump `PyYAML` from 6.0 to 6.0.1 to avoid build issue caused by https://github.com/yaml/pyyaml/issues/601
@@ -139,7 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.0.10] - 2023-05-08
 ### Added
-- 'include_disabled' option to decide whether disabled nodes should be part of a BOS session 
+- 'include_disabled' option to decide whether disabled nodes should be part of a BOS session
 
 ## [2.0.9] - 2023-01-12
 ### Fixed

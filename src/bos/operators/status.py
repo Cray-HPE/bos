@@ -30,7 +30,7 @@ from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.capmc import status as get_power_states
-from bos.operators.utils.clients.capmc import CAPMC_HANDLED_ERROR_STRINGS
+from bos.operators.utils.clients.capmc import disable_based_on_error_xname_status
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 from bos.server.models.v2_component import V2Component  # noqa: E501
 
@@ -72,7 +72,7 @@ class StatusOperator(BaseOperator):
         """ A single pass of detecting and acting on components  """
         components = self.bos_client.components.get_components(enabled=True)
         component_ids = [component['id'] for component in components]
-        power_states, node_failures = get_power_states(component_ids)
+        power_states, xname_status_failures = get_power_states(component_ids)
         cfs_states = self._get_cfs_components()
         updated_components = []
         if components:
@@ -82,7 +82,7 @@ class StatusOperator(BaseOperator):
         for component in components:
             updated_component = self._check_status(
                 component, power_states.get(component['id']), cfs_states.get(component['id']),
-                node_failures.get(component['id']))
+                xname_status_failures.nodes_in_error.get(component['id']))
             if updated_component:
                 updated_components.append(updated_component)
         if not updated_components:
@@ -133,11 +133,11 @@ class StatusOperator(BaseOperator):
         if power_state and cfs_component:
             phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
         else:
-            # If the component cannot be found in capmc or cfs
+            # If the component cannot be found in CAPMC or CFS
             if not power_state:
                 if not error:
                     error = 'Component information was not returned by CAPMC'
-                disable = self.disable_based_on_error(error)
+                disable = disable_based_on_error_xname_status(error)
                 if disable:
                     override = None
             elif not cfs_component:
@@ -244,19 +244,6 @@ class StatusOperator(BaseOperator):
                     phase = Phase.powering_off
 
         return phase, override, disable, error, action_failed
-
-    def disable_based_on_error(self, error):
-        """
-        CAPMC returns errors. Some of these may be transient, some not.
-        Non-transient errors should cause the node to be disabled.
-
-        Returns:
-            True: When the error is non-transient.
-            False: When the error is transient.
-        """
-        if error in CAPMC_HANDLED_ERROR_STRINGS:
-            return True
-        return False
 
 if __name__ == '__main__':
     main(StatusOperator)

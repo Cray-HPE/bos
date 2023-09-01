@@ -28,7 +28,7 @@ from requests import HTTPError
 
 from bos.common.values import Action, Status
 import bos.operators.utils.clients.bss as bss
-import bos.operators.utils.clients.capmc as capmc
+from bos.operators.utils.clients.capmc import disable_based_on_error_xname_on_off, power
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
@@ -70,7 +70,17 @@ class PowerOnOperator(BaseOperator):
             raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
         component_ids = [component['id'] for component in components]
         try:
-            capmc.power(component_ids, state='on')
+            errors = power(component_ids, state='on')
+            # Update any nodes with errors they encountered
+            if errors.nodes_in_error:
+                for node in errors.nodes_in_error:
+                    for component in components:
+                        if node == component['id']:
+                            index = components.index(component)
+                            error = errors.nodes_in_error[node]
+                            components[index]['error'] = error
+                            components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
+                            break
         except Exception as e:
             raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
         return components
@@ -81,8 +91,8 @@ class PowerOnOperator(BaseOperator):
         Receive a BSS_REFERRAL_TOKEN from BSS.
         Map the token to the boot artifacts.
         Update each node's desired state with the token.
-        
-        Because the connection to the BSS tokens database can be lost due to 
+
+        Because the connection to the BSS tokens database can be lost due to
         infrequent use, retry up to retries number of times.
         """
         parameters = defaultdict(set)

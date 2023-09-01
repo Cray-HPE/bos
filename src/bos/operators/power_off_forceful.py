@@ -25,7 +25,7 @@
 import logging
 
 from bos.common.values import Action, Status
-import bos.operators.utils.clients.capmc as capmc
+from bos.operators.utils.clients.capmc import disable_based_on_error_xname_on_off, power
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
@@ -58,7 +58,17 @@ class ForcefulPowerOffOperator(BaseOperator):
 
     def _act(self, components):
         component_ids = [component['id'] for component in components]
-        capmc.power(component_ids, state='off', force=True)
+        errors = power(component_ids, state='off', force=True)
+        # Update any nodes with errors they encountered
+        if errors.nodes_in_error:
+            for node in errors.nodes_in_error:
+                for component in components:
+                    if node == component['id']:
+                        index = components.index(component)
+                        error = errors.nodes_in_error[node]
+                        components[index]['error'] = error
+                        components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
+                        break
         return components
 
 
