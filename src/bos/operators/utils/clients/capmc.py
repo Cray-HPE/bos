@@ -407,7 +407,7 @@ def power(nodes, state, force = True, session = None, cont = True, reason = "BOS
                      f"Error message: {errors.error_message}")
         LOGGER.debug("Failed interacting with Cray Advanced Platform "
                      "Monitoring and Control (CAPMC). "
-                     f"Full response: {json_response.text}")
+                     f"Full response: {errors.response}")
     return errors
 
 
