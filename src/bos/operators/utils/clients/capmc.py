@@ -374,7 +374,7 @@ def power(nodes, state, force = True, session = None, cont = True, reason = "BOS
         or more of the requested components fails their action.
 
     Returns:
-      errors (dict): A class container on error code, error message, and
+      errors (dict): A class containing on error code, error message, and
       a dictionary containing the nodes (keys) suffering from errors (values)
       :rtype: CapmcXnameOnOffReturnedError
 

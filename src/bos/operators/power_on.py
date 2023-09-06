@@ -71,19 +71,48 @@ class PowerOnOperator(BaseOperator):
         component_ids = [component['id'] for component in components]
         try:
             errors = power(component_ids, state='on')
-            # Update any nodes with errors they encountered
-            if errors.nodes_in_error:
-                for node in errors.nodes_in_error:
-                    for component in components:
-                        if node == component['id']:
-                            index = components.index(component)
+            if errors.error_code != 0:
+                if errors.nodes_in_error:
+                    # Update any nodes with errors they encountered
+                    for node in errors.nodes_in_error:
+                        index = self._find_component_in_components(node, components)
+                        if index:
                             error = errors.nodes_in_error[node].error_message
                             components[index]['error'] = error
                             components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
                             break
+                else:
+                    # Errors could not be associated with a specific node.
+                    # Ask CAPMC to act on them one at a time to identify
+                    # nodes associated with errors.
+                    for component in component_ids:
+                        errors = power(component, state='on')
+                        if errors.error_code != 0:
+                            index = self._find_component_in_components(node, components)
+                            if index:
+                                components[index]['error'] = errors.error_message
+                                components[index]['enabled'] = False
         except Exception as e:
             raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
         return components
+
+    def _find_component_in_components(self, component_id, components) -> int:
+        """
+        In a list of components, find the component that matches
+        the component ID. Return its index in the list.
+
+        :param str component_id: The component ID
+        :param List[dict] components: A list of components
+
+        Returns:
+          An index indicating the matched components location in the list
+          It returns None if there is no match.
+          :rtype: int
+        """
+        for component in components:
+            if component_id == component['id']:
+                return components.index(component)
+        return None
 
     def _set_bss(self, components, retries=5):
         """
