@@ -1197,6 +1197,11 @@ components:
           $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
       additionalProperties: false
       required: [path, type]
+    V2SessionTemplateArray:
+      description: An array of Session Templates.
+      type: array
+      items:
+        $ref: '#/components/schemas/V2SessionTemplate'
     V2Session:
       description: |
         A Session object
@@ -1595,14 +1600,7 @@ components:
           minimum: 0
           maximum: 1048576
       additionalProperties: true
-    # Schemas that combine objects of different versions
-    SessionTemplateArray:
-      description: An array of Session Templates.
-      type: array
-      items:
-        anyOf:
-          - $ref: '#/components/schemas/V1SessionTemplate'
-          - $ref: '#/components/schemas/V2SessionTemplate'
+
   requestBodies:
     V2sessionCreateRequest:
       description: The information to create a Session
@@ -1703,12 +1701,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V1SessionStatus'
-    V1SessionTemplateDetails:
-      description: Session Template details
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/V1SessionTemplate'
     # V2
     V2SessionTemplateDetails:
       description: Session Template details
@@ -1716,6 +1708,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionTemplate'
+    V2SessionTemplateDetailsArray:
+      description: Session Template details array
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2SessionTemplateArray'
     V2SessionTemplateValidation:
       description: Session Template validity details
       content:
@@ -1764,21 +1762,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2Options'
-    # Responses that may contain V1 or V2 objects
-    SessionTemplateDetails:
-      description: Session Template details
-      content:
-        application/json:
-          schema:
-            anyOf:
-              - $ref: '#/components/schemas/V1SessionTemplate'
-              - $ref: '#/components/schemas/V2SessionTemplate'
-    SessionTemplateDetailsArray:
-      description: Session Template details array
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SessionTemplateArray'
     # Errors
     AlreadyExists:
       description: The resource to be created already exists
@@ -2005,7 +1988,7 @@ paths:
       operationId: get_v1_sessiontemplates
       responses:
         200:
-          $ref: '#/components/responses/SessionTemplateDetailsArray'
+          $ref: '#/components/responses/V2SessionTemplateDetailsArray'
         400:
           $ref: '#/components/responses/MultiTenancyNotSupported'
   /v1/sessiontemplate/{session_template_id}:
@@ -2024,7 +2007,7 @@ paths:
       operationId: get_v1_sessiontemplate
       responses:
         200:
-          $ref: '#/components/responses/SessionTemplateDetails'
+          $ref: '#/components/responses/V2SessionTemplateDetails'
         400:
           $ref: '#/components/responses/MultiTenancyNotSupported'
         404:
@@ -2056,7 +2039,7 @@ paths:
       operationId: get_v1_sessiontemplatetemplate
       responses:
         200:
-          $ref: '#/components/responses/V1SessionTemplateDetails'
+          $ref: '#/components/responses/V2SessionTemplateDetails'
   /v1/session:
     parameters:
       - $ref: '#/components/parameters/V1TenantHeaderParam'
@@ -2411,7 +2394,7 @@ paths:
       operationId: get_v2_sessiontemplates
       responses:
         200:
-          $ref: '#/components/responses/SessionTemplateDetailsArray'
+          $ref: '#/components/responses/V2SessionTemplateDetailsArray'
   /v2/sessiontemplatesvalid/{session_template_id}:
     parameters:
       - $ref: '#/components/parameters/TemplateIdPathParam'
@@ -2449,7 +2432,7 @@ paths:
       operationId: get_v2_sessiontemplate
       responses:
         200:
-          $ref: '#/components/responses/SessionTemplateDetails'
+          $ref: '#/components/responses/V2SessionTemplateDetails'
         404:
           $ref: '#/components/responses/ResourceNotFound'
     put:
