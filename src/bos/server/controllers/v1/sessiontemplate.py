@@ -39,14 +39,14 @@ LOGGER = logging.getLogger('bos.server.controllers.v1.sessiontemplate')
 DB = dbutils.get_wrapper(db='session_templates')
 
 EXAMPLE_BOOT_SET = {
-    "type": "your-boot-type",
-    "etag": "your_boot_image_etag",
+    "type": "s3",
+    "etag": "boot-image-s3-etag",
     "kernel_parameters": "your-kernel-parameters",
     "node_list": [
         "xname1", "xname2", "xname3"],
-    "path": "your-boot-path",
-    "rootfs_provider": "your-rootfs-provider",
-    "rootfs_provider_passthrough": "your-rootfs-provider-passthrough"}
+    "path": "s3://boot-images/boot-image-ims-id/manifest.json",
+    "rootfs_provider": "cpss3",
+    "rootfs_provider_passthrough": "dvs:api-gw-service-nmn.local:300:hsn0,nmn0:0"}
 
 EXAMPLE_SESSION_TEMPLATE = {
     "boot_sets": {

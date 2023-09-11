@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Changed
 - Removed non-v2 fields from v1 session template template
+- Provide more useful example values in v1 and v2 session template templates
 
 ## [2.6.3] - 08-22-2023
 ### Changed
