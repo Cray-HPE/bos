@@ -30,7 +30,8 @@ import os
 
 from bos.common.tenant_utils import no_v1_multi_tenancy_support
 from bos.server import redis_db_utils as dbutils
-from bos.server.models.v1_session_template import V1SessionTemplate as SessionTemplate  # noqa: E501
+from bos.server.models.v1_session_template import V1SessionTemplate  # noqa: E501
+from bos.server.models.v2_session_template import V2SessionTemplate  # noqa: E501
 from bos.server.utils import _canonize_xname
 from bos.common.tenant_utils import get_tenant_aware_key
 from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplates, delete_v2_sessiontemplate
@@ -94,7 +95,8 @@ def create_v1_sessiontemplate():  # noqa: E501
     sessiontemplate = None
 
     try:
-        """Convert the JSON request data into a SessionTemplate object.
+        """Verify that we can convert the JSON request data into a
+           V1SessionTemplate object.
            Any exceptions caught here would be generated from the model
            (i.e. bos.server.models.session_template). Examples are
            an exception for a session template missing the required name
@@ -102,23 +104,60 @@ def create_v1_sessiontemplate():  # noqa: E501
            confirm to Kubernetes naming convention.
            In this case return 400 with a description of the specific error.
         """
-        sessiontemplate = SessionTemplate.from_dict(connexion.request.get_json())
+        template_data = connexion.request.get_json()
+        V1SessionTemplate.from_dict(template_data)
     except Exception as err:
         return connexion.problem(
             status=400, title="The session template could not be created.",
             detail=str(err))
 
-    """For now overwrite any existing template by name w/o warning.
-       Later this can be changed when we support patching operations.
-       This could also be changed to result in an HTTP 409 Conflict. TBD.
-    """
-    LOGGER.debug("create_v1_sessiontemplate name: %s", sessiontemplate.name)
-    st_json = connexion.request.get_json()
+    # Strip out the v1-specific fields from the dictionary
+    v1_specific_st_fields = [ "cfs_url", "cfs_branch", "partition" ]
+    for v1_field_name in v1_specific_st_fields:
+        try:
+            del template_data[v1_field_name]
+        except KeyError:
+            pass
+
+    # Do the same for each boot set    
+    # Oddly, boot_sets is not a required field, so only do this if it is present
+    if "boot_sets" in template_data:
+        v1_specific_bootset_fields = [ "network", "boot_ordinal", "shutdown_ordinal" ]
+        for bs in template_data["boot_sets"].values():
+            for v1_bs_field_name in v1_specific_bootset_fields:
+                try:
+                    del bs[v1_bs_field_name]
+                except KeyError:
+                    pass
+
+    # BOS v2 doesn't want the session template name inside the dictionary itself
+    # name is a required v1 field, though, so we can safely pop it here
+    session_template_id = template_data.pop("name")
+
+    # Now basically follow the same process as when creating a V2 session template (except in the end,
+    # if successful, we will return 201 status and the name of the template, to match the v1 API spec)
+    try:
+        """Verify that we can convert the JSON request data into a
+           V2SessionTemplate object.
+           Any exceptions caught here would be generated from the model
+           (i.e. bos.server.models.session_template).
+           An example is an exception for a session template name that
+           does not conform to Kubernetes naming convention.
+           In this case return 400 with a description of the specific error.
+        """
+        V2SessionTemplate.from_dict(template_data)
+    except Exception as err:
+        return connexion.problem(
+            status=400, title="The session template could not be created as a v2 template.",
+            detail=str(err))
+
+    template_data = sanitize_xnames(template_data)
+    template_data['name'] = session_template_id
     # Tenants are not used in v1, but v1 and v2 share template storage
-    st_json["tenant"] = ""
-    template_key = get_tenant_aware_key(sessiontemplate.name, "")
-    DB.put(template_key, st_json)
-    return sessiontemplate.name, 201
+    template_data['tenant'] = ""
+    template_key = get_tenant_aware_key(session_template_id, "")
+    DB.put(template_key, template_data)
+    return session_template_id, 201
 
 
 @no_v1_multi_tenancy_support
