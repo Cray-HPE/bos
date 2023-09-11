@@ -30,6 +30,7 @@ import os
 
 from bos.common.tenant_utils import no_v1_multi_tenancy_support
 from bos.server import redis_db_utils as dbutils
+
 from bos.server.models.v1_session_template import V1SessionTemplate  # noqa: E501
 from bos.server.models.v2_session_template import V2SessionTemplate  # noqa: E501
 from bos.server.utils import _canonize_xname
@@ -56,6 +57,8 @@ EXAMPLE_SESSION_TEMPLATE = {
         "configuration": "desired-cfs-config"},
     "enable_cfs": True}
 
+V1_SPECIFIC_ST_FIELDS = [ "cfs_url", "cfs_branch", "partition" ]
+V1_SPECIFIC_BOOTSET_FIELDS = [ "network", "boot_ordinal", "shutdown_ordinal" ]
 
 def sanitize_xnames(st_json):
     """
@@ -76,6 +79,33 @@ def sanitize_xnames(st_json):
                 st_json['boot_sets'][boot_set]['node_list'] = clean_nl
     return st_json
 
+def strip_v1_only_fields(template_data):
+    """
+    Edits in-place the template data, removing any fields which are specific to BOS v1.
+    Returns True if any changes were made.
+    Returns False if nothing was removed.
+    """
+    changes_made=False
+    # Strip out the v1-specific fields from the dictionary
+    for v1_field_name in V1_SPECIFIC_ST_FIELDS:
+        try:
+            del template_data[v1_field_name]
+            changes_made=True
+        except KeyError:
+            pass
+
+    # Do the same for each boot set    
+    # Oddly, boot_sets is not a required field, so only do this if it is present
+    if "boot_sets" in template_data:
+        for bs in template_data["boot_sets"].values():
+            for v1_bs_field_name in V1_SPECIFIC_BOOTSET_FIELDS:
+                try:
+                    del bs[v1_bs_field_name]
+                    changes_made=True
+                except KeyError:
+                    pass
+
+    return changes_made
 
 @no_v1_multi_tenancy_support
 @dbutils.redis_error_handler
@@ -111,24 +141,7 @@ def create_v1_sessiontemplate():  # noqa: E501
             status=400, title="The session template could not be created.",
             detail=str(err))
 
-    # Strip out the v1-specific fields from the dictionary
-    v1_specific_st_fields = [ "cfs_url", "cfs_branch", "partition" ]
-    for v1_field_name in v1_specific_st_fields:
-        try:
-            del template_data[v1_field_name]
-        except KeyError:
-            pass
-
-    # Do the same for each boot set    
-    # Oddly, boot_sets is not a required field, so only do this if it is present
-    if "boot_sets" in template_data:
-        v1_specific_bootset_fields = [ "network", "boot_ordinal", "shutdown_ordinal" ]
-        for bs in template_data["boot_sets"].values():
-            for v1_bs_field_name in v1_specific_bootset_fields:
-                try:
-                    del bs[v1_bs_field_name]
-                except KeyError:
-                    pass
+    strip_v1_only_fields(template_data)
 
     # BOS v2 doesn't want the session template name inside the dictionary itself
     # name is a required v1 field, though, so we can safely pop it here

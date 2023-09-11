@@ -25,7 +25,7 @@ import json
 from kubernetes import client, config
 import logging
 import os
-
+from bos.server.controllers.v1.sessiontemplate import strip_v1_only_fields
 from bos.server.dbclient import BosEtcdClient
 from bos.common.utils import requests_retry_session
 from bos.common.tenant_utils import get_tenant_aware_key
@@ -37,6 +37,7 @@ BASEKEY = "/sessionTemplate"
 
 PROTOCOL = 'http'
 SERVICE_NAME = 'cray-bos'
+
 
 def MissingName():
     """
@@ -54,7 +55,7 @@ def pod_ip():
     config.load_incluster_config()
     v1 = client.CoreV1Api()
     # Find the correct version of the cray-bos pod
-    version = os.getenv('APP_VERSION')
+    version = os.getenv('APP_VERSION')    
     if not version:
         msg = "Could not determine application's version. Therefore could not contact the correct BOS pod. Aborting."
         LOGGER.error(msg)
@@ -62,9 +63,11 @@ def pod_ip():
     pods = v1.list_namespaced_pod("services",
                                   label_selector=f"app.kubernetes.io/name=cray-bos,app.kubernetes.io/version={version}")
     # Get the pod's IP address
-    if pods:
-        pod_ip = pods.items[0].status.pod_ip
-    return pod_ip
+    if pods and pods.items:
+        return pods.items[0].status.pod_ip
+    msg = "Could not determine BOS pod IP address. Aborting."
+    LOGGER.error(msg)
+    raise ValueError(msg)
 
 
 def convert_v1_to_v2(v1_st):
@@ -84,8 +87,7 @@ def convert_v1_to_v2(v1_st):
                    exception.
     """
     session_template_keys = ['name', 'description',
-                             'enable_cfs', 'cfs', 'partition',
-                             'boot_sets', 'links']
+                             'enable_cfs', 'cfs', 'boot_sets', 'links']
     boot_set_keys = ['name', 'path', 'type', 'etag', 'kernel_parameters',
                      'node_list', 'node_roles_groups', 'node_groups',
                      'rootfs_provider', 'rootfs_provider_passthrough']
@@ -97,7 +99,7 @@ def convert_v1_to_v2(v1_st):
         raise MissingName()
     for k, v in v1_st.items():
         if k in session_template_keys:
-            if k != "boot_sets" and k != "name":
+            if k != "boot_sets" and k != "name" and k!= "links":
                 v2_st[k] = v
         else:
             LOGGER.warning("Discarding attribute: '{}' from session template: '{}'".format(k, v1_st['name']))
@@ -114,7 +116,7 @@ def convert_v1_to_v2(v1_st):
     return v2_st, name
 
 
-def migrate_v1_to_v2_session_templates():
+def migrate_v1_etcd_to_v2_redis_session_templates():
     """
     Read the session templates out of the V1 etcd key/value store and
     write them into the v2 Redis database.
@@ -153,19 +155,22 @@ def migrate_v1_to_v2_session_templates():
                                  "to error: {}".format(v1_st['name'],
                                                        response.reason))
                     LOGGER.error("Error specifics: {}".format(response.text))
-
-                v1_st["name"] = v1_st["name"] + "_v1_deprecated"
-                response = session.post("{}".format(st_v1_endpoint), json=v1_st)
-                if not response.ok:
-                    LOGGER.error("Session template: '{}' was not migrated for v1 due "
-                                 "to error: {}".format(v1_st['name'],
-                                                       response.reason))
-                    LOGGER.error("Error specifics: {}".format(response.text))
             else:
                 LOGGER.error("Session template: '{}' was not migrated due "
                                  "to error: {}".format(v1_st['name'],
                                                        response.reason))
                 LOGGER.error("Error specifics: {}".format(response.text))
+
+# Convert existing v1 session templates to v2 format
+def convert_v1_to_v2_session_templates():
+    db=dbutils.get_wrapper(db='session_templates')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        if strip_v1_only_fields(data):
+            name = data.get("name")
+            LOGGER.info(f"Converting {name} to BOS v2")
+            db.put(st_key, data)
 
 # Multi-tenancy key migrations
 
@@ -188,8 +193,9 @@ def migrate_to_tenant_aware_keys():
 
 
 def perform_migrations():
-    migrate_v1_to_v2_session_templates()
+    migrate_v1_etcd_to_v2_redis_session_templates()
     migrate_to_tenant_aware_keys()
+    convert_v1_to_v2_session_templates()
 
 
 if __name__ == "__main__":
