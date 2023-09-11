@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Removed non-v2 fields from v1 session template template
 - Provide more useful example values in v1 and v2 session template templates
+- Update API spec to reflect that no v1-format session template will exist inside BOS, because the
+  v1 session template creation endpoint will strip v1-specific fields and create a v2-format session template,
+  and even the v1 session template template endpoint will return a v2-compatible example template.
 
 ## [2.6.3] - 08-22-2023
 ### Changed
