@@ -38,13 +38,10 @@ from ..v2.sessiontemplates import get_v2_sessiontemplate, get_v2_sessiontemplate
 LOGGER = logging.getLogger('bos.server.controllers.v1.sessiontemplate')
 DB = dbutils.get_wrapper(db='session_templates')
 
-
 EXAMPLE_BOOT_SET = {
     "type": "your-boot-type",
-    "boot_ordinal": 1,
     "etag": "your_boot_image_etag",
     "kernel_parameters": "your-kernel-parameters",
-    "network": "nmn",
     "node_list": [
         "xname1", "xname2", "xname3"],
     "path": "your-boot-path",
