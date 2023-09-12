@@ -1961,7 +1961,10 @@ paths:
       - $ref: '#/components/parameters/V1TenantHeaderParam'
     post:
       summary: Create Session Template
-      description: Create a new Session Template.
+      description: |
+        Create a new Session Template.
+        
+        The created template will be modified if necessary to follow the BOS v2 session template format.
       tags:
         - sessiontemplate
       x-openapi-router-controller: bos.server.controllers.v1.sessiontemplate
