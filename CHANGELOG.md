@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Changed
+- Update the changes made for `2.7.0` below to include the deprecated sub-fields of the `cfs`
+  field in v1 session templates.
+- Update the API spec to explicitly state which fields are automatically removed from v1 session
+  templates in this version of BOS.
+- Remove the now-superfluous read-only `links` field from V1 session templates, since BOS no longer
+  ever returns session templates using that schema; the schema is now only used to validate session
+  templates being created by the user, and thus there is no purpose for read-only fields in it.
+- Update the API spec to mark some v1-specific fields as deprecated that were not previously marked as
+  such (`partition`, `boot_ordinal`, `network`, and `shutdown_ordinal`). These fields already had no
+  effect and thus were effectively deprecated anyway.
 
 ## [2.7.0] - 09-12-2023
 ### Changed

@@ -438,8 +438,11 @@ components:
 
         It is recommended that this should be 1-1023 characters in length.
 
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+        When upgrading to this version of BOS, all existing V1 session
+        templates will automatically have this deprecated field removed from them.
+
+        When a V1 session template is created, this deprecated field is
+        automatically removed from it before storing it in BOS.
     V1CfsUrl:
       type: string
       deprecated: true
@@ -448,8 +451,11 @@ components:
 
         It is recommended that this should be 1-4096 characters in length.
 
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+        When upgrading to this version of BOS, all existing V1 session
+        templates will automatically have this deprecated field removed from them.
+
+        When a V1 session template is created, this deprecated field is
+        automatically removed from it before storing it in BOS.
     V1CfsParameters:
       type: object
       description: |
@@ -470,8 +476,11 @@ components:
             git commit hashes are hexadecimal strings with a length of 40 characters (although
             fewer characters may be sufficient to uniquely identify a commit in some cases).
 
-            This restriction is not enforced in this version of BOS, but it is
-            targeted to start being enforced in an upcoming BOS version.
+            When upgrading to this version of BOS, all existing V1 session
+            templates will automatically have this deprecated field removed from them.
+
+            When a V1 session template is created, this deprecated field is
+            automatically removed from it before storing it in BOS.
         playbook:
           type: string
           deprecated: true
@@ -481,8 +490,11 @@ components:
 
             It is recommended that this should be 1-255 characters in length.
 
-            This restriction is not enforced in this version of BOS, but it is
-            targeted to start being enforced in an upcoming BOS version.
+            When upgrading to this version of BOS, all existing V1 session
+            templates will automatically have this deprecated field removed from them.
+
+            When a V1 session template is created, this deprecated field is
+            automatically removed from it before storing it in BOS.
         configuration:
           $ref: '#/components/schemas/CfsConfiguration'
       additionalProperties: false
@@ -654,12 +666,20 @@ components:
           $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
         network:
           type: string
+          deprecated: true
           description: |
             The network over which the node will boot.
             Choices:  NMN -- Node Management Network
+
+            When upgrading to this version of BOS, all existing V1 session
+            templates will automatically have this deprecated field removed from them.
+
+            When a V1 session template is created, this deprecated field is
+            automatically removed from it before storing it in BOS.
           pattern: '^[nN][mM][nN]$'
         boot_ordinal:
           type: integer
+          deprecated: true
           minimum: 0
           description: |
             The boot ordinal. This will establish the order for Boot Set operations.
@@ -667,10 +687,14 @@ components:
 
             It is recommended that this should have a maximum value of 65535.
 
-            This restriction is not enforced in this version of BOS, but it is
-            targeted to start being enforced in an upcoming BOS version.
+            When upgrading to this version of BOS, all existing V1 session
+            templates will automatically have this deprecated field removed from them.
+
+            When a V1 session template is created, this deprecated field is
+            automatically removed from it before storing it in BOS.
         shutdown_ordinal:
           type: integer
+          deprecated: true
           minimum: 0
           description: |
             The shutdown ordinal. This will establish the order for Boot Set
@@ -678,8 +702,11 @@ components:
 
             It is recommended that this should have a maximum value of 65535.
 
-            This restriction is not enforced in this version of BOS, but it is
-            targeted to start being enforced in an upcoming BOS version.
+            When upgrading to this version of BOS, all existing V1 session
+            templates will automatically have this deprecated field removed from them.
+
+            When a V1 session template is created, this deprecated field is
+            automatically removed from it before storing it in BOS.
       additionalProperties: false
       required: [path, type]
     V1SessionTemplateUuid:
@@ -693,9 +720,6 @@ components:
         * 1-127 characters in length.
         * Use only letters, digits, periods (.), dashes (-), and underscores (_).
         * Begin and end with a letter or digit.
-
-        These restrictions are not enforced in this version of BOS, but they are
-        targeted to start being enforced in an upcoming BOS version.
       minLength: 1
       example: "my-session-template"
       deprecated: true
@@ -706,6 +730,12 @@ components:
         A Session Template is used to create a Session which when combined with an
         action (i.e. boot, configure, reboot, shutdown) will create a Kubernetes BOA job
         to complete the required tasks for the operation.
+
+        When upgrading to this version of BOS, all existing V1 session templates
+        will automatically have all deprecated fields removed from them.
+
+        When a V1 session template is created, all deprecated fields are automatically
+        removed from it before storing it in BOS.
 
         ## Link Relationships
 
@@ -725,13 +755,17 @@ components:
           $ref: '#/components/schemas/V1CfsParameters'
         partition:
           type: string
+          deprecated: true
           description: |
             The machine partition to operate on.
 
             It is recommended that this should be 1-255 characters in length.
 
-            This restriction is not enforced in this version of BOS, but it is
-            targeted to start being enforced in an upcoming BOS version.
+            When upgrading to this version of BOS, all existing V1 session
+            templates will automatically have this deprecated field removed from them.
+
+            When a V1 session template is created, this deprecated field is
+            automatically removed from it before storing it in BOS.
         boot_sets:
           type: object
           description: |
@@ -743,13 +777,8 @@ components:
             * Boot Set names should be 1-127 characters in length.
             * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
             * Boot Set names should begin and end with a letter or digit.
-
-            These restrictions are not enforced in this version of BOS, but they are
-            targeted to start being enforced in an upcoming BOS version.
           additionalProperties:
             $ref: '#/components/schemas/V1BootSet'
-        links:
-          $ref: '#/components/schemas/LinkListReadOnly'
       required: [name]
       additionalProperties: false
     V1BoaKubernetesJob:
