@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+
+## [2.8.0] - 09-18-2023
 ### Changed
 - Update the changes made for `2.7.0` below to include the deprecated sub-fields of the `cfs`
   field in v1 session templates.
