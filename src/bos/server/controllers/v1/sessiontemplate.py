@@ -56,8 +56,9 @@ EXAMPLE_SESSION_TEMPLATE = {
         "configuration": "desired-cfs-config"},
     "enable_cfs": True}
 
-V1_SPECIFIC_ST_FIELDS = [ "cfs_url", "cfs_branch", "partition" ]
-V1_SPECIFIC_BOOTSET_FIELDS = [ "network", "boot_ordinal", "shutdown_ordinal" ]
+V1_SPECIFIC_ST_FIELDS = [ "cfs_branch", "cfs_url", "partition" ]
+V1_SPECIFIC_CFS_FIELDS = [ "branch", "clone_url", "commit", "playbook" ]
+V1_SPECIFIC_BOOTSET_FIELDS = [ "boot_ordinal", "network", "shutdown_ordinal" ]
 
 def sanitize_xnames(st_json):
     """
@@ -85,10 +86,13 @@ def strip_v1_only_fields(template_data):
     Returns False if nothing was removed.
     """
     changes_made=False
+
     # Strip out the v1-specific fields from the dictionary
     for v1_field_name in V1_SPECIFIC_ST_FIELDS:
         try:
             del template_data[v1_field_name]
+            LOGGER.info("Stripped %s field from session template %s", v1_field_name,
+                        template_data.get("name", ""))
             changes_made=True
         except KeyError:
             pass
@@ -100,9 +104,23 @@ def strip_v1_only_fields(template_data):
             for v1_bs_field_name in V1_SPECIFIC_BOOTSET_FIELDS:
                 try:
                     del bs[v1_bs_field_name]
+                    LOGGER.info("Stripped %s field from a boot set in session template %s",
+                                v1_bs_field_name, template_data.get("name", ""))
                     changes_made=True
                 except KeyError:
                     pass
+
+    # Do the same for the cfs field, if present
+    if "cfs" in template_data:
+        cfs_data = template_data["cfs"]
+        for v1_cfs_field_name in V1_SPECIFIC_CFS_FIELDS:
+            try:
+                del cfs_data[v1_cfs_field_name]
+                LOGGER.info("Stripped cfs.%s field from session template %s", v1_cfs_field_name,
+                            template_data.get("name", ""))
+                changes_made=True
+            except KeyError:
+                pass
 
     return changes_made
 
