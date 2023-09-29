@@ -274,7 +274,7 @@ class CapmcNodeError(object):
         """
         Print how this class was initialized for debugging purposes.
         """
-        return f"CapmcNodeError(self.error_code, self.error_message)"
+        return f"CapmcNodeError({self.error_code}, {self.error_message})"
 
     def __str__(self) -> str:
         """
