@@ -98,9 +98,9 @@ class CapmcReturnedError(ABC):
         :param dict error_strings: A dictionary of error strings to compare against
         """
         for err_str in error_string_dict:
-            match = re.match(fr"{err_str}: +\[([\w,]+)\]", self.error_message)
+            match = re.match(fr"{err_str}: +\[([\w ?]+)\]", self.error_message)
             if match:
-                nodes_in_error = match.group(1).split(',')
+                nodes_in_error = match.group(1).split()
                 for node in nodes_in_error:
                     self.nodes_in_error[node] = CapmcNodeError(self.error_code, err_str)
                 break
