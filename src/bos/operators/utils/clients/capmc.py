@@ -274,13 +274,13 @@ class CapmcNodeError(object):
         """
         Print how this class was initialized for debugging purposes.
         """
-        print(f"CapmcNodeError(self.error_code, self.error_message)")
+        return f"CapmcNodeError(self.error_code, self.error_message)"
 
     def __str__(self) -> str:
         """
         Print a human-readable version of this class.
         """
-        print(f"Error code: {self.error_code}\tError Message: {self.error_message}")
+        return f"Error code: {self.error_code}\tError Message: {self.error_message}"
 
 
 class CapmcException(Exception):
