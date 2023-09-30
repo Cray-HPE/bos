@@ -103,6 +103,7 @@ class CapmcReturnedError(ABC):
             if match:
                 nodes_in_error = match.group(1).split()
                 for node in nodes_in_error:
+                    LOGGER.debug(f"Logging Error -- Node: {node} Error: {err_str}")
                     self.nodes_in_error[node] = CapmcNodeError(self.error_code, err_str)
                 break
 
@@ -249,6 +250,7 @@ class CapmcXnameOnOffReturnedError(CapmcReturnedError):
         if self.error_code == -1:
             if 'undefined' in self.response:
                 for node in self.response['undefined']:
+                    LOGGER.debug(f"Found an undefined node: {node}")
                     self.nodes_in_error[node] = CapmcNodeError(self.error_code,'undefined')
             if 'xnames' in self.response:
                 for xname_dict in self.response['xnames']:
