@@ -74,7 +74,7 @@ class GracefulPowerOffOperator(BaseOperator):
                     errors = power([component], state='off', force=False)
                     if errors.error_code != 0:
                         index = self._find_component_in_components(component, components)
-                        if index:
+                        if index is not None:
                             components[index]['error'] = errors.error_message
                             components[index]['enabled'] = False
 
