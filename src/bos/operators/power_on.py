@@ -76,7 +76,7 @@ class PowerOnOperator(BaseOperator):
                     # Update any nodes with errors they encountered
                     for node in errors.nodes_in_error:
                         index = self._find_component_in_components(node, components)
-                        if index:
+                        if index is not None:
                             error = errors.nodes_in_error[node].error_message
                             components[index]['error'] = error
                             components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
@@ -86,9 +86,9 @@ class PowerOnOperator(BaseOperator):
                     # Ask CAPMC to act on them one at a time to identify
                     # nodes associated with errors.
                     for component in component_ids:
-                        errors = power(component, state='on')
+                        errors = power([component], state='on')
                         if errors.error_code != 0:
-                            index = self._find_component_in_components(node, components)
+                            index = self._find_component_in_components(component, components)
                             if index:
                                 components[index]['error'] = errors.error_message
                                 components[index]['enabled'] = False

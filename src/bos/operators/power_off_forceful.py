@@ -74,10 +74,11 @@ class ForcefulPowerOffOperator(BaseOperator):
                 # Ask CAPMC to act on them one at a time to identify
                 # nodes associated with errors.
                 for component in component_ids:
-                    errors = power(component, state='off', force=True)
+                    LOGGER.debug(f"Powering off {component}")
+                    errors = power([component], state='off', force=True)
                     if errors.error_code != 0:
-                        index = self._find_component_in_components(node, components)
-                        if index:
+                        index = self._find_component_in_components(component, components)
+                        if index is not None:
                             components[index]['error'] = errors.error_message
                             components[index]['enabled'] = False
 
