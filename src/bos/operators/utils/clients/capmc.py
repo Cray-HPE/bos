@@ -369,7 +369,7 @@ def power(nodes: List, state: str, force: bool = True, session = None,
     to power the node to the desired state.
 
     Args:
-      nodes (list): Nodes to power on
+      nodes (list): Nodes to act upon
       state (string): Power state: off or on
       force (bool): Should the power off be forceful (True) or not forceful (False)
       session (Requests.session object): A Requests session instance

@@ -71,7 +71,7 @@ class GracefulPowerOffOperator(BaseOperator):
                 # nodes associated with errors.
                 for component in component_ids:
                     LOGGER.debug(f"Powering off {component}")
-                    errors = power(list(component), state='off', force=False)
+                    errors = power([component], state='off', force=False)
                     if errors.error_code != 0:
                         index = self._find_component_in_components(component, components)
                         if index:
