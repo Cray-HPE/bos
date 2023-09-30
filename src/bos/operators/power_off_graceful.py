@@ -70,7 +70,8 @@ class GracefulPowerOffOperator(BaseOperator):
                 # Ask CAPMC to act on them one at a time to identify
                 # nodes associated with errors.
                 for component in component_ids:
-                    errors = power(component, state='off', force=False)
+                    LOGGER.debug("Powering off {component}")
+                    errors = power(list(component), state='off', force=False)
                     if errors.error_code != 0:
                         index = self._find_component_in_components(component, components)
                         if index:

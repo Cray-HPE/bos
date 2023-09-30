@@ -27,6 +27,7 @@ import json
 import re
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from typing import List
 
 from bos.operators.utils import requests_retry_session, PROTOCOL
 
@@ -357,7 +358,9 @@ def status(nodes, filtertype = 'show_all', session = None):
     return node_power_status, xname_status_failures
 
 
-def power(nodes, state, force = True, session = None, cont = True, reason = "BOS: Powering nodes") -> CapmcXnameOnOffReturnedError:
+def power(nodes: List, state: str, force: bool = True, session = None,
+          cont: bool = True,
+          reason: str = "BOS: Powering nodes") -> CapmcXnameOnOffReturnedError:
     """
     Sets a node to a power state using CAPMC; returns a set of nodes that were unable to achieve
     that state.
