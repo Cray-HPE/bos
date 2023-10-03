@@ -164,6 +164,9 @@ class BaseOperator(ABC):
                 'id': component['id'],
                 'error': component['error']  # New error, or clearing out old error
             }
+            # Allow operators to disable components.
+            if not component['enabled']:
+                patch['enabled'] = component['enabled']
             if self.name:
                 last_action_data = {
                     'action': self.name,
@@ -178,7 +181,7 @@ class BaseOperator(ABC):
 
             if additional_fields:
                 patch.update(additional_fields)
-            
+
             # When updating a component's desired state, operators
             # are expected to provide session data as a hacky way to prove
             # that they are operators. If they do not provide it, then the

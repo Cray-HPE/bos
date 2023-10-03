@@ -25,15 +25,16 @@
 import logging
 
 from bos.common.values import Action, Status
-import bos.operators.utils.clients.capmc as capmc
+from bos.operators.utils.clients.capmc import disable_based_on_error_xname_on_off, power
 from bos.operators.utils.clients.bos.options import options
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import main
+from bos.operators.power_operator_base import PowerOperatorBase
 from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
 
 LOGGER = logging.getLogger('bos.operators.power_off_forceful')
 
 
-class ForcefulPowerOffOperator(BaseOperator):
+class ForcefulPowerOffOperator(PowerOperatorBase):
     """
     The Forceful Power-Off Operator tells capmc to power-off nodes if:
     - Enabled in the BOS database and the status is power_off_gracefully of power_off_forcefully
@@ -56,10 +57,17 @@ class ForcefulPowerOffOperator(BaseOperator):
             HSMState(enabled=True),
         ]
 
-    def _act(self, components):
-        component_ids = [component['id'] for component in components]
-        capmc.power(component_ids, state='off', force=True)
-        return components
+    def _my_power(self, component_ids):
+        """
+        Power off components forcefully.
+
+        Returns:
+          errors (dict): A class containing an error code, error message, and
+          a dictionary containing the nodes (keys) suffering from errors (values)
+          :rtype: CapmcXnameOnOffReturnedError
+        """
+
+        return power(component_ids, state='off', force=True)
 
 
 if __name__ == '__main__':

@@ -30,7 +30,9 @@ from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.capmc import status as get_power_states
+from bos.operators.utils.clients.capmc import disable_based_on_error_xname_status
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
+from bos.server.models.v2_component import V2Component  # noqa: E501
 
 LOGGER = logging.getLogger('bos.operators.status')
 
@@ -70,7 +72,7 @@ class StatusOperator(BaseOperator):
         """ A single pass of detecting and acting on components  """
         components = self.bos_client.components.get_components(enabled=True)
         component_ids = [component['id'] for component in components]
-        power_states, _failed_nodes = get_power_states(component_ids)
+        power_states, xname_status_failures = get_power_states(component_ids)
         cfs_states = self._get_cfs_components()
         updated_components = []
         if components:
@@ -78,8 +80,13 @@ class StatusOperator(BaseOperator):
             self.boot_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_boot_wait_time)._match
             self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
         for component in components:
+            error_string = None
+            node_error = xname_status_failures.nodes_in_error.get(component['id'],{})
+            if node_error:
+                error_string = node_error.error_message
             updated_component = self._check_status(
-                component, power_states.get(component['id']), cfs_states.get(component['id']))
+                component, power_states.get(component['id']), cfs_states.get(component['id']),
+                error_string)
             if updated_component:
                 updated_components.append(updated_component)
         if not updated_components:
@@ -90,12 +97,18 @@ class StatusOperator(BaseOperator):
         self.bos_client.components.update_components(updated_components)
 
     @staticmethod
-    def _get_cfs_components():
+    def _get_cfs_components() -> dict:
         """
         Gets all the components from CFS.
         We used to get only the components of interest, but that caused an HTTP request
         that was longer than uwsgi could handle when the number of nodes was very large.
         Requesting all components means none need to be specified in the request.
+
+        :return:  A dictionary containing the CFS components
+        :rtype: dict
+
+        The function returns a dictionary of CFS componets where the key is the component ID and
+        the values are the individual component data.
         """
         cfs_data = get_cfs_components()
         cfs_states = {}
@@ -103,22 +116,36 @@ class StatusOperator(BaseOperator):
             cfs_states[component['id']] = component
         return cfs_states
 
-    def _check_status(self, component, power_state, cfs_component):
+    def _check_status(self, component: V2Component, power_state: str, cfs_component: str, error: str) -> dict:
         """
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
+
+        :param V2Component component: A BOS component
+        :param str power_state: The component's power state
+        :param str cfs_component: The component's CFS state as seen in the Configuration Framework Service (CFS)
+        :param str error: The error the node is experiencing; This equals None if there is no error.
+
+        :return updated_component: The component's updated data
+        :rtype: dict
         """
+        phase = Phase.none
+        override = Status.on_hold
+        disable = False
+        action_failed = False
+
         if power_state and cfs_component:
             phase, override, disable, error, action_failed = self._calculate_status(component, power_state, cfs_component)
         else:
-            # If the component cannot be found in capmc or cfs
-            phase = Phase.none
-            override = Status.on_hold
-            action_failed = False
+            # If the component cannot be found in CAPMC or CFS
             if not power_state:
-                error = 'Component information was not returned by capmc'
+                if not error:
+                    error = 'Component information was not returned by CAPMC'
+                disable = disable_based_on_error_xname_status(error)
+                if disable:
+                    override = None
             elif not cfs_component:
-                error = 'Component information was not returned by cfs'
+                error = 'Component information was not returned by CFS'
 
         updated_component = {
             'id': component['id'],
@@ -163,7 +190,7 @@ class StatusOperator(BaseOperator):
         """
         Calculate a component's status based on its current state, power state, and
         CFS state.
-        
+
         Disabling for successful completion should return an empty phase
         Disabling for a failure should return the phase that failed
         Override is used for status information that cannot be determined using only
@@ -221,7 +248,6 @@ class StatusOperator(BaseOperator):
                     phase = Phase.powering_off
 
         return phase, override, disable, error, action_failed
-
 
 if __name__ == '__main__':
     main(StatusOperator)
