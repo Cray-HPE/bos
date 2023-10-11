@@ -127,6 +127,8 @@ class Session:
                 for component_id in components:
                     data.append(self._operate(component_id, copy.deepcopy(state)))
                 all_component_ids += components
+            if not all_component_ids:
+                raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
             raise SessionSetupException(err)
         else:
@@ -158,7 +160,7 @@ class Session:
             hsmfilter = HSMState(enabled=True)
             nodes = set(hsmfilter._filter(list(nodes)))
         if not nodes:
-            self._log(LOGGER.warning, "No nodes were found to act on.")
+            self._log(LOGGER.warning, "No nodes were found to act upon.")
         return nodes
 
     def _apply_limit(self, nodes):
