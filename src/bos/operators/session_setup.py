@@ -124,6 +124,8 @@ class Session:
                 for component_id in components:
                     data.append(self._operate(component_id, boot_set))
                 all_component_ids += components
+            if not all_component_ids:
+                raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
             raise SessionSetupException(err)
         else:
@@ -160,7 +162,7 @@ class Session:
             nodes = set(hsmfilter._filter(list(nodes)))
         nodes = self._apply_tenant_limit(nodes)
         if not nodes:
-            self._log(LOGGER.warning, "No nodes were found to act on.")
+            self._log(LOGGER.warning, "No nodes were found to act upon.")
         return nodes
 
     def _apply_arch(self, nodes, arch):
