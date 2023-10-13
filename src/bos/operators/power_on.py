@@ -55,7 +55,7 @@ class PowerOnOperator(BaseOperator):
     def filters(self):
         return [
             BOSQuery(enabled=True, status=Status.power_on_pending),
-            HSMState(enabled=True)
+            HSMState()
         ]
 
     def _act(self, components):
