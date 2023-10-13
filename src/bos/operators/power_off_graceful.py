@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -50,7 +50,7 @@ class GracefulPowerOffOperator(PowerOperatorBase):
     def filters(self):
         return [
             BOSQuery(enabled=True, status=Status.power_off_pending),
-            HSMState(enabled=True),
+            HSMState(),
         ]
 
     def _my_power(self, component_ids):
