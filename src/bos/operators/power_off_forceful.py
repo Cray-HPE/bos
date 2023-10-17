@@ -53,7 +53,7 @@ class ForcefulPowerOffOperator(BaseOperator):
             BOSQuery(enabled=True, status=','.join([Status.power_off_forcefully_called,
                                                     Status.power_off_gracefully_called])),
             TimeSinceLastAction(seconds=options.max_power_off_wait_time),
-            HSMState(enabled=True),
+            HSMState(),
         ]
 
     def _act(self, components):

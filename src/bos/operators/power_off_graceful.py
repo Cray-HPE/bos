@@ -49,7 +49,7 @@ class GracefulPowerOffOperator(BaseOperator):
     def filters(self):
         return [
             BOSQuery(enabled=True, status=Status.power_off_pending),
-            HSMState(enabled=True),
+            HSMState(),
         ]
 
     def _act(self, components):
