@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Make the include_disabled option work as intended.
 - Return the correct object from hsm's get_components call when there are no nodes in the session.
+- Fixed session setup errors when there are no valid nodes before filtering for architecture.
 
 ## [2.9.0] - 09-29-2023
 ### Changed

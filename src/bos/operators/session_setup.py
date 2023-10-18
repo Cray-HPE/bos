@@ -181,6 +181,8 @@ class Session:
         returns:
           A set representing the subset of nodes that match arch, or the logical arch from HSM.
         """
+        if not nodes:
+            return nodes
         valid_archs = set([arch])
         if arch == 'X86':
             valid_archs.add('UNKNOWN')
