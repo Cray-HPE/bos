@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+## [2.10.0] - 10-18-2023
+### Fixed
+- Make the include_disabled option work as intended.
+- Return the correct object from hsm's get_components call when there are no nodes in the session.
+- Fixed session setup errors when there are no valid nodes before filtering for architecture.
+
 ## [2.9.0] - 09-29-2023
 ### Changed
 - Update the spire-agent path
