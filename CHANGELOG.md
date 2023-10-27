@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Changed
-- Sessions the specify nodes that aren't in the current tenant will fail
+- Sessions that specify nodes that aren't in the current tenant will fail
 
 ## [2.10.1] - 2023-10-31
 ### Fixed
