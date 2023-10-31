@@ -192,16 +192,17 @@ def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
     LOGGER.info(f"Called delete v2 sessions min_age={min_age} max_age={max_age} status={status}")
     try:
         tenant = get_tenant_from_header()
-        sessions = _get_filtered_sessions(tenant=get_tenant_from_header(),
+        sessions = _get_filtered_sessions(tenant=tenant,
                                           min_age=min_age, max_age=max_age,
                                           status=status)
         LOGGER.info("delete v2 sessions: len(sessions) = %d", len(sessions))
         for session in sessions:
             session_name = session['name']
+            session_key = get_tenant_aware_key(session_name, tenant)
             LOGGER.info("delete v2 sessions: session_name=%s", session_name)
-            DB.delete(session_name)
-            if session_name in STATUS_DB:
-                STATUS_DB.delete(session_name)
+            if session_key in STATUS_DB:
+                STATUS_DB.delete(session_key)
+            DB.delete(session_key)
     except ParsingException as err:
         return connexion.problem(
             detail=str(err),
