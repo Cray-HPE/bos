@@ -5,19 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased]
 
-## [2.10.0] - 10-18-2023
+## [2.10.1] - 2023-10-31
+### Fixed
+- Update delete_v2_sessions function to use tenant-aware database keys (so that it actually
+  deletes sessions)
+
+## [2.10.0] - 2023-10-18
 ### Fixed
 - Make the include_disabled option work as intended.
 - Return the correct object from hsm's get_components call when there are no nodes in the session.
 - Fixed session setup errors when there are no valid nodes before filtering for architecture.
 
-## [2.9.0] - 09-29-2023
+## [2.9.0] - 2023-09-29
 ### Changed
 - Update the spire-agent path
 
-## [2.8.0] - 09-18-2023
+## [2.8.0] - 2023-09-18
 ### Changed
 - Update the changes made for `2.7.0` below to include the deprecated sub-fields of the `cfs`
   field in v1 session templates.
@@ -30,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   such (`partition`, `boot_ordinal`, `network`, and `shutdown_ordinal`). These fields already had no
   effect and thus were effectively deprecated anyway.
 
-## [2.7.0] - 09-12-2023
+## [2.7.0] - 2023-09-12
 ### Changed
 - Removed non-v2 fields from v1 session template template
 - Provide more useful example values in v1 and v2 session template templates
@@ -42,23 +47,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update BOS migration code to properly convert v1 session templates to v2, both from old Etcd database and within
   current redis DB.
 
-## [2.6.3] - 08-22-2023
+## [2.6.3] - 2023-08-22
 ### Changed
 Updated `bos-reporter` spec file to reflect the fact that it should not be installed without `spire-agent` being present.
 
-## [2.6.2] - 08-14-2023
+## [2.6.2] - 2023-08-14
 ### Fixed
 Fixed HSM query handling to prevent errors from querying with an empty list nodes.
 
-## [2.6.1] - 08-10-2023
+## [2.6.1] - 2023-08-10
 ### Fixed
 Fixed database key migration when upgrading from newer versions of BOS.
 
-## [2.6.0] - 08-09-2023
+## [2.6.0] - 2023-08-09
 ### Changed
 - Build `bos-reporter` RPM as `noos`
 
-## [2.5.6] - 08-08-2023
+## [2.5.6] - 2023-08-08
 ### Changed
 - IsAlive attribute look-up.
 ### Added
