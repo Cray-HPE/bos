@@ -189,22 +189,24 @@ def delete_v2_session(session_id):  # noqa: E501
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
+    LOGGER.info("Called delete v2 sessions")
+    tenant = get_tenant_from_header()
     try:
-        tenant = get_tenant_from_header()
-        sessions = _get_filtered_sessions(tenant=get_tenant_from_header(),
-                                          min_age=min_age, max_age=max_age,
+        sessions = _get_filtered_sessions(tenant=tenant, min_age=min_age, max_age=max_age,
                                           status=status)
-        for session in sessions:
-            session_name = session['name']
-            DB.delete(session_name)
-            if session_name in STATUS_DB:
-                STATUS_DB.delete(session_name)
     except ParsingException as err:
         return connexion.problem(
             detail=str(err),
             status=400,
             title='Error parsing age field'
         )
+
+    for session in sessions:
+        session_key = get_tenant_aware_key(session['name'], tenant)
+        if session_key in STATUS_DB:
+            STATUS_DB.delete(session_key)
+        DB.delete(session_key)
+
     return None, 204
 
 
