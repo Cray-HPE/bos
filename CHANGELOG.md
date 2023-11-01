@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.10.1] - 2023-10-31
 ### Fixed
-- Update delete_v2_sessions function to use template-aware database keys (so that it actually
+- Update delete_v2_sessions function to use tenant-aware database keys (so that it actually
   deletes sessions)
 
 ## [2.10.0] - 2023-10-18
