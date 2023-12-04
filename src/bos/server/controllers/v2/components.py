@@ -196,7 +196,7 @@ def patch_v2_components_list(data):
             component_id = component_data['id']
             if component_id not in DB or not _is_valid_tenant_component(component_id):
                 return connexion.problem(
-                    status=404, title="Component could not found.",
+                    status=404, title="Component not found.",
                     detail="Component {} could not be found".format(component_id))
             components.append((component_id, component_data))
     except Exception as err:
@@ -251,7 +251,7 @@ def get_v2_component(component_id):
     LOGGER.debug("GET /components/id invoked get_component")
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
-            status=404, title="Component could not found.",
+            status=404, title="Component not found.",
             detail="Component {} could not be found".format(component_id))
     component = DB.get(component_id)
     component = _set_status(component)
@@ -281,7 +281,7 @@ def patch_v2_component(component_id):
     LOGGER.debug("PATCH /components/id invoked patch_component")
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
-            status=404, title="Component could not found.",
+            status=404, title="Component not found.",
             detail="Component {} could not be found".format(component_id))
     try:
         data = connexion.request.get_json()
@@ -325,7 +325,7 @@ def delete_v2_component(component_id):
     LOGGER.debug("DELETE /components/id invoked delete_component")
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
-            status=404, title="Component could not found.",
+            status=404, title="Component not found.",
             detail="Component {} could not be found".format(component_id))
     return DB.delete(component_id), 204
 
