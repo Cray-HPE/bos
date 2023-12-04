@@ -137,6 +137,13 @@ class Session:
         # Populate from nodelist
         for node_name in boot_set.get('node_list', []):
             nodes.add(node_name)
+        if nodes:
+            tenant_nodes = self._apply_tenant_limit(nodes)
+            if nodes != tenant_nodes:
+                invalid_nodes = ",".join(list(nodes.difference(tenant_nodes)))
+                raise SessionSetupException(
+                    f"The session template includes nodes which do not exist"
+                    f" or are not available to this tenant: {invalid_nodes}")
         # Populate from node_groups
         for group_name in boot_set.get('node_groups', []):
             if group_name not in self.inventory.groups:
