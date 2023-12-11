@@ -22,13 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 '''
-Provisioning mechanism unique to the ContentProjectionService; this is software
-that is often installed as part of Cray CME images in both standard, enhanced
-and premium offerings; the underlying implementation of CPS may be handled by
-another protocol (iSCSI or DVS) depending on the product.
+Provisioning mechanism using the Scalable Boot Provisioning Service
 '''
 
 from .baserootfs import BaseRootfsProvider
 
-class CPSS3Provider(BaseRootfsProvider):
-    PROTOCOL = 'craycps-s3'
+class SBPSProvider(BaseRootfsProvider):
+    PROTOCOL = 'sbps-s3'
