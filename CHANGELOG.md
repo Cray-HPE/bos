@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.2] - 2024-01-02
+### Changed
+- Specify `~1.0.0` for the version of `cray-etcd-base` chart.
+- Pin Alpine version to `3.18` (to avoid build failures with `3.19`)
+
 ## [2.10.1] - 2023-10-31
 ### Fixed
 - Update delete_v2_sessions function to use tenant-aware database keys (so that it actually
