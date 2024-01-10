@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
-- Fix a broken build caused by PEP-668.
+- Fix a broken build caused by PEP-668. Pin Alpine version to 3. This is less restrictive.
 
 ## [2.12.0] - 2024-01-02
 ### Changed
