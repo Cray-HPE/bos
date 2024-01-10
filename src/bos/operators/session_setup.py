@@ -281,6 +281,14 @@ class Session:
             return state
 
     def _get_state_from_boot_set(self, boot_set):
+        """
+        Returns:
+          state: A dictionary containing two keys 'boot_artifacts' and 'configuration'.
+            'boot_artifacts' is itself a dictionary containing key/value pairs where the keys are the
+            boot artifacts (kernel, initrd, rootfs, and boot parameters) and the values are paths to
+            those artifacts in storage.
+            'configuration' is a string.
+        """
         state = {}
         boot_artifacts = {}
         image_metadata = BootImageMetaDataFactory(boot_set)()
@@ -324,6 +332,12 @@ class Session:
         Warning: We need to ensure that the 'root' parameter exists and is set correctly.
         If any of the parameter locations are empty, they are simply not used.
 
+        Inputs:
+            boot_set: A boot set from the session template data
+            artifact_info: The artifact summary from the boot_set.
+                           This is a dictionary containing keys which are boot artifacts (kernel, initrd, roots, and kernel boot parameters).
+                           The values are the paths to those boot artifacts in S3.
+                           It also contains the etags for the rootfs and kerenl boot parameters.
         Returns:
             A string containing the needed kernel boot parameters
 

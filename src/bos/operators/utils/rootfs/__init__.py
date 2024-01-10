@@ -56,7 +56,7 @@ class RootfsProvider(object):
 
     def __str__(self):
         """
-        The value to add to the boot parameter.
+        The value to add to the 'root=' kernel boot parameter.
         """
         fields = []
         if self.PROTOCOL:
