@@ -25,7 +25,7 @@
 
 # Upstream Build Args
 ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v6.6.0
-ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3.18
+ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 # Generate Code
 FROM $OPENAPI_IMAGE as codegen
@@ -56,8 +56,13 @@ COPY constraints.txt requirements.txt /app/
 RUN apk add --upgrade --no-cache apk-tools busybox && \
     apk update && \
     apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
-    apk -U upgrade --no-cache && \
-    pip3 install --no-cache-dir -U pip
+    apk -U upgrade --no-cache
+# Create a virtual environment in which we can install Python packages. This
+# isolates our installation from the system installation.
+ENV VIRTUAL_ENV=/app/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN pip3 install --no-cache-dir -U pip
 RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
 RUN cd lib && pip3 install --no-cache-dir .
 
@@ -87,7 +92,7 @@ CMD [ "./docker_api_test_entry.sh" ]
 FROM base as intermediate
 WORKDIR /app
 EXPOSE 9000
-RUN apk add --no-cache uwsgi-python3
+RUN pip3 install --no-cache-dir uWSGI
 COPY config/uwsgi.ini ./
 ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 
