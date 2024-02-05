@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Scalable Boot Provisioning Service (SBPS) support
+
+## [2.13.0] - 2024-01-10
 ### Fixed
 - Fix a broken build caused by PEP-668. Pin Alpine version to 3. This is less restrictive.
 
