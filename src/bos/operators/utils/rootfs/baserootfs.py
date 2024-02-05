@@ -22,13 +22,36 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 '''
-Provisioning mechanism unique to the ContentProjectionService; this is software
-that is often installed as part of Cray CME images in both standard, enhanced
-and premium offerings; the underlying implementation of CPS may be handled by
-another protocol (iSCSI or DVS) depending on the product.
+Provisioning mechanism, base class
+The assumption is the artifact info contains information about the rootfs.
 '''
 
-from .baserootfs import BaseRootfsProvider
+from . import RootfsProvider
 
-class CPSS3Provider(BaseRootfsProvider):
-    PROTOCOL = 'craycps-s3'
+class BaseRootfsProvider(RootfsProvider):
+
+    PROTOCOL = None
+
+    @property
+    def provider_field(self):
+        return self.artifact_info['rootfs']
+
+    @property
+    def provider_field_id(self):
+        return self.artifact_info['rootfs_etag']
+
+    @property
+    def nmd_field(self):
+        """
+        The value to add to the kernel boot parameters for Node Memory Dump (NMD)
+        parameter.
+        """
+        fields = []
+        if self.provider_field:
+            fields.append("url=%s" % self.provider_field)
+        if self.provider_field_id:
+            fields.append("etag=%s" % self.provider_field_id)
+        if fields:
+            return "nmd_data={}".format(",".join(fields))
+        else:
+            return ''
