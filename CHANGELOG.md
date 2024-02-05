@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.3] - 2024-02-06
+### Changed
+- Removed unintended ability to update v2 session fields other than `status` and `components`.
+
 ## [2.10.2] - 2024-01-02
 ### Changed
 - Specify `~1.0.0` for the version of `cray-etcd-base` chart.

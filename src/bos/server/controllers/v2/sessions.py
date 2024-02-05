@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -37,6 +37,7 @@ from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
+from bos.server.models.v2_session_update import V2SessionUpdate as SessionUpdate  # noqa: E501
 from .boot_set import validate_boot_sets, BOOT_SET_ERROR
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
@@ -127,16 +128,27 @@ def patch_v2_session(session_id):
     Returns:
       Session Dictionary, Status Code
     """
+    if not connexion.request.is_json:
+        msg = "Post must be in JSON format"
+        LOGGER.error(msg)
+        return msg, 400
+
+    LOGGER.debug("connexion.request.is_json")
+    patch_data_json=connexion.request.get_json()
+    LOGGER.debug("type=%s", type(patch_data_json))
+    LOGGER.debug("Received: %s", patch_data_json)
+
+    # This call is just to ensure that the patch data
+    # coming in is valid per the API schema
+    SessionUpdate.from_dict(patch_data_json)  # noqa: E501
+
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
 
-    if not connexion.request.is_json:
-        return "Post must be in JSON format", 400
-    data = connexion.request.get_json()
-    component = DB.patch(session_key, data)
+    component = DB.patch(session_key, patch_data_json)
     return component, 200
 
 
