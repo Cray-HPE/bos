@@ -34,6 +34,13 @@ class ProviderFactory(object):
     a given agent instance.
     """
     def __init__(self, boot_set, artifact_info):
+        """
+        Inputs:
+            boot_set: A boot set from the session template data
+            artifact_info: The artifact summary from the boot_set.
+                           This is a dictionary containing keys which are boot artifacts (kernel, initrd, roots, and kernel boot parameters)
+                           the values are the paths to those boot artifacts in S3. It also contains the etags for the rootfs and kerenl boot parameters.
+        """
         self.boot_set = boot_set
         self.artifact_info = artifact_info
 

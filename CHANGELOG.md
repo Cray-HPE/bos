@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [2.14.0] - 2024-02-06
+### Added
+- Scalable Boot Provisioning Service (SBPS) support
+
+### Changed
+- Removed unintended ability to update v2 session fields other than `status` and `components`.
+
 ## [2.13.0] - 2024-01-10
 ### Fixed
 - Fix a broken build caused by PEP-668. Pin Alpine version to 3. This is less restrictive.

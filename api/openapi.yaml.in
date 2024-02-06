@@ -1268,6 +1268,24 @@ components:
         status:
           $ref: '#/components/schemas/V2SessionStatus'
       additionalProperties: false
+    V2SessionUpdate:
+      description: |
+        A Session update object
+
+        ## Link Relationships
+
+        * self : The Session object
+      type: object
+      properties:
+        components:
+          type: string
+          description: |
+            A comma-separated list of nodes, representing the initial list of nodes
+            the Session should operate against.  The list will remain even if
+            other Sessions have taken over management of the nodes.
+        status:
+          $ref: '#/components/schemas/V2SessionStatus'
+      additionalProperties: false
     V2SessionArray:
       description: An array of Sessions.
       type: array
@@ -1674,7 +1692,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/V2Session'
+            $ref: '#/components/schemas/V2SessionUpdate'
     V2applyStagedRequest:
       description: A list of xnames that should have their staged Session applied.
       required: true
@@ -2611,8 +2629,10 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
     patch:
-      summary: Update a single Session
-      description: Update the state for a given Session in the BOS database
+      summary: Update status of a single Session
+      description: |
+        Update the state for a given Session in the BOS database.
+        This is intended only for internal use by the BOS service.
       tags:
         - v2
         - sessions

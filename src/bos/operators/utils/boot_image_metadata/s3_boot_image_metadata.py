@@ -88,10 +88,11 @@ class S3BootImageMetaData(BootImageMetaData):
         Get the kernel object
         As an example, the object looks like this
         {'link': {'etag': 'dcaa006fdd460586e62f9ec44e7f61cf',
-                               'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/boot_parameters',
-                               'type': 's3'},
-                      'md5': 'dcaa006fdd460586e62f9ec44e7f61cf',
-                      'type': 'application/vnd.cray.image.parameters.boot'}
+                  'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/kernel',
+                  'type': 's3'},
+         'md5': 'dcaa006fdd460586e62f9ec44e7f61cf',
+         'type': 'application/vnd.cray.image.parameters.boot'
+        }
         """
         return self.boot_artifacts.kernel
 
@@ -101,10 +102,11 @@ class S3BootImageMetaData(BootImageMetaData):
         Get the initrd object
         As an example, the object looks like this
         {'link': {'etag': 'be2927a765c88558370ee1c5edf1c50c-3',
-                      'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/initrd',
-                      'type': 's3'},
-             'md5': 'aa69151d7fe8dcb66d74cbc05ef3e7cc',
-             'type': 'application/vnd.cray.image.initrd'}
+                  'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/initrd',
+                  'type': 's3'},
+         'md5': 'aa69151d7fe8dcb66d74cbc05ef3e7cc',
+         'type': 'application/vnd.cray.image.initrd'
+        }
         """
         return self.boot_artifacts.initrd
 
@@ -114,10 +116,11 @@ class S3BootImageMetaData(BootImageMetaData):
         Get the boot parameters object
         As an example, the object looks like this
         {'link': {'etag': 'dcaa006fdd460586e62f9ec44e7f61cf',
-                               'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/boot_parameters',
-                               'type': 's3'},
-                      'md5': 'dcaa006fdd460586e62f9ec44e7f61cf',
-                      'type': 'application/vnd.cray.image.parameters.boot'}
+                  'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/boot_parameters',
+                  'type': 's3'},
+         'md5': 'dcaa006fdd460586e62f9ec44e7f61cf',
+         'type': 'application/vnd.cray.image.parameters.boot'
+        }
         """
         return self.boot_artifacts.boot_parameters
 
@@ -127,10 +130,11 @@ class S3BootImageMetaData(BootImageMetaData):
         Get the rootfs object
         As an example, the object looks like this
         {'link': {'etag': 'f04af5f34635ae7c507322985e60c00c-131',
-                      'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/rootfs',
-                      'type': 's3'},
-             'md5': 'e7d60fdcc8a2617b872a12fcf76f9d53',
-             'type': 'application/vnd.cray.image.rootfs.squashfs'}
+                  'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/rootfs',
+                  'type': 's3'},
+         'md5': 'e7d60fdcc8a2617b872a12fcf76f9d53',
+         'type': 'application/vnd.cray.image.rootfs.squashfs'
+        }
         """
         return self.boot_artifacts.rootfs
 
