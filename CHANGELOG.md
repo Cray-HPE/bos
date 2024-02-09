@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Updated API spec to reflect the actual API behavior: a component filter must have exactly one
+  property specified (`session` or `ids`), but not both.
+- Modified API server for `v2/components`:
+  - Add minor debug logging to match what is done in `v2/sessions` methods
+  - Validate incoming component put/patch requests against the schema
+  - Gracefully handle the case where a components filter includes nonexistent component IDs
+    (instead of returning with a 500 internal server error)
 
 ## [2.14.0] - 2024-02-06
 ### Added

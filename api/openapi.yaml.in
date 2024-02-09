@@ -225,6 +225,10 @@ components:
       type: string
       description: An empty string value.
       enum: [ '' ]
+    EmptyStringNullable:
+      type: string
+      description: An empty string value.
+      enum: [ '' ]
     EnableCfs:
       type: boolean
       description: |
@@ -1528,10 +1532,9 @@ components:
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
-    V2ComponentsFilter:
+    V2ComponentsFilterByIds:
       description: |
-        Information for patching multiple Components.
-        If a Session name is specified, then all Components part of this Session will be patched.
+        Information for patching multiple Components by listing their IDs.
       type: object
       properties:
         ids:
@@ -1543,8 +1546,23 @@ components:
 
             This restriction is not enforced in this version of BOS, but it is
             targeted to start being enforced in an upcoming BOS version.
+          minLength: 1
+        session:
+          $ref: '#/components/schemas/EmptyStringNullable'
+      required: [ids]
+      additionalProperties: false
+    V2ComponentsFilterBySession:
+      description: |
+        Information for patching multiple Components by Session name.
+        All Components part of this Session will be patched.
+      type: object
+      properties:
+        ids:
+          $ref: '#/components/schemas/EmptyStringNullable'
         session:
           $ref: '#/components/schemas/V2SessionName'
+      required: [session]
+      additionalProperties: false
     V2ComponentsUpdate:
       description: Information for patching multiple Components.
       type: object
@@ -1552,8 +1570,11 @@ components:
         patch:
           $ref: '#/components/schemas/V2Component'
         filters:
-          $ref: '#/components/schemas/V2ComponentsFilter'
+          oneOf:
+            - $ref: '#/components/schemas/V2ComponentsFilterByIds'
+            - $ref: '#/components/schemas/V2ComponentsFilterBySession'
       required: [patch, filters]
+      additionalProperties: false
     V2ApplyStagedComponents:
       description: |
         A list of Components that should have their staged Session applied.
