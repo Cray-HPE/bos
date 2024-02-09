@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -30,6 +30,9 @@ from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_B
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
+from bos.server.models.v2_component import V2Component as Component  # noqa: E501
+from bos.server.models.v2_component_array import V2ComponentArray as ComponentArray  # noqa: E501
+from bos.server.models.v2_components_update import V2ComponentsUpdate as ComponentsUpdate  # noqa: E501
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.components')
 DB = dbutils.get_wrapper(db='components')
@@ -156,16 +159,34 @@ def _matches_filter(data, enabled, session, staged_session, phase, status):
 def put_v2_components():
     """Used by the PUT /components API operation"""
     LOGGER.debug("PUT /components invoked put_components")
+    if not connexion.request.is_json:
+        msg = "Must be in JSON format"
+        LOGGER.error(msg)
+        return msg, 400
+
+    LOGGER.debug("connexion.request.is_json")
+    data=connexion.request.get_json()
+    LOGGER.debug("type=%s", type(data))
+    LOGGER.debug("Received: %s", data)
+
     try:
-        data = connexion.request.get_json()
-        components = []
-        for component_data in data:
-            component_id = component_data['id']
-            components.append((component_id, component_data))
+        # This call is just to ensure that the data
+        # coming in is valid per the API schema
+        ComponentArray.from_dict(data)  # noqa: E501
     except Exception as err:
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        msg="Provided data does not follow API spec"
+        LOGGER.exception(msg)
+        return connexion.problem(status=400, title=msg,detail=str(err))
+
+    components = []
+    for component_data in data:
+        try:
+            component_id = component_data['id']
+        except KeyError:
+            return connexion.problem(
+                status=400, title="Required field missing.",
+                detail="At least one component is missing the required 'id' field")
+        components.append((component_id, component_data))
     response = []
     for component_id, component_data in components:
         component_data = _set_auto_fields(component_data)
@@ -178,15 +199,40 @@ def put_v2_components():
 def patch_v2_components():
     """Used by the PATCH /components API operation"""
     LOGGER.debug("PATCH /components invoked patch_components")
-    data = connexion.request.get_json()
+    if not connexion.request.is_json:
+        msg = "Must be in JSON format"
+        LOGGER.error(msg)
+        return msg, 400
+
+    LOGGER.debug("connexion.request.is_json")
+    data=connexion.request.get_json()
+    LOGGER.debug("type=%s", type(data))
+    LOGGER.debug("Received: %s", data)
+
     if type(data) == list:
+        try:
+            # This call is just to ensure that the data
+            # coming in is valid per the API schema
+            ComponentArray.from_dict(data)  # noqa: E501
+        except Exception as err:
+            msg="Provided data does not follow API spec"
+            LOGGER.exception(msg)
+            return connexion.problem(status=400, title=msg,detail=str(err))
         return patch_v2_components_list(data)
     elif type(data) == dict:
+        try:
+            # This call is just to ensure that the data
+            # coming in is valid per the API schema
+            ComponentsUpdate.from_dict(data)  # noqa: E501
+        except Exception as err:
+            msg="Provided data does not follow API spec"
+            LOGGER.exception(msg)
+            return connexion.problem(status=400, title=msg,detail=str(err))
         return patch_v2_components_dict(data)
-    else:
-        return connexion.problem(
-           status=400, title="Error parsing the data provided.",
-           detail="Unexpected data type {}".format(str(type(data))))
+
+    return connexion.problem(
+        status=400, title="Error parsing the data provided.",
+        detail="Unexpected data type {}".format(str(type(data))))
 
 
 def patch_v2_components_list(data):
@@ -227,18 +273,23 @@ def patch_v2_components_dict(data):
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
+        # Make sure all of the components exist and belong to this tenant (if any)
+        for component_id in id_list:
+            if component_id not in DB or not _is_valid_tenant_component(component_id):
+                return connexion.problem(
+                    status=404, title="Component not found.",
+                    detail="Component {} could not be found".format(component_id))
     elif session:
-        id_list = [component["id"] for component in get_v2_components_data(session=session)]
+        id_list = [component["id"] for component in get_v2_components_data(session=session, tenant=get_tenant_from_header())]
     else:
         return connexion.problem(
-            status=400, title="One filter must be provided.",
-            detail="Only one filter may be provided.")
+            status=400, title="Exactly one filter must be provided.",
+            detail="Exactly one filter may be provided.")
     response = []
     patch = data.get("patch")
     if "id" in patch:
         del patch["id"]
     patch = _set_auto_fields(patch)
-    id_list, _ = _apply_tenant_limit(id_list)
     for component_id in id_list:
         response.append(DB.patch(component_id, patch, _update_handler))
     return response, 200
@@ -263,12 +314,24 @@ def get_v2_component(component_id):
 def put_v2_component(component_id):
     """Used by the PUT /components/{component_id} API operation"""
     LOGGER.debug("PUT /components/id invoked put_component")
+    if not connexion.request.is_json:
+        msg = "Must be in JSON format"
+        LOGGER.error(msg)
+        return msg, 400
+
+    LOGGER.debug("connexion.request.is_json")
+    data=connexion.request.get_json()
+    LOGGER.debug("type=%s", type(data))
+    LOGGER.debug("Received: %s", data)
+
     try:
-        data = connexion.request.get_json()
+        # This call is just to ensure that the data
+        # coming in is valid per the API schema
+        Component.from_dict(data)  # noqa: E501
     except Exception as err:
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        msg="Provided data does not follow API spec"
+        LOGGER.exception(msg)
+        return connexion.problem(status=400, title=msg,detail=str(err))
     data['id'] = component_id
     data = _set_auto_fields(data)
     return DB.put(component_id, data), 200
@@ -279,16 +342,29 @@ def put_v2_component(component_id):
 def patch_v2_component(component_id):
     """Used by the PATCH /components/{component_id} API operation"""
     LOGGER.debug("PATCH /components/id invoked patch_component")
+    if not connexion.request.is_json:
+        msg = "Must be in JSON format"
+        LOGGER.error(msg)
+        return msg, 400
+
+    LOGGER.debug("connexion.request.is_json")
+    data=connexion.request.get_json()
+    LOGGER.debug("type=%s", type(data))
+    LOGGER.debug("Received: %s", data)
+
+    try:
+        # This call is just to ensure that the data
+        # coming in is valid per the API schema
+        Component.from_dict(data)  # noqa: E501
+    except Exception as err:
+        msg="Provided data does not follow API spec"
+        LOGGER.exception(msg)
+        return connexion.problem(status=400, title=msg,detail=str(err))
+
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
-    try:
-        data = connexion.request.get_json()
-    except Exception as err:
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
     if "actual_state" in data and not validate_actual_state_change_is_allowed(component_id):
         return connexion.problem(
             status=409, title="Actual state can not be updated.",
