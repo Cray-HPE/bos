@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.5] - 2024-03-04
+### Fixed
+- Corrected minor errors in a couple description fields in API spec (no functional impact)
+
 ## [2.10.4] - 2024-02-13
 ### Changed
 - Updated API spec to reflect the actual API behavior: a component filter must have exactly one
