@@ -1411,7 +1411,7 @@ it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
       additionalProperties: false
     V2ComponentActualState:
       description: |
-        The desired boot artifacts and configuration for a component
+        The actual boot artifacts and configuration for a component
       type: object
       properties:
         boot_artifacts:
@@ -1452,7 +1452,8 @@ it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
       additionalProperties: false
     V2ComponentStagedState:
       description: |
-        The desired boot artifacts and configuration for a component
+        The staged boot artifacts and configuration for a component. Optionally, a session
+        may be set which can be triggered at a later time against this component.
       type: object
       properties:
         boot_artifacts:
