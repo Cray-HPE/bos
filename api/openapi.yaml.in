@@ -1,5 +1,5 @@
 # Cray Boot Orchestration Service (BOS) API Specification
-openapi: "3.0.2"
+openapi: "3.1.0"
 
 info:
   title: "Boot Orchestration Service"
@@ -398,8 +398,10 @@ components:
             * Boot Set names must begin and end with a letter or digit.
           minProperties: 1
           maxProperties: 127
-          additionalProperties:
-            $ref: '#/components/schemas/V2BootSet'
+          patternProperties:
+            '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$':
+              $ref: '#/components/schemas/V2BootSet'
+          additionalProperties: false
         links:
           $ref: '#/components/schemas/LinkListReadOnly'
       additionalProperties: false
