@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.15.1] - 2024-03-04
+
 ### Fixed
 - Corrected minor errors in a couple description fields in API spec (no functional impact)
 
