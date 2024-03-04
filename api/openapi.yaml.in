@@ -1403,7 +1403,7 @@ components:
       readOnly: true
     V2ComponentActualState:
       description: |
-        The desired boot artifacts and configuration for a Component
+        The actual boot artifacts and configuration for a Component
       type: object
       properties:
         boot_artifacts:
@@ -1429,7 +1429,7 @@ components:
       additionalProperties: false
     V2ComponentStagedState:
       description: |
-        The desired boot artifacts and configuration for a Component. Optionally, a Session
+        The staged boot artifacts and configuration for a Component. Optionally, a Session
         may be set which can be triggered at a later time against this Component.
       type: object
       properties:
