@@ -32,40 +32,13 @@ import bos.server.redis_db_utils as dbutils
 
 
 LOGGER = logging.getLogger('bos.server.migration')
-BASEKEY = "/sessionTemplate"
 
-PROTOCOL = 'http'
-SERVICE_NAME = 'cray-bos'
 
 def MissingName():
     """
     The session template's name is missing
     """
     pass
-
-
-def pod_ip():
-    """
-    Find the IP address for the pod that corresponds to the correct labels;
-    specifically 'cray-bos' and the version number of this version of BOS.
-    """
-    pod_ip = None
-    config.load_incluster_config()
-    v1 = client.CoreV1Api()
-    # Find the correct version of the cray-bos pod
-    version = os.getenv('APP_VERSION')
-    if not version:
-        msg = "Could not determine application's version. Therefore could not contact the correct BOS pod. Aborting."
-        LOGGER.error(msg)
-        raise ValueError(msg)
-    pods = v1.list_namespaced_pod("services",
-                                  label_selector=f"app.kubernetes.io/name=cray-bos,app.kubernetes.io/version={version}")
-    # Get the pod's IP address
-    if pods and pods.items:
-        return pods.items[0].status.pod_ip
-    msg = "Could not determine BOS pod IP address. Aborting."
-    LOGGER.error(msg)
-    raise ValueError(msg)
 
 
 def convert_v1_to_v2(v1_st):
