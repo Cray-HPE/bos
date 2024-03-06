@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -34,7 +34,7 @@ LOGGER = logging.getLogger('bos.common.tenant_utils')
 TENANT_HEADER = "Cray-Tenant-Name"
 SERVICE_NAME = 'cray-tapms/v1alpha2'
 BASE_ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
-TENANT_ENDPOINT = "%s/tenants" % BASE_ENDPOINT ## CASMPET-6433 will change this from tenant to tenants
+TENANT_ENDPOINT = "%s/tenants" % BASE_ENDPOINT ## CASMPET-6433 changed this from tenant to tenants
 
 
 class InvalidTenantException(Exception):
@@ -125,17 +125,5 @@ def reject_invalid_tenant(func):
             return connexion.problem(
                 status=400, title="Invalid tenant",
                 detail=str("The provided tenant does not exist"))
-        return func(*args, **kwargs)
-    return wrapper
-
-
-def no_v1_multi_tenancy_support(func):
-    """Decorator for returning errors if the endpoint doesn't support multi-tenancy"""
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        if get_tenant_from_header():
-            return connexion.problem(
-                status=400, title="Multi-tenancy not supported",
-                detail=str("BOS v1 endpoints do not support multi-tenancy and a tenant was specified in the header"))
         return func(*args, **kwargs)
     return wrapper

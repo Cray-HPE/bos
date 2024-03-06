@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,20 +29,7 @@ import os
 
 import connexion
 
-from bos.server import specialized_encoder
 from bos.server.controllers.v2 import options
-
-### Shim so that old pickled records still work
-# Remove when v1 is removed
-import sys
-import bos.server.controllers as controllers
-import bos.server.models as models
-
-models.v1_generic_metadata.GenericMetadata = models.v1_generic_metadata.V1GenericMetadata
-sys.modules['bos.controllers'] = controllers
-sys.modules['bos.models'] = models
-sys.modules['bos.models.generic_metadata'] = models.v1_generic_metadata
-###
 
 LOGGER = logging.getLogger('bos.__main__')
 
@@ -56,7 +43,6 @@ def create_app():
     options._init()
 
     app = connexion.App(__name__, specification_dir='./openapi/')
-    app.app.json_encoder = specialized_encoder.MetadataEncoder
     app.add_api('openapi.yaml',
                 arguments={'title':
                            'Cray Boot Orchestration Service'},

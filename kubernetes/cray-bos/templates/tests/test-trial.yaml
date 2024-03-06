@@ -1,7 +1,7 @@
 {{/*
 MIT License
 
-(C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+(C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -61,4 +61,4 @@ spec:
             - --retry-delay 
             - "1"
             - --retry-connrefused
-            - http://cray-bos/v1/version
+            - http://cray-bos/v2/version

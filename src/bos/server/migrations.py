@@ -26,8 +26,6 @@ from kubernetes import client, config
 import logging
 import os
 
-from bos.server.controllers.v1.sessiontemplate import strip_v1_only_fields
-from bos.server.dbclient import BosEtcdClient
 from bos.common.utils import requests_retry_session
 from bos.common.tenant_utils import get_tenant_aware_key
 import bos.server.redis_db_utils as dbutils
@@ -116,51 +114,6 @@ def convert_v1_to_v2(v1_st):
     return v2_st, name
 
 
-def migrate_v1_etcd_to_v2_redis_session_templates():
-    """
-    Read the session templates out of the V1 etcd key/value store and
-    write them into the v2 Redis database.
-    Do not overwrite existing session templates.
-    Sanitize the V1 session templates so they conform to the V2 session
-    template standards.
-    """
-    pod_ip_addr = pod_ip()
-    pod_port = os.getenv('BOS_CONTAINER_PORT')
-    endpoint = f"{PROTOCOL}://{pod_ip_addr}:{pod_port}"
-    st_v2_endpoint = f"{endpoint}/v2/sessiontemplates"
-    st_v1_endpoint = f"{endpoint}/v1/sessiontemplate"
-    session = requests_retry_session()
-    with BosEtcdClient() as bec:
-        for session_template_byte_str, _meta in bec.get_prefix('{}/'.format(BASEKEY)):
-            v1_st = json.loads(session_template_byte_str.decode("utf-8"))
-            response = session.get("{}/{}".format(st_v1_endpoint, v1_st['name']))
-            if response.status_code == 200:
-                LOGGER.warning("Session template: '{}' already exists. Not "
-                               "overwriting.".format(v1_st['name']))
-            elif response.status_code == 404:
-                LOGGER.info("Migrating v1 session template: '{}' to v2 "
-                            "database".format(v1_st['name']))
-                try:
-                    v2_st, name = convert_v1_to_v2(v1_st)
-                except MissingName as err:
-                    if 'name' in v1_st:
-                        # We should probably never get here.
-                        LOGGER.error("Session template: '{}' was not migrated because it was missing its name.".format(v1_st['name']))
-                    else:
-                        LOGGER.error("A session template: '{}' was not migrated because it was missing its name.".format(name))
-                response = session.put("{}/{}".format(st_v2_endpoint, name),
-                                                      json=v2_st)
-                if not response.ok:
-                    LOGGER.error("Session template: '{}' was not migrated for v2 due "
-                                 "to error: {}".format(v1_st['name'],
-                                                       response.reason))
-                    LOGGER.error("Error specifics: {}".format(response.text))
-            else:
-                LOGGER.error("Session template: '{}' was not migrated due "
-                                 "to error: {}".format(v1_st['name'],
-                                                       response.reason))
-                LOGGER.error("Error specifics: {}".format(response.text))
-
 # Convert existing v1 session templates to v2 format
 def convert_v1_to_v2_session_templates():
     db=dbutils.get_wrapper(db='session_templates')
@@ -193,7 +146,6 @@ def migrate_to_tenant_aware_keys():
 
 
 def perform_migrations():
-    migrate_v1_etcd_to_v2_redis_session_templates()
     migrate_to_tenant_aware_keys()
     convert_v1_to_v2_session_templates()
 

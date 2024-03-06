@@ -7,9 +7,6 @@
 #   tag: "" (default = "latest")
 #   pullPolicy: "" (default = "IfNotPresent")
 
-boa_image:
-  repository: artifactory.algol60.net/csm-docker/stable/cray-boa
-  tag: 0.0.0-boa
 database:
   image:
     repository: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis
@@ -55,11 +52,6 @@ cray-service:
         value: bos
       - name: PROXY_PATH
         value: /apis/bos
-      - name: BOS_BOA_IMAGE
-        valueFrom:
-          configMapKeyRef:
-            name: boa-config
-            key: boa_image
       - name: S3_CREDENTIALS
         value: "bos-s3-credentials"
       - name: S3_PROTOCOL
@@ -76,34 +68,14 @@ cray-service:
           secretKeyRef:
             name: "bos-s3-credentials"
             key: secret_key
-      # Default configuration for the number of retries is
-      # 30 minutes (5s x 360 ~ 1800s or 30 minutes).
-      # This value is placed in the boa-job-template config map.
-      - name: NODE_STATE_CHECK_NUMBER_OF_RETRIES
-        value: "360"
-      # Time in seconds to wait before declaring a graceful shutdown a failure.
-      - name: GRACEFUL_SHUTDOWN_TIMEOUT
-        value: "300"
-      # Time in seconds to wait before declaring a forceful shutdown a failure.
-      - name: FORCEFUL_SHUTDOWN_TIMEOUT
-        value: "180"
-      # Time in seconds to wait before initially querying the component for its status.
-      # This gives the component time to 'settle'.
-      - name: GRACEFUL_SHUTDOWN_PREWAIT
-        value: "20"
-      # Time in seconds to wait before re-checking the power status.
-      - name: POWER_STATUS_FREQUENCY
-        value: "10"
       - name: PYTHONPATH
         value: "/app/lib/server"
       volumeMounts:
       - name: ca-vol
         mountPath: /mnt/ca-vol
-      - name: job-template
-        mountPath: /mnt/bos/job_templates/
       livenessProbe:
         httpGet:
-          path: /v1/version
+          path: /v2/version
           port: 9000
         initialDelaySeconds: 10
         periodSeconds: 60
@@ -111,7 +83,7 @@ cray-service:
         failureThreshold: 5
       readinessProbe:
         httpGet:
-          path: /v1/healthz
+          path: /v2/healthz
           port: 9000
         periodSeconds: 60
         timeoutSeconds: 10
@@ -128,10 +100,6 @@ cray-service:
       name: ca-vol
       configMap:
         name: cray-configmap-ca-public-key
-    job-template:
-      name: job-template
-      configMap:
-        name: boa-job-template
   affinity:
     podAntiAffinity:
       preferredDuringSchedulingIgnoredDuringExecution:
@@ -149,50 +117,6 @@ cray-service:
     enabled: true
     prefix: /apis/bos
     uri: /
-  etcdWaitContainer: true
-
-cray-etcd-base:
-  nameOverride: cray-bos
-  etcd:
-    enabled: true
-    fullnameOverride: "cray-bos-bitnami-etcd"
-    persistence:
-      storage: 8Gi
-    extraEnvVars:
-      - name: ETCD_HEARTBEAT_INTERVAL
-        value: "4200"
-      - name: ETCD_ELECTION_TIMEOUT
-        value: "21000"
-      - name: ETCD_MAX_SNAPSHOTS
-        value: "1"
-      - name: ETCD_QUOTA_BACKEND_BYTES
-        value: "10737418240"
-      - name: ETCD_SNAPSHOT_COUNT
-        value: "5000000"
-      - name: ETCD_SNAPSHOT_HISTORY_LIMIT
-        value: "24"
-      - name: ETCD_DISABLE_PRESTOP
-        value: "yes"
-    autoCompactionMode: revision
-    autoCompactionRetention: "100000"
-    extraVolumes:
-    - configMap:
-        defaultMode: 420
-        name: cray-bos-bitnami-etcd-config
-      name: etcd-config
-    resources:
-      limits:
-        cpu: 4
-        memory: 8Gi
-      requests:
-        cpu: 10m
-        memory: 64Mi
-    disasterRecovery:
-      cronjob:
-        snapshotsDir: "/snapshots/cray-bos-bitnami-etcd"
-        schedule: "0 */1 * * *"
-        historyLimit: 1
-        snapshotHistoryLimit: 24
 
 deploymentDefaults:
   service:
