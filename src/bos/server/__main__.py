@@ -30,6 +30,7 @@ import os
 import connexion
 
 from bos.server.controllers.v2 import options
+from bos.server.encoder import JSONEncoder
 
 LOGGER = logging.getLogger('bos.__main__')
 
@@ -43,6 +44,7 @@ def create_app():
     options._init()
 
     app = connexion.App(__name__, specification_dir='./openapi/')
+    app.app.json_encoder = JSONEncoder
     app.add_api('openapi.yaml',
                 arguments={'title':
                            'Cray Boot Orchestration Service'},
