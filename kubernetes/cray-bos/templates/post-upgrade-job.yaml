@@ -56,8 +56,8 @@ spec:
         runAsNonRoot: true
         runAsUser: 65534
         runAsGroup: 65534
-
-      initContainers:
+      initContainers: []
+      containers:
       - name: bos-migrations
         image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}:{{ .Chart.AppVersion}}
         command:
