@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -33,6 +33,7 @@ COMPONENTS_ENDPOINT = "%s/components" % BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.cfs')
 
+GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
 
 
@@ -57,6 +58,17 @@ def patch_components(data, session=None):
     except HTTPError as err:
         LOGGER.error("Failed asking CFS to configure nodes: %s", err)
         raise
+
+
+def get_components_from_id_list(id_list):
+    session = requests_retry_session()
+    component_list = []
+    while id_list:
+        next_batch = id_list[:GET_BATCH_SIZE]
+        next_comps = get_components(session=session, ids=','.join(next_batch))
+        component_list.extend(next_comps)
+        id_list = id_list[GET_BATCH_SIZE:]
+    return component_list
 
 
 def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False):

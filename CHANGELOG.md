@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.29] - 03-07-2024
+### Fixed
+- Break up large CFS component queries to avoid errors
+
 ## [2.0.28] - 03-04-2024
 ### Fixed
 - Corrected minor errors in a couple description fields in API spec (no functional impact)
