@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -48,7 +48,7 @@ def MissingName():
 
 def pod_ip():
     """
-    Find the IP address for the pod that corresponds to the correct the labels,
+    Find the IP address for the pod that corresponds to the correct labels;
     specifically 'cray-bos' and the version number of this version of BOS.
     """
     pod_ip = None
