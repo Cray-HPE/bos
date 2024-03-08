@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.15.3] - 2024-03-08
+### Changed
+- Reduce superfluous S3 calls during BOSv2 session creation.
+
 ## [2.15.2] - 2024-03-07
 ### Fixed
 - Break up large CFS component queries to avoid errors
