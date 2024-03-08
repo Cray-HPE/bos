@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,6 +22,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+import copy
 import logging
 from botocore.exceptions import ClientError
 from typing import Set
@@ -118,11 +119,18 @@ class Session:
     def _setup_components(self):
         all_component_ids = []
         data = []
+        stage = self.session_data.get("stage", False)
         try:
             for _, boot_set in self.template.get('boot_sets', {}).items():
                 components = self._get_boot_set_component_list(boot_set)
+                if not components:
+                    continue
+                if stage:
+                    state = self._generate_desired_state(boot_set, staged=True)
+                else:
+                    state = self._generate_desired_state(boot_set)
                 for component_id in components:
-                    data.append(self._operate(component_id, boot_set))
+                    data.append(self._operate(component_id, copy.deepcopy(state)))
                 all_component_ids += components
             if not all_component_ids:
                 raise SessionSetupException("No nodes were found to act upon.")
@@ -246,14 +254,14 @@ class Session:
         logger('Session {}: {}'.format(self.name, message))
 
     # Operations
-    def _operate(self, component_id, boot_set):
+    def _operate(self, component_id, state):
         stage = self.session_data.get("stage", False)
         data = {"id": component_id}
         if stage:
-            data["staged_state"] = self._generate_desired_state(boot_set, staged=True)
+            data["staged_state"] = state
             data["staged_state"]["session"] = self.name
         else:
-            data["desired_state"] = self._generate_desired_state(boot_set)
+            data["desired_state"] = state
             if self.operation_type == "reboot" :
                 data["actual_state"] = EMPTY_ACTUAL_STATE
             data["session"] = self.name
