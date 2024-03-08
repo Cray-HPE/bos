@@ -33,7 +33,7 @@ COMPONENTS_ENDPOINT = "%s/components" % BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.cfs')
 
-GET_BATCH_SIZE = 200
+GET_BATCH_SIZE = 1
 PATCH_BATCH_SIZE = 1000
 
 
@@ -63,11 +63,15 @@ def patch_components(data, session=None):
 def get_components_from_id_list(id_list):
     session = requests_retry_session()
     component_list = []
+    count = 1
+    id_count = len(id_list)
     while id_list:
         next_batch = id_list[:GET_BATCH_SIZE]
+        LOGGER.debug("get_components_from_id_list: Request 1: %d / %d", len(next_batch), id_count)
         next_comps = get_components(session=session, ids=','.join(next_batch))
         component_list.extend(next_comps)
         id_list = id_list[GET_BATCH_SIZE:]
+        count+=1
     return component_list
 
 
