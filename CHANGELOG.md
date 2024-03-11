@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - Update base operator to handle case where all nodes to act on have exceeded their retry limit
+- Fix return value of CAPMC client power function when no nodes specified
 
 ## [2.0.30] - 03-08-2024
 ### Changed
