@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -386,7 +386,9 @@ def power(nodes: List, state: str, force: bool = True, session = None,
     """
     if not nodes:
         LOGGER.warning("power called without nodes; returning without action.")
-        return set(), {}
+        # Instantiating this with an empty dictionary is the equivalent of reporting
+        # no errors
+        return CapmcXnameOnOffReturnedError({})
 
     valid_states = ["off", "on"]
     state = state.lower()
