@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,7 +24,6 @@
 # Cray-provided base controllers for the Boot Orchestration Service
 
 
-from bos.server.controllers.v1 import base as v1_base
 from bos.server.controllers.v2 import base as v2_base
 
 import logging
@@ -35,7 +34,6 @@ def root_get():
     """ Get a list of supported versions """
     LOGGER.info('in get_versions')
     versions = [
-        v1_base.calc_version(details=False),
-        v2_base.calc_version(details=False),
+        v2_base.calc_version(details=False)
     ]
     return versions, 200

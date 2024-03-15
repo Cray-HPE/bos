@@ -27,7 +27,6 @@ nodes (Node Personalization) or Images (Image Customization).
   * Boot -- Boot nodes that are off
   * Reboot -- Gracefully power down nodes that are on and then power them back up
   * Shutdown -- Gracefully power down nodes that are on
-  * Reconfigure -- Reconfigure the nodes using the Configuration Framework Service (CFS)  (Currently, not supported.)
 * Boot Set -- A collection of nodes that you want to perform an operation upon.  It contains
   * A list of nodes
   * The following applies to booting or rebooting:
@@ -40,9 +39,7 @@ nodes (Node Personalization) or Images (Image Customization).
   * `boot_sets`: One or more Boot Sets as described above
   * `enable_cfs`: Whether to enable the Configuration Framework Service (CFS); Choices: true/false
   * cfs: The configuration framework service configuration options to use for all boot sets that don't already define their own.
-* Session -- Performs an Operation (action) on a Session Template.  The creation of
-  a Session results in the creation of one or more Kubernetes BOA jobs which interact
-  with other Shasta subsystems to perform the requested operation.
+* Session -- Performs an Operation (action) on a Session Template.
 
 ## Launching a Boot Session
 
@@ -147,17 +144,6 @@ To manually update the server code into your local checkout, run the following c
 $ cd $REPO
 $ ./regenerate_server.sh
 ```
-
-## Dependency: cray-boa
-
-`cray-bos` uses the `cray-boa` image built by the [`boa`](https://github.com/Cray-HPE/boa) repository.
-We specify which major and minor version of the image we want with the 
-[`update_external_versions.conf`](update_external_versions.conf) file.
-At build time the [`runBuildPrep.sh`](runBuildPrep.sh) script calls a utility
-which finds the latest version with that major and minor number.
-
-When creating a new release branch, be sure to update this file to specify the
-desired major and minor number of the image for the new release.
 
 ## Build Helpers
 
