@@ -92,7 +92,7 @@ CMD [ "./docker_api_test_entry.sh" ]
 FROM base as intermediate
 WORKDIR /app
 EXPOSE 9000
-RUN pip3 install --no-cache-dir uWSGI
+RUN apk add --no-cache uwsgi uwsgi-python3
 COPY config/uwsgi.ini ./
 ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 
