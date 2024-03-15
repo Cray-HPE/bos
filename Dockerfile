@@ -94,9 +94,8 @@ WORKDIR /app
 EXPOSE 9000
 RUN apk add --no-cache uwsgi uwsgi-python3
 RUN find /usr -type f -name \*plugin\* -print
-COPY config/uwsgi.ini ./
-RUN sh -c "find /app/venv -type d -name site-packages | xargs -I {} sed -i 's#^pythonpath=set-by-dockerfile$#pythonpath={}#' /app/uwsgi.ini"
-RUN cat /app/uwsgi.ini
+COPY config/uwsgi.ini config/update_uwsgi_ini.sh ./
+RUN ./update_uwsgi_ini.sh
 ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 
 # Debug image
