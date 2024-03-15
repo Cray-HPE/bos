@@ -62,18 +62,15 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
 ENV VIRTUAL_ENV=/app/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip3 install --no-cache-dir -U pip
+RUN pip3 install --no-cache-dir -U pip -c constraints.txt
 RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
-RUN cd lib && pip3 install --no-cache-dir .
+RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt
 
-# Testing image
+# Base testing image
 FROM base as testing
 WORKDIR /app
-COPY docker_test_entry.sh .
 COPY test-requirements.txt .
-RUN apk add --no-cache --repository https://arti.hpc.amslabs.hpecorp.net/artifactory/mirror-alpine/edge/testing/ etcd etcd-ctl
 RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && pip3 install --no-cache-dir -r test-requirements.txt
-CMD [ "./docker_test_entry.sh" ]
 
 # Codestyle reporting
 FROM testing as codestyle
@@ -101,7 +98,7 @@ FROM intermediate as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app
 RUN apk add --no-cache busybox-extras && \
-    pip3 install --no-cache-dir rpdb
+    pip3 install --no-cache-dir rpdb -c constraints.txt
 
 # Application image
 FROM intermediate as application

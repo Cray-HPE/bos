@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,7 @@ from .lib import common
 @pytest.mark.smoke
 def test_get_version():
     r = common.create_session().get(
-        common.get_service_url('v1'))
+        common.get_service_url('v2'))
     assert r.status_code == 200, \
         "expected 200 received {} with data\n{}".format(
             r.status_code, r.text)
@@ -40,7 +40,7 @@ def test_get_version():
 
 def test_get_version_major_number():
     r = common.create_session().get(
-        common.get_service_url('v1'))
+        common.get_service_url('v2'))
     assert (r.status_code, int(r.json()['major'])) == (200, 1), \
         "expected (200 ,1) received ({},{})".format(r.status_code,
                                                     int(r.json()['major']))
@@ -48,7 +48,7 @@ def test_get_version_major_number():
 
 def test_get_version_minor_number():
     r = common.create_session().get(
-        common.get_service_url('v1'))
+        common.get_service_url('v2'))
     assert (r.status_code, int(r.json()['minor'])) == (200, 0), \
         "expected (200 ,0) received ({},{})".format(r.status_code,
                                                     int(r.json()['minor']))
@@ -56,7 +56,7 @@ def test_get_version_minor_number():
 
 def test_get_version_patch_number():
     r = common.create_session().get(
-        common.get_service_url('v1'))
+        common.get_service_url('v2'))
     assert (r.status_code, int(r.json()['patch'])) == (200, 0), \
         "expected (200 ,0) received ({},{})".format(r.status_code,
                                                     int(r.json()['patch']))
