@@ -1,7 +1,7 @@
 {{/*
 MIT License
 
-(C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+(C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -56,32 +56,7 @@ spec:
         runAsNonRoot: true
         runAsUser: 65534
         runAsGroup: 65534
-
-      initContainers:
-      - name: cray-bos-wait-for-etcd
-        image: artifactory.algol60.net/csm-docker/stable/docker-kubectl:1.19.15
-        command:
-          - /bin/sh
-          - -c
-          - |
-            while true; do
-              JOB_CONDITION="$(kubectl get jobs -n services -l app.kubernetes.io/name=cray-bos-wait-for-etcd -o jsonpath='{.items[0].status.conditions[0].type}')"
-              JOB_CONDITION_RC=$?
-              if [ $JOB_CONDITION_RC -eq 0 ]; then
-                if [ "$JOB_CONDITION" == 'Complete' ]; then
-                  echo "Completed"
-                  break
-                fi
-                echo "Waiting for the cray-bos-wait-for-etcd job in the services namespace to complete, current condition is $(kubectl get jobs -n services -l app.kubernetes.io/name=cray-bos-wait-for-etcd -o jsonpath='{.items[0].status}')"
-                sleep 3
-              elif [ $JOB_CONDITION_RC -ne 1 ]; then
-                echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , failing"
-                exit 1
-              else
-                echo "'kubectl get jobs' failed with exit code $JOB_CONDITION_RC , will retry"
-              sleep 3
-              fi
-            done
+      initContainers: []
       containers:
       - name: bos-migrations
         image: {{ index .Values "cray-service" "containers" "cray-bos" "image" "repository" }}:{{ .Chart.AppVersion}}

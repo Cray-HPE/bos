@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.0] - 2024-03-15
+### Dependencies
+- Use appropriate version of `kubernetes` Python module to match CSM 1.6 Kubernetes version
+
+### Removed
+- BOS v1
+
 ## [2.16.0] - 2024-03-15
 ### Changed
 - Install uWSGI using `apk` instead of `pip`; update uWSGI config file to point to Python virtualenv
