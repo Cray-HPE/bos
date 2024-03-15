@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.16.0] - 2024-03-15
+### Changed
+- Install uWSGI using `apk` instead of `pip`; update uWSGI config file to point to Python virtualenv
+
 ## [2.15.4] - 2024-03-12
 ### Fixed
 - Update base operator to handle case where all nodes to act on have exceeded their retry limit
