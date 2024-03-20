@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -50,8 +50,10 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
+    LOGGER.debug("GET /components with %d IDs specified", len(id_list))
     response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
                                       phase=phase, status=status)
+    LOGGER.debug("GET /components returning data on %d components", len(response))
     for component in response:
         del_timestamp(component)
     return response, 200
@@ -183,6 +185,7 @@ def patch_v2_components():
 
 def patch_v2_components_list(data):
     try:
+        LOGGER.debug("patch_v2_components_list: %d components specified", len(data))
         components = []
         for component_data in data:
             component_id = component_data['id']
@@ -219,8 +222,10 @@ def patch_v2_components_dict(data):
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
+        LOGGER.debug("patch_v2_components_dict: %d IDs specified", len(id_list))
     elif session:
         id_list = [component["id"] for component in get_v2_components_data(session=session)]
+        LOGGER.debug("patch_v2_components_dict: %d IDs found for specified session", len(id_list))
     else:
         return connexion.problem(
             status=400, title="One filter must be provided.",
