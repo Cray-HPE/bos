@@ -6,11 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.0.32] - 03-21-2024
 ### Fixed
 - Failed components are no longer reported in the session status phase percentages.
 - Components requiring phase updates are no longer reported in the session status phase percentages.
 - Return the correct object from HSM's get_components call when there are no nodes in the session.
 - Make the include_disabled option work as intended.
+
+### Changed
 - Improvements to BOS v2 debug logging.
 
 ## [2.0.31] - 03-12-2024
