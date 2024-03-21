@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -51,6 +51,7 @@ def get_v2_healthz():
 
     :rtype: Healthz
     """
+    LOGGER.debug("GET /v2/healthz invoked get_v2_healthz")
     return Healthz(
         db_status=_get_db_status(),
         api_status='ok',

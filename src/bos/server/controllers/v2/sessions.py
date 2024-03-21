@@ -58,6 +58,7 @@ def post_v2_session():  # noqa: E501
 
     :rtype: Session
     """
+    LOGGER.debug("POST /v2/sessions invoked post_v2_session")
     # -- Validation --
     if connexion.request.is_json:
         LOGGER.debug("connexion.request.is_json")
@@ -128,6 +129,7 @@ def patch_v2_session(session_id):
     Returns:
       Session Dictionary, Status Code
     """
+    LOGGER.debug("PATCH /v2/sessions/%s invoked patch_v2_session", session_id)
     if not connexion.request.is_json:
         msg = "Post must be in JSON format"
         LOGGER.error(msg)
@@ -161,6 +163,7 @@ def get_v2_session(session_id):  # noqa: E501
     Return:
       Session Dictionary, Status Code
     """
+    LOGGER.debug("GET /v2/sessions/%s invoked get_v2_session", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         return connexion.problem(
@@ -176,10 +179,12 @@ def get_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
 
     List all sessions
     """
-    LOGGER.info("Called get v2 sessions")
+    LOGGER.debug("GET /v2/sessions invoked get_v2_sessions with min_age=%s max_age=%s status=%s",
+                 min_age, max_age, status)
     response = _get_filtered_sessions(tenant=get_tenant_from_header(),
                                       min_age=min_age, max_age=max_age,
                                       status=status)
+    LOGGER.debug("get_v2_sessions returning %d sessions", len(response))
     return response, 200
 
 
@@ -189,6 +194,7 @@ def delete_v2_session(session_id):  # noqa: E501
 
     Delete the session by session id
     """
+    LOGGER.debug("DELETE /v2/sessions/%s invoked delete_v2_session", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         return connexion.problem(
@@ -201,7 +207,8 @@ def delete_v2_session(session_id):  # noqa: E501
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
-    LOGGER.info("Called delete v2 sessions")
+    LOGGER.debug("DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
+                 min_age, max_age, status)
     tenant = get_tenant_from_header()
     try:
         sessions = _get_filtered_sessions(tenant=tenant, min_age=min_age, max_age=max_age,
@@ -231,6 +238,7 @@ def get_v2_session_status(session_id):  # noqa: E501
     Return:
       Session Status Dictionary, Status Code
     """
+    LOGGER.debug("GET /v2/sessions/status/%s invoked get_v2_session_status", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         return connexion.problem(
@@ -252,6 +260,7 @@ def save_v2_session_status(session_id):  # noqa: E501
     Return:
       Session Status Dictionary, Status Code
     """
+    LOGGER.debug("POST /v2/sessions/status/%s invoked save_v2_session_status", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         return connexion.problem(

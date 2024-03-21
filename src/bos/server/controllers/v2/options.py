@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -72,7 +72,7 @@ def _init():
 @dbutils.redis_error_handler
 def get_v2_options():
     """Used by the GET /options API operation"""
-    LOGGER.debug("GET /options invoked get_options")
+    LOGGER.debug("GET /v2/options invoked get_v2_options")
     data = get_v2_options_data()
     data = _clean_options_data(data)
     return data, 200
@@ -112,7 +112,7 @@ def _check_defaults(data):
 @dbutils.redis_error_handler
 def patch_v2_options():
     """Used by the PATCH /options API operation"""
-    LOGGER.debug("PATCH /options invoked patch_options")
+    LOGGER.debug("PATCH /v2/options invoked patch_v2_options")
     try:
         data = connexion.request.get_json()
     except Exception as err:
