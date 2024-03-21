@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -70,6 +70,7 @@ class BaseBosEndpoint(object):
     def get_item(self, item_id):
         """Get information for a single BOS item"""
         url = self.base_url + '/' + item_id
+        LOGGER.debug("GET %s", url)
         response = self.session.get(url)
         response.raise_for_status()
         item = json.loads(response.text)
@@ -78,6 +79,7 @@ class BaseBosEndpoint(object):
     @log_call_errors
     def get_items(self, **kwargs):
         """Get information for all BOS items"""
+        LOGGER.debug("GET %s with params=%s", self.base_url, kwargs)
         response = self.session.get(self.base_url, params=kwargs)
         response.raise_for_status()
         items = json.loads(response.text)
@@ -87,6 +89,7 @@ class BaseBosEndpoint(object):
     def update_item(self, item_id, data):
         """Update information for a single BOS item"""
         url = self.base_url + '/' + item_id
+        LOGGER.debug("PATCH %s with body=%s", url, data)
         response = self.session.patch(url, json=data)
         response.raise_for_status()
         item = json.loads(response.text)
@@ -95,6 +98,7 @@ class BaseBosEndpoint(object):
     @log_call_errors
     def update_items(self, data):
         """Update information for multiple BOS items"""
+        LOGGER.debug("PATCH %s with body=%s", self.base_url, data)
         response = self.session.patch(self.base_url, json=data)
         response.raise_for_status()
         items = json.loads(response.text)
@@ -103,6 +107,7 @@ class BaseBosEndpoint(object):
     @log_call_errors
     def put_items(self, data):
         """Put information for multiple BOS Items"""
+        LOGGER.debug("PUT %s with body=%s", self.base_url, data)
         response = self.session.put(self.base_url, json=data)
         response.raise_for_status()
         items = json.loads(response.text)
@@ -111,6 +116,7 @@ class BaseBosEndpoint(object):
     @log_call_errors
     def delete_items(self, **kwargs):
         """Delete information for multiple BOS items"""
+        LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs)
         response.raise_for_status()
         if response.text:
@@ -129,6 +135,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
     def get_item(self, item_id, tenant):
         """Get information for a single BOS item"""
         url = self.base_url + '/' + item_id
+        LOGGER.debug("GET %s for tenant=%s", url, tenant)
         response = self.session.get(url, headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         item = json.loads(response.text)
@@ -139,8 +146,11 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         """Get information for all BOS items"""
         headers = None
         if "tenant" in kwargs:
-            headers = get_new_tenant_header(kwargs["tenant"])
-            del kwargs["tenant"]
+            tenant = kwargs.pop("tenant")
+            headers = get_new_tenant_header(tenant)
+            LOGGER.debug("GET %s for tenant=%s with params=%s", self.base_url, tenant, kwargs)
+        else:
+            LOGGER.debug("GET %s with params=%s", self.base_url, kwargs)
         response = self.session.get(self.base_url, params=kwargs, headers=headers)
         response.raise_for_status()
         items = json.loads(response.text)
@@ -150,6 +160,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
     def update_item(self, item_id, tenant, data):
         """Update information for a single BOS item"""
         url = self.base_url + '/' + item_id
+        LOGGER.debug("PATCH %s for tenant=%s with body=%s", url, tenant, data)
         response = self.session.patch(url, json=data, headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         item = json.loads(response.text)
@@ -158,6 +169,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
     @log_call_errors
     def update_items(self, tenant, data):
         """Update information for multiple BOS items"""
+        LOGGER.debug("PATCH %s for tenant=%s with body=%s", self.base_url, tenant, data)
         response = self.session.patch(self.base_url, json=data, headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         items = json.loads(response.text)
@@ -165,7 +177,8 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
 
     @log_call_errors
     def put_items(self, tenant, data):
-        """Put information for multiple BOS Items"""
+        """Put information for multiple BOS items"""
+        LOGGER.debug("PUT %s for tenant=%s with body=%s", self.base_url, tenant, data)
         response = self.session.put(self.base_url, json=data, headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         items = json.loads(response.text)
@@ -176,8 +189,11 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         """Delete information for multiple BOS items"""
         headers = None
         if "tenant" in kwargs:
-            headers = get_new_tenant_header(kwargs["tenant"])
-            del kwargs["tenant"]
+            tenant = kwargs.pop("tenant")
+            headers = get_new_tenant_header(tenant)
+            LOGGER.debug("DELETE %s for tenant=%s with params=%s", self.base_url, tenant, kwargs)
+        else:
+            LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs, headers=headers)
         response.raise_for_status()
         if response.text:

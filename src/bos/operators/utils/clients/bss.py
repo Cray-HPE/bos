@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -71,8 +71,11 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
                "kernel": kernel,
                "initrd": initrd}
 
+    LOGGER.debug("PUT %s for hosts %s", url, node_set)
     try:
         resp = session.put(url, data=json.dumps(payload), verify=False)
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
+                     resp.reason, resp.text)
         resp.raise_for_status()
         return resp
     except HTTPError as err:
