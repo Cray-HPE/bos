@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -78,10 +78,47 @@ def read_all_node_xnames():
         raise HWStateManagerException(ke) from ke
 
 
-def get_components(node_list, enabled=None):
-    """Get information for all list components HSM"""
+def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
+    """
+    Get information for all list components HSM
+
+    :return the HSM components
+    :rtype Dictionary containing a 'Components' key whose value is a list
+    containing each component, where each component is itself represented by a
+    dictionary.
+
+    Here is an example of the returned values.
+    {
+    "Components": [
+        {
+        "ID": "x3000c0s19b1n0",
+        "Type": "Node",
+        "State": "Ready",
+        "Flag": "OK",
+        "Enabled": true,
+        "Role": "Compute",
+        "NID": 1,
+        "NetType": "Sling",
+        "Arch": "X86",
+        "Class": "River"
+        },
+        {
+        "ID": "x3000c0s19b2n0",
+        "Type": "Node",
+        "State": "Ready",
+        "Flag": "OK",
+        "Enabled": true,
+        "Role": "Compute",
+        "NID": 1,
+        "NetType": "Sling",
+        "Arch": "X86",
+        "Class": "River"
+        }
+    ]
+    }
+    """
     if not node_list:
-        return []
+        return {'Components': []}
     session = requests_retry_session()
     try:
         payload = {'ComponentIDs': node_list}

@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -54,7 +54,7 @@ class ForcefulPowerOffOperator(PowerOperatorBase):
             BOSQuery(enabled=True, status=','.join([Status.power_off_forcefully_called,
                                                     Status.power_off_gracefully_called])),
             TimeSinceLastAction(seconds=options.max_power_off_wait_time),
-            HSMState(enabled=True),
+            HSMState(),
         ]
 
     def _my_power(self, component_ids):
