@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.1] - 2024-03-21
+### Changed
+- Improvements to BOS v2 debug logging.
+
 ## [2.17.0] - 2024-03-15
 ### Dependencies
 - Use appropriate version of `kubernetes` Python module to match CSM 1.6 Kubernetes version

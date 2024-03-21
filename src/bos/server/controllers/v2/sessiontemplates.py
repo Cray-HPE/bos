@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -77,11 +77,11 @@ def _sanitize_xnames(st_json):
 @reject_invalid_tenant
 @dbutils.redis_error_handler
 def put_v2_sessiontemplate(session_template_id):  # noqa: E501
-    """PUT /v2/sessiontemplate
+    """PUT /v2/sessiontemplates
 
     Creates a new session template. # noqa: E501
     """
-    LOGGER.debug("PUT /v2/sessiontemplate invoked put_sessiontemplate")
+    LOGGER.debug("PUT /v2/sessiontemplates/%s invoked put_v2_sessiontemplate", session_template_id)
     if connexion.request.is_json:
         LOGGER.debug("connexion.request.is_json")
         LOGGER.debug("type=%s", type(connexion.request.get_json()))
@@ -127,19 +127,20 @@ def get_v2_sessiontemplates():  # noqa: E501
 
     List all sessiontemplates
     """
-    LOGGER.debug("get_sessiontemplates: Fetching sessions.")
+    LOGGER.debug("GET /v2/sessiontemplates invoked get_v2_sessiontemplates")
     response = _get_filtered_templates(tenant=get_tenant_from_header())
+    LOGGER.debug("get_v2_sessiontemplates returning %d templates", len(response))
     return response, 200
 
 
 @dbutils.redis_error_handler
 def get_v2_sessiontemplate(session_template_id):
     """
-    GET /v2/sessiontemplate
+    GET /v2/sessiontemplates
 
     Get the session template by session template ID
     """
-    LOGGER.debug("get_sessiontemplate by ID: %s", session_template_id)  # noqa: E501
+    LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate", session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
         return connexion.problem(
@@ -156,17 +157,18 @@ def get_v2_sessiontemplatetemplate():
 
     Get the example session template
     """
+    LOGGER.debug("GET /v2/sessiontemplatetemplate invoked get_v2_sessiontemplatetemplate")
     return EXAMPLE_SESSION_TEMPLATE, 200
 
 
 @dbutils.redis_error_handler
 def delete_v2_sessiontemplate(session_template_id):
     """
-    DELETE /v2/sessiontemplate
+    DELETE /v2/sessiontemplates
 
     Delete the session template by session template ID
     """
-    LOGGER.debug("delete_sessiontemplate by ID: %s", session_template_id)
+    LOGGER.debug("DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate", session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
         return connexion.problem(
@@ -178,11 +180,11 @@ def delete_v2_sessiontemplate(session_template_id):
 @dbutils.redis_error_handler
 def patch_v2_sessiontemplate(session_template_id):
     """
-    PATCH /v2/sessiontemplate
+    PATCH /v2/sessiontemplates
 
     Patch the session template by session template ID
     """
-    LOGGER.debug("PATCH /v2/sessiontemplate invoked patch_sessiontemplate with ID: %s", session_template_id)
+    LOGGER.debug("PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate", session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
         return connexion.problem(
@@ -231,6 +233,7 @@ def validate_v2_sessiontemplate(session_template_id: str):
     Validate a V2 session template. Look for missing elements or errors that would prevent
     a session from being launched using this template.
     """
+    LOGGER.debug("GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate", session_template_id)
     data, status_code = get_v2_sessiontemplate(session_template_id)
 
     if status_code != 200:
