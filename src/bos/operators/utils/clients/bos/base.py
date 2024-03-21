@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -69,6 +69,7 @@ class BaseBosEndpoint(object):
         """Get information for a single BOS item"""
         url = self.base_url + '/' + item_id
         session = requests_retry_session()
+        LOGGER.debug("GET %s", url)
         response = session.get(url)
         response.raise_for_status()
         item = json.loads(response.text)
@@ -78,6 +79,7 @@ class BaseBosEndpoint(object):
     def get_items(self, **kwargs):
         """Get information for all BOS items"""
         session = requests_retry_session()
+        LOGGER.debug("GET %s with params=%s", self.base_url, kwargs)
         response = session.get(self.base_url, params=kwargs)
         response.raise_for_status()
         items = json.loads(response.text)
@@ -88,6 +90,7 @@ class BaseBosEndpoint(object):
         """Update information for a single BOS item"""
         url = self.base_url + '/' + item_id
         session = requests_retry_session()
+        LOGGER.debug("PATCH %s with body=%s", url, data)
         response = session.patch(url, json=data)
         response.raise_for_status()
         item = json.loads(response.text)
@@ -97,6 +100,7 @@ class BaseBosEndpoint(object):
     def update_items(self, data):
         """Update information for multiple BOS items"""
         session = requests_retry_session()
+        LOGGER.debug("PATCH %s with body=%s", self.base_url, data)
         response = session.patch(self.base_url, json=data)
         response.raise_for_status()
         items = json.loads(response.text)
@@ -106,6 +110,7 @@ class BaseBosEndpoint(object):
     def put_items(self, data):
         """Put information for multiple BOS Items"""
         session = requests_retry_session()
+        LOGGER.debug("PUT %s with body=%s", self.base_url, data)
         response = session.put(self.base_url, json=data)
         response.raise_for_status()
         items = json.loads(response.text)
@@ -115,6 +120,7 @@ class BaseBosEndpoint(object):
     def delete_items(self, **kwargs):
         """Delete information for multiple BOS items"""
         session = requests_retry_session()
+        LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = session.delete(self.base_url, params=kwargs)
         response.raise_for_status()
         if response.text:

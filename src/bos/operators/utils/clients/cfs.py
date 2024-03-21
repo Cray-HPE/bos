@@ -40,19 +40,27 @@ PATCH_BATCH_SIZE = 1000
 def get_components(session=None, **kwargs):
     if not session:
         session = requests_retry_session()
+    LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, kwargs)
     response = session.get(COMPONENTS_ENDPOINT, params=kwargs)
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, response.text)
     try:
         response.raise_for_status()
     except HTTPError as err:
         LOGGER.error("Failed getting nodes from cfs: %s", err)
         raise
-    return response.json()
+    component_list = response.json()
+    LOGGER.debug("Returning %d components from CFS", len(component_list))
+    return component_list
 
 
 def patch_components(data, session=None):
     if not session:
         session = requests_retry_session()
+    LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
     response = session.patch(COMPONENTS_ENDPOINT, json=data)
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, response.text)
     try:
         response.raise_for_status()
     except HTTPError as err:
@@ -61,6 +69,7 @@ def patch_components(data, session=None):
 
 
 def get_components_from_id_list(id_list):
+    LOGGER.debug("get_components_from_id_list called with %d IDs", len(id_list))
     session = requests_retry_session()
     component_list = []
     while id_list:
@@ -68,10 +77,14 @@ def get_components_from_id_list(id_list):
         next_comps = get_components(session=session, ids=','.join(next_batch))
         component_list.extend(next_comps)
         id_list = id_list[GET_BATCH_SIZE:]
+    LOGGER.debug("get_components_from_id_list returning a total of %d components from CFS",
+                 len(component_list))
     return component_list
 
 
 def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False):
+    LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
+                 " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
     session = requests_retry_session()
     data = []
     if not tags:
@@ -94,6 +107,8 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
 
 
 def set_cfs(components, enabled, clear_state=False):
+    LOGGER.debug("set_cfs called on %d components with enabled=%s clear_state=%s", len(components),
+                 enabled, clear_state)
     configurations = defaultdict(list)
     for component in components:
         config_name = component.get('desired_state', {}).get('configuration', '')

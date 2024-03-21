@@ -113,7 +113,7 @@ class BaseOperator(ABC):
         if not components:
             LOGGER.debug('Found 0 components that require action')
             return
-        LOGGER.info('Found {} components that require action'.format(len(components)))
+        LOGGER.info('Found %d components that require action', len(components))
         if self.retry_attempt_field:  # Only check for failed components if we track retries for this operator
             components = self._handle_failed_components(components)
             if not components:
@@ -192,6 +192,8 @@ class BaseOperator(ABC):
             if 'desired_state' in patch and 'session' not in patch:
                 raise MissingSessionData
             data.append(patch)
+        LOGGER.info('Found %d components that require updates', len(data))
+        LOGGER.debug(f'Updated components: {data}')
         self.bos_client.components.update_components(data)
 
     def _preset_last_action(self, components: List[dict]) -> None:
@@ -212,6 +214,8 @@ class BaseOperator(ABC):
                 }
                 patch['last_action'] = last_action_data
             data.append(patch)
+        LOGGER.info('Found %d components that require updates', len(data))
+        LOGGER.debug(f'Updated components: {data}')
         self.bos_client.components.update_components(data)
 
     def _update_database_for_failure(self, components: List[dict]) -> None:
@@ -227,6 +231,8 @@ class BaseOperator(ABC):
             if not component['error']:
                 patch['error'] = 'The retry limit has been hit for this component, but no services have reported specific errors'
             data.append(patch)
+        LOGGER.info('Found %d components that require updates', len(data))
+        LOGGER.debug(f'Updated components: {data}')
         self.bos_client.components.update_components(data)
 
 

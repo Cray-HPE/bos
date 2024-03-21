@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -75,8 +75,11 @@ def check_cpss3(session=None):
     """
     session = session or requests_retry_session()
     uri = os.path.join(ENDPOINT, 'contents')
+    LOGGER.debug("GET %s", uri)
     try:
         response = session.get(uri)
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                     response.reason, response.text)
         response.raise_for_status()
     except HTTPError as he:
         raise ServiceNotReady(he) from he

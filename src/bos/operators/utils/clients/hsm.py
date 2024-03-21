@@ -55,11 +55,14 @@ def read_all_node_xnames():
     """
     session = requests_retry_session()
     endpoint = '%s/State/Components/' % (BASE_ENDPOINT)
+    LOGGER.debug("GET %s", endpoint)
     try:
         response = session.get(endpoint)
     except ConnectionError as ce:
         LOGGER.error("Unable to contact HSM service: %s", ce)
         raise HWStateManagerException(ce) from ce
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, response.text)
     try:
         response.raise_for_status()
     except (HTTPError, MaxRetryError) as hpe:
@@ -124,7 +127,10 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
         payload = {'ComponentIDs': node_list}
         if enabled is not None:
             payload['enabled'] = [str(enabled)]
+        LOGGER.debug("POST %s with body=%s", ENDPOINT, payload)
         response = session.post(ENDPOINT, json=payload)
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                     response.reason, response.text)
         response.raise_for_status()
         components = json.loads(response.text)
     except (ConnectionError, MaxRetryError) as e:
@@ -217,7 +223,10 @@ class Inventory(object):
         if self._session is None:
             self._session = requests_retry_session()
         try:
+            LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
             response = self._session.get(url, params=params, verify=VERIFY)
+            LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                         response.reason, response.text)
             response.raise_for_status()
         except HTTPError as err:
             LOGGER.error("Failed to get '{}': {}".format(url, err))

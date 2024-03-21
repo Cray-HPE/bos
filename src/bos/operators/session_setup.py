@@ -70,7 +70,7 @@ class SessionSetupOperator(BaseOperator):
         sessions = self._get_pending_sessions()
         if not sessions:
             return
-        LOGGER.info('Found {} sessions that require action'.format(len(sessions)))
+        LOGGER.info('Found %d sessions that require action', len(sessions))
         inventory_cache = Inventory()
         for data in sessions:
             session = Session(data, inventory_cache, self.bos_client)
@@ -132,6 +132,8 @@ class Session:
         except Exception as err:
             raise SessionSetupException(err)
         else:
+            self._log(LOGGER.info, 'Found %d components that require updates', len(data))
+            self._log(LOGGER.debug, f'Updated components: {data}')
             self.bos_client.components.update_components(data)
         return list(set(all_component_ids))
 
@@ -205,8 +207,8 @@ class Session:
         sco._mark_session_complete(self.name)
         self._log(LOGGER.info, f'Session {self.name} has failed.')
 
-    def _log(self, logger, message):
-        logger('Session {}: {}'.format(self.name, message))
+    def _log(self, logger, message, *xargs):
+        logger('Session {}: {}'.format(self.name, message), *xargs)
 
     # Operations
     def _operate(self, component_id, state):
@@ -292,7 +294,8 @@ class Session:
         # Parameters from the image itself if the parameters exist.
         if (artifact_info.get('boot_parameters') is not None and
             artifact_info.get('boot_parameters_etag') is not None):
-            LOGGER.info("++ _get_s3_download_url %s with etag %s.",
+            self._log(LOGGER.info,
+                        "++ _get_s3_download_url %s with etag %s.",
                         artifact_info['boot_parameters'],
                         artifact_info['boot_parameters_etag'])
 
@@ -306,7 +309,7 @@ class Session:
                 if image_kernel_parameters:
                     boot_param_pieces.extend(image_kernel_parameters)
             except (ClientError, UnicodeDecodeError, S3ObjectNotFound) as error:
-                LOGGER.error("Unable to read file {}. Thus, no kernel boot parameters obtained "
+                self._log(LOGGER.error, "Unable to read file {}. Thus, no kernel boot parameters obtained "
                              "from image".format(artifact_info['boot_parameters']))
                 LOGGER.error(error)
                 raise
