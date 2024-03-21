@@ -46,7 +46,9 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
 
     Allows filtering using a comma separated list of ids.
     """
-    LOGGER.debug("GET /components invoked get_components")
+    LOGGER.debug("GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
+                 "staged_session=%s phase=%s status=%s", ids, enabled, session, staged_session,
+                 phase, status)
     id_list = []
     if ids:
         try:
@@ -56,8 +58,10 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
     tenant = get_tenant_from_header()
+    LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified", tenant, len(id_list))
     response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
                                       phase=phase, status=status, tenant=tenant)
+    LOGGER.debug("GET /v2/components returning data for tenant=%s on %d components", tenant, len(response))
     for component in response:
         del_timestamp(component)
     return response, 200
@@ -158,7 +162,7 @@ def _matches_filter(data, enabled, session, staged_session, phase, status):
 @dbutils.redis_error_handler
 def put_v2_components():
     """Used by the PUT /components API operation"""
-    LOGGER.debug("PUT /components invoked put_components")
+    LOGGER.debug("PUT /v2/components invoked put_v2_components")
     if not connexion.request.is_json:
         msg = "Must be in JSON format"
         LOGGER.error(msg)
@@ -198,7 +202,7 @@ def put_v2_components():
 @dbutils.redis_error_handler
 def patch_v2_components():
     """Used by the PATCH /components API operation"""
-    LOGGER.debug("PATCH /components invoked patch_components")
+    LOGGER.debug("PATCH /v2/components invoked patch_v2_components")
     if not connexion.request.is_json:
         msg = "Must be in JSON format"
         LOGGER.error(msg)
@@ -237,6 +241,7 @@ def patch_v2_components():
 
 def patch_v2_components_list(data):
     try:
+        LOGGER.debug("patch_v2_components_list: %d components specified", len(data))
         components = []
         for component_data in data:
             component_id = component_data['id']
@@ -274,6 +279,7 @@ def patch_v2_components_dict(data):
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
         # Make sure all of the components exist and belong to this tenant (if any)
+        LOGGER.debug("patch_v2_components_dict: %d IDs specified", len(id_list))
         for component_id in id_list:
             if component_id not in DB or not _is_valid_tenant_component(component_id):
                 return connexion.problem(
@@ -281,6 +287,7 @@ def patch_v2_components_dict(data):
                     detail="Component {} could not be found".format(component_id))
     elif session:
         id_list = [component["id"] for component in get_v2_components_data(session=session, tenant=get_tenant_from_header())]
+        LOGGER.debug("patch_v2_components_dict: %d IDs found for specified session", len(id_list))
     else:
         return connexion.problem(
             status=400, title="Exactly one filter must be provided.",
@@ -299,7 +306,7 @@ def patch_v2_components_dict(data):
 @dbutils.redis_error_handler
 def get_v2_component(component_id):
     """Used by the GET /components/{component_id} API operation"""
-    LOGGER.debug("GET /components/id invoked get_component")
+    LOGGER.debug("GET /v2/components/%s invoked get_v2_component", component_id)
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
             status=404, title="Component not found.",
@@ -313,7 +320,7 @@ def get_v2_component(component_id):
 @dbutils.redis_error_handler
 def put_v2_component(component_id):
     """Used by the PUT /components/{component_id} API operation"""
-    LOGGER.debug("PUT /components/id invoked put_component")
+    LOGGER.debug("PUT /v2/components/%s invoked put_v2_component", component_id)
     if not connexion.request.is_json:
         msg = "Must be in JSON format"
         LOGGER.error(msg)
@@ -341,7 +348,7 @@ def put_v2_component(component_id):
 @dbutils.redis_error_handler
 def patch_v2_component(component_id):
     """Used by the PATCH /components/{component_id} API operation"""
-    LOGGER.debug("PATCH /components/id invoked patch_component")
+    LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component", component_id)
     if not connexion.request.is_json:
         msg = "Must be in JSON format"
         LOGGER.error(msg)
@@ -398,7 +405,7 @@ def validate_actual_state_change_is_allowed(component_id):
 @dbutils.redis_error_handler
 def delete_v2_component(component_id):
     """Used by the DELETE /components/{component_id} API operation"""
-    LOGGER.debug("DELETE /components/id invoked delete_component")
+    LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component", component_id)
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         return connexion.problem(
             status=404, title="Component not found.",
@@ -410,7 +417,7 @@ def delete_v2_component(component_id):
 @dbutils.redis_error_handler
 def post_v2_apply_staged():
     """Used by the POST /applystaged API operation"""
-    LOGGER.debug("POST /applystaged invoked post_v2_apply_staged")
+    LOGGER.debug("POST /v2/applystaged invoked post_v2_apply_staged")
     response = {"succeeded": [], "failed": [], "ignored": []}
     # Obtain latest desired behavior for how to clear staging information
     # for all components
