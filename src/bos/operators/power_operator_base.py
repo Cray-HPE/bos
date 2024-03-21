@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -103,6 +103,8 @@ class PowerOperatorBase(BaseOperator):
                     LOGGER.debug(f"Acting on component {component}")
                     errors = self._my_power([component])
                     if errors.error_code != 0:
+                        LOGGER.debug("Component %s error code=%s message=%s", component,
+                                     errors.error_code, errors.error_message)
                         index = self._find_component_in_components(component, components)
                         if index is not None:
                             components[index]['error'] = errors.error_message

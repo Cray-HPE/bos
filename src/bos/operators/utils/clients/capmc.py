@@ -322,7 +322,10 @@ def status(nodes, filtertype = 'show_all', session = None):
     body = {'filter': filtertype,
             'xnames': list(nodes)}
 
+    LOGGER.debug("POST %s with body=%s", endpoint, body)
     response = session.post(endpoint, json = body)
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, response.text)
     try:
         json_response = json.loads(response.text)
     except json.JSONDecodeError as jde:
@@ -445,8 +448,11 @@ def call(endpoint, nodes, node_format = 'xnames', cont = True, reason = "None gi
     session = session or requests_retry_session()
     if kwargs:
         payload.update(kwargs)
+    LOGGER.debug("POST %s with body=%s", endpoint, payload)
     try:
         resp = session.post(endpoint, verify = False, json = payload)
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
+                     resp.reason, resp.text)
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:
         LOGGER.error("Failed interacting with Cray Advanced Platform Monitoring and Control "

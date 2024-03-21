@@ -127,6 +127,13 @@ class PowerOnOperator(PowerOperatorBase):
                     bss_tokens.append({"id": node,
                                        "desired_state": {"bss_token": token},
                                        "session": sessions[node]})
+        LOGGER.info('Found %d components that require BSS token updates', len(bss_tokens))
+        redacted_component_updates = [
+            { "id": comp["id"], 
+              "session": comp["session"]
+            }
+            for comp in bss_tokens ]
+        LOGGER.debug('Updated components (minus desired_state data): {}'.format(redacted_component_updates))
         self.bos_client.components.update_components(bss_tokens)
 
     def _my_power(self, component_ids):

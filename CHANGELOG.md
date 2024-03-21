@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Components requiring phase updates are no longer reported in the session status phase percentages.
 - Return the correct object from HSM's get_components call when there are no nodes in the session.
 - Make the include_disabled option work as intended.
+- Improvements to BOS v2 debug logging.
 
 ## [2.0.31] - 03-12-2024
 ### Fixed

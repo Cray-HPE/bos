@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -41,6 +41,7 @@ class SessionStatusEndpoint(object):
         """Get information for a single BOS item"""
         url = self.base_url + '/' + session_id + '/status'
         session = requests_retry_session()
+        LOGGER.debug("GET %s", url)
         response = session.get(url)
         response.raise_for_status()
         item = json.loads(response.text)
@@ -54,6 +55,7 @@ class SessionStatusEndpoint(object):
         """
         session = requests_retry_session()
         url = self.base_url + '/' + session_id + '/status'
+        LOGGER.debug("POST %s", url)
         response = session.post(url)
         response.raise_for_status()
         items = json.loads(response.text)
