@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.9] - 2024-03-20
+### Changed
+- Improvements to BOS v2 debug logging.
+
 ## [2.10.8] - 2024-03-12
 ### Fixed
 - Update base operator to handle case where all nodes to act on have exceeded their retry limit

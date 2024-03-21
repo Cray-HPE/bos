@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -127,6 +127,13 @@ class PowerOnOperator(BaseOperator):
                     bss_tokens.append({"id": node,
                                        "desired_state": {"bss_token": token},
                                        "session": sessions[node]})
+        LOGGER.info('Found %d components that require BSS token updates', len(bss_tokens))
+        redacted_component_updates = [
+            { "id": comp["id"], 
+              "session": comp["session"]
+            }
+            for comp in bss_tokens ]
+        LOGGER.debug('Updated components (minus desired_state data): {}'.format(redacted_component_updates))
         self.bos_client.components.update_components(bss_tokens)
 
 
