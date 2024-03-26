@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -118,9 +118,12 @@ def status(nodes, session=None, **kwargs):
       PowerControlException: Any non-nominal response from PCS.
       JSONDecodeError: Error decoding the PCS response
     """
+    status_bucket = defaultdict(set)
+    if not nodes:
+        LOGGER.warning("status called without nodes; returning without action.")
+        return status_bucket
     session = session or requests_retry_session()
     power_status_all = _power_status(xname=list(nodes), session=session, **kwargs)
-    status_bucket = defaultdict(set)
     for power_status_entry in power_status_all['status']:
         # IF the returned xname has an error, it itself is the status regardless of
         # what the powerState field suggests. This is a major departure from how CAPMC handled errors.
@@ -139,12 +142,16 @@ def node_to_powerstate(nodes, session=None, **kwargs):
     For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for the node in question.
     """
     power_states = {}
+    if not nodes:
+        LOGGER.warning("node_to_powerstate called without nodes; returning without action.")
+        return power_states
     session = session or requests_retry_session()
     status_bucket = status(nodes, session, **kwargs)
     for pstatus, nodeset in status_bucket.items():
         for node in nodeset:
             power_states[node] = pstatus
     return power_states
+
 def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None, session=None):
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
@@ -202,6 +209,10 @@ def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered on state.
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        # Should probably raise an exception here, since we don't want to actually call PCS
+        # with an empty node list. Suggestions welcome for what to raise.
+        LOGGER.error("power_on called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='On', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -210,6 +221,10 @@ def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        # Should probably raise an exception here, since we don't want to actually call PCS
+        # with an empty node list. Suggestions welcome for what to raise.
+        LOGGER.error("power_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -218,6 +233,10 @@ def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        # Should probably raise an exception here, since we don't want to actually call PCS
+        # with an empty node list. Suggestions welcome for what to raise.
+        LOGGER.error("soft_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Soft-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -226,6 +245,10 @@ def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered off state (forceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        # Should probably raise an exception here, since we don't want to actually call PCS
+        # with an empty node list. Suggestions welcome for what to raise.
+        LOGGER.error("force_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Force-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
