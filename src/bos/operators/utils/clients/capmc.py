@@ -316,6 +316,12 @@ def status(nodes, filtertype = 'show_all', session = None):
     Raises:
       JSONDecodeError -- error decoding the CAPMC response
     """
+    if not nodes:
+        LOGGER.warning("status called without nodes; returning without action.")
+        # Instantiating CapmcXnameStatusReturnedError with an empty dictionary is
+        # the equivalent of reporting no errors
+        return {}, CapmcXnameStatusReturnedError({})
+
     endpoint = '%s/get_xname_status' % (ENDPOINT)
     status_bucket = defaultdict(set)
     session = session or requests_retry_session()
