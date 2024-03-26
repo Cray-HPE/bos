@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -71,14 +71,16 @@ class StatusOperator(BaseOperator):
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
         components = self.bos_client.components.get_components(enabled=True)
+        if not components:
+            LOGGER.debug('No enabled components found')
+            return
         component_ids = [component['id'] for component in components]
         power_states, xname_status_failures = get_power_states(component_ids)
         cfs_states = self._get_cfs_components()
         updated_components = []
-        if components:
-            # Recreate these filters to pull in the latest options values
-            self.boot_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_boot_wait_time)._match
-            self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
+        # Recreate these filters to pull in the latest options values
+        self.boot_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_boot_wait_time)._match
+        self.power_on_wait_time_elapsed = TimeSinceLastAction(seconds=options.max_power_on_wait_time)._match
         for component in components:
             error_string = None
             node_error = xname_status_failures.nodes_in_error.get(component['id'],{})
