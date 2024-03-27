@@ -55,6 +55,9 @@ def get_components(session=None, **kwargs):
 
 
 def patch_components(data, session=None):
+    if not data:
+        LOGGER.warning("patch_components called without data; returning without action.")
+        return
     if not session:
         session = requests_retry_session()
     LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
@@ -69,6 +72,9 @@ def patch_components(data, session=None):
 
 
 def get_components_from_id_list(id_list):
+    if not id_list:
+        LOGGER.warning("get_components_from_id_list called without IDs; returning without action.")
+        return []
     LOGGER.debug("get_components_from_id_list called with %d IDs", len(id_list))
     session = requests_retry_session()
     component_list = []
@@ -83,6 +89,9 @@ def get_components_from_id_list(id_list):
 
 
 def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False):
+    if not node_ids:
+        LOGGER.warning("patch_desired_config called without IDs; returning without action.")
+        return
     LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
                  " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
     session = requests_retry_session()
@@ -107,6 +116,9 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
 
 
 def set_cfs(components, enabled, clear_state=False):
+    if not components:
+        LOGGER.warning("set_cfs called without components; returning without action.")
+        return
     LOGGER.debug("set_cfs called on %d components with enabled=%s clear_state=%s", len(components),
                  enabled, clear_state)
     configurations = defaultdict(list)
