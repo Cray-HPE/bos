@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Add code to the beginning of some CFS functions to check if they have been called without
+  necessary arguments, and if so, to log a warning and return immediately.
+
+### Changed
+- If the status operator `_run` method finds no enabled components, stop immediately, as there is
+  nothing to do.
+
+### Fixed
+- If CAPMC `status` function is called with an empty node list, log a warning and return without
+  calling CAPMC.
 
 ## [2.0.32] - 03-21-2024
 ### Fixed
