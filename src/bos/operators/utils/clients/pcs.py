@@ -125,7 +125,7 @@ def status(nodes, session=None, **kwargs):
     session = session or requests_retry_session()
     power_status_all = _power_status(xname=list(nodes), session=session, **kwargs)
     for power_status_entry in power_status_all['status']:
-        # IF the returned xname has an error, it itself is the status regardless of
+        # If the returned xname has an error, it itself is the status regardless of
         # what the powerState field suggests. This is a major departure from how CAPMC handled errors.
         xname = power_status_entry.get('xname', '')
         if power_status_entry['error']:
