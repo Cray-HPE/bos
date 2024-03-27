@@ -34,8 +34,9 @@ from bos.common.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-power-control'
 POWER_CONTROL_VERSION = 'v1'
-ENDPOINT = "%s://%s/" % (PROTOCOL, SERVICE_NAME)
-TRANSITION_ENDPOINT = "%stransitions" %(ENDPOINT)
+ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
+POWER_STATUS_ENDPOINT = '%s/power-status' % (ENDPOINT)
+TRANSITION_ENDPOINT = "%s/transitions" %(ENDPOINT)
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
 
@@ -87,7 +88,6 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     Per the spec, a power_status_all is returned. power_status_all is an array of power
     statuses.
     """
-    endpoint = '%s/power-status' % (ENDPOINT)
     session = session or requests_retry_session()
     params = {}
     if xname:
@@ -98,7 +98,12 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     if management_state_filter:
         assert management_state_filter in set(['available', 'unavailable'])
         params['managementStateFilter'] = management_state_filter.lower()
-    response = session.get(endpoint, params=params)
+    # PCS added the POST option for this endpoint in app version 2.3.0
+    # (chart versions 2.0.8 and 2.1.5)
+    LOGGER.debug("POST %s with body=%s", POWER_STATUS_ENDPOINT, params)
+    response = session.post(POWER_STATUS_ENDPOINT, json=params)
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, response.text)
     try:
         response.raise_for_status()
         if not response.ok:
@@ -209,7 +214,10 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
         if deputy_key:
             reserved_location['deputyKey'] = deputy_key
         params['location'].append(reserved_location)
+    LOGGER.debug("POST %s with body=%s", TRANSITION_ENDPOINT, params)
     response = session.post(TRANSITION_ENDPOINT, json=params)
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, response.text)
     try:
         response.raise_for_status()
         if not response.ok:
