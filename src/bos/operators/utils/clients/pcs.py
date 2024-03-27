@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -57,6 +57,20 @@ class PowerControlTimeoutException(PowerControlException):
     Raised when a call to PowerControl exceeded total time to complete.
     """
 
+
+class PowerControlComponentsEmptyException(Exception):
+    """
+    Raised when one of the PCS utility functions that requires a non-empty
+    list of components is passed an empty component list. This will only
+    happen in the case of a programming bug.
+    
+    This exception is not raised for functions that require a node list
+    but that are able to return a sensible object to the caller that
+    indicates nothing has been done. For example, the status function.
+    This exception is instead used for functions that will fail if they run
+    with an empty node list, but which cannot return an appropriate
+    "no-op" value to the caller.
+    """
 
 def _power_status(xname=None, power_state_filter=None, management_state_filter=None,
                   session=None):
@@ -118,11 +132,14 @@ def status(nodes, session=None, **kwargs):
       PowerControlException: Any non-nominal response from PCS.
       JSONDecodeError: Error decoding the PCS response
     """
+    status_bucket = defaultdict(set)
+    if not nodes:
+        LOGGER.warning("status called without nodes; returning without action.")
+        return status_bucket
     session = session or requests_retry_session()
     power_status_all = _power_status(xname=list(nodes), session=session, **kwargs)
-    status_bucket = defaultdict(set)
     for power_status_entry in power_status_all['status']:
-        # IF the returned xname has an error, it itself is the status regardless of
+        # If the returned xname has an error, it itself is the status regardless of
         # what the powerState field suggests. This is a major departure from how CAPMC handled errors.
         xname = power_status_entry.get('xname', '')
         if power_status_entry['error']:
@@ -139,12 +156,16 @@ def node_to_powerstate(nodes, session=None, **kwargs):
     For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for the node in question.
     """
     power_states = {}
+    if not nodes:
+        LOGGER.warning("node_to_powerstate called without nodes; returning without action.")
+        return power_states
     session = session or requests_retry_session()
     status_bucket = status(nodes, session, **kwargs)
     for pstatus, nodeset in status_bucket.items():
         for node in nodeset:
             power_states[node] = pstatus
     return power_states
+
 def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None, session=None):
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
@@ -170,7 +191,11 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     Raises:
         PowerControlException: Any non-nominal response from PCS, typically as a result of an unexpected payload
           response, or a failure to create a transition record.
+        PowerControlComponentsEmptyException: No xnames specified
     """
+    if not xnames:
+        raise PowerControlComponentsEmptyException(
+                "_transition_create called with no xnames! (operation=%s)" % operation)
     session = session or requests_retry_session()
     try:
         assert operation in set(['On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init', 'Force-Off'])
@@ -202,6 +227,8 @@ def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered on state.
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        raise PowerControlComponentsEmptyException("power_on called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='On', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -210,6 +237,8 @@ def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        raise PowerControlComponentsEmptyException("power_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -218,6 +247,8 @@ def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        raise PowerControlComponentsEmptyException("soft_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Soft-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -226,6 +257,8 @@ def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Sends a request to PCS for transitioning nodes in question to a powered off state (forceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
+    if not nodes:
+        raise PowerControlComponentsEmptyException("force_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Force-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
