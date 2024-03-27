@@ -58,6 +58,20 @@ class PowerControlTimeoutException(PowerControlException):
     """
 
 
+class PowerControlComponentsEmptyException(Exception):
+    """
+    Raised when one of the PCS utility functions that requires a non-empty
+    list of components is passed an empty component list. This will only
+    happen in the case of a programming bug.
+    
+    This exception is not raised for functions that require a node list
+    but that are able to return a sensible object to the caller that
+    indicates nothing has been done. For example, the status function.
+    This exception is instead used for functions that will fail if they run
+    with an empty node list, but which cannot return an appropriate
+    "no-op" value to the caller.
+    """
+
 def _power_status(xname=None, power_state_filter=None, management_state_filter=None,
                   session=None):
     """
@@ -177,7 +191,11 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     Raises:
         PowerControlException: Any non-nominal response from PCS, typically as a result of an unexpected payload
           response, or a failure to create a transition record.
+        PowerControlComponentsEmptyException: No xnames specified
     """
+    if not xnames:
+        raise PowerControlComponentsEmptyException(
+                "_transition_create called with no xnames! (operation=%s)" % operation)
     session = session or requests_retry_session()
     try:
         assert operation in set(['On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init', 'Force-Off'])
@@ -210,9 +228,7 @@ def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
     if not nodes:
-        # Should probably raise an exception here, since we don't want to actually call PCS
-        # with an empty node list. Suggestions welcome for what to raise.
-        LOGGER.error("power_on called with no nodes!")
+        raise PowerControlComponentsEmptyException("power_on called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='On', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -222,9 +238,7 @@ def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
     if not nodes:
-        # Should probably raise an exception here, since we don't want to actually call PCS
-        # with an empty node list. Suggestions welcome for what to raise.
-        LOGGER.error("power_off called with no nodes!")
+        raise PowerControlComponentsEmptyException("power_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -234,9 +248,7 @@ def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
     if not nodes:
-        # Should probably raise an exception here, since we don't want to actually call PCS
-        # with an empty node list. Suggestions welcome for what to raise.
-        LOGGER.error("soft_off called with no nodes!")
+        raise PowerControlComponentsEmptyException("soft_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Soft-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
@@ -246,9 +258,7 @@ def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
     if not nodes:
-        # Should probably raise an exception here, since we don't want to actually call PCS
-        # with an empty node list. Suggestions welcome for what to raise.
-        LOGGER.error("force_off called with no nodes!")
+        raise PowerControlComponentsEmptyException("force_off called with no nodes!")
     session = session or requests_retry_session()
     return _transition_create(xnames=nodes, operation='Force-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
