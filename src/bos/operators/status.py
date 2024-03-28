@@ -200,7 +200,7 @@ class StatusOperator(BaseOperator):
                     phase = Phase.none
                     disable = True  # Successful state - booted with the correct artifacts, no configuration necessary
                 else:
-                    cfs_status = cfs_component.get('configurationStatus', '').lower()
+                    cfs_status = cfs_component.get('configuration_status', '').lower()
                     if cfs_status == 'configured':
                         phase = Phase.none
                         disable = True  # Successful state - booted with the correct artifacts and configured
