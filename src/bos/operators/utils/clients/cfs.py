@@ -95,24 +95,18 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
     LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
                  " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
     session = requests_retry_session()
-    data = []
-    if not tags:
-        tags = {}
-    for node_id in node_ids:
-        node_patch = {
-            'id': node_id,
-            'enabled': enabled,
-            'desiredConfig': desired_config,
-            'tags': tags
-        }
-        if clear_state:
-            node_patch['state'] = []
-        data.append(node_patch)
-        if len(data) >= PATCH_BATCH_SIZE:
-            patch_components(data, session=session)
-            data = []
-    if data:
-        patch_components(data, session=session)
+    node_patch = {
+        'enabled': enabled,
+        'desiredConfig': desired_config,
+        'tags': tags if tags else {}
+    }
+    data={ "patch": node_patch, "filters": {} }
+    if clear_state:
+        node_patch['state'] = []
+    while node_ids:
+        data["filters"]["ids"] = ','.join(node_ids[:PATCH_BATCH_SIZE])
+        patch_components(data=data, session=session)
+        node_ids = node_ids[PATCH_BATCH_SIZE:]
 
 
 def set_cfs(components, enabled, clear_state=False):
