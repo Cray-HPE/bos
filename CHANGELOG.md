@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.3] - 2024-03-28
+### Changed
+- Use POST instead of GET when requesting node power status from PCS, to avoid
+  size limitations on the GET parameters.
+
 ## [2.17.2] - 2024-03-27
 ### Added
 - Add code to the beginning of some CFS functions to check if they have been called without
