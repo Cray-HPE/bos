@@ -28,7 +28,7 @@ from requests.exceptions import HTTPError, ConnectionError
 from bos.common.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-cfs-api'
-BASE_ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)
+BASE_ENDPOINT = "%s://%s/v3" % (PROTOCOL, SERVICE_NAME)
 COMPONENTS_ENDPOINT = "%s/components" % BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.cfs')
@@ -37,19 +37,31 @@ GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
 
 
-def get_components(session=None, **kwargs):
+def get_components(session=None, **params):
+    """
+    Makes GET request for CFS components.
+    Performs additional requests to get additional pages of components, if
+    needed.
+    Returns the list of CFS components
+    """
     if not session:
         session = requests_retry_session()
-    LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, kwargs)
-    response = session.get(COMPONENTS_ENDPOINT, params=kwargs)
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
-    try:
-        response.raise_for_status()
-    except HTTPError as err:
-        LOGGER.error("Failed getting nodes from cfs: %s", err)
-        raise
-    component_list = response.json()
+    component_list = []
+    while params is not None:
+        LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, params)
+        response = session.get(COMPONENTS_ENDPOINT, params=params)
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                     response.reason, response.text)
+        try:
+            response.raise_for_status()
+        except HTTPError as err:
+            LOGGER.error("Failed getting nodes from CFS: %s", err)
+            raise
+        response_json = response.json()
+        new_components = response_json["components"]
+        LOGGER.debug("Query returned %d components", len(new_components))
+        component_list.extend(new_components)
+        params = response_json["next"]
     LOGGER.debug("Returning %d components from CFS", len(component_list))
     return component_list
 
@@ -95,24 +107,18 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
     LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
                  " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
     session = requests_retry_session()
-    data = []
-    if not tags:
-        tags = {}
-    for node_id in node_ids:
-        node_patch = {
-            'id': node_id,
-            'enabled': enabled,
-            'desiredConfig': desired_config,
-            'tags': tags
-        }
-        if clear_state:
-            node_patch['state'] = []
-        data.append(node_patch)
-        if len(data) >= PATCH_BATCH_SIZE:
-            patch_components(data, session=session)
-            data = []
-    if data:
-        patch_components(data, session=session)
+    node_patch = {
+        'enabled': enabled,
+        'desired_config': desired_config,
+        'tags': tags if tags else {}
+    }
+    data={ "patch": node_patch, "filters": {} }
+    if clear_state:
+        node_patch['state'] = []
+    while node_ids:
+        data["filters"]["ids"] = ','.join(node_ids[:PATCH_BATCH_SIZE])
+        patch_components(data=data, session=session)
+        node_ids = node_ids[PATCH_BATCH_SIZE:]
 
 
 def set_cfs(components, enabled, clear_state=False):

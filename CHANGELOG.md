@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.4] - 2024-03-29
+### Changed
+- Make BOS be more efficient when patching CFS components.
+
+### Fixed
+- Switch from CFS v2 to v3 to avoid running afoul of page size limitations
+
 ## [2.17.3] - 2024-03-28
 ### Changed
 - Use POST instead of GET when requesting node power status from PCS, to avoid
