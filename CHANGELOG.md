@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixed
+- Updated API spec to reflect that BOA updates the boot set status by using the phase `boot_set`.
 
 ## [2.0.34] - 03-28-2024
 ### Changed
