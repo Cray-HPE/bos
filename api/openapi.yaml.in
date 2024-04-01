@@ -854,10 +854,10 @@ it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
     V1PhaseName:
       type: string
       description: |
-        The phase that this data belongs to (boot, shutdown, or configure). If blank,
-        it belongs to the Boot Set itself, which only applies to the GenericMetadata type.
+        The phase that this data belongs to (boot, shutdown, or configure). Or it can
+        be set to "boot_set" to indicate that it belongs to the Boot Set itself.
       example: "Boot"
-      pattern: '^($|[sS][hH][uU][tT][dD][oO][wW][nN]$|[bB][oO][oO][tT]$|[cC][oO][nN][fF][iI][gG][uU][rR][eE]$)'
+      pattern: '^([bB][oO][oO][tT]_[sS][eE][tT]$|[sS][hH][uU][tT][dD][oO][wW][nN]$|[bB][oO][oO][tT]$|[cC][oO][nN][fF][iI][gG][uU][rR][eE]$)'
     V1NodeChangeList:
       type: object
       description: |
