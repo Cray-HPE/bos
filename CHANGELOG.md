@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.6] - 2024-04-19
+### Fixed
+- Corrected description of `disable_components_on_completion` in API spec.
+
 ## [2.17.5] - 2024-04-19
 ### Changed
 - Reduced v2 default polling frequency from 60 seconds to 15 seconds, to improve performance

@@ -1006,8 +1006,8 @@ components:
         disable_components_on_completion:
           type: boolean
           description: |
-            Allows for BOS Components to be marked as disabled after a Session has been completed. If false, BOS will continue to maintain the state
-            of the nodes declaratively, even after a Session finishes.
+            If true, when a Session has brought a Component to its desired state, that Component will be marked as disabled in BOS.
+            If false, BOS will continue to maintain the state of the nodes declaratively, even after a Session finishes.
         discovery_frequency:
           type: integer
           description: How frequently the BOS discovery agent syncs new Components from HSM. (in seconds)
