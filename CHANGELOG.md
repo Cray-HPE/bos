@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.0.36] - 04-19-2024
 ### Changed
 - Reduced v2 default polling frequency from 60 seconds to 15 seconds, to improve performance
 - Reconciled discrepancies in default v2 option values between `src/bos/operators/utils/clients/bos/options.py`
