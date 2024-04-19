@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.14] - 2024-04-19
+### Changed
+- Reduced v2 default polling frequency from 60 seconds to 15 seconds, to improve performance
+- Reconciled discrepancies in default v2 option values between `src/bos/operators/utils/clients/bos/options.py`
+  and `src/bos/server/controllers/v2/options.py`
+
 ## [2.10.13] - 2024-04-01
 ### Fixed
 - Updated API spec to reflect that BOA updates the boot set status by using the phase `boot_set`.

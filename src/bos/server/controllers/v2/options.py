@@ -45,7 +45,7 @@ DEFAULTS = {
     'max_boot_wait_time': 1200,
     'max_power_on_wait_time': 120,
     'max_power_off_wait_time': 300,
-    'polling_frequency': 60,
+    'polling_frequency': 15,
     'default_retry_policy': 3,
 }
 
