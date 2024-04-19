@@ -77,7 +77,7 @@ class Options:
 
     @property
     def polling_frequency(self):
-        return self.get_option('polling_frequency', int, 60)
+        return self.get_option('polling_frequency', int, 15)
 
     @property
     def discovery_frequency(self):
@@ -85,15 +85,15 @@ class Options:
 
     @property
     def max_boot_wait_time(self):
-        return self.get_option('max_boot_wait_time', int, 600)
+        return self.get_option('max_boot_wait_time', int, 1200)
 
     @property
     def max_power_on_wait_time(self):
-        return self.get_option('max_power_on_wait_time', int, 30)
+        return self.get_option('max_power_on_wait_time', int, 120)
 
     @property
     def max_power_off_wait_time(self):
-        return self.get_option('max_power_off_wait_time', int, 180)
+        return self.get_option('max_power_off_wait_time', int, 300)
 
     @property
     def disable_components_on_completion(self):
