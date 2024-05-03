@@ -1216,6 +1216,7 @@ paths:
       tags:
         - version
       x-openapi-router-controller: bos.server.controllers.base
+      operationId: get_versions
       responses:
         200:
           description: A collection of Versions
