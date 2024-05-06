@@ -398,8 +398,8 @@ components:
             * Boot Set names must begin and end with a letter or digit.
           minProperties: 1
           maxProperties: 127
-          propertyNames:
-            $ref: '#/components/schemas/BootSetName'
+          #propertyNames:
+          #  $ref: '#/components/schemas/BootSetName'
           additionalProperties:
             $ref: '#/components/schemas/V2BootSet'
         links:
