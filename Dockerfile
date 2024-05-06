@@ -42,6 +42,7 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -o lib \
     -c config/autogen-server.json \
     -v \
+    --global-property debugModels,debugOperations,debugOpenAPI,debugSupportingFiles \
     --generate-alias-as-model
 
 # Base image
