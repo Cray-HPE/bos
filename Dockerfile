@@ -32,7 +32,7 @@ FROM $OPENAPI_IMAGE as codegen
 WORKDIR /app
 COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
-ENV JAVA_OPTS="${JAVA_OPTS}  -Dlog.level=debug"
+#ENV JAVA_OPTS="${JAVA_OPTS}  -Dlog.level=debug"
 RUN /usr/local/bin/docker-entrypoint.sh validate \
     -i api/openapi.yaml \
     --recommend
@@ -41,9 +41,10 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -g python-flask \
     -o lib \
     -c config/autogen-server.json \
-    -v \
-    --global-property debugModels,debugOperations,debugOpenAPI,debugSupportingFiles \
     --generate-alias-as-model
+#    -v \
+#    --global-property debugModels,debugOperations,debugOpenAPI,debugSupportingFiles \
+
 
 # Base image
 FROM $ALPINE_BASE_IMAGE as base
