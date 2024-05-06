@@ -1224,7 +1224,7 @@ components:
       description: |-
         Only include Sessions with the given status.
     V2TenantHeaderParam:
-      name: Cray-Tenant-Name
+      name: "Cray-Tenant-Name"
       in: header
       description: |
         Tenant name.
