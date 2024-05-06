@@ -1284,6 +1284,22 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/sessiontemplates/{session_template_id}:
+    parameters:
+    - name: session_template_id
+      in: path
+      description: Session Template name
+      required: true
+      schema:
+        $ref: '#/components/schemas/SessionTemplateName'
+    - name: "Cray-Tenant-Name"
+      in: header
+      description: |
+        Tenant name.
+        Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
     get:
       summary: Get Session Template by ID
       description: |
@@ -1295,22 +1311,6 @@ paths:
       - sessiontemplatess
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: get_v2_sessiontemplate
-      parameters:
-      - name: session_template_id
-        in: path
-        description: Session Template name
-        required: true
-        schema:
-          $ref: '#/components/schemas/SessionTemplateName'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
@@ -1324,22 +1324,6 @@ paths:
       - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: put_v2_sessiontemplate
-      parameters:
-      - name: session_template_id
-        in: path
-        description: Session Template name
-        required: true
-        schema:
-          $ref: '#/components/schemas/SessionTemplateName'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
          description: A JSON object for creating a Session Template
          required: true
@@ -1360,22 +1344,6 @@ paths:
       - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: patch_v2_sessiontemplate
-      parameters:
-      - name: session_template_id
-        in: path
-        description: Session Template name
-        required: true
-        schema:
-          $ref: '#/components/schemas/SessionTemplateName'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
         description: A JSON object for updating a Session Template
         required: true
@@ -1398,22 +1366,6 @@ paths:
       - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: delete_v2_sessiontemplate
-      parameters:
-      - name: session_template_id
-        in: path
-        description: Session Template name
-        required: true
-        schema:
-          $ref: '#/components/schemas/SessionTemplateName'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
@@ -1435,6 +1387,16 @@ paths:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
   /v2/sessions:
+    parameters:
+    - name: "Cray-Tenant-Name"
+      in: header
+      description: |
+        Tenant name.
+        Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
     post:
       summary: Create a Session
       description: |
@@ -1446,16 +1408,6 @@ paths:
       - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: post_v2_session
-      parameters:
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
          $ref: '#/components/requestBodies/V2sessionCreateRequest'
       responses:
@@ -1466,15 +1418,6 @@ paths:
     get:
       summary: List Sessions
       parameters:
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       - name: max_age
         schema:
           $ref: '#/components/schemas/AgeString'
@@ -1506,15 +1449,6 @@ paths:
     delete:
       summary: Delete multiple Sessions.
       parameters:
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       - name: max_age
         schema:
           $ref: '#/components/schemas/AgeString'
@@ -1547,6 +1481,22 @@ paths:
         400:
           $ref: '#/components/responses/BadRequest'
   /v2/sessions/{session_id}:
+    parameters:
+    - name: session_id
+      in: path
+      description: Session ID
+      required: true
+      schema:
+        type: string
+    - name: "Cray-Tenant-Name"
+      in: header
+      description: |
+        Tenant name.
+        Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
     get:
       summary: Get Session details by ID
       description: Get Session details by Session ID.
@@ -1555,22 +1505,6 @@ paths:
       - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_session
-      parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         200:
           $ref: '#/components/responses/V2SessionDetails'
@@ -1586,22 +1520,6 @@ paths:
       - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: patch_v2_session
-      parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
         $ref: '#/components/requestBodies/V2sessionUpdateRequest'
       responses:
@@ -1619,28 +1537,28 @@ paths:
       - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: delete_v2_session
-      parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
         404:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/sessions/{session_id}/status:
+    parameters:
+    - name: session_id
+      in: path
+      description: Session ID
+      required: true
+      schema:
+        type: string
+    - name: "Cray-Tenant-Name"
+      in: header
+      description: |
+        Tenant name.
+        Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
     get:
       summary: Get Session extended status information by ID
       description: Get Session extended status information by ID
@@ -1649,22 +1567,6 @@ paths:
       - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_session_status
-      parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         200:
           $ref: '#/components/responses/V2SessionExtendedStatus'
@@ -1679,40 +1581,25 @@ paths:
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       description: Saves the current Session to database.  For use at Session completion.
       operationId: save_v2_session_status
-      parameters:
-      - name: session_id
-        in: path
-        description: Session ID
-        required: true
-        schema:
-          type: string
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         200:
           $ref: '#/components/responses/V2SessionDetails'
         404:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/components:
+    parameters:
+    - name: "Cray-Tenant-Name"
+      in: header
+      description: |
+        Tenant name.
+        Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
     get:
       summary: Retrieve the state of a collection of Components
       parameters:
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       - name: ids
         schema:
           $ref: '#/components/schemas/V2ComponentId'
@@ -1777,16 +1664,6 @@ paths:
       - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: put_v2_components
-      parameters:
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
         $ref: '#/components/requestBodies/V2componentsPutRequest'
       responses:
@@ -1803,16 +1680,6 @@ paths:
       - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: patch_v2_components
-      parameters:
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
         $ref: '#/components/requestBodies/V2componentsUpdateRequest'
       responses:
@@ -1823,6 +1690,22 @@ paths:
         404:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/components/{component_id}:
+    parameters:
+    - name: component_id
+      in: path
+      description: Component ID. e.g. xname for hardware Components
+      required: true
+      schema:
+        $ref: '#/components/schemas/V2ComponentId'
+    - name: "Cray-Tenant-Name"
+      in: header
+      description: |
+        Tenant name.
+        Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
+        Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
+      required: false
+      schema:
+        $ref: '#/components/schemas/TenantName'
     get:
       summary: Retrieve the state of a single Component
       description: Retrieve the current and desired state of a single Component
@@ -1831,22 +1714,6 @@ paths:
       - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: get_v2_component
-      parameters:
-      - name: component_id
-        in: path
-        description: Component ID. e.g. xname for hardware Components
-        required: true
-        schema:
-          $ref: '#/components/schemas/V2ComponentId'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         200:
           $ref: '#/components/responses/V2componentDetails'
@@ -1862,22 +1729,6 @@ paths:
       - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: put_v2_component
-      parameters:
-      - name: component_id
-        in: path
-        description: Component ID. e.g. xname for hardware Components
-        required: true
-        schema:
-          $ref: '#/components/schemas/V2ComponentId'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
       responses:
@@ -1893,22 +1744,6 @@ paths:
       - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: patch_v2_component
-      parameters:
-      - name: component_id
-        in: path
-        description: Component ID. e.g. xname for hardware Components
-        required: true
-        schema:
-          $ref: '#/components/schemas/V2ComponentId'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       requestBody:
         $ref: '#/components/requestBodies/V2componentUpdateRequest'
       responses:
@@ -1929,22 +1764,6 @@ paths:
       - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: delete_v2_component
-      parameters:
-      - name: component_id
-        in: path
-        description: Component ID. e.g. xname for hardware Components
-        required: true
-        schema:
-          $ref: '#/components/schemas/V2ComponentId'
-      - name: "Cray-Tenant-Name"
-        in: header
-        description: |
-          Tenant name.
-          Requests with a non-empty tenant name will restict the context of the operation to Session Templates owned by that tenant.
-          Requests with an empty tenant name, or that omit this parameter, will have no such context restrictions.
-        required: false
-        schema:
-          $ref: '#/components/schemas/TenantName'
       responses:
         204:
           $ref: '#/components/responses/ResourceDeleted'
