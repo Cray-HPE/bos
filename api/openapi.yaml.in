@@ -194,7 +194,9 @@ components:
       description: An empty string value.
       enum: [ '' ]
     EmptyStringNullable:
-      type: string
+      type:
+      - "null"
+      - "string"
       description: An empty string value.
       enum: [ '' ]
     EnableCfs:
@@ -438,6 +440,10 @@ components:
       minLength: 1
       maxLength: 45
       pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
+    V2SessionNameOrEmpty:
+      oneOf:
+      - $ref: '#/components/schemas/V2SessionName'
+      - $ref: '#/components/schemas/EmptyString'
     V2SessionOperation:
       type: string
       enum: ['boot', 'reboot', 'shutdown']
@@ -751,9 +757,7 @@ components:
         configuration:
           $ref: '#/components/schemas/CfsConfiguration'
         session:
-          oneOf:
-          - $ref: '#/components/schemas/V2SessionName'
-          - $ref: '#/components/schemas/EmptyString'
+          $ref: '#/components/schemas/V2SessionNameOrEmpty'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -828,9 +832,7 @@ components:
           type: string
           description: A description of the most recent error to impact the Component.
         session:
-          oneOf:
-          - $ref: '#/components/schemas/V2SessionName'
-          - $ref: '#/components/schemas/EmptyString'
+          $ref: '#/components/schemas/V2SessionNameOrEmpty'
         retry_policy:
           type: integer
           description: |
@@ -872,6 +874,10 @@ components:
           $ref: '#/components/schemas/V2SessionName'
       required: [session]
       additionalProperties: false
+    V2ComponentsUpdateFilters:
+      oneOf:
+      - $ref: '#/components/schemas/V2ComponentsFilterByIds'
+      - $ref: '#/components/schemas/V2ComponentsFilterBySession'
     V2ComponentsUpdate:
       description: Information for patching multiple Components.
       type: object
@@ -879,9 +885,7 @@ components:
         patch:
           $ref: '#/components/schemas/V2Component'
         filters:
-          oneOf:
-          - $ref: '#/components/schemas/V2ComponentsFilterByIds'
-          - $ref: '#/components/schemas/V2ComponentsFilterBySession'
+          $ref: '#/components/schemas/V2ComponentsUpdateFilters'
       required: [patch, filters]
       additionalProperties: false
     V2ApplyStagedComponents:
@@ -980,6 +984,10 @@ components:
           minimum: 0
           maximum: 1048576
       additionalProperties: true
+    V2ComponentsUpdateOrArray:
+      oneOf:
+      - $ref: '#/components/schemas/V2ComponentsUpdate'
+      - $ref: '#/components/schemas/V2ComponentArray'
 
   requestBodies:
     V2sessionCreateRequest:
@@ -1009,9 +1017,7 @@ components:
       content:
         application/json:
           schema:
-            oneOf:
-            - $ref: '#/components/schemas/V2ComponentsUpdate'
-            - $ref: '#/components/schemas/V2ComponentArray'
+            $ref: '#/components/schemas/V2ComponentsUpdateOrArray'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
