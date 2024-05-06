@@ -108,7 +108,7 @@ components:
       type: string
       description: Age in minutes (e.g. "3m"), hours (e.g. "5h"), days (e.g. "10d"), or weeks (e.g. "2w").
       examples:
-        - "3d"
+      - "3d"
       format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
       minLength: 1
       # This allows for over 10 years using the smallest units (minutes)
@@ -117,13 +117,13 @@ components:
       type: string
       description: A path to the initrd to use for booting.
       examples:
-        - "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/initrd"
+      - "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/initrd"
       maxLength: 4095
     BootKernelPath:
       type: string
       description: A path to the kernel to use for booting.
       examples:
-        - "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/kernel"
+      - "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/kernel"
       maxLength: 4095
     BootManifestPath:
       type: string
@@ -131,20 +131,20 @@ components:
         A path identifying the metadata describing the components of the boot image.
         This could be a URI, URL, etc, depending on the type of the Boot Set.
       examples:
-        - "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
+      - "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
       minLength: 1
       maxLength: 4095
     BootKernelParameters:
       type: string
       description: The kernel parameters to use to boot the nodes.
       examples:
-        - "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_limit=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
+      - "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_limit=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
       maxLength: 4096
     BootSetEtag:
       type: string
       description: This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
       examples:
-        - "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
+      - "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
       minLength: 1
       maxLength: 65536
     BootSetName:
@@ -155,7 +155,7 @@ components:
         * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
         * Boot Set names must begin and end with a letter or digit.
       examples:
-        - "compute"
+      - "compute"
       minLength: 1
       maxLength: 127
       pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
@@ -163,7 +163,7 @@ components:
       type: string
       description: The root file system provider.
       examples:
-        - "cpss3"
+      - "cpss3"
       minLength: 1
       maxLength: 511
     BootSetRootfsProviderPassthrough:
@@ -173,21 +173,21 @@ components:
         These are additional kernel parameters that will be appended to
         the 'rootfs=<protocol>' kernel parameter
       examples:
-        - "dvs:api-gw-service-nmn.local:300:nmn0"
+      - "dvs:api-gw-service-nmn.local:300:nmn0"
       maxLength: 4096
     BootSetType:
       type: string
       description: |
         The MIME type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
       examples:
-        - "s3"
+      - "s3"
       minLength: 1
       maxLength: 127
     CfsConfiguration:
       type: string
       description: The name of configuration to be applied.
       examples:
-        - "compute-23.4.0"
+      - "compute-23.4.0"
       maxLength: 127
     EmptyString:
       type: string
@@ -206,7 +206,7 @@ components:
       type: string
       description: Hardware component name (xname).
       examples:
-        - "x3001c0s39b0n0"
+      - "x3001c0s39b0n0"
       minLength: 1
       maxLength: 127
     Healthz:
@@ -244,7 +244,7 @@ components:
       minItems: 1
       maxItems: 65535
       examples:
-        - ["x3000c0s19b1n0", "x3000c0s19b2n0"]
+      - ["x3000c0s19b1n0", "x3000c0s19b2n0"]
       items:
         $ref: '#/components/schemas/HardwareComponentName'
     NodeGroupList:
@@ -263,12 +263,12 @@ components:
       minItems: 1
       maxItems: 1023
       examples:
-        - ["Compute", "Application"]
+      - ["Compute", "Application"]
       items:
         type: string
         description: Name of a role that is defined in the Hardware State Manager (HSM).
         examples:
-          - "Compute"
+        - "Compute"
         minLength: 1
         maxLength: 127
     ProblemDetails:
@@ -291,7 +291,7 @@ components:
           description: HTTP status code
           type: integer
           examples:
-            - 400
+          - 400
         instance:
           description: |
             A relative URI reference that identifies the specific occurrence of
@@ -330,12 +330,12 @@ components:
       maxLength: 127
       pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
       examples:
-        - "cle-1.0.0"
+      - "cle-1.0.0"
     TenantName:
       type: string
       description: Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
       examples:
-        - "vcluster-my-tenant1"
+      - "vcluster-my-tenant1"
       maxLength: 127
     Version:
       description: Version data
@@ -357,8 +357,8 @@ components:
     # V2
     V2TenantName:
       type:
-        - "string"
-        - "null"
+      - "string"
+      - "null"
       description: |
         Name of the tenant that owns this resource. Only used in environments
         with multi-tenancy enabled. An empty string or null value means the resource
@@ -399,7 +399,7 @@ components:
             * Use only letters, digits, periods (.), dashes (-), and underscores (_).
             * Begin and end with a letter or digit.
           examples:
-            - "cle-1.0.0"
+          - "cle-1.0.0"
         tenant:
           $ref: '#/components/schemas/V2TenantName'
         description:
@@ -433,7 +433,7 @@ components:
       type: string
       description: Name of the Session.
       examples:
-        - "session-20190728032600"
+      - "session-20190728032600"
       # These validation parameters are restricted by Kubernetes naming conventions.
       minLength: 1
       maxLength: 45
@@ -486,8 +486,8 @@ components:
       description: When the Session was created.
     V2SessionEndTime:
       type:
-        - "string"
-        - "null"
+      - "string"
+      - "null"
       description: When the Session was completed. A null value means the Session has not ended.
     V2SessionStatus:
       type: object
@@ -502,8 +502,8 @@ components:
           $ref: '#/components/schemas/V2SessionStatusLabel'
         error:
           type:
-            - "string"
-            - "null"
+          - "string"
+          - "null"
           description: |
             Error which prevented the Session from running.
             A null value means the Session has not encountered an error.
@@ -713,7 +713,7 @@ components:
       type: string
       description: The date/time when the state was last updated in RFC 3339 format.
       examples:
-        - '2019-07-28T03:26:00Z'
+      - '2019-07-28T03:26:00Z'
       format: date-time
       readOnly: true
     V2ComponentActualState:
@@ -752,8 +752,8 @@ components:
           $ref: '#/components/schemas/CfsConfiguration'
         session:
           oneOf:
-            - $ref: '#/components/schemas/V2SessionName'
-            - $ref: '#/components/schemas/EmptyString'
+          - $ref: '#/components/schemas/V2SessionName'
+          - $ref: '#/components/schemas/EmptyString'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -829,15 +829,15 @@ components:
           description: A description of the most recent error to impact the Component.
         session:
           oneOf:
-            - $ref: '#/components/schemas/V2SessionName'
-            - $ref: '#/components/schemas/EmptyString'
+          - $ref: '#/components/schemas/V2SessionName'
+          - $ref: '#/components/schemas/EmptyString'
         retry_policy:
           type: integer
           description: |
             The maximum number attempts per action when actions fail.
             Defaults to the global default_retry_policy if not set
           examples:
-            - 1
+          - 1
           minimum: 0
           maximum: 1048576
       additionalProperties: false
@@ -880,8 +880,8 @@ components:
           $ref: '#/components/schemas/V2Component'
         filters:
           oneOf:
-            - $ref: '#/components/schemas/V2ComponentsFilterByIds'
-            - $ref: '#/components/schemas/V2ComponentsFilterBySession'
+          - $ref: '#/components/schemas/V2ComponentsFilterByIds'
+          - $ref: '#/components/schemas/V2ComponentsFilterBySession'
       required: [patch, filters]
       additionalProperties: false
     V2ApplyStagedComponents:
@@ -915,7 +915,7 @@ components:
             Delete complete Sessions that are older than cleanup_completed_session_ttl (in minutes, hours, days, or weeks).
             0 disables cleanup behavior.
           examples:
-            - "3d"
+          - "3d"
           format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
@@ -929,7 +929,7 @@ components:
             The maximum amount of time a Component's actual state is considered valid (in minutes, hours, days, or weeks).
             0 disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
           examples:
-            - "6h"
+          - "6h"
           format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
@@ -976,7 +976,7 @@ components:
           type: integer
           description: The default maximum number attempts per node for failed actions.
           examples:
-            - 1
+          - 1
           minimum: 0
           maximum: 1048576
       additionalProperties: true
@@ -1010,8 +1010,8 @@ components:
         application/json:
           schema:
             oneOf:
-              - $ref: '#/components/schemas/V2ComponentsUpdate'
-              - $ref: '#/components/schemas/V2ComponentArray'
+            - $ref: '#/components/schemas/V2ComponentsUpdate'
+            - $ref: '#/components/schemas/V2ComponentArray'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
@@ -1242,7 +1242,7 @@ paths:
       summary: Get API versions
       description: Return list of versions currently running.
       tags:
-        - version
+      - version
       x-openapi-router-controller: bos.server.controllers.base
       operationId: get_versions
       responses:
@@ -1260,8 +1260,8 @@ paths:
       summary: Get API version
       description: Return the API version
       tags:
-        - v2
-        - version
+      - v2
+      - version
       x-openapi-router-controller: bos.server.controllers.v2.base
       operationId: get_v2
       responses:
@@ -1274,8 +1274,8 @@ paths:
       summary: Get service health details
       description: Get BOS health details.
       tags:
-        - v2
-        - healthz
+      - v2
+      - healthz
       x-openapi-router-controller: bos.server.controllers.v2.healthz
       operationId: get_v2_healthz
       responses:
@@ -1287,13 +1287,13 @@ paths:
           $ref: '#/components/responses/ServiceUnavailable'
   /v2/sessiontemplates:
     parameters:
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: List Session Templates
       description: List all Session Templates.
       tags:
-        - v2
-        - sessiontemplates
+      - v2
+      - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: get_v2_sessiontemplates
       responses:
@@ -1301,8 +1301,8 @@ paths:
           $ref: '#/components/responses/V2SessionTemplateDetailsArray'
   /v2/sessiontemplatesvalid/{session_template_id}:
     parameters:
-      - $ref: '#/components/parameters/TemplateIdPathParam'
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/TemplateIdPathParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Validate the Session Template by ID
       description: |
@@ -1310,8 +1310,8 @@ paths:
         The Session Template ID corresponds to the *name*
         of the Session Template.
       tags:
-        - v2
-        - sessiontemplatess
+      - v2
+      - sessiontemplatess
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: validate_v2_sessiontemplate
       responses:
@@ -1321,8 +1321,8 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/sessiontemplates/{session_template_id}:
     parameters:
-      - $ref: '#/components/parameters/TemplateIdPathParam'
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/TemplateIdPathParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Get Session Template by ID
       description: |
@@ -1330,8 +1330,8 @@ paths:
         The Session Template ID corresponds to the *name*
         of the Session Template.
       tags:
-        - v2
-        - sessiontemplatess
+      - v2
+      - sessiontemplatess
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: get_v2_sessiontemplate
       responses:
@@ -1343,8 +1343,8 @@ paths:
       summary: Create Session Template
       description: Create a new Session Template.
       tags:
-        - v2
-        - sessiontemplates
+      - v2
+      - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: put_v2_sessiontemplate
       requestBody:
@@ -1363,8 +1363,8 @@ paths:
       summary: Update a Session Template
       description: Update an existing Session Template.
       tags:
-        - v2
-        - sessiontemplates
+      - v2
+      - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: patch_v2_sessiontemplate
       requestBody:
@@ -1385,8 +1385,8 @@ paths:
       summary: Delete a Session Template
       description: Delete a Session Template.
       tags:
-        - v2
-        - sessiontemplates
+      - v2
+      - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: delete_v2_sessiontemplate
       responses:
@@ -1402,8 +1402,8 @@ paths:
         used as a starting point for users creating their own
         Session Templates.
       tags:
-        - v2
-        - sessiontemplates
+      - v2
+      - sessiontemplates
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: get_v2_sessiontemplatetemplate
       responses:
@@ -1411,7 +1411,7 @@ paths:
           $ref: '#/components/responses/V2SessionTemplateDetails'
   /v2/sessions:
     parameters:
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     post:
       summary: Create a Session
       description: |
@@ -1419,8 +1419,8 @@ paths:
         specified in the SessionCreateRequest
         on the Boot Sets defined in the Session Template.
       tags:
-        - v2
-        - sessions
+      - v2
+      - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: post_v2_session
       requestBody:
@@ -1433,14 +1433,14 @@ paths:
     get:
       summary: List Sessions
       parameters:
-        - $ref: '#/components/parameters/V2SessionsMinAgeQueryParam'
-        - $ref: '#/components/parameters/V2SessionsMaxAgeQueryParam'
-        - $ref: '#/components/parameters/V2SessionsStatusQueryParam'
+      - $ref: '#/components/parameters/V2SessionsMinAgeQueryParam'
+      - $ref: '#/components/parameters/V2SessionsMaxAgeQueryParam'
+      - $ref: '#/components/parameters/V2SessionsStatusQueryParam'
       description: |
         List all Sessions, including those in progress and those complete.
       tags:
-        - v2
-        - sessions
+      - v2
+      - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_sessions
       responses:
@@ -1449,15 +1449,15 @@ paths:
     delete:
       summary: Delete multiple Sessions.
       parameters:
-        - $ref: '#/components/parameters/V2SessionsMinAgeQueryParam'
-        - $ref: '#/components/parameters/V2SessionsMaxAgeQueryParam'
-        - $ref: '#/components/parameters/V2SessionsStatusQueryParam'
+      - $ref: '#/components/parameters/V2SessionsMinAgeQueryParam'
+      - $ref: '#/components/parameters/V2SessionsMaxAgeQueryParam'
+      - $ref: '#/components/parameters/V2SessionsStatusQueryParam'
       description: |
         Delete multiple Sessions.  If filters are provided, only Sessions matching
         all filters will be deleted.  By default only completed Sessions will be deleted.
       tags:
-        - v2
-        - sessions
+      - v2
+      - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: delete_v2_sessions
       responses:
@@ -1467,14 +1467,14 @@ paths:
           $ref: '#/components/responses/BadRequest'
   /v2/sessions/{session_id}:
     parameters:
-      - $ref: '#/components/parameters/V2SessionIdPathParam'
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/V2SessionIdPathParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Get Session details by ID
       description: Get Session details by Session ID.
       tags:
-        - v2
-        - sessions
+      - v2
+      - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_session
       responses:
@@ -1488,8 +1488,8 @@ paths:
         Update the state for a given Session in the BOS database.
         This is intended only for internal use by the BOS service.
       tags:
-        - v2
-        - sessions
+      - v2
+      - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: patch_v2_session
       requestBody:
@@ -1505,8 +1505,8 @@ paths:
       summary: Delete Session by ID
       description: Delete Session by Session ID.
       tags:
-        - v2
-        - sessions
+      - v2
+      - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: delete_v2_session
       responses:
@@ -1516,14 +1516,14 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/sessions/{session_id}/status:
     parameters:
-      - $ref: '#/components/parameters/V2SessionIdPathParam'
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/V2SessionIdPathParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Get Session extended status information by ID
       description: Get Session extended status information by ID
       tags:
-        - v2
-        - sessions
+      - v2
+      - sessions
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: get_v2_session_status
       responses:
@@ -1534,9 +1534,9 @@ paths:
     post:
       summary: Saves the current Session to database
       tags:
-        - v2
-        - sessions
-        - cli_ignore
+      - v2
+      - sessions
+      - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       description: Saves the current Session to database.  For use at Session completion.
       operationId: save_v2_session_status
@@ -1547,48 +1547,48 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/components:
     parameters:
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Retrieve the state of a collection of Components
       parameters:
-        - name: ids
-          schema:
-            $ref: '#/components/schemas/V2ComponentId'
-          in: query
-          description: |-
-            Retrieve the Components with the given ID
-            (e.g. xname for hardware Components). Can be chained
-            for selecting groups of Components.
-        - name: session
-          schema:
-            type: string
-          in: query
-          description: |-
-            Retrieve the Components with the given Session ID.
-        - name: staged_session
-          schema:
-            type: string
-          in: query
-          description: |-
-            Retrieve the Components with the given staged Session ID.
-        - name: enabled
-          schema:
-            type: boolean
-          in: query
-          description: |-
-            Retrieve the Components with the "enabled" state.
-        - name: phase
-          schema:
-            type: string
-          in: query
-          description: |-
-            Retrieve the Components in the given phase.
-        - name: status
-          schema:
-            type: string
-          in: query
-          description: |-
-            Retrieve the Components with the given status.
+      - name: ids
+        schema:
+          $ref: '#/components/schemas/V2ComponentId'
+        in: query
+        description: |-
+          Retrieve the Components with the given ID
+          (e.g. xname for hardware Components). Can be chained
+          for selecting groups of Components.
+      - name: session
+        schema:
+          type: string
+        in: query
+        description: |-
+          Retrieve the Components with the given Session ID.
+      - name: staged_session
+        schema:
+          type: string
+        in: query
+        description: |-
+          Retrieve the Components with the given staged Session ID.
+      - name: enabled
+        schema:
+          type: boolean
+        in: query
+        description: |-
+          Retrieve the Components with the "enabled" state.
+      - name: phase
+        schema:
+          type: string
+        in: query
+        description: |-
+          Retrieve the Components in the given phase.
+      - name: status
+        schema:
+          type: string
+        in: query
+        description: |-
+          Retrieve the Components with the given status.
       description: |-
         Retrieve the full collection of Components in the form of a
         ComponentArray. Full results can also be filtered by query
@@ -1597,8 +1597,8 @@ paths:
         If the collection is empty or the filters have no match, an
         empty array is returned.
       tags:
-        - v2
-        - components
+      - v2
+      - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: get_v2_components
       responses:
@@ -1610,9 +1610,9 @@ paths:
       summary: Add or Replace a collection of Components
       description: Update the state for a collection of Components in the BOS database
       tags:
-        - v2
-        - components
-        - cli_ignore
+      - v2
+      - components
+      - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: put_v2_components
       requestBody:
@@ -1626,9 +1626,9 @@ paths:
       summary: Update a collection of Components
       description: Update the state for a collection of Components in the BOS database
       tags:
-        - v2
-        - components
-        - cli_ignore
+      - v2
+      - components
+      - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: patch_v2_components
       requestBody:
@@ -1642,14 +1642,14 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/components/{component_id}:
     parameters:
-      - $ref: '#/components/parameters/V2ComponentIdPathParam'
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/V2ComponentIdPathParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     get:
       summary: Retrieve the state of a single Component
       description: Retrieve the current and desired state of a single Component
       tags:
-        - v2
-        - components
+      - v2
+      - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: get_v2_component
       responses:
@@ -1663,8 +1663,8 @@ paths:
       summary: Add or Replace a single Component
       description: Update the state for a given Component in the BOS database
       tags:
-        - v2
-        - components
+      - v2
+      - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: put_v2_component
       requestBody:
@@ -1678,8 +1678,8 @@ paths:
       summary: Update a single Component
       description: Update the state for a given Component in the BOS database
       tags:
-        - v2
-        - components
+      - v2
+      - components
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: patch_v2_component
       requestBody:
@@ -1697,9 +1697,9 @@ paths:
       summary: Delete a single Component
       description: Delete the given Component
       tags:
-        - v2
-        - components
-        - cli_ignore
+      - v2
+      - components
+      - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: delete_v2_component
       responses:
@@ -1709,7 +1709,7 @@ paths:
           $ref: '#/components/responses/ResourceNotFound'
   /v2/applystaged:
     parameters:
-      - $ref: '#/components/parameters/V2TenantHeaderParam'
+    - $ref: '#/components/parameters/V2TenantHeaderParam'
     post:
       summary: Start a staged Session for the specified Components
       description: |
@@ -1718,8 +1718,8 @@ paths:
         will be ignored, and a list all Components that are acted on will
         be returned in the response.
       tags:
-        - v2
-        - applystaged
+      - v2
+      - applystaged
       x-openapi-router-controller: bos.server.controllers.v2.components
       operationId: post_v2_apply_staged
       requestBody:
@@ -1734,7 +1734,7 @@ paths:
       summary: Retrieve the BOS service options
       description: Retrieve the list of BOS service options.
       tags:
-        - options
+      - options
       x-openapi-router-controller: bos.server.controllers.v2.options
       operationId: get_v2_options
       responses:
@@ -1744,8 +1744,8 @@ paths:
       summary: Update BOS service options
       description: Update one or more of the BOS service options.
       tags:
-        - v2
-        - options
+      - v2
+      - options
       x-openapi-router-controller: bos.server.controllers.v2.options
       operationId: patch_v2_options
       requestBody:
@@ -1760,8 +1760,8 @@ paths:
       summary: Get API version
       description: Return the API version
       tags:
-        - v2
-        - version
+      - v2
+      - version
       x-openapi-router-controller: bos.server.controllers.v2.base
       operationId: get_version_v2
       responses:
