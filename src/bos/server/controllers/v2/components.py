@@ -49,6 +49,7 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
         try:
             id_list = ids.split(',')
         except Exception as err:
+            LOGGER.exception("Error parsing component IDs")
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
@@ -160,6 +161,7 @@ def put_v2_components():
             component_id = component_data['id']
             components.append((component_id, component_data))
     except Exception as err:
+        LOGGER.exception("Error parsing component data")
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -180,6 +182,7 @@ def patch_v2_components():
     elif type(data) == dict:
         return patch_v2_components_dict(data)
     else:
+        LOGGER.error("Unexpected data type %s", str(type(data)))
         return connexion.problem(
            status=400, title="Error parsing the data provided.",
            detail="Unexpected data type {}".format(str(type(data))))
@@ -192,11 +195,13 @@ def patch_v2_components_list(data):
         for component_data in data:
             component_id = component_data['id']
             if component_id not in DB:
+                LOGGER.warning("Component %s could not be found", component_id)
                 return connexion.problem(
                     status=404, title="Component could not found.",
                     detail="Component {} could not be found".format(component_id))
             components.append((component_id, component_data))
     except Exception as err:
+        LOGGER.exception("Error loading component data")
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -214,6 +219,7 @@ def patch_v2_components_dict(data):
     ids = filters.get("ids", None)
     session = filters.get("session", None)
     if ids and session:
+        LOGGER.warning("Multiple filters provided")
         return connexion.problem(
             status=400, title="Only one filter may be provided.",
             detail="Only one filter may be provided.")
@@ -221,6 +227,7 @@ def patch_v2_components_dict(data):
         try:
             id_list = ids.split(',')
         except Exception as err:
+            LOGGER.exception("Error parsing the IDs provided")
             return connexion.problem(
                 status=400, title="Error parsing the ids provided.",
                 detail=str(err))
@@ -229,6 +236,7 @@ def patch_v2_components_dict(data):
         id_list = [component["id"] for component in get_v2_components_data(session=session)]
         LOGGER.debug("patch_v2_components_dict: %d IDs found for specified session", len(id_list))
     else:
+        LOGGER.warning("No filter provided")
         return connexion.problem(
             status=400, title="One filter must be provided.",
             detail="Only one filter may be provided.")
@@ -247,6 +255,7 @@ def get_v2_component(component_id):
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /v2/components/%s invoked get_v2_component", component_id)
     if component_id not in DB:
+        LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
@@ -263,6 +272,7 @@ def put_v2_component(component_id):
     try:
         data = connexion.request.get_json()
     except Exception as err:
+        LOGGER.exception("Error parsing request data")
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -276,16 +286,19 @@ def patch_v2_component(component_id):
     """Used by the PATCH /components/{component_id} API operation"""
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component", component_id)
     if component_id not in DB:
+        LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
     try:
         data = connexion.request.get_json()
     except Exception as err:
+        LOGGER.exception("Error parsing request data")
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
     if "actual_state" in data and not validate_actual_state_change_is_allowed(component_id):
+        LOGGER.warning("Not able to update actual state")
         return connexion.problem(
             status=409, title="Actual state can not be updated.",
             detail="BOS is currently changing the state of the node,"
@@ -319,6 +332,7 @@ def delete_v2_component(component_id):
     """Used by the DELETE /components/{component_id} API operation"""
     LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component", component_id)
     if component_id not in DB:
+        LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
             status=404, title="Component could not found.",
             detail="Component {} could not be found".format(component_id))
@@ -342,10 +356,11 @@ def post_v2_apply_staged():
                     response["succeeded"].append(xname)
                 else:
                     response["ignored"].append(xname)
-            except Exception as err:
-                LOGGER.error(f"An error was encountered while attempting to apply stage for node {xname}: {err}")
+            except Exception:
+                LOGGER.exception("An error was encountered while attempting to apply stage for node %s", xname)
                 response["failed"].append(xname)
     except Exception as err:
+        LOGGER.exception("Error parsing request data")
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))

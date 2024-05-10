@@ -80,11 +80,13 @@ def post_v2_session():  # noqa: E501
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name)
     if error_code >= BOOT_SET_ERROR:
+        LOGGER.error("Session template fails check: %s", msg)
         return msg, 400
 
     # -- Setup Record --
     session = _create_session(session_create)
     if session.name in DB:
+        LOGGER.warning("v2 session named %s already exists", session.name)
         return connexion.problem(
             detail="A session with the name {} already exists".format(session.name),
             status=409,
@@ -124,6 +126,7 @@ def patch_v2_session(session_id):
     """
     LOGGER.debug("PATCH /v2/sessions/%s invoked patch_v2_session", session_id)
     if session_id not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -146,6 +149,7 @@ def get_v2_session(session_id):  # noqa: E501
     """
     LOGGER.debug("GET /v2/sessions/%s invoked get_v2_session", session_id)
     if session_id not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -174,6 +178,7 @@ def delete_v2_session(session_id):  # noqa: E501
     """
     LOGGER.debug("DELETE /v2/sessions/%s invoked delete_v2_session", session_id)
     if session_id not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -195,6 +200,7 @@ def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
             if session_name in STATUS_DB:
                 STATUS_DB.delete(session_name)
     except ParsingException as err:
+        LOGGER.exception("Error parsing age field")
         return connexion.problem(
             detail=str(err),
             status=400,
@@ -214,6 +220,7 @@ def get_v2_session_status(session_id):  # noqa: E501
     """
     LOGGER.debug("GET /v2/sessions/status/%s invoked get_v2_session_status", session_id)
     if session_id not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -235,6 +242,7 @@ def save_v2_session_status(session_id):  # noqa: E501
     """
     LOGGER.debug("POST /v2/sessions/status/%s invoked save_v2_session_status", session_id)
     if session_id not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))

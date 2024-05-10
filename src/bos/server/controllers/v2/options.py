@@ -116,6 +116,7 @@ def patch_v2_options():
     try:
         data = connexion.request.get_json()
     except Exception as err:
+        LOGGER.exception("Error parsing request data")
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
