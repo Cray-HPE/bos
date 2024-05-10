@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -49,3 +49,13 @@ class ServiceNotReady(Exception):
     """
     Raised when a service is not ready for interaction.
     """
+
+def compact_response_text(response_text: str) -> str:
+    """
+    Often JSON is "pretty printed" in response text, which is undesirable for our logging.
+    This function transforms the response text into a single line, stripping leading and trailing whitespace from each line,
+    and then returns it.
+    """
+    if response_text:
+        return ' '.join([ line.strip() for line in response_text.split('\n') ])
+    return str(response.text)

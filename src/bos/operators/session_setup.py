@@ -154,13 +154,20 @@ class Session:
                 self._log(LOGGER.warning, f"No hardware matching role {role_name}")
                 continue
             nodes |= self.inventory.roles[role_name]
+        if not nodes:
+            self._log(LOGGER.warning, "Even before checking limits or disabled status, no nodes found to act upon.")
+            return nodes
+        self._log(LOGGER.debug, "Before checking limits or disabled status, %d nodes found to act upon.", len(nodes))
         # Filter to nodes defined by limit
         nodes = self._apply_limit(nodes)
+        if not nodes:
+            return nodes
         # Exclude disabled nodes
         include_disabled = self.session_data.get("include_disabled", False)
         if not include_disabled:
             hsmfilter = HSMState(enabled=True)
             nodes = set(hsmfilter._filter(list(nodes)))
+            self._log(LOGGER.debug, "After removing disabled nodes, %d nodes remain to act upon.", len(nodes))
         if not nodes:
             self._log(LOGGER.warning, "No nodes were found to act upon.")
         return nodes
@@ -189,6 +196,10 @@ class Session:
                 limit_nodes = self.inventory[limit]
             limit_node_set = op(limit_nodes)
         nodes = nodes.intersection(limit_node_set)
+        if not nodes:
+            self._log(LOGGER.warning, "After applying limit, no nodes remain to act upon.")
+        else:
+            self._log(LOGGER.debug, "After applying limit, %d nodes remain to act upon.", len(nodes))
         return nodes
 
     def _mark_running(self, component_ids):

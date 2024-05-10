@@ -25,7 +25,7 @@ from requests.exceptions import HTTPError
 import logging
 import json
 
-from bos.operators.utils import requests_retry_session, PROTOCOL
+from bos.operators.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
@@ -58,12 +58,13 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
                                          communicating with the
                                          Hardware State Manager
     '''
+    if not node_set:
+        LOGGER.warning("set_bss called with empty node_set")
+        return
+
     session = session or requests_retry_session()
     LOGGER.info("Params: {}".format(kernel_params))
     url = "%s/bootparameters" % (ENDPOINT)
-
-    if not node_set:
-        return
 
     # Assignment payload
     payload = {"hosts": list(node_set),
@@ -75,7 +76,7 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
     try:
         resp = session.put(url, data=json.dumps(payload), verify=False)
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
-                     resp.reason, resp.text)
+                     resp.reason, compact_response_text(resp.text))
         resp.raise_for_status()
         return resp
     except HTTPError as err:

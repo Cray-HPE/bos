@@ -25,7 +25,7 @@ from collections import defaultdict
 import logging
 from requests.exceptions import HTTPError, ConnectionError
 
-from bos.operators.utils import requests_retry_session, PROTOCOL
+from bos.operators.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = "%s://%s/v2" % (PROTOCOL, SERVICE_NAME)
@@ -43,7 +43,7 @@ def get_components(session=None, **kwargs):
     LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, kwargs)
     response = session.get(COMPONENTS_ENDPOINT, params=kwargs)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:
@@ -63,7 +63,7 @@ def patch_components(data, session=None):
     LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
     response = session.patch(COMPONENTS_ENDPOINT, json=data)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:

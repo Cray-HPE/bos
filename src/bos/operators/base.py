@@ -138,6 +138,10 @@ class BaseOperator(ABC):
 
     def _handle_failed_components(self, components: List[dict]) -> List[dict]:
         """ Marks components failed if the retry limits are exceeded """
+        if not components:
+            # If we have been passed an empty list, there is nothing to do.
+            LOGGER.debug("_handle_failed_components: No components to handle")
+            return []
         failed_components = []
         good_components = []  # Any component that isn't determined to be in a failed state
         for component in components:
@@ -161,6 +165,10 @@ class BaseOperator(ABC):
         Updates the BOS database for all components acted on by the operator
         Includes updating the last action, attempt count and error
         """
+        if not components:
+            # If we have been passed an empty list, there is nothing to do.
+            LOGGER.debug("_update_database: No components require database updates")
+            return
         data = []
         for component in components:
             patch = {
@@ -201,6 +209,10 @@ class BaseOperator(ABC):
         # e.g. nodes could be powered-on without the correct power-on last action, causing status problems
         if not self.name:
             return
+        if not components:
+            # If we have been passed an empty list, there is nothing to do.
+            LOGGER.debug("_preset_last_action: No components require database updates")
+            return
         data = []
         for component in components:
             patch = {
@@ -222,6 +234,10 @@ class BaseOperator(ABC):
         """
         Updates the BOS database for all components the operator believes have failed
         """
+        if not components:
+            # If we have been passed an empty list, there is nothing to do.
+            LOGGER.debug("_update_database_for_failure: No components require database updates")
+            return
         data = []
         for component in components:
             patch = {

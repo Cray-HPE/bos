@@ -28,7 +28,7 @@ from collections import defaultdict
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.operators.utils import requests_retry_session, PROTOCOL
+from bos.operators.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
 BASE_ENDPOINT = "%s://%s/hsm/v2/" % (PROTOCOL, SERVICE_NAME)
@@ -62,7 +62,7 @@ def read_all_node_xnames():
         LOGGER.error("Unable to contact HSM service: %s", ce)
         raise HWStateManagerException(ce) from ce
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
     except (HTTPError, MaxRetryError) as hpe:
@@ -121,6 +121,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     }
     """
     if not node_list:
+        LOGGER.warning("hsm.get_components called with empty node list")
         return {'Components': []}
     session = requests_retry_session()
     try:
@@ -130,7 +131,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
         LOGGER.debug("POST %s with body=%s", ENDPOINT, payload)
         response = session.post(ENDPOINT, json=payload)
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                     response.reason, response.text)
+                     response.reason, compact_response_text(response.text))
         response.raise_for_status()
         components = json.loads(response.text)
     except (ConnectionError, MaxRetryError) as e:
@@ -226,7 +227,7 @@ class Inventory(object):
             LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
             response = self._session.get(url, params=params, verify=VERIFY)
             LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                         response.reason, response.text)
+                         response.reason, compact_response_text(response.text))
             response.raise_for_status()
         except HTTPError as err:
             LOGGER.error("Failed to get '{}': {}".format(url, err))
