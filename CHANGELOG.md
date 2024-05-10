@@ -6,9 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Fixes
+- Fix bug preventing multiple components from having CAPMC error information updated from single failed CAPMC power request.
+
 ### Changed
 - Added more checks to avoid operating on empty lists
 - Compact response bodies to single line before logging them
+- Improve v2 server logging when unexpected things occur
 
 ## [2.0.37] - 04-19-2024
 ### Fixed

@@ -65,7 +65,6 @@ class PowerOperatorBase(BaseOperator):
         """
         return self._power_components(components)
 
-
     def _power_components(self, components: List[dict]) -> List[dict]:
         """
         Apply the _my_power operation to a list of components.
@@ -85,31 +84,33 @@ class PowerOperatorBase(BaseOperator):
         """
         component_ids = [component['id'] for component in components]
         errors = self._my_power(component_ids)
-        if errors.error_code != 0:
-            if errors.nodes_in_error:
-                # Update any nodes with errors they encountered
-                for component in errors.nodes_in_error:
-                    index = self._find_component_in_components(component, components)
-                    if index is not None:
-                        error = errors.nodes_in_error[component].error_message
-                        components[index]['error'] = error
-                        components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
-                        break
-            else:
-                # Errors could not be associated with a specific node.
-                # Ask CAPMC to act on them one at a time to identify
-                # nodes associated with errors.
-                for component in component_ids:
-                    LOGGER.debug(f"Acting on component {component}")
-                    errors = self._my_power([component])
-                    if errors.error_code != 0:
-                        LOGGER.debug("Component %s error code=%s message=%s", component,
-                                     errors.error_code, errors.error_message)
-                        index = self._find_component_in_components(component, components)
-                        if index is not None:
-                            components[index]['error'] = errors.error_message
-                            components[index]['enabled'] = False
+        if errors.error_code == 0:
+            return components
+            
+        if errors.nodes_in_error:
+            # Update any nodes with errors they encountered
+            for component in errors.nodes_in_error:
+                index = self._find_component_in_components(component, components)
+                if index is not None:
+                    error = errors.nodes_in_error[component].error_message
+                    components[index]['error'] = error
+                    components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
+            return components
 
+        # Errors could not be associated with a specific node.
+        # Ask CAPMC to act on them one at a time to identify
+        # nodes associated with errors.
+        for component in component_ids:
+            LOGGER.debug("Acting on component %s", component)
+            errors = self._my_power([component])
+            if errors.error_code == 0:
+                continue
+            LOGGER.debug("Component %s error code=%s message=%s", component,
+                         errors.error_code, errors.error_message)
+            index = self._find_component_in_components(component, components)
+            if index is not None:
+                components[index]['error'] = errors.error_message
+                components[index]['enabled'] = False
         return components
 
     def _find_component_in_components(self, component_id, components) -> int:
