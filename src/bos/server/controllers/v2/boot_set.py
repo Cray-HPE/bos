@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 #
 
 import logging
+from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
 
@@ -81,7 +82,7 @@ def validate_boot_sets(session_template: dict,
                 image_metadata = BootImageMetaDataFactory(bs)()
             except Exception as err:
                 msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its boot artifacts. Error: {err}"
+                    f"could not locate its boot artifacts. Error: " + exc_type_msg(err)
                 LOGGER.error(msg)
                 return BOOT_SET_ERROR, msg
 
@@ -95,7 +96,7 @@ def validate_boot_sets(session_template: dict,
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Error: {err}"
+                    f"could not locate its {boot_artifact}. Error: " + exc_type_msg(err)
                     LOGGER.error(msg)
                     return BOOT_SET_ERROR, msg
 
@@ -113,7 +114,7 @@ def validate_boot_sets(session_template: dict,
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Warning: {err}"
+                    f"could not locate its {boot_artifact}. Warning: " + exc_type_msg(err)
                     LOGGER.warn(msg)
                     warning_flag = True
                     warn_msg = warn_msg + msg

@@ -204,8 +204,8 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     session = session or requests_retry_session()
     try:
         assert operation in set(['On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init', 'Force-Off'])
-    except AssertionError:
-        raise PowerControlSyntaxException("Operation '%s' is not supported or implemented." %(operation))
+    except AssertionError as err:
+        raise PowerControlSyntaxException("Operation '%s' is not supported or implemented." %(operation)) from err
     params = {'location': [], 'operation': operation}
     if task_deadline_minutes:
         params['taskDeadlineMinutes'] = int(task_deadline_minutes)
