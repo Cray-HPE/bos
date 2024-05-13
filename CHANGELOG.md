@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix bug where a single CAPMC operation reports multiple failing nodes, but only one of them
   has its status correctly updated in BOS v2.
 
+### Changed
+- Added more checks to avoid operating on empty lists
+
 ## [2.0.37] - 04-19-2024
 ### Fixed
 - Corrected description of `disable_components_on_completion` in API spec.

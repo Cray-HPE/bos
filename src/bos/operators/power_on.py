@@ -64,6 +64,8 @@ class PowerOnOperator(PowerOperatorBase):
         Set up BSS and CFS prior to powering on the components.
         Power on the components.
         """
+        if not components:
+            return components
         self._preset_last_action(components)
         try:
             self._set_bss(components)
@@ -85,6 +87,10 @@ class PowerOnOperator(PowerOperatorBase):
         Because the connection to the BSS tokens database can be lost due to
         infrequent use, retry up to retries number of times.
         """
+        if not components:
+            # If we have been passed an empty list, there is nothing to do.
+            LOGGER.debug("_set_bss: No components to act on")
+            return
         parameters = defaultdict(set)
         sessions = {}
         for component in components:
@@ -128,6 +134,8 @@ class PowerOnOperator(PowerOperatorBase):
                                        "desired_state": {"bss_token": token},
                                        "session": sessions[node]})
         LOGGER.info('Found %d components that require BSS token updates', len(bss_tokens))
+        if not bss_tokens:
+            return
         redacted_component_updates = [
             { "id": comp["id"], 
               "session": comp["session"]
@@ -145,7 +153,6 @@ class PowerOnOperator(PowerOperatorBase):
           a dictionary containing the nodes (keys) suffering from errors (values)
           :rtype: CapmcXnameOnOffReturnedError
         """
-
         return power(component_ids, state='on')
 
 

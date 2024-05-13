@@ -58,12 +58,15 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
                                          communicating with the
                                          Hardware State Manager
     '''
+    if not node_set:
+        # Cannot simply return if no nodes are specified, as this function
+        # is intended to return the response object from BSS.
+        # Accordingly, an Exception is raised.
+        raise Exception("set_bss called with empty node_set")
+
     session = session or requests_retry_session()
     LOGGER.info("Params: {}".format(kernel_params))
     url = "%s/bootparameters" % (ENDPOINT)
-
-    if not node_set:
-        return
 
     # Assignment payload
     payload = {"hosts": list(node_set),
