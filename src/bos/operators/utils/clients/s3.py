@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,6 +29,8 @@ import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 from urllib.parse import urlparse
+
+from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.s3')
 
@@ -110,7 +112,7 @@ def s3_client(connection_timeout=60, read_timeout=60):
         s3_gateway = os.environ['S3_GATEWAY']
     except KeyError as error:
         LOGGER.error("Missing needed S3 configuration: %s", error)
-        raise S3MissingConfiguration(error)
+        raise S3MissingConfiguration(error) from error
 
     s3 = boto3.client('s3',
                       endpoint_url=s3_protocol + "://" + s3_gateway,
@@ -161,7 +163,7 @@ class S3Object:
         except ClientError as error:
             msg = f"s3 object {self.path} was not found."
             LOGGER.error(msg)
-            LOGGER.debug(error)
+            LOGGER.debug(exc_type_msg(error))
             raise S3ObjectNotFound(msg) from error
 
         if self.etag and self.etag != s3_obj["ETag"].strip('\"'):
@@ -194,7 +196,7 @@ class S3Object:
         except (ClientError, ParamValidationError) as error:
             msg = f"Unable to download object {self.path}."
             LOGGER.error(msg)
-            LOGGER.debug(error)
+            LOGGER.debug(exc_type_msg(error))
             raise S3ObjectNotFound(msg) from error
 
 
@@ -235,7 +237,7 @@ class S3BootArtifacts(S3Object):
         except Exception as error:
             msg = f"Unable to read manifest file '{self.path}'."
             LOGGER.error(msg)
-            LOGGER.debug(error)
+            LOGGER.debug(exc_type_msg(error))
             raise ManifestNotFound(msg) from error
 
         # Cache the manifest.json file
