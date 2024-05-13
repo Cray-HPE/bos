@@ -94,7 +94,6 @@ class PowerOperatorBase(BaseOperator):
                         error = errors.nodes_in_error[component].error_message
                         components[index]['error'] = error
                         components[index]['enabled'] = disable_based_on_error_xname_on_off(error)
-                        break
             else:
                 # Errors could not be associated with a specific node.
                 # Ask CAPMC to act on them one at a time to identify
