@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2020-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,6 +28,7 @@ import re
 import datetime
 from time import sleep
 
+from bos.common.utils import exc_type_msg
 from bos.reporter.client import requests_retry_session
 from bos.reporter.node_identity import read_identity
 from bos.reporter.components.state import report_state, BOSComponentException, UnknownComponent
@@ -86,7 +87,7 @@ def report_state_until_success(component):
             LOGGER.warning("Unable to contact BOS to report component status: %s" % (cce))
             continue
         except OSError as exc:
-            LOGGER.error("BOS client encountered an %s" % (exc))
+            LOGGER.error("BOS client encountered an error: %s", exc_type_msg(exc))
             continue
         LOGGER.info("Updated the actual_state record for BOS component '%s'." % (component))
         return
@@ -133,7 +134,7 @@ def main():
         try:
             report_state_until_success(component)
         except Exception as exp:
-            LOGGER.error("An error occurred: {}".format(exp))
+            LOGGER.error("An error occurred: %s", exc_type_msg(exp))
         if has_slept_before:
             sleep(sleep_time)
         else:

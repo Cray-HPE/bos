@@ -27,7 +27,7 @@ from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.tenant_utils import get_new_tenant_header
-from bos.common.utils import PROTOCOL, requests_retry_session
+from bos.common.utils import PROTOCOL, exc_type_msg, requests_retry_session
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
 
@@ -43,13 +43,13 @@ def log_call_errors(func):
             result = func(*args, **kwargs)
             return result
         except (ConnectionError, MaxRetryError) as e:
-            LOGGER.error("Unable to connect to BOS: {}".format(e))
+            LOGGER.error("Unable to connect to BOS: %s", exc_type_msg(e))
             raise e
         except HTTPError as e:
-            LOGGER.error("Unexpected response from BOS: {}".format(e))
+            LOGGER.error("Unexpected response from BOS: %s", exc_type_msg(e))
             raise e
         except json.JSONDecodeError as e:
-            LOGGER.error("Non-JSON response from BOS: {}".format(e))
+            LOGGER.error("Non-JSON response from BOS: %s", exc_type_msg(e))
             raise e
 
     return wrap

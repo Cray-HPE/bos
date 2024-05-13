@@ -30,7 +30,7 @@ import uuid
 from connexion.lifecycle import ConnexionResponse
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
-from bos.common.utils import get_current_time, get_current_timestamp, load_timestamp
+from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.components import get_v2_components_data
@@ -83,6 +83,7 @@ def post_v2_session():  # noqa: E501
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name)
     if error_code >= BOOT_SET_ERROR:
+        LOGGER.error("Session template fails check: %s", msg)
         return msg, 400
 
     # -- Setup Record --
@@ -90,6 +91,7 @@ def post_v2_session():  # noqa: E501
     session = _create_session(session_create, tenant)
     session_key =  get_tenant_aware_key(session.name, tenant)
     if session_key in DB:
+        LOGGER.warning("v2 session named %s already exists", session.name)
         return connexion.problem(
             detail="A session with the name {} already exists".format(session.name),
             status=409,
@@ -146,6 +148,7 @@ def patch_v2_session(session_id):
 
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -166,6 +169,7 @@ def get_v2_session(session_id):  # noqa: E501
     LOGGER.debug("GET /v2/sessions/%s invoked get_v2_session", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -197,6 +201,7 @@ def delete_v2_session(session_id):  # noqa: E501
     LOGGER.debug("DELETE /v2/sessions/%s invoked delete_v2_session", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -214,6 +219,7 @@ def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
         sessions = _get_filtered_sessions(tenant=tenant, min_age=min_age, max_age=max_age,
                                           status=status)
     except ParsingException as err:
+        LOGGER.error("Error parsing age field: %s", exc_type_msg(err))
         return connexion.problem(
             detail=str(err),
             status=400,
@@ -241,6 +247,7 @@ def get_v2_session_status(session_id):  # noqa: E501
     LOGGER.debug("GET /v2/sessions/status/%s invoked get_v2_session_status", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
@@ -263,6 +270,7 @@ def save_v2_session_status(session_id):  # noqa: E501
     LOGGER.debug("POST /v2/sessions/status/%s invoked save_v2_session_status", session_id)
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
+        LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
             detail="Session {} could not be found".format(session_id))
