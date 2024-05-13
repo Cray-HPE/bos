@@ -36,6 +36,7 @@ from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFac
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
+from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 
@@ -135,7 +136,7 @@ class Session:
             if not all_component_ids:
                 raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
-            raise SessionSetupException(err)
+            raise SessionSetupException(err) from err
         else:
             self._log(LOGGER.info, 'Found %d components that require updates', len(data))
             self._log(LOGGER.debug, f'Updated components: {data}')
@@ -392,7 +393,7 @@ class Session:
             except (ClientError, UnicodeDecodeError, S3ObjectNotFound) as error:
                 self._log(LOGGER.error, "Unable to read file {}. Thus, no kernel boot parameters obtained "
                              "from image".format(artifact_info['boot_parameters']))
-                LOGGER.error(error)
+                LOGGER.error(exc_type_msg(error))
                 raise
 
         # Parameters from the BOS Session template if the parameters exist.

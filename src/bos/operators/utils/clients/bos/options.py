@@ -26,7 +26,7 @@ import json
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.utils import requests_retry_session
+from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
@@ -56,11 +56,11 @@ class Options:
             response.raise_for_status()
             return json.loads(response.text)
         except (ConnectionError, MaxRetryError) as e:
-            LOGGER.error("Unable to connect to BOS: {}".format(e))
+            LOGGER.error("Unable to connect to BOS: %s", exc_type_msg(e))
         except HTTPError as e:
-            LOGGER.error("Unexpected response from BOS: {}".format(e))
+            LOGGER.error("Unexpected response from BOS: %s", exc_type_msg(e))
         except json.JSONDecodeError as e:
-            LOGGER.error("Non-JSON response from BOS: {}".format(e))
+            LOGGER.error("Non-JSON response from BOS: %s", exc_type_msg(e))
         return {}
 
     def get_option(self, key, value_type, default):

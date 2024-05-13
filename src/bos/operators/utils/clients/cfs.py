@@ -25,7 +25,7 @@ from collections import defaultdict
 import logging
 from requests.exceptions import HTTPError, ConnectionError
 
-from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
+from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = "%s://%s/v3" % (PROTOCOL, SERVICE_NAME)
@@ -55,7 +55,7 @@ def get_components(session=None, **params):
         try:
             response.raise_for_status()
         except HTTPError as err:
-            LOGGER.error("Failed getting nodes from CFS: %s", err)
+            LOGGER.error("Failed getting nodes from CFS: %s", exc_type_msg(err))
             raise
         response_json = response.json()
         new_components = response_json["components"]
@@ -79,7 +79,7 @@ def patch_components(data, session=None):
     try:
         response.raise_for_status()
     except HTTPError as err:
-        LOGGER.error("Failed asking CFS to configure nodes: %s", err)
+        LOGGER.error("Failed asking CFS to configure nodes: %s", exc_type_msg(err))
         raise
 
 

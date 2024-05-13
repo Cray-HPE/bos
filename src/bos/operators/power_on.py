@@ -26,6 +26,7 @@ from collections import defaultdict
 import logging
 from requests import HTTPError
 
+from bos.common.utils import exc_type_msg
 from bos.common.values import Action, Status
 import bos.operators.utils.clients.bss as bss
 import bos.operators.utils.clients.pcs as pcs
@@ -112,9 +113,9 @@ class PowerOnOperator(BaseOperator):
                 resp = bss.set_bss(node_set=nodes, kernel_params=kernel_parameters,
                                    kernel=kernel, initrd=initrd)
                 resp.raise_for_status()
-            except HTTPError:
-                LOGGER.error(f"Failed to set BSS for boot artifacts: {key} for"
-                             "nodes: {nodes}. Error: {err}")
+            except HTTPError as err:
+                LOGGER.error("Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
+                             key, nodes, exc_type_msg(err))
             else:
                 token = resp.headers['bss-referral-token']
                 attempts = 0
@@ -124,7 +125,8 @@ class PowerOnOperator(BaseOperator):
                         break
                     except Exception as err:
                         attempts += 1
-                        LOGGER.error(f"An error occurred attempting to record the BSS token: {err}")
+                        LOGGER.error("An error occurred attempting to record the BSS token: %s",
+                                     exc_type_msg(err))
                         if attempts > retries:
                             raise
                         LOGGER.info("Retrying to record the BSS token.")
