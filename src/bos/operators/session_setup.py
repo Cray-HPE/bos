@@ -159,20 +159,26 @@ class Session:
                 self._log(LOGGER.warning, f"No hardware matching role {role_name}")
                 continue
             nodes |= self.inventory.roles[role_name]
+        if not nodes:
+            self._log(LOGGER.warning, "After populating node list, before any filtering, no nodes to act upon.")
+            return nodes
+        self._log(LOGGER.debug, "Before any limiting or filtering, %d nodes to act upon.", len(nodes))
         # Filter out any nodes that do not match the boot set architecture desired; boot sets that do not have a
         # specified arch are considered 'X86' nodes.
         arch = boot_set.get('arch', 'X86')
         nodes = self._apply_arch(nodes, arch)
+        if not nodes:
+            return nodes
         # Filter to nodes defined by limit
         nodes = self._apply_limit(nodes)
-        # Exclude disabled nodes
-        include_disabled = self.session_data.get("include_disabled", False)
-        if not include_disabled:
-            hsmfilter = HSMState(enabled=True)
-            nodes = set(hsmfilter._filter(list(nodes)))
-        nodes = self._apply_tenant_limit(nodes)
         if not nodes:
-            self._log(LOGGER.warning, "No nodes were found to act upon.")
+            return nodes
+        # Exclude disabled nodes
+        nodes = self._apply_include_disabled(nodes)
+        if not nodes:
+            return nodes
+        # If this session is for a tenant, filter out nodes not belonging to this tenant
+        nodes = self._apply_tenant_limit(nodes)
         return nodes
 
     def _apply_arch(self, nodes, arch):
@@ -197,7 +203,29 @@ class Session:
         if arch == 'X86':
             valid_archs.add('UNKNOWN')
         hsm_filter = HSMState()
-        return set(hsm_filter.filter_by_arch(nodes, valid_archs))
+        nodes = set(hsm_filter.filter_by_arch(nodes, valid_archs))
+        if not nodes:
+            self._log(LOGGER.warning, "After filtering for architecture, no nodes remain to act upon.")
+        else:
+            self._log(LOGGER.debug, "After filtering for architecture, %d nodes remain to act upon.", len(nodes))
+        return nodes
+
+    def _apply_include_disabled(self, nodes):
+        """
+        If include_disabled is False for this session, filter out any nodes which are disabled in HSM.
+        If include_disabled is True, return the node list unchanged.
+        """
+        include_disabled = self.session_data.get("include_disabled", False)
+        if include_disabled:
+            # Nodes disabled in HSM may be included, so no filtering is required
+            return nodes
+        hsmfilter = HSMState(enabled=True)
+        nodes = set(hsmfilter._filter(list(nodes)))
+        if not nodes:
+            self._log(LOGGER.warning, "After removing disabled nodes, no nodes remain to act upon.")
+        else:
+            self._log(LOGGER.debug, "After removing disabled nodes, %d nodes remain to act upon.", len(nodes))
+        return nodes
 
     def _apply_limit(self, nodes):
         session_limit = self.session_data.get('limit')
@@ -223,6 +251,10 @@ class Session:
                 limit_nodes = self.inventory[limit]
             limit_node_set = op(limit_nodes)
         nodes = nodes.intersection(limit_node_set)
+        if not nodes:
+            self._log(LOGGER.warning, "After applying limit, no nodes remain to act upon.")
+        else:
+            self._log(LOGGER.debug, "After applying limit, %d nodes remain to act upon.", len(nodes))
         return nodes
 
     def _apply_tenant_limit(self, nodes):
@@ -234,6 +266,10 @@ class Session:
         except InvalidTenantException as e:
             raise SessionSetupException(str(e)) from e
         nodes = nodes.intersection(tenant_limit)
+        if not nodes:
+            self._log(LOGGER.warning, "After applying tenant limit, no nodes remain to act upon.")
+        else:
+            self._log(LOGGER.debug, "After applying tenant limit, %d nodes remain to act upon.", len(nodes))
         return nodes
 
     def _mark_running(self, component_ids):
