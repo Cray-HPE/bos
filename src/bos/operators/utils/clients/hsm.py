@@ -121,6 +121,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     }
     """
     if not node_list:
+        LOGGER.warning("hsm.get_components called with empty node list")
         return {'Components': []}
     session = requests_retry_session()
     try:
