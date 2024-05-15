@@ -32,8 +32,9 @@ from requests.exceptions import HTTPError
 import logging
 import os
 
-from . import RootfsProvider
-from .. import PROTOCOL, ServiceNotReady, requests_retry_session
+from bos.common.utils import compact_response_text
+from bos.operators.utils import PROTOCOL, ServiceNotReady, requests_retry_session
+from bos.operators.utils.rootfs import RootfsProvider
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-cps'
@@ -79,7 +80,7 @@ def check_cpss3(session=None):
     try:
         response = session.get(uri)
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                     response.reason, response.text)
+                     response.reason, compact_response_text(response.text))
         response.raise_for_status()
     except HTTPError as he:
         raise ServiceNotReady(he) from he

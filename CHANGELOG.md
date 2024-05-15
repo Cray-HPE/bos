@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Added more checks to avoid operating on empty lists
+- Compact response bodies to single line before logging them
 
 ## [2.0.37] - 04-19-2024
 ### Fixed
