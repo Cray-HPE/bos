@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,8 @@ import connexion
 import json
 import logging
 import redis
+
+from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
 DATABASES = ["options", "components", "session_templates", "sessions", "bss_tokens_boot_artifacts", "session_status"]  # Index is the db id.
@@ -66,7 +68,7 @@ class DBWrapper():
             return redis.Redis(host=DB_HOST, port=DB_PORT, db=db_id)
         except Exception as err:
             LOGGER.error("Failed to connect to database %s : %s",
-                         db_id, err)
+                         db_id, exc_type_msg(err))
             raise
 
     # The following methods act like REST calls for single items

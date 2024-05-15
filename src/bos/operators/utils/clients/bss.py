@@ -25,7 +25,7 @@ from requests.exceptions import HTTPError
 import logging
 import json
 
-from bos.common.utils import compact_response_text
+from bos.common.utils import compact_response_text, exc_type_msg
 from bos.operators.utils import requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
@@ -83,5 +83,5 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
         resp.raise_for_status()
         return resp
     except HTTPError as err:
-        LOGGER.error("%s" % err)
+        LOGGER.error(exc_type_msg(err))
         raise

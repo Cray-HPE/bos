@@ -33,6 +33,7 @@ import os
 import time
 from typing import List, NoReturn, Type
 
+from bos.common.utils import exc_type_msg
 from bos.common.values import Status
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
@@ -267,7 +268,7 @@ def _update_log_level() -> None:
             LOGGER.log(new_level, 'Logging level changed from {} to {}'.format(
                 logging.getLevelName(current_level), logging.getLevelName(new_level)))
     except Exception as e:
-        LOGGER.error('Error updating logging level: {}'.format(e))
+        LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 
 
 def _liveliness_heartbeat() -> NoReturn:

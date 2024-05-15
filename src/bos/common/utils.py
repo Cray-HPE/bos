@@ -23,6 +23,7 @@
 #
 import datetime
 import re
+import traceback
 from dateutil.parser import parse
 
 TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M|re.S)
@@ -65,3 +66,10 @@ def compact_response_text(response_text: str) -> str:
     if response_text:
         return ' '.join([ line.strip() for line in response_text.split('\n') ])
     return str(response_text)
+
+
+def exc_type_msg(exc: Exception) -> str:
+    """
+    Given an exception, returns a string of its type and its text (e.g. TypeError: 'int' object is not subscriptable)
+    """
+    return ''.join(traceback.format_exception_only(type(exc), exc))

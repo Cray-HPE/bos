@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -32,6 +32,7 @@ import json
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
+from bos.common.utils import exc_type_msg
 from bos.reporter.components import BOSComponentException
 from bos.reporter.components import ENDPOINT as COMPONENT_ENDPOINT
 from bos.reporter.client import requests_retry_session
@@ -61,8 +62,8 @@ def patch_component(component, properties, session=None):
     try:
         response = session.patch(component_endpoint, json=properties)
     except (ConnectionError, MaxRetryError) as ce:
-        LOGGER.warning("Could not connect to BOS API service: %s" % (ce))
-        raise BOSComponentException(ce)
+        LOGGER.warning("Could not connect to BOS API service: %s", exc_type_msg(ce))
+        raise BOSComponentException(ce) from ce
     try:
         response.raise_for_status()
     except HTTPError as hpe:
@@ -71,9 +72,9 @@ def patch_component(component, properties, session=None):
                 json_response = json.loads(response.text)
                 raise UnknownComponent(json_response['detail'])
             except json.JSONDecodeError as jde:
-                raise UnrecognizedResponse("BOS returned a non-json response: %s\n%s" % (response.text, jde))
+                raise UnrecognizedResponse("BOS returned a non-json response: %s\n%s" % (response.text, jde)) from jde
         LOGGER.warning("Unexpected response from '%s':\n%s: %s", component_endpoint, response.status_code, response.text)
-        raise BOSComponentException(hpe)
+        raise BOSComponentException(hpe) from hpe
 
 
 def report_state(component, state, session=None):
@@ -82,4 +83,3 @@ def report_state(component, state, session=None):
     """
     data = {'id': component, 'actual_state': state}
     patch_component(component, data, session=session)
-
