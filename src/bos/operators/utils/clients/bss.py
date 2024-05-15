@@ -25,7 +25,7 @@ from requests.exceptions import HTTPError
 import logging
 import json
 
-from bos.common.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
@@ -78,7 +78,7 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
     try:
         resp = session.put(url, data=json.dumps(payload), verify=False)
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
-                     resp.reason, resp.text)
+                     resp.reason, compact_response_text(resp.text))
         resp.raise_for_status()
         return resp
     except HTTPError as err:
