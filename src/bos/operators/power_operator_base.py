@@ -84,7 +84,7 @@ class PowerOperatorBase(BaseOperator):
         """
         if not components:
             return components
-        with open("/app/comps.json", "rt") as f:
+        with open("/tmp/comps.json", "rt") as f:
             component_state_map = json.load(f)
         self._do_power_components(list(component_state_map.keys()), component_state_map=component_state_map)
         self._do_power_components({ component['id']: component for component in components })
