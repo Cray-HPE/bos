@@ -86,7 +86,8 @@ class PowerOperatorBase(BaseOperator):
             return components
         with open("/tmp/comps.json", "rt") as f:
             component_state_map = json.load(f)
-        self._do_power_components(list(component_state_map.keys()), component_state_map=component_state_map)
+        component_id_map = { comp: {} for comp in component_state_map }
+        self._do_power_components(component_id_map, component_state_map=component_state_map)
         self._do_power_components({ component['id']: component for component in components })
         return components
 
