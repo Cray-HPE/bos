@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,8 +25,9 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from . import BootImageMetaData, BootImageMetaDataBadRead
-from ..clients.s3 import S3BootArtifacts, S3MissingConfiguration, ArtifactNotFound
+from bos.common.utils import exc_type_msg
+from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
+from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, ArtifactNotFound
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_image_metadata')
 
@@ -45,27 +46,27 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             self.artifact_summary['kernel'] = self.kernel_path
         except ArtifactNotFound as err:
-            LOGGER.warn(err)
+            LOGGER.warn(exc_type_msg(err))
         try:
             self.artifact_summary['initrd'] = self.initrd_path
         except ArtifactNotFound as err:
-            LOGGER.warn(err)
+            LOGGER.warn(exc_type_msg(err))
         try:
             self.artifact_summary['rootfs'] = self.rootfs_path
         except ArtifactNotFound as err:
-            LOGGER.warn(err)
+            LOGGER.warn(exc_type_msg(err))
         try:
             self.artifact_summary['rootfs_etag'] = self.rootfs_etag
         except ArtifactNotFound as err:
-            LOGGER.warn(err)
+            LOGGER.warn(exc_type_msg(err))
         try:
             self.artifact_summary['boot_parameters'] = self.boot_parameters_path
         except ArtifactNotFound as err:
-            LOGGER.warn(err)
+            LOGGER.warn(exc_type_msg(err))
         try:
             self.artifact_summary['boot_parameters_etag'] = self.boot_parameters_etag
         except ArtifactNotFound as err:
-            LOGGER.warn(err)
+            LOGGER.warn(exc_type_msg(err))
 
     @property
     def metadata(self):
@@ -79,7 +80,7 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             return self.boot_artifacts.manifest_json
         except (ClientError, S3MissingConfiguration) as error:
-            LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''), error)
+            LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''), exc_type_msg(error))
             raise BootImageMetaDataBadRead(error)
 
     @property

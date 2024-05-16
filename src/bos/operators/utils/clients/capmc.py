@@ -29,6 +29,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import List
 
+from bos.common.utils import compact_response_text
 from bos.operators.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-capmc'
@@ -331,7 +332,7 @@ def status(nodes, filtertype = 'show_all', session = None):
     LOGGER.debug("POST %s with body=%s", endpoint, body)
     response = session.post(endpoint, json = body)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         json_response = json.loads(response.text)
     except json.JSONDecodeError as jde:
@@ -458,7 +459,7 @@ def call(endpoint, nodes, node_format = 'xnames', cont = True, reason = "None gi
     try:
         resp = session.post(endpoint, verify = False, json = payload)
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
-                     resp.reason, resp.text)
+                     resp.reason, compact_response_text(resp.text))
         resp.raise_for_status()
     except requests.exceptions.HTTPError as err:
         LOGGER.error("Failed interacting with Cray Advanced Platform Monitoring and Control "

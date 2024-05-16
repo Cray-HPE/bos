@@ -25,6 +25,7 @@ from collections import defaultdict
 import logging
 from requests.exceptions import HTTPError, ConnectionError
 
+from bos.common.utils import compact_response_text, exc_type_msg
 from bos.operators.utils import requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-cfs-api'
@@ -43,11 +44,11 @@ def get_components(session=None, **kwargs):
     LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, kwargs)
     response = session.get(COMPONENTS_ENDPOINT, params=kwargs)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:
-        LOGGER.error("Failed getting nodes from cfs: %s", err)
+        LOGGER.error("Failed getting nodes from CFS: %s", exc_type_msg(err))
         raise
     component_list = response.json()
     LOGGER.debug("Returning %d components from CFS", len(component_list))
@@ -63,11 +64,11 @@ def patch_components(data, session=None):
     LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
     response = session.patch(COMPONENTS_ENDPOINT, json=data)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:
-        LOGGER.error("Failed asking CFS to configure nodes: %s", err)
+        LOGGER.error("Failed asking CFS to configure nodes: %s", exc_type_msg(err))
         raise
 
 
