@@ -22,6 +22,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+import json
 import logging
 from typing import Dict, List, Type, Union
 
@@ -83,11 +84,14 @@ class PowerOperatorBase(BaseOperator):
         """
         if not components:
             return components
+        with open("/app/comps.json", "rt") as f:
+            component_state_map = json.load(f)
+        self._do_power_components(list(component_state_map.keys()), component_state_map=component_state_map)
         self._do_power_components({ component['id']: component for component in components })
         return components
 
     def _do_power_components(self, component_id_map: Dict[str, dict],
-                             component_ids: Union[None,List[str]]=None) -> None:
+                             component_ids: Union[None,List[str]]=None, component_state_map=None) -> None:
         """
         Apply the _my_power operation to a list of components.
         Handle any errors. This includes setting the error per component and
@@ -107,11 +111,17 @@ class PowerOperatorBase(BaseOperator):
         Returns:
           None
         """
+        def _my_power(cids):
+            if component_state_map is None:
+                return self._my_power(cids)
+            return self._my_power([component_state_map] + cids)
+            
+
         if component_ids is None:
             component_ids = list(component_id_map)
         num_components = len(component_ids)
         LOGGER.debug("_do_power_components called on %d components", num_components)
-        errors = self._my_power(component_ids)
+        errors = _my_power(component_ids)
         if errors.error_code == 0:
             return
 
@@ -145,7 +155,7 @@ class PowerOperatorBase(BaseOperator):
             # nodes associated with errors.
             for component_id in component_ids:
                 LOGGER.debug("Acting on component %s", component_id)
-                errors = self._my_power([component_id])
+                errors = _my_power([component_id])
                 if errors.error_code == 0:
                     continue
                 LOGGER.debug("Component %s error code=%s message=%s", component_id,

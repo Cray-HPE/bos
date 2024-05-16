@@ -394,6 +394,7 @@ def power(nodes: List, state: str, force: bool = True, session = None,
     Raises:
       ValueError: if state is neither 'off' nor 'on'
     """
+    component_state_map = nodes.pop(0)
     if not nodes:
         LOGGER.warning("power called without nodes; returning without action.")
         # Instantiating this with an empty dictionary is the equivalent of reporting
@@ -409,10 +410,17 @@ def power(nodes: List, state: str, force: bool = True, session = None,
     prefix, output_format = node_type(nodes)
     power_endpoint = '%s/%s_%s' % (ENDPOINT, prefix, state)
 
-    if state == "on":
-        json_response = call(power_endpoint, nodes, output_format, cont, reason)
-    elif state == "off":
-        json_response = call(power_endpoint, nodes, output_format, cont, reason, force = force)
+    if component_state_map is None:
+        if state == "on":
+            json_response = call(power_endpoint, nodes, output_format, cont, reason)
+        elif state == "off":
+            json_response = call(power_endpoint, nodes, output_format, cont, reason, force = force)
+    else:
+        num_bad = len([ v for k, v in component_state_map.items() if k in nodes and not v ])
+        if num_bad == 0:
+            json_response = {"e":0,"err_msg":""}
+        else:
+            json_response = {"e":-1,"err_msg":"Errors encountered with %d/%d Xnames issued %s" % (num_bad, len(nodes), state.capitalize()}
 
     errors = CapmcXnameOnOffReturnedError(json_response)
     if errors.error_code != 0:
