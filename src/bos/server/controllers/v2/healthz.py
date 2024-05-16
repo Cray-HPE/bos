@@ -23,6 +23,7 @@
 #
 import logging
 
+from bos.common.utils import exc_type_msg
 from bos.server.models.healthz import Healthz as Healthz
 from bos.server import redis_db_utils
 
@@ -37,7 +38,7 @@ def _get_db_status():
         if DB.info():
             available = True
     except Exception as e:
-        LOGGER.error(e)
+        LOGGER.error(exc_type_msg(e))
 
     if available:
         return 'ok'

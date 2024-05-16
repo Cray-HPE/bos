@@ -26,6 +26,7 @@ import logging
 import subprocess
 import yaml
 
+from bos.common.utils import exc_type_msg
 from bos.server.controllers.utils import url_for
 from bos.server.models import Version, Link
 from os import path
@@ -55,7 +56,7 @@ def calc_version(details):
     try:
         f = open(openapispec_f, 'r')
     except IOError as e:
-        LOGGER.debug('error opening openapi.yaml file: %s' % e)
+        LOGGER.debug('error opening "%s" file: %s', openapispec_f, exc_type_msg(e))
 
     openapispec_map = yaml.safe_load(f)
     f.close()

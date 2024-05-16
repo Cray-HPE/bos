@@ -25,7 +25,7 @@ from requests.exceptions import HTTPError
 import logging
 import json
 
-from bos.common.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
@@ -58,12 +58,15 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
                                          communicating with the
                                          Hardware State Manager
     '''
+    if not node_set:
+        # Cannot simply return if no nodes are specified, as this function
+        # is intended to return the response object from BSS.
+        # Accordingly, an Exception is raised.
+        raise Exception("set_bss called with empty node_set")
+
     session = session or requests_retry_session()
     LOGGER.info("Params: {}".format(kernel_params))
     url = "%s/bootparameters" % (ENDPOINT)
-
-    if not node_set:
-        return
 
     # Assignment payload
     payload = {"hosts": list(node_set),
@@ -75,9 +78,9 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
     try:
         resp = session.put(url, data=json.dumps(payload), verify=False)
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
-                     resp.reason, resp.text)
+                     resp.reason, compact_response_text(resp.text))
         resp.raise_for_status()
         return resp
     except HTTPError as err:
-        LOGGER.error("%s" % err)
+        LOGGER.error(exc_type_msg(err))
         raise

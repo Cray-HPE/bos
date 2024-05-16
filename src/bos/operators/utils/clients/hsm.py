@@ -28,7 +28,7 @@ from collections import defaultdict
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
 BASE_ENDPOINT = "%s://%s/hsm/v2/" % (PROTOCOL, SERVICE_NAME)
@@ -59,14 +59,14 @@ def read_all_node_xnames():
     try:
         response = session.get(endpoint)
     except ConnectionError as ce:
-        LOGGER.error("Unable to contact HSM service: %s", ce)
+        LOGGER.error("Unable to contact HSM service: %s", exc_type_msg(ce))
         raise HWStateManagerException(ce) from ce
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
     except (HTTPError, MaxRetryError) as hpe:
-        LOGGER.error("Unexpected response from HSM: %s", response)
+        LOGGER.error("Unexpected response from HSM: %s (%s)", response, exc_type_msg(hpe))
         raise HWStateManagerException(hpe) from hpe
     try:
         json_body = json.loads(response.text)
@@ -77,7 +77,7 @@ def read_all_node_xnames():
         return set([component['ID'] for component in json_body['Components']
                     if component.get('Type', None) == 'Node'])
     except KeyError as ke:
-        LOGGER.error("Unexpected API response from HSM")
+        LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
         raise HWStateManagerException(ke) from ke
 
 
@@ -121,6 +121,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     }
     """
     if not node_list:
+        LOGGER.warning("hsm.get_components called with empty node list")
         return {'Components': []}
     session = requests_retry_session()
     try:
@@ -130,17 +131,17 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
         LOGGER.debug("POST %s with body=%s", ENDPOINT, payload)
         response = session.post(ENDPOINT, json=payload)
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                     response.reason, response.text)
+                     response.reason, compact_response_text(response.text))
         response.raise_for_status()
         components = json.loads(response.text)
     except (ConnectionError, MaxRetryError) as e:
-        LOGGER.error("Unable to connect to HSM: {}".format(e))
+        LOGGER.error("Unable to connect to HSM: %s", exc_type_msg(e))
         raise e
     except HTTPError as e:
-        LOGGER.error("Unexpected response from HSM: {}".format(e))
+        LOGGER.error("Unexpected response from HSM: %s", exc_type_msg(e))
         raise e
     except json.JSONDecodeError as e:
-        LOGGER.error("Non-JSON response from HSM: {}".format(e))
+        LOGGER.error("Non-JSON response from HSM: %s", exc_type_msg(e))
         raise e
     return components
 
@@ -226,10 +227,10 @@ class Inventory(object):
             LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
             response = self._session.get(url, params=params, verify=VERIFY)
             LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                         response.reason, response.text)
+                         response.reason, compact_response_text(response.text))
             response.raise_for_status()
         except HTTPError as err:
-            LOGGER.error("Failed to get '{}': {}".format(url, err))
+            LOGGER.error("Failed to get '%s': %s", url, exc_type_msg(err))
             raise
         try:
             return response.json()
