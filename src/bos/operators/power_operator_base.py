@@ -168,7 +168,7 @@ class PowerOperatorBase(BaseOperator):
         # Subdivide the nodes into 8 groups and recursively act on those
         chunk_size = len(component_ids) // 8
         while component_ids:
-            self._do_power_components(component_id_map, component_ids[:chunk_size])
+            self._do_power_components(component_id_map, component_ids[:chunk_size], component_state_map=component_state_map)
             component_ids = component_ids[chunk_size:]
 
     def _my_power(self, component_ids: List[str]):
