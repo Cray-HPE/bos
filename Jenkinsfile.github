@@ -2,7 +2,7 @@
  *
  *  MIT License
  *
- *  (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+ *  (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -125,8 +125,8 @@ pipeline {
         stage("SLES15SP2 RPM Build") {
             agent {
                 docker {
-                    // https://rndwiki-pro.its.hpecorp.net/display/CSMTemp/Build+Environment+Docker+Images
-                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp2_build_environment:latest"
+                    // https://rndwiki-pro.its.hpecorp.net/display/MTL/Build+Environment+Docker+Images
+                    image "artifactory.algol60.net/csm-docker/stable/csm-docker-sle:15.2"
                     reuseNode true
                     // Support docker in docker for clamav scan
                     args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
@@ -150,8 +150,8 @@ pipeline {
         stage("SLES15SP3 RPM Build") {
             agent {
                 docker {
-                    // https://rndwiki-pro.its.hpecorp.net/display/CSMTemp/Build+Environment+Docker+Images
-                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp3_build_environment:latest"
+                    // https://rndwiki-pro.its.hpecorp.net/display/MTL/Build+Environment+Docker+Images
+                    image "artifactory.algol60.net/csm-docker/stable/csm-docker-sle:15.3"
                     reuseNode true
                     // Support docker in docker for clamav scan
                     args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
@@ -175,7 +175,8 @@ pipeline {
         stage("SLES15SP4 RPM Build") {
             agent {
                 docker {
-                    image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp4_build_environment:latest"
+                    // https://rndwiki-pro.its.hpecorp.net/display/MTL/Build+Environment+Docker+Images
+                    image "artifactory.algol60.net/csm-docker/stable/csm-docker-sle:15.4"
                     reuseNode true
                     // Support docker in docker for clamav scan
                     args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
