@@ -86,8 +86,13 @@ class PowerOperatorBase(BaseOperator):
             return components
         with open("/tmp/comps.json", "rt") as f:
             component_state_map = json.load(f)
-        component_id_map = { comp: {} for comp in component_state_map }
+        component_id_map = { comp_id: { 'id': comp_id, 'enabled': True, 'error': None } for comp_id in component_state_map }
+        assert all(comp['error'] is None for comp_id, comp in component_id_map.items())
+        assert all(comp['enabled']==True for comp_id, comp in component_id_map.items())
         self._do_power_components(component_id_map, component_state_map=component_state_map)
+        assert all(comp['error'] is not None for comp_id, comp in component_id_map.items() if not component_state_map[comp_id])
+        assert all(comp['error'] is None for comp_id, comp in component_id_map.items() if component_state_map[comp_id])
+        assert all(comp['enabled']==component_state_map[comp_id] for comp_id, comp in component_id_map.items())
         self._do_power_components({ component['id']: component for component in components })
         return components
 
