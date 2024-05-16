@@ -27,7 +27,7 @@ import functools
 import logging
 import hashlib
 from requests.exceptions import HTTPError
-from bos.common.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger('bos.common.tenant_utils')
 
@@ -78,7 +78,7 @@ def get_tenant_data(tenant, session=None):
     try:
         response.raise_for_status()
     except HTTPError as e:
-        LOGGER.error("Failed getting tenant data from tapms: %s", e)
+        LOGGER.error("Failed getting tenant data from tapms: %s", exc_type_msg(e))
         if response.status_code == 404:
             raise InvalidTenantException(f"Data not found for tenant {tenant}") from e
         else:
@@ -110,6 +110,7 @@ def tenant_error_handler(func):
         try:
             return func(*args, **kwargs)
         except InvalidTenantException as e:
+            LOGGER.debug("Invalid tenant: %s", exc_type_msg(e))
             return connexion.problem(
                 status=400, title='Invalid tenant',
                 detail=str(e))
@@ -122,6 +123,7 @@ def reject_invalid_tenant(func):
     def wrapper(*args, **kwargs):
         tenant = get_tenant_from_header()
         if tenant and not validate_tenant_exists(tenant):
+            LOGGER.debug("The provided tenant does not exist")
             return connexion.problem(
                 status=400, title="Invalid tenant",
                 detail=str("The provided tenant does not exist"))

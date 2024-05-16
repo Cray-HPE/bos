@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 #
 import datetime
 import re
+import traceback
 from dateutil.parser import parse
 import requests
 from requests.adapters import HTTPAdapter
@@ -58,6 +59,7 @@ def duration_to_timedelta(timestamp: str):
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)
+
 
 class TimeoutHTTPAdapter(HTTPAdapter):
     """
@@ -95,3 +97,21 @@ def requests_retry_session(retries=10, backoff_factor=0.5,
     # Mounting to only http will not work!
     session.mount("%s://" % protocol, adapter)
     return session
+
+
+def compact_response_text(response_text: str) -> str:
+    """
+    Often JSON is "pretty printed" in response text, which is undesirable for our logging.
+    This function transforms the response text into a single line, stripping leading and trailing whitespace from each line,
+    and then returns it.
+    """
+    if response_text:
+        return ' '.join([ line.strip() for line in response_text.split('\n') ])
+    return str(response_text)
+
+
+def exc_type_msg(exc: Exception) -> str:
+    """
+    Given an exception, returns a string of its type and its text (e.g. TypeError: 'int' object is not subscriptable)
+    """
+    return ''.join(traceback.format_exception_only(type(exc), exc))

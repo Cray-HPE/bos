@@ -30,7 +30,7 @@ import requests
 import json
 from collections import defaultdict
 
-from bos.common.utils import requests_retry_session, PROTOCOL
+from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-power-control'
 POWER_CONTROL_VERSION = 'v1'
@@ -103,7 +103,7 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     LOGGER.debug("POST %s with body=%s", POWER_STATUS_ENDPOINT, params)
     response = session.post(POWER_STATUS_ENDPOINT, json=params)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
         if not response.ok:
@@ -204,8 +204,8 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     session = session or requests_retry_session()
     try:
         assert operation in set(['On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init', 'Force-Off'])
-    except AssertionError:
-        raise PowerControlSyntaxException("Operation '%s' is not supported or implemented." %(operation))
+    except AssertionError as err:
+        raise PowerControlSyntaxException("Operation '%s' is not supported or implemented." %(operation)) from err
     params = {'location': [], 'operation': operation}
     if task_deadline_minutes:
         params['taskDeadlineMinutes'] = int(task_deadline_minutes)
@@ -217,7 +217,7 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     LOGGER.debug("POST %s with body=%s", TRANSITION_ENDPOINT, params)
     response = session.post(TRANSITION_ENDPOINT, json=params)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, response.text)
+                 response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
         if not response.ok:

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.17.7] - 2024-05-16
+### Changed
+- Added more checks to avoid operating on empty lists
+- Compact response bodies to single line before logging them
+- Improve BOS logging of unexpected errors
+
 ## [2.17.6] - 2024-04-19
 ### Fixed
 - Corrected description of `disable_components_on_completion` in API spec.

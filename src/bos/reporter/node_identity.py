@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -60,8 +60,8 @@ def identity_from_environment():
     ident_string = 'NODE_IDENTITY'
     try:
         return os.environ[ident_string]
-    except KeyError:
-        raise UnknownIdentity("Node identity not passed in via environment '%s'" % (ident_string))
+    except KeyError as exc:
+        raise UnknownIdentity("Node identity not passed in via environment '%s'" % (ident_string)) from exc
 
 
 def read_identity():

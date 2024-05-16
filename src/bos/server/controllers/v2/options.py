@@ -26,6 +26,7 @@ import connexion
 import threading
 import time
 
+from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v2_options import V2Options as Options
 
@@ -60,8 +61,8 @@ def _init():
         try:
             data = DB.get(OPTIONS_KEY)
             break
-        except Exception:
-            LOGGER.info('Database is not yet available')
+        except Exception as err:
+            LOGGER.info('Database is not yet available (%s)', exc_type_msg(err))
             time.sleep(1)
     if not data:
         return
@@ -116,6 +117,7 @@ def patch_v2_options():
     try:
         data = connexion.request.get_json()
     except Exception as err:
+        LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -142,6 +144,6 @@ def check_v2_logging_level():
             data = get_v2_options_data()
             if 'logging_level' in data:
                 update_log_level(data['logging_level'])
-        except Exception as e:
-            LOGGER.debug(e)
+        except Exception as err:
+            LOGGER.debug("Error checking or updating log level: %s", exc_type_msg(err))
         time.sleep(5)

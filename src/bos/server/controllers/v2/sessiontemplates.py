@@ -25,6 +25,7 @@ import logging
 import connexion
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
+from bos.common.utils import exc_type_msg
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
 from bos.server import redis_db_utils as dbutils
 from bos.server.utils import _canonize_xname
@@ -92,6 +93,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     try:
         data = connexion.request.get_json()
     except Exception as err:
+        LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -108,6 +110,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
         """
         SessionTemplate.from_dict(template_data)
     except Exception as err:
+        LOGGER.error("Error creating session template: %s", exc_type_msg(err))
         return connexion.problem(
             status=400, title="The session template could not be created.",
             detail=str(err))
@@ -143,6 +146,7 @@ def get_v2_sessiontemplate(session_template_id):
     LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate", session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
+        LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
             detail="Sessiontemplate {} could not be found".format(session_template_id))
@@ -171,6 +175,7 @@ def delete_v2_sessiontemplate(session_template_id):
     LOGGER.debug("DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate", session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
+        LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
             detail="Sessiontemplate {} could not be found".format(session_template_id))
@@ -187,6 +192,7 @@ def patch_v2_sessiontemplate(session_template_id):
     LOGGER.debug("PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate", session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
+        LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
             detail="Sessiontemplate {} could not be found".format(session_template_id))
@@ -201,6 +207,7 @@ def patch_v2_sessiontemplate(session_template_id):
     try:
         data = connexion.request.get_json()
     except Exception as err:
+        LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -217,8 +224,9 @@ def patch_v2_sessiontemplate(session_template_id):
         """
         SessionTemplate.from_dict(template_data)
     except Exception as err:
+        LOGGER.error("Error patching session template: %s", exc_type_msg(err))
         return connexion.problem(
-            status=400, title="The session template could not be created.",
+            status=400, title="The session template could not be patched.",
             detail=str(err))
 
     template_data = _sanitize_xnames(template_data)
