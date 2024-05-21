@@ -23,7 +23,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
-from typing import Dict, List, Type, Union
+from typing import Dict, List, Type
 
 from bos.operators.utils.clients.capmc import disable_based_on_error_xname_on_off, power
 from bos.operators.base import BaseOperator, main
@@ -83,11 +83,26 @@ class PowerOperatorBase(BaseOperator):
         """
         if not components:
             return components
-        self._do_power_components({ component['id']: component for component in components })
+        component_id_map = { component['id']: component for component in components }
+        component_ids = [ component['id'] for component in components ]
+
+        chunk_size = len(components)
+        next_index = 0
+        while next_index < len(components):
+            if self._do_power_components(component_id_map, component_ids[next_index, next_index+chunk_size]):
+                # This mean that the power operation did not involve any vague CAPMC errors that could not be
+                # isolated to specific nodes (or if it did, they were done one at a time and isolated)
+                next_index+=chunk_size
+                chunk_size=len(components)-next_index
+                continue
+            # We know that our call to _do_power_components will only return False when at least 16 components
+            # were specified, so the following calculation will result in at least 2
+            chunk_size = chunk_size // 8
+
         return components
 
     def _do_power_components(self, component_id_map: Dict[str, dict],
-                             component_ids: Union[None,List[str]]=None) -> None:
+                             component_ids: List[str]) -> bool:
         """
         Apply the _my_power operation to a list of components.
         Handle any errors. This includes setting the error per component and
@@ -102,34 +117,36 @@ class PowerOperatorBase(BaseOperator):
         :param Dict[str,dict] component_id_map: A mapping from component IDs
         to components (used to update the status of the components)
         :param List[str] component_ids: A list of component IDs to operate on.
-        If None, operate on all components in the map.
 
         Returns:
-          None
+          True if all errors (if any) got associated to a node
+          False otherwise
         """
-        if component_ids is None:
-            component_ids = list(component_id_map)
         num_components = len(component_ids)
         LOGGER.debug("_do_power_components called on %d components", num_components)
         errors = self._my_power(component_ids)
         if errors.error_code == 0:
-            return
+            return True
 
         if errors.nodes_in_error:
             # Update any nodes with errors they encountered
             for component_id, node_error in errors.nodes_in_error.items():
                 if component_id not in component_ids:
                     LOGGER.debug("CAPMC error for xname that wasn't in request: %s error code=%s "
-                                 "message=%s", node_error.error_message, component_id)
+                                 "message=%s", component_id, node_error.error_code,
+                                 node_error.error_message)
                     continue
                 LOGGER.debug("Component %s error code=%s message=%s", component_id,
                              node_error.error_code, node_error.error_message)
                 component = component_id_map[component_id]
                 component['error'] = node_error.error_message
                 component['enabled'] = disable_based_on_error_xname_on_off(node_error.error_message)
-            return
+            return True
 
         # Errors could not be associated with a specific node.
+        if num_components >= 16:
+            return False
+
         if num_components == 1:
             # Well, okay, I guess the error can be associated with this node
             component_id = component_ids[0]
@@ -138,28 +155,30 @@ class PowerOperatorBase(BaseOperator):
             component = component_id_map[component_id]
             component['error'] = errors.error_message
             component['enabled'] = False
-            return
+            return True
 
-        if num_components < 16:
-            # Ask CAPMC to act on them one at a time to identify
-            # nodes associated with errors.
-            for component_id in component_ids:
-                LOGGER.debug("Acting on component %s", component_id)
-                errors = self._my_power([component_id])
-                if errors.error_code == 0:
+        # This means there are < 16 components in our failed request
+        # Ask CAPMC to act on them one at a time to identify
+        # nodes associated with errors.
+        for component_id in component_ids:
+            LOGGER.debug("Acting on component %s", component_id)
+            errors = self._my_power([component_id])
+            if errors.error_code == 0:
+                continue
+            LOGGER.debug("Component %s error code=%s message=%s", component_id,
+                         errors.error_code, errors.error_message)
+            component = component_id_map[component_id]
+            if errors.nodes_in_error:
+                if component_id in errors.nodes_in_error:
+                    node_error = errors.nodes_in_error[component_id]
+                    component['error'] = node_error.error_message
+                    component['enabled'] = disable_based_on_error_xname_on_off(node_error.error_message)
                     continue
-                LOGGER.debug("Component %s error code=%s message=%s", component_id,
-                             errors.error_code, errors.error_message)
-                component = component_id_map[component_id]
-                component['error'] = errors.error_message
-                component['enabled'] = False
-            return
+                LOGGER.debug("CAPMC errors for xnames not in request: %s", errors.nodes_in_error)
+            component['error'] = errors.error_message
+            component['enabled'] = False
 
-        # Subdivide the nodes into 8 groups and recursively act on those
-        chunk_size = len(component_ids) // 8
-        while component_ids:
-            self._do_power_components(component_id_map, component_ids[:chunk_size])
-            component_ids = component_ids[chunk_size:]
+        return True
 
     def _my_power(self, component_ids: List[str]):
         """
