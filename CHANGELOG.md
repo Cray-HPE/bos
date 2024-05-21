@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Increase memory requests and limits for BOS pods, to prevent OOM kill issues seen at scale.
 
+### Fixed
+- Fixed minor errors in updated CAPMC logic.
+
 ## [2.0.38] - 05-16-2024
 ### Fixed
 - Fix bug where a single CAPMC operation reports multiple failing nodes, but only one of them
