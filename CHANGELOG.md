@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
   spec to OAS 3.1
 
+### Fixed
+- Addressed linter complaints
+
 ## [2.17.7] - 2024-05-16
 ### Changed
 - Added more checks to avoid operating on empty lists

@@ -64,7 +64,7 @@ class PowerControlComponentsEmptyException(Exception):
     Raised when one of the PCS utility functions that requires a non-empty
     list of components is passed an empty component list. This will only
     happen in the case of a programming bug.
-    
+
     This exception is not raised for functions that require a node list
     but that are able to return a sensible object to the caller that
     indicates nothing has been done. For example, the status function.
