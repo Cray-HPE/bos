@@ -93,7 +93,7 @@ class S3Url(object):
 def s3_client(connection_timeout=60, read_timeout=60):
     """
     Return an s3 client
-    
+
     Args:
       connection_timeout -- Number of seconds to wait to time out the connection
                             Default: 60 seconds
@@ -102,8 +102,8 @@ def s3_client(connection_timeout=60, read_timeout=60):
     Returns:
       Returns an s3 client object
     Raises:
-      S3MissingConfiguration -- it cannot contact S3 because it did not have the proper 
-                                credentials or configuration 
+      S3MissingConfiguration -- it cannot contact S3 because it did not have the proper
+                                credentials or configuration
     """
     try:
         s3_access_key = os.environ['S3_ACCESS_KEY']
@@ -144,14 +144,14 @@ class S3Object:
     @property
     def object_header(self) -> dict:
         """
-        Get the S3 object's header metadata. 
-        
-        
+        Get the S3 object's header metadata.
+
+
         Return:
           The S3 object headers (dict)
-        
+
         Raises:
-          ClientError 
+          ClientError
         """
 
         try:
@@ -176,16 +176,16 @@ class S3Object:
     def object(self):
         """
         The S3 object itself.  If the object was not found, log it and return an error.
-        
+
         Args:
           path -- path to the S3 key
           etag -- Entity tag
-        
+
         Return:
           S3 Object
-          
+
         Raises:
-          boto3.exceptions.ClientError -- when it cannot read from S3        
+          boto3.exceptions.ClientError -- when it cannot read from S3
         """
 
         s3 = s3_client()
@@ -215,16 +215,16 @@ class S3BootArtifacts(S3Object):
     def manifest_json(self):
         """
         Read a manifest.json file from S3. If the object was not found, log it and return an error.
-        
+
         Args:
           path -- path to the S3 key
           etag -- Entity tag
-        
+
         Return:
           Manifest file in JSON format
-          
+
         Raises:
-          boto3.exceptions.ClientError -- when it cannot read from S3        
+          boto3.exceptions.ClientError -- when it cannot read from S3
         """
 
         if self._manifest_json:
@@ -247,7 +247,7 @@ class S3BootArtifacts(S3Object):
     def _get_artifact(self, artifact_type):
         """
         Get the artifact_type artifact object out of the manifest.
-        
+
         The artifact object looks like this
         {
             "link": {
@@ -258,10 +258,10 @@ class S3BootArtifacts(S3Object):
             "type": "application/vnd.cray.image.rootfs.squashfs",
             "md5": "cccccckvnfdikecvecdngnljnnhvdlvbkueckgbkelee"
         }
-        
+
         Return:
           Artifact object
-        
+
         Raises:
           ValueError -- Manifest file is corrupt or invalid
           ArtifactNotFound -- The requested artifact is missing
@@ -288,7 +288,7 @@ class S3BootArtifacts(S3Object):
     def initrd(self):
         """
         Get the initrd artifact object out of the manifest.
-    
+
         Return:
           initrd object
         """
@@ -298,7 +298,7 @@ class S3BootArtifacts(S3Object):
     def kernel(self):
         """
         Get the kernel artifact object out of the manifest.
-    
+
         Return:
           Kernel object
         """
@@ -308,7 +308,7 @@ class S3BootArtifacts(S3Object):
     def boot_parameters(self):
         """
         Get the kernel artifact object out of the manifest, if one exists.
-    
+
         Return:
            boot parameters object if one exists, else None
         """
@@ -323,7 +323,7 @@ class S3BootArtifacts(S3Object):
     def rootfs(self):
         """
         Get the rootfs artifact object out of the manifest.
-    
+
         Return:
           rootfs object
         """

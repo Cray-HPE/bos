@@ -27,7 +27,7 @@ LOGGER = logging.getLogger('bos.server.migration')
 
 
 def perform_migrations():
-    # Not removing this file entirely because we are going to be adding 
+    # Not removing this file entirely because we are going to be adding
     # code here to migrate the previous BOS data to enforce API field
     # restrictions
     pass

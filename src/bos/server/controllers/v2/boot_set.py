@@ -41,13 +41,13 @@ def validate_boot_sets(session_template: dict,
     Validates the boot sets listed in a session template.
     It ensures that there are boot sets.
     It checks that each boot set specifies nodes via one of the specifier fields.
-    Ensures that the boot artifacts exist.  
-    
+    Ensures that the boot artifacts exist.
+
     Inputs:
       session_template (dict): Session template data
-      operation (str): Requested operation  
+      operation (str): Requested operation
       template_name (str): The name of the session template; Note, during Session template
-                                 creation, the name in the session template data does not have 
+                                 creation, the name in the session template data does not have
                                  to match the name used to create the session template.
     Returns:
         Returns an error_code and a message
@@ -55,8 +55,8 @@ def validate_boot_sets(session_template: dict,
             0 -- Success
             1 -- Warning, not fatal
             2 -- Error, fatal
-        
-      
+
+
     """
     # Verify boot sets exist.
     if 'boot_sets' not in session_template or not session_template['boot_sets']:
