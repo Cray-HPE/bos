@@ -117,10 +117,10 @@ cray-service:
         failureThreshold: 20
       resources:
         requests:
-          memory: "200Mi"
+          memory: "600Mi"
           cpu: "300m"
         limits:
-          memory: "500Mi"
+          memory: "1Gi"
           cpu: "1000m"
   volumes:
     ca-vol:

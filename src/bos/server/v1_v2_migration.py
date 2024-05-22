@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -46,7 +46,7 @@ def MissingName():
 
 def pod_ip():
     """
-    Find the IP address for the pod that corresponds to the correct the labels, 
+    Find the IP address for the pod that corresponds to the correct the labels,
     specifically 'cray-bos' and the version number of this version of BOS.
     """
     pod_ip = None
@@ -69,15 +69,15 @@ def pod_ip():
 def convert_v1_to_v2(v1_st):
     """
     Convert a v1 session template to a v2 session template.
-    Prune extraneous v1 attributes. 
-    
+    Prune extraneous v1 attributes.
+
     Input:
       v1_st: A v1 session template
-    
+
     Returns:
       v2_st: A v2 session template
       name: The name of the session template
-    
+
     Raises:
       MissingName: If the session template's name is missing, then raise this
                    exception.
@@ -92,8 +92,8 @@ def convert_v1_to_v2(v1_st):
     v2_st = {'boot_sets': {}}
     try:
         name = v1_st['name']
-    except KeyError:
-        raise MissingName()
+    except KeyError as exc:
+        raise MissingName() from exc
     for k, v in v1_st.items():
         if k in session_template_keys:
             if k != "boot_sets" and k != "name":
@@ -144,7 +144,8 @@ def migrate_v1_to_v2_session_templates():
                         # We should probably never get here.
                         LOGGER.error("Session template: '{}' was not migrated because it was missing its name.".format(v1_st['name']))
                     else:
-                        LOGGER.error("A session template: '{}' was not migrated because it was missing its name.".format(name))
+                        LOGGER.error("A session template was not migrated because it was missing its name: {}".format(v1_st))
+                    continue
                 response = session.put("{}/{}".format(st_v2_endpoint, name),
                                                       json=v2_st)
                 if not response.ok:

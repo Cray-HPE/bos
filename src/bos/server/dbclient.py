@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -40,7 +40,7 @@ class BosEtcdClient(Etcd3Client):
 
     Please note: Even though this extends the Etcd3Client implementation, the underlying
     watch and lock implementation pieces that are provided by the underlying etcd client
-    code are not expected to be resilient to connection failures. We do not use these 
+    code are not expected to be resilient to connection failures. We do not use these
     in the BOS API, so it isn't an issue.
     """
 

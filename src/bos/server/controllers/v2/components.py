@@ -447,7 +447,7 @@ def _populate_boot_artifacts(data):
     token, then those boot artifacts will be overwritten.
     If there are boot artifacts and no BSS token, then
     they will not be overwritten. Further, if the boot
-    artifacts are provided and the BSS token is unknown, 
+    artifacts are provided and the BSS token is unknown,
     the boot artifacts will not be overwritten.
     """
     try:

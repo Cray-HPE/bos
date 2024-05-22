@@ -56,8 +56,8 @@ def log_call_errors(func):
 
 
 class BaseBosEndpoint(object):
-    """ 
-    This base class provides generic access to the BOS API. 
+    """
+    This base class provides generic access to the BOS API.
     The individual endpoint needs to be overridden for a specific endpoint.
     """
     ENDPOINT = ''
