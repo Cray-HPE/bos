@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Increase memory requests and limits for BOS pods, to prevent OOM kill issues seen at scale.
+
 ### Dependencies
 - Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
   spec to OAS 3.1
