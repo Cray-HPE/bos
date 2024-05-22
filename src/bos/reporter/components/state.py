@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 """
-This is a client module to the BOS component state API. 
+This is a client module to the BOS component state API.
 
 The primary use for this is to allow nodes to indicate the
 state of their boot artifacts as indicate by the BOS Session ID.
