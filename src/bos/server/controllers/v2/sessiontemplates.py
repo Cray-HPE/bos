@@ -232,7 +232,7 @@ def patch_v2_sessiontemplate(session_template_id):
 def validate_v2_sessiontemplate(session_template_id: str):
     """
     Validate a V2 session template. Look for missing elements or errors that would prevent
-    a session from being launched using this template. 
+    a session from being launched using this template.
     """
     LOGGER.debug("GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate", session_template_id)
     data, status_code = get_v2_sessiontemplate(session_template_id)

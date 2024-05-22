@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Fixed minor errors in updated CAPMC logic.
+- Addressed linter complaints
 
 ## [2.0.38] - 05-16-2024
 ### Fixed

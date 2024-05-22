@@ -139,7 +139,7 @@ class PowerOnOperator(PowerOperatorBase):
         if not bss_tokens:
             return
         redacted_component_updates = [
-            { "id": comp["id"], 
+            { "id": comp["id"],
               "session": comp["session"]
             }
             for comp in bss_tokens ]
