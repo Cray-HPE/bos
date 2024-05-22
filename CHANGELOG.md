@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Increase memory requests and limits for BOS pods, to prevent OOM kill issues seen at scale.
 - Set UWSGI `max-requests` and `harakiri` options to help avoid OOM and scaling issues.
 
+### Fixed
+- Addressed linter complaints
+
 ## [2.10.16] - 2024-05-16
 ### Changed
 - Added more checks to avoid operating on empty lists

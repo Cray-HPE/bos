@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -97,7 +97,7 @@ def strip_v1_only_fields(template_data):
         except KeyError:
             pass
 
-    # Do the same for each boot set    
+    # Do the same for each boot set
     # Oddly, boot_sets is not a required field, so only do this if it is present
     if "boot_sets" in template_data:
         for bs in template_data["boot_sets"].values():
