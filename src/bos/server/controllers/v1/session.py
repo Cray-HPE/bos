@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -70,7 +70,7 @@ def create_v1_session():  # noqa: E501
         template_uuid = received_object.pop("templateUuid")
         if "templateName" not in received_object:
             received_object["templateName"] = template_uuid
-    session = Session.from_dict(connexion.request.get_json())  # noqa: E501       
+    session = Session.from_dict(connexion.request.get_json())  # noqa: E501
     template_name = session.template_name
     if not template_name:
         msg = "templateName is a required parameter"
