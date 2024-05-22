@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Increase memory requests and limits for BOS pods, to prevent OOM kill issues seen at scale.
+- Set UWSGI `max-requests` and `harakiri` options to help avoid OOM and scaling issues.
 
 ### Dependencies
 - Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
