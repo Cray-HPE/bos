@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.40] - 05-30-2024
+### Changed
+- Remove `__pycache__` directories from BOS reporter RPM
+
+### Fixed
+- Include `bos.common` dependency in BOS reporter RPM
+
 ## [2.0.39] - 05-21-2024
 ### Changed
 - Increase memory requests and limits for BOS pods, to prevent OOM kill issues seen at scale.

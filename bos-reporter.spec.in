@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -65,6 +65,8 @@ mkdir -p ${RPM_BUILD_ROOT}%{_systemdsvcdir}
 cp bos/reporter/etc/bos-reporter.service %{buildroot}/%{_systemdsvcdir}/bos-reporter.service
 chmod +x %{buildroot}/%{python3_sitelib}/bos/reporter/status_reporter/__main__.py
 popd
+# Remove __pycache__ directories that we don't want in the RPM
+find %{buildroot}/%{python3_sitelib}/bos -type d -name __pycache__ -exec rm -rvf {} \; -prune
 
 %clean
 rm -rf %{buildroot}
@@ -73,6 +75,8 @@ rm -rf %{buildroot}
 %defattr(-,root,root)
 
 %dir %{python3_sitelib}/bos
+%{python3_sitelib}/bos/__init__.py
+%{python3_sitelib}/bos/common
 %{python3_sitelib}/bos/reporter
 %{_systemdsvcdir}/bos-reporter.service
 
