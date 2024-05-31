@@ -24,6 +24,7 @@
 import json
 import logging
 import os
+import threading
 
 import boto3
 from botocore.exceptions import ClientError, ParamValidationError
@@ -34,6 +35,9 @@ from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.s3')
 
+# CASMCMS-9015: Instantiating the client is not thread-safe.
+# This lock is used to serialize it.
+boto3_client_lock = threading.Lock()
 
 class ArtifactNotFound(Exception):
     """
@@ -114,15 +118,16 @@ def s3_client(connection_timeout=60, read_timeout=60):
         LOGGER.error("Missing needed S3 configuration: %s", error)
         raise S3MissingConfiguration(error) from error
 
-    s3 = boto3.client('s3',
-                      endpoint_url=s3_protocol + "://" + s3_gateway,
-                      aws_access_key_id=s3_access_key,
-                      aws_secret_access_key=s3_secret_key,
-                      use_ssl=False,
-                      verify=False,
-                      config=BotoConfig(
-                          connect_timeout=connection_timeout,
-                          read_timeout=read_timeout))
+    with boto3_client_lock:
+        s3 = boto3.client('s3',
+                          endpoint_url=s3_protocol + "://" + s3_gateway,
+                          aws_access_key_id=s3_access_key,
+                          aws_secret_access_key=s3_secret_key,
+                          use_ssl=False,
+                          verify=False,
+                          config=BotoConfig(
+                              connect_timeout=connection_timeout,
+                              read_timeout=read_timeout))
     return s3
 
 
