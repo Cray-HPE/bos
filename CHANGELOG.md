@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.41] - 05-31-2024
+### Fixed
+- Instantiate S3 client in a thread-safe manner.
+
 ## [2.0.40] - 05-30-2024
 ### Changed
 - Remove `__pycache__` directories from BOS reporter RPM
