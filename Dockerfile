@@ -50,6 +50,7 @@ COPY --from=codegen /app/lib/ /app/lib
 # additional required libraries necessary for developer authored controller/database
 # code.
 RUN mv lib/requirements.txt lib/bos/server/requirements.txt
+RUN sed -i 's/Flask == 2\(.*\)$/Flask >= 2\1\nFlask < 3/' lib/bos/server/requirements.txt
 # Then copy all src into the base image
 COPY src/bos/ /app/lib/bos/
 COPY constraints.txt requirements.txt /app/
@@ -67,7 +68,7 @@ RUN pip3 install --no-cache-dir -U pip -c constraints.txt
 RUN cat requirements.txt
 RUN cat lib/bos/server/requirements.txt
 RUN cat constraints.txt
-RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -vvv -r requirements.txt
+RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
 RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt
 
 # Base testing image
