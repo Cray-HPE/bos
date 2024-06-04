@@ -63,7 +63,9 @@ ENV VIRTUAL_ENV=/app/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip3 install --no-cache-dir -U pip -c constraints.txt
-RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -v -r requirements.txt
+RUN cat requirements.txt
+RUN cat constraints.txt
+RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -vvv -r requirements.txt
 RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt
 
 # Base testing image
