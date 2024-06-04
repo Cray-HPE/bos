@@ -39,6 +39,7 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -o lib \
     -c config/autogen-server.json \
     --generate-alias-as-model
+RUN find lib -type f -print | xargs grep -E 'DispatchingApp|[-]loading|attachment_filename|cache_timeout|add_etags|send_from_directory|RequestContext[.]g'
 
 # Base image
 FROM $ALPINE_BASE_IMAGE as base
