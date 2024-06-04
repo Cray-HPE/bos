@@ -49,6 +49,12 @@ COPY --from=codegen /app/lib/ /app/lib
 # additional required libraries necessary for developer authored controller/database
 # code.
 RUN mv lib/requirements.txt lib/bos/server/requirements.txt
+# The openapi-generator creates a requirements file that specifies exactly Flask==2.1.1
+# However, using Flask 2.2.5 is also compatible, and resolves a CVE.
+# Accordingly, we relax their requirements file.
+RUN cat lib/bos/server/requirements.txt && \
+    sed -i 's/Flask == 2\(.*\)$/Flask >= 2\1\nFlask < 3/' lib/bos/server/requirements.txt && \
+    cat lib/bos/server/requirements.txt
 # Then copy all src into the base image
 COPY src/bos/ /app/lib/bos/
 COPY constraints.txt requirements.txt /app/
