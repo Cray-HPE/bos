@@ -32,6 +32,7 @@ FROM $OPENAPI_IMAGE as codegen
 WORKDIR /app
 COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
+RUN /usr/local/bin/docker-entrypoint.sh config-help -g python-flask
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python-flask \
