@@ -51,9 +51,13 @@ COPY --from=codegen /app/lib/ /app/lib
 RUN mv lib/requirements.txt lib/bos/server/requirements.txt
 # The openapi-generator creates a requirements file that specifies exactly Flask==2.1.1
 # However, using Flask 2.2.5 is also compatible, and resolves a CVE.
+# Additionally, the requirements file specified a maximum version of 2.14.2 for connexion,
+# but we need to use > 3 in order to use werkzeug > 3 (which we need in order to resolve a CVE).
 # Accordingly, we relax their requirements file.
 RUN cat lib/bos/server/requirements.txt && \
-    sed -i 's/Flask == 2\(.*\)$/Flask >= 2\1\nFlask < 3/' lib/bos/server/requirements.txt && \
+    sed -i -e 's/^Flask == 2\(.*\)$/Flask >= 2\1\nFlask < 3/' \
+           -e 's/^connexion\[swagger-ui\] <= 2.14.2;/connexion[swagger-ui] < 3.1;/' \
+           lib/bos/server/requirements.txt && \
     cat lib/bos/server/requirements.txt
 # Then copy all src into the base image
 COPY src/bos/ /app/lib/bos/
