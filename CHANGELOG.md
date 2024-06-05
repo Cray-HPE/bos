@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Dependencies
 - Bumped `certifi` from 2022.12.7 to 2023.7.22 to resolve [SNYK-PYTHON-CERTIFI-5805047 CVE](https://security.snyk.io/vuln/SNYK-PYTHON-CERTIFI-5805047)
 - Bumped `Flask` from 2.1.1 to 2.2.5 to resolve [SNYK-PYTHON-FLASK-5490129 CVE](https://snyk.io/vuln/SNYK-PYTHON-FLASK-5490129)
+- Bumped `connexion` from 2.14.2 to 3.0.6 and `Werkzeug` from 2.2.3 to 3.0.3 to resolve
+  [SNYK-PYTHON-WERKZEUG-6808933 CVE](https://security.snyk.io/vuln/SNYK-PYTHON-WERKZEUG-6808933)
 
 ## [2.18.2] - 2024-05-31
 ### Fixed

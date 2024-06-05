@@ -8,7 +8,7 @@ certifi==2023.7.22
 charset-normalizer==3.1.0
 click==8.1.7
 clickclick==20.10.2
-connexion==2.14.2
+connexion==3.0.6
 etcd3==0.12.0
 Flask==2.2.5
 google-auth==2.16.3
@@ -43,4 +43,4 @@ swagger-ui-bundle==0.0.9
 tenacity==8.2.3
 urllib3==1.26.18
 websocket-client==1.5.3
-Werkzeug==2.2.3
+Werkzeug==3.0.3
