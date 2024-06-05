@@ -111,7 +111,7 @@ components:
       type: string
       description: Age in minutes (e.g. "3m"), hours (e.g. "5h"), days (e.g. "10d"), or weeks (e.g. "2w").
       example: 3d
-      format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
+      pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
       minLength: 1
       # This allows for over 10 years using the smallest units (minutes)
       maxLength: 8
@@ -1606,7 +1606,7 @@ components:
             Delete complete Sessions that are older than cleanup_completed_session_ttl (in minutes, hours, days, or weeks).
             0 disables cleanup behavior.
           example: 3d
-          format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
+          pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
           maxLength: 8
@@ -1619,7 +1619,7 @@ components:
             The maximum amount of time a Component's actual state is considered valid (in minutes, hours, days, or weeks).
             0 disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
           example: 6h
-          format: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
+          pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
           maxLength: 8

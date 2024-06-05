@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.20] - 2024-06-05
+### Fixed
+- Some schemas in the API used the `format` keyword to mean `pattern`, and thus the patterns they specified were not being
+  interpreted or enforced. This fixes that.
+
 ## [2.10.19] - 2024-05-31
 ### Fixed
 - Instantiate S3 client in a thread-safe manner.
