@@ -151,6 +151,7 @@ components:
       minLength: 1
       maxLength: 127
       pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
+      writeOnly: true
     BootSetRootfsProvider:
       type: string
       description: The root file system provider.
@@ -490,6 +491,9 @@ components:
         role, and their logical groupings. This collection of nodes is associated with one
         set of boot artifacts and optional additional records for configuration and root
         filesystem provisioning.
+
+        If specified, the name field must match the key mapping to this boot set in the
+        boot_sets field of the containing V2SessionTemplate.
       type: object
       properties:
         name:
