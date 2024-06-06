@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Modified API spec to enforce previously-recommended limits
-- Removed inaccurate docstring from `_sanitize_xnames`; removed unnecessary return value
+- Make `BootSetName` a write-only property in a boot set, and require it to be equal to the name mapping to that
+  boot set inside the session template that contains it.
 
 ### Removed
 - Remove vestigial `BASEKEY` definition from sessions and templates server controller source files
 - Removed unused `BootSetNamePathParam` schema from the API spec (a vestige of BOS v1)
+- Removed inaccurate docstring from `_sanitize_xnames`; removed unnecessary return value
 
 ## [2.20.0] - 2024-06-05
 ### Fixed
