@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - List Python packages after installing, for build log purposes
 - Modified API spec to enforce previously-recommended limits
+- Make `BootSetName` a write-only property in a boot set, and require it to be equal to the name mapping to that
+  boot set inside the session template that contains it.
 
 ### Removed
 - Removed unused `BootSetNamePathParam` schema from the API spec (a vestige of BOS v1)
