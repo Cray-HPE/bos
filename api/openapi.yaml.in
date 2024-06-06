@@ -1148,13 +1148,6 @@ components:
             $ref: '#/components/schemas/ProblemDetails'
 
   parameters:
-    BootSetNamePathParam:
-      name: boot_set_name
-      in: path
-      description: Boot Set name
-      required: true
-      schema:
-        type: string
     TemplateIdPathParam:
       name: session_template_id
       in: path
