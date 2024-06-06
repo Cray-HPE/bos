@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Remove vestigial `BASEKEY` definition from sessions and templates server controller source files
+- Removed unused `BootSetNamePathParam` schema from the API spec (a vestige of BOS v1)
 
 ## [2.20.0] - 2024-06-05
 ### Fixed
