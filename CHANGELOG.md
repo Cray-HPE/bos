@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Modified API spec to enforce previously-recommended limits
+- Removed inaccurate docstring from `_sanitize_xnames`; removed unnecessary return value
 
 ### Removed
 - Remove vestigial `BASEKEY` definition from sessions and templates server controller source files

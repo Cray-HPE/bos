@@ -57,13 +57,11 @@ EXAMPLE_SESSION_TEMPLATE = {
 def _sanitize_xnames(st_json):
     """
     Sanitize xnames - Canonize the xnames
-    N.B. Because python passes object references by value you need to use
-    the return value.  It will have no impact on the inputted object.
     Args:
       st_json (dict): The Session Template as a JSON object
 
     Returns:
-      The Session Template with all of the xnames sanitized
+      Nothing
     """
     if 'boot_sets' in st_json:
         for boot_set in st_json['boot_sets']:
@@ -71,7 +69,6 @@ def _sanitize_xnames(st_json):
                 clean_nl = [_canonize_xname(node) for node in
                             st_json['boot_sets'][boot_set]['node_list']]
                 st_json['boot_sets'][boot_set]['node_list'] = clean_nl
-    return st_json
 
 
 @reject_invalid_tenant
@@ -114,7 +111,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
             status=400, title="The session template could not be created.",
             detail=str(err))
 
-    template_data = _sanitize_xnames(template_data)
+    _sanitize_xnames(template_data)
     tenant = get_tenant_from_header()
     template_data['name'] = session_template_id
     template_data['tenant'] = tenant
@@ -228,7 +225,7 @@ def patch_v2_sessiontemplate(session_template_id):
             status=400, title="The session template could not be patched.",
             detail=str(err))
 
-    template_data = _sanitize_xnames(template_data)
+    _sanitize_xnames(template_data)
     template_data['name'] = session_template_id
 
     return DB.patch(template_key, template_data), 200
