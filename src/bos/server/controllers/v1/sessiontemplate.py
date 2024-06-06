@@ -63,8 +63,6 @@ V1_SPECIFIC_BOOTSET_FIELDS = [ "boot_ordinal", "network", "shutdown_ordinal" ]
 def sanitize_xnames(st_json):
     """
     Sanitize xnames - Canonize the xnames
-    N.B. Because python passes object references by value you need to use
-    the return value.  It will have no impact on the inputted object.
     Args:
       st_json (string): The Session Template as a JSON object
 
@@ -145,7 +143,7 @@ def create_v1_sessiontemplate():  # noqa: E501
         """Verify that we can convert the JSON request data into a
            V1SessionTemplate object.
            Any exceptions caught here would be generated from the model
-           (i.e. bos.server.models.session_template). Examples are
+           (i.e. bos.server.models.v1_session_template). Examples are
            an exception for a session template missing the required name
            field, or an exception for a session template name that does not
            confirm to Kubernetes naming convention.
@@ -170,9 +168,7 @@ def create_v1_sessiontemplate():  # noqa: E501
         """Verify that we can convert the JSON request data into a
            V2SessionTemplate object.
            Any exceptions caught here would be generated from the model
-           (i.e. bos.server.models.session_template).
-           An example is an exception for a session template name that
-           does not conform to Kubernetes naming convention.
+           (i.e. bos.server.models.v2_session_template).
            In this case return 400 with a description of the specific error.
         """
         V2SessionTemplate.from_dict(template_data)
