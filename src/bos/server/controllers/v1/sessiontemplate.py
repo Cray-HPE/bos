@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -60,8 +60,6 @@ EXAMPLE_SESSION_TEMPLATE = {
 def sanitize_xnames(st_json):
     """
     Sanitize xnames - Canonize the xnames
-    N.B. Because python passes object references by value you need to use
-    the return value.  It will have no impact on the inputted object.
     Args:
       st_json (string): The Session Template as a JSON object
 
@@ -96,7 +94,7 @@ def create_v1_sessiontemplate():  # noqa: E501
     try:
         """Convert the JSON request data into a SessionTemplate object.
            Any exceptions caught here would be generated from the model
-           (i.e. bos.server.models.session_template). Examples are
+           (i.e. bos.server.models.v1_session_template). Examples are
            an exception for a session template missing the required name
            field, or an exception for a session template name that does not
            confirm to Kubernetes naming convention.
