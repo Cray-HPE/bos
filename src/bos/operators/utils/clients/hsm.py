@@ -151,7 +151,7 @@ class Inventory(object):
     Inventory handles the generation of a hardware inventory in a similar manner to how the
     dynamic inventory is generated for CFS.  To reduce the number of calls to HSM, everything is
     cached for repeated checks, stored both as overall inventory and separate group types to allow
-    use in finding BOA's base list of nodes, and lazily loaded to prevent extra calls when no limit
+    use in finding BOS's base list of nodes, and lazily loaded to prevent extra calls when no limit
     is used.
     """
 

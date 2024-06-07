@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,7 +31,6 @@ LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.factory')
 class BootImageMetaDataUnknown(Exception):
     """
     Raised when a user requests a Provider provisioning mechanism that is not known
-    by BOA.
     """
 
 class BootImageMetaDataFactory(object):
