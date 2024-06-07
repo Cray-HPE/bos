@@ -1,5 +1,5 @@
 # Cray Boot Orchestration Service (BOS) API Specification
-openapi: "3.0.2"
+openapi: "3.0.3"
 
 info:
   title: "Boot Orchestration Service"
@@ -107,117 +107,76 @@ components:
     AgeString:
       type: string
       description: Age in minutes (e.g. "3m"), hours (e.g. "5h"), days (e.g. "10d"), or weeks (e.g. "2w").
-      example: 3d
+      example: "3d"
       pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
       minLength: 1
       # This allows for over 10 years using the smallest units (minutes)
       maxLength: 8
     BootInitrdPath:
       type: string
-      description: |
-        A path to the initrd to use for booting.
-
-        It is recommended that this should be no more than 4095 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: A path to the initrd to use for booting.
       example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/initrd"
+      maxLength: 4095
     BootKernelPath:
       type: string
-      description: |
-        A path to the kernel to use for booting.
-
-        It is recommended that this should be no more than 4095 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: A path to the kernel to use for booting.
       example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/kernel"
+      maxLength: 4095
     BootManifestPath:
       type: string
       description: |
         A path identifying the metadata describing the components of the boot image.
         This could be a URI, URL, etc, depending on the type of the Boot Set.
-
-        It is recommended that this should be 1-4095 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
       example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
+      minLength: 1
+      maxLength: 4095
     BootKernelParameters:
       type: string
-      description: |
-        The kernel parameters to use to boot the nodes.
-
-        Linux kernel parameters may never exceed 4096 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The kernel parameters to use to boot the nodes.
       example: "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_limit=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
+      maxLength: 4096
     BootSetEtag:
       type: string
-      description: |
-        This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
-
-        ETags are defined as being 1-65536 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
       example: "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
+      maxLength: 65536
     BootSetName:
       type: string
       description: |
         The Boot Set name.
 
-        It is recommended that:
-        * Boot Set names should be 1-127 characters in length.
-        * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
-        * Boot Set names should begin and end with a letter or digit.
-
-        These restrictions are not enforced in this version of BOS, but they are
-        targeted to start being enforced in an upcoming BOS version.
+        * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
+        * Boot Set names must begin and end with a letter or digit.
       example: "compute"
+      minLength: 1
+      maxLength: 127
+      pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
     BootSetRootfsProvider:
       type: string
-      description: |
-        The root file system provider.
-
-        It is recommended that this should be 1-511 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The root file system provider.
       example: "cpss3"
+      minLength: 1
+      maxLength: 511
     BootSetRootfsProviderPassthrough:
       type: string
       description: |
         The root file system provider passthrough.
         These are additional kernel parameters that will be appended to
         the 'rootfs=<protocol>' kernel parameter
-
-        Linux kernel parameters may never exceed 4096 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
       example: "dvs:api-gw-service-nmn.local:300:nmn0"
+      maxLength: 4096
     BootSetType:
       type: string
       description: |
         The MIME type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
-
-        It is recommended that this should be 1-127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
       example: "s3"
+      minLength: 1
+      maxLength: 127
     CfsConfiguration:
       type: string
-      description: |
-        The name of configuration to be applied.
-
-        It is recommended that this should be no more than 127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The name of configuration to be applied.
       example: "compute-23.4.0"
+      maxLength: 127
     EmptyString:
       type: string
       description: An empty string value.
@@ -226,6 +185,7 @@ components:
       type: string
       description: An empty string value.
       enum: [ '' ]
+      nullable: true
     EnableCfs:
       type: boolean
       description: |
@@ -233,14 +193,10 @@ components:
       default: true
     HardwareComponentName:
       type: string
-      description: |
-        Hardware component name (xname).
-
-        It is recommended that this should be 1-127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Hardware component name (xname).
       example: "x3001c0s39b0n0"
+      minLength: 1
+      maxLength: 127
     Healthz:
       description: Service health status
       type: object
@@ -272,57 +228,34 @@ components:
         $ref: '#/components/schemas/Link'
     NodeList:
       type: array
-      description: |
-        A node list that is required to have at least one node.
-
-        It is recommended that this list should be 1-65535 items in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: A node list that is required to have at least one node.
       minItems: 1
+      maxItems: 65535
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
       items:
         $ref: '#/components/schemas/HardwareComponentName'
     NodeGroupList:
       type: array
-      description: |
-        Node group list. Allows actions against associated nodes by logical groupings.
-
-        It is recommended that this list should be 1-4095 items in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Node group list. Allows actions against associated nodes by logical groupings.
       minItems: 1
+      maxItems: 4095
       items:
         type: string
-        description: |
-          Name of a user-defined logical group in the Hardware State Manager (HSM).
-
-          It is recommended that this should be 1-127 characters in length.
-
-          This restriction is not enforced in this version of BOS, but it is
-          targeted to start being enforced in an upcoming BOS version.
+        description: Name of a user-defined logical group in the Hardware State Manager (HSM).
+        minLength: 1
+        maxLength: 127
     NodeRoleList:
       type: array
-      description: |
-        Node role list. Allows actions against nodes with associated roles.
-
-        It is recommended that this list should be 1-1023 items in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Node role list. Allows actions against nodes with associated roles.
       minItems: 1
+      maxItems: 1023
       example: ["Compute", "Application"]
       items:
         type: string
-        description: |
-          Name of a role that is defined in the Hardware State Manager (HSM).
-
-          It is recommended that this should be 1-127 characters in length.
-
-          This restriction is not enforced in this version of BOS, but it is
-          targeted to start being enforced in an upcoming BOS version.
+        description: Name of a role that is defined in the Hardware State Manager (HSM).
         example: "Compute"
+        minLength: 1
+        maxLength: 127
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
       type: object
@@ -362,44 +295,31 @@ components:
         A comma-separated list of nodes, groups, or roles to which the Session
         will be limited. Components are treated as OR operations unless
         preceded by "&" for AND or "!" for NOT.
-
-        It is recommended that this should be 1-65535 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+        An empty string or null value is the same as specifying no limit.
+      maxLength: 65535
+      nullable: true
     SessionTemplateDescription:
       type: string
-      description: |
-        An optional description for the Session Template.
-
-        It is recommended that this should be 1-1023 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: An optional description for the Session Template.
+      minLength: 1
+      maxLength: 1023
     SessionTemplateName:
       type: string
       description: |
         Name of the Session Template.
 
-        It is recommended to use names which meet the following restrictions:
-        * Maximum length of 127 characters.
+        The name must:
         * Use only letters, digits, periods (.), dashes (-), and underscores (_).
         * Begin and end with a letter or digit.
-
-        These restrictions are not enforced in this version of BOS, but they are
-        targeted to start being enforced in an upcoming BOS version.
       minLength: 1
+      maxLength: 127
+      pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
       example: "cle-1.0.0"
     TenantName:
       type: string
-      description: |
-        Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
-
-        It is recommended that this should be no more than 127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
       example: "vcluster-my-tenant1"
+      maxLength: 127
     Version:
       description: Version data
       type: object
@@ -451,17 +371,15 @@ components:
         name:
           type: string
           minLength: 1
+          maxLength: 127
+          pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
           readOnly: true
           description: |
             Name of the Session Template.
 
-            It is recommended to use names which meet the following restrictions:
-            * Maximum length of 127 characters.
+            Names must:
             * Use only letters, digits, periods (.), dashes (-), and underscores (_).
             * Begin and end with a letter or digit.
-
-            These restrictions are not enforced in this version of BOS, but they are
-            targeted to start being enforced in an upcoming BOS version.
           example: "cle-1.0.0"
         tenant:
           $ref: '#/components/schemas/V2TenantName'
@@ -476,15 +394,11 @@ components:
           description: |
             Mapping from Boot Set names to Boot Sets.
 
-            It is recommended that:
-            * At least one Boot Set should be defined, because a Session Template with no
-              Boot Sets is not functional.
-            * Boot Set names should be 1-127 characters in length.
-            * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
-            * Boot Set names should begin and end with a letter or digit.
-
-            These restrictions are not enforced in this version of BOS, but they are
-            targeted to start being enforced in an upcoming BOS version.
+            * Boot Set names must be 1-127 characters in length.
+            * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names must begin and end with a letter or digit.
+          minProperties: 1
+          maxProperties: 127
           additionalProperties:
             $ref: '#/components/schemas/V2BootSet'
         links:
@@ -763,13 +677,9 @@ components:
       maxLength: 65535
     V2ComponentId:
       type: string
-      description: |
-        The Component's ID. (e.g. xname for hardware Components)
-
-        It is recommended that this should be 1-127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The Component's ID. (e.g. xname for hardware Components)
+      minLength: 1
+      maxLength: 127
     V2ComponentIdList:
       description: A list of Component IDs (xnames)
       type: array
@@ -919,14 +829,9 @@ components:
       properties:
         ids:
           type: string
-          description: |
-            A comma-separated list of Component IDs.
-
-            It is recommended that this should be 1-65535 characters in length.
-
-            This restriction is not enforced in this version of BOS, but it is
-            targeted to start being enforced in an upcoming BOS version.
+          description: A comma-separated list of Component IDs.
           minLength: 1
+          maxLength: 65535
         session:
           $ref: '#/components/schemas/EmptyStringNullable'
       required: [ids]
@@ -985,7 +890,7 @@ components:
           description: |
             Delete complete Sessions that are older than cleanup_completed_session_ttl (in minutes, hours, days, or weeks).
             0 disables cleanup behavior.
-          example: 3d
+          example: "3d"
           pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
@@ -998,7 +903,7 @@ components:
           description: |
             The maximum amount of time a Component's actual state is considered valid (in minutes, hours, days, or weeks).
             0 disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
-          example: 6h
+          example: "6h"
           pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
@@ -1017,6 +922,7 @@ components:
         logging_level:
           type: string
           description: The logging level for all BOS services
+          pattern: '^([dD][eE][bB][uU][gG]|[iI][nN][fF][oO]|[wW][aA][rR][nN][iI][nN][gG]|[eE][rR][rR][oO][rR]|[cC][rR][iI][tT][iI][cC][aA][lL])$'
         max_boot_wait_time:
           type: integer
           description: How long BOS will wait for a node to boot into a usable state before rebooting it again (in seconds)
@@ -1312,6 +1218,7 @@ paths:
       tags:
         - version
       x-openapi-router-controller: bos.server.controllers.base
+      operationId: root_get
       responses:
         200:
           description: A collection of Versions
