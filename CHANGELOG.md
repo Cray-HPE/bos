@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Code linting (no change in logic or outputs)
+- Modified API spec to enforce previously-recommended limits
 
 ## [2.21.0]
 
@@ -46,8 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set UWSGI `max-requests` and `harakiri` options to help avoid OOM and scaling issues.
 
 ### Dependencies
-- Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
-  spec to OAS 3.1
+- Bumped `openapi-generator-cli` from v6.6.0 to v7.6.0
 
 ### Fixed
 - Addressed linter complaints
