@@ -6,12 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Require boot sets to have some form of node/group/role list specified
+
 ### Changed
 - Modified API spec to enforce previously-recommended limits
-- Removed inaccurate docstring from `_sanitize_xnames`; removed unnecessary return value
+- Make `BootSetName` a write-only property in a boot set, and require it to be equal to the name mapping to that
+  boot set inside the session template that contains it.
+- Modified session template creation and patching to validate boot set names.
 
 ### Removed
 - Removed unused `BootSetNamePathParam` schema from the API spec (a vestige of BOS v1)
+- Removed inaccurate docstring from `_sanitize_xnames`; removed unnecessary return value
 
 ## [2.20.0] - 2024-06-05
 ### Fixed
