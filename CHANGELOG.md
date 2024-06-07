@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Modified API spec to enforce previously-recommended limits
 
 ## [2.20.0] - 2024-06-05
 ### Fixed
@@ -34,8 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set UWSGI `max-requests` and `harakiri` options to help avoid OOM and scaling issues.
 
 ### Dependencies
-- Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
-  spec to OAS 3.1
+- Bumped `openapi-generator-cli` from v6.6.0 to v7.6.0
 
 ### Fixed
 - Addressed linter complaints
