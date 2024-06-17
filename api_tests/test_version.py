@@ -25,7 +25,7 @@
 
 import pytest
 
-from .lib import common
+from src.bos import common
 
 
 @pytest.mark.repogettests

@@ -30,22 +30,25 @@ import unittest
 from flask import json
 from six import BytesIO
 
-from bos.server.models.healthz import Healthz  # noqa: E501
-from bos.server.models.one_of_v2_components_update_v2_component_array import OneOfV2ComponentsUpdateV2ComponentArray  # noqa: E501
-from bos.server.models.problem_details import ProblemDetails  # noqa: E501
-from bos.server.models.unknownbasetype import UNKNOWN_BASE_TYPE  # noqa: E501
-from bos.server.models.v2_apply_staged_components import V2ApplyStagedComponents  # noqa: E501
-from bos.server.models.v2_apply_staged_status import V2ApplyStagedStatus  # noqa: E501
-from bos.server.models.v2_component import V2Component  # noqa: E501
-from bos.server.models.v2_component_array import V2ComponentArray  # noqa: E501
-from bos.server.models.v2_options import V2Options  # noqa: E501
-from bos.server.models.v2_session import V2Session  # noqa: E501
-from bos.server.models.v2_session_array import V2SessionArray  # noqa: E501
-from bos.server.models.v2_session_create import V2SessionCreate  # noqa: E501
-from bos.server.models.v2_session_extended_status import V2SessionExtendedStatus  # noqa: E501
-from bos.server.models.v2_session_template import V2SessionTemplate  # noqa: E501
-from bos.server.models.v2_session_template_array import V2SessionTemplateArray  # noqa: E501
-from bos.server.models.version import Version  # noqa: E501
+import sys
+sys.path.append("..")
+
+#from bos.server.models.healthz import Healthz  # noqa: E501
+#from bos.server.models.one_of_v2_components_update_v2_component_array import OneOfV2ComponentsUpdateV2ComponentArray  # noqa: E501
+#from bos.server.models.problem_details import ProblemDetails  # noqa: E501
+#from bos.server.models.unknownbasetype import UNKNOWN_BASE_TYPE  # noqa: E501
+#from bos.server.models.v2_apply_staged_components import V2ApplyStagedComponents  # noqa: E501
+#from bos.server.models.v2_apply_staged_status import V2ApplyStagedStatus  # noqa: E501
+#from bos.server.models.v2_component import V2Component  # noqa: E501
+#from bos.server.models.v2_component_array import V2ComponentArray  # noqa: E501
+#from bos.server.models.v2_options import V2Options  # noqa: E501
+#from bos.server.models.v2_session import V2Session  # noqa: E501
+#from bos.server.models.v2_session_array import V2SessionArray  # noqa: E501
+#from bos.server.models.v2_session_create import V2SessionCreate  # noqa: E501
+#from bos.server.models.v2_session_extended_status import V2SessionExtendedStatus  # noqa: E501
+#from bos.server.models.v2_session_template import V2SessionTemplate  # noqa: E501
+#from bos.server.models.v2_session_template_array import V2SessionTemplateArray  # noqa: E501
+#from bos.server.models.version import Version  # noqa: E501
 from bos.server.test import BaseTestCase
 
 

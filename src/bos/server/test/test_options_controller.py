@@ -30,8 +30,11 @@ import unittest
 from flask import json
 from six import BytesIO
 
-from bos.server.models.problem_details import ProblemDetails  # noqa: E501
-from bos.server.models.v2_options import V2Options  # noqa: E501
+import sys
+sys.path.append("..")
+
+#from bos.server.models.problem_details import ProblemDetails  # noqa: E501
+#from bos.server.models.v2_options import V2Options  # noqa: E501
 from bos.server.test import BaseTestCase
 
 

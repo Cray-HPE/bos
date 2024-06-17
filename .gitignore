@@ -3,6 +3,9 @@ results
 .settings
 .version
 .pydevproject
+.env
+.vscode
+__pycache__
 ansible/bos_deploy.retry
 .tox
 tox.log
