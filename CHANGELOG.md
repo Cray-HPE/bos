@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified API spec to enforce previously-recommended limits
 - Make `BootSetName` a write-only property in a boot set, and require it to be equal to the name mapping to that
   boot set inside the session template that contains it.
+- Modified session template creation and patching to validate boot set names.
 
 ## [2.24.0] - 2024-08-09
 ### Fixed
