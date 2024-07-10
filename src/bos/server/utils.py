@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,11 @@
 #
 import re
 
+import connexion
+
+class ParsingException(Exception):
+    pass
+
 
 def _canonize_xname(xname):
     """Ensure the xname is canonical.
@@ -36,3 +41,14 @@ def _canonize_xname(xname):
     :rtype: string
     """
     return re.sub(r'x0*(\d+)c0*(\d+)s0*(\d+)b0*(\d+)n0*(\d+)', r'x\1c\2s\3b\4n\5', xname.lower())
+
+
+def _get_request_json():
+    """
+    Used by endpoints which are expecting a JSON payload in the request body.
+    Returns the JSON payload.
+    Raises an Exception otherwise
+    """
+    if not connexion.request.is_json:
+        raise ParsingException("Non-JSON request received")
+    return connexion.request.get_json()
