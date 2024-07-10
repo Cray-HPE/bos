@@ -33,7 +33,6 @@ from .boot_set import validate_boot_sets
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
 DB = dbutils.get_wrapper(db='session_templates')
-BASEKEY = "/sessionTemplates"
 
 EXAMPLE_BOOT_SET = {
     "type": "s3",

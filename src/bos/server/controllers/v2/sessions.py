@@ -44,7 +44,6 @@ LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
 COMPONENTS_DB = dbutils.get_wrapper(db='components')
 STATUS_DB = dbutils.get_wrapper(db='session_status')
-BASEKEY = "/sessions"
 MAX_COMPONENTS_IN_ERROR_DETAILS = 10
 
 
