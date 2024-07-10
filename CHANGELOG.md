@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Require boot sets to have some form of node/group/role list specified
+- Sanitize session templates during migration to this BOS version, to ensure they comply with the API specification
 
 ### Changed
 - Modified API spec to enforce previously-recommended limits
