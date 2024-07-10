@@ -29,7 +29,7 @@ from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key
 from bos.common.utils import exc_type_msg
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate # noqa: E501
 from bos.server import redis_db_utils as dbutils
-from bos.server.utils import _canonize_xname
+from bos.server.utils import _canonize_xname, _get_request_json, ParsingException
 from .boot_set import validate_boot_sets
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
@@ -64,12 +64,46 @@ def _sanitize_xnames(st_json):
     Returns:
       Nothing
     """
-    if 'boot_sets' in st_json:
-        for boot_set in st_json['boot_sets']:
-            if 'node_list' in st_json['boot_sets'][boot_set]:
-                clean_nl = [_canonize_xname(node) for node in
-                            st_json['boot_sets'][boot_set]['node_list']]
-                st_json['boot_sets'][boot_set]['node_list'] = clean_nl
+    # There should always be a boot_sets field -- this function
+    # is only called after the template has been verified
+    for boot_set in st_json['boot_sets'].values():
+        if 'node_list' not in boot_set:
+            continue
+        boot_set['node_list'] = [_canonize_xname(node) for node in boot_set['node_list']]
+
+
+def _validate_sanitize_session_template(session_template_id, template_data):
+    """
+    Used when creating or patching session templates
+    """
+    # The boot_sets field is required.
+    if "boot_sets" not in template_data:
+            raise ParsingException("Missing required 'boot_sets' field")
+
+    # All keys in the boot_sets mapping must match the 'name' fields in the
+    # boot sets to which they map (if they contain a 'name' field).
+    for bs_name, bs in template_data["boot_sets"].items():
+        if "name" not in bs:
+            # Set the field here -- this allows the name to be validated
+            # per the schema later
+            bs["name"] = bs_name
+        elif bs["name"] != bs_name:
+            raise ParsingException(f"boot_sets key ({bs_name}) does not match 'name' "
+                                   f"field of corresponding boot set ({bs["name"]})")
+
+    # Convert the JSON request data into a SessionTemplate object.
+    # Any exceptions raised here would be generated from the model
+    # (i.e. bos.server.models.v2_session_template).
+    SessionTemplate.from_dict(template_data)
+
+    # We do not bother storing the boot set names inside the boot sets, so delete them.
+    # We know every boot set has a name field because we verified that earlier.
+    for bs in template_data["boot_sets"].values():
+        del bs["name"]
+
+    _sanitize_xnames(template_data)
+    template_data['name'] = session_template_id
+    return
 
 
 @reject_invalid_tenant
@@ -80,40 +114,25 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     Creates a new session template. # noqa: E501
     """
     LOGGER.debug("PUT /v2/sessiontemplates/%s invoked put_v2_sessiontemplate", session_template_id)
-    if connexion.request.is_json:
-        LOGGER.debug("connexion.request.is_json")
-        LOGGER.debug("type=%s", type(connexion.request.get_json()))
-        LOGGER.debug("Received: %s", connexion.request.get_json())
-    else:
-        return "PUT must be in JSON format", 400
-
     try:
-        data = connexion.request.get_json()
+        template_data = _get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
+        LOGGER.error("Error parsing PUT '%s' request data: %s", session_template_id, exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
-
-    template_data = data
+    LOGGER.debug("type=%s", type(template_data))
+    LOGGER.debug("Received: %s", template_data)
 
     try:
-        # Convert the JSON request data into a SessionTemplate object.
-        # Any exceptions caught here would be generated from the model
-        # (i.e. bos.server.models.session_template).
-        # An example is an exception for a session template name that
-        # does not conform to Kubernetes naming convention.
-        # In this case return 400 with a description of the specific error.
-        SessionTemplate.from_dict(template_data)
+        _validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
-        LOGGER.error("Error creating session template: %s", exc_type_msg(err))
+        LOGGER.error("Error creating session template '%s': %s", session_template_id, exc_type_msg(err))
         return connexion.problem(
             status=400, title="The session template could not be created.",
             detail=str(err))
 
-    _sanitize_xnames(template_data)
     tenant = get_tenant_from_header()
-    template_data['name'] = session_template_id
     template_data['tenant'] = tenant
     template_key = get_tenant_aware_key(session_template_id, tenant)
     return DB.put(template_key, template_data), 200
@@ -195,39 +214,23 @@ def patch_v2_sessiontemplate(session_template_id):
             status=404, title="Sessiontemplate could not found.",
             detail=f"Sessiontemplate {session_template_id} could not be found")
 
-    if connexion.request.is_json:
-        LOGGER.debug("connexion.request.is_json")
-        LOGGER.debug("type=%s", type(connexion.request.get_json()))
-        LOGGER.debug("Received: %s", connexion.request.get_json())
-    else:
-        return "Patch must be in JSON format", 400
-
     try:
-        data = connexion.request.get_json()
+        template_data = _get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
+        LOGGER.error("Error parsing PATCH '%s' request data: %s", session_template_id, exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
-
-    template_data = data
+    LOGGER.debug("type=%s", type(template_data))
+    LOGGER.debug("Received: %s", template_data)
 
     try:
-        # Convert the JSON request data into a SessionTemplate object.
-        # Any exceptions caught here would be generated from the model
-        # (i.e. bos.server.models.session_template).
-        # An example is an exception for a session template name that
-        # does not confirm to Kubernetes naming convention.
-        # In this case return 400 with a description of the specific error.
-        SessionTemplate.from_dict(template_data)
+        _validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
-        LOGGER.error("Error patching session template: %s", exc_type_msg(err))
+        LOGGER.error("Error patching session template '%s': %s", session_template_id, exc_type_msg(err))
         return connexion.problem(
             status=400, title="The session template could not be patched.",
             detail=str(err))
-
-    _sanitize_xnames(template_data)
-    template_data['name'] = session_template_id
 
     return DB.patch(template_key, template_data), 200
 
