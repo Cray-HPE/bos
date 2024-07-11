@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -39,5 +39,5 @@ class Timestamp(BaseTimestamp):
 
         This value is returned as a timedelta object.
         """
-        computation_time = timedelta(seconds=int(os.getenv('LIVENESS_DELTA_MAX', 20)))
+        computation_time = timedelta(seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
         return computation_time
