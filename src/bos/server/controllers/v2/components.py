@@ -584,7 +584,6 @@ def del_timestamp(data: dict):
         del data['actual_state']['boot_artifacts']['timestamp']
     except KeyError:
         pass
-    return None
 
 
 def _set_last_updated(data):
