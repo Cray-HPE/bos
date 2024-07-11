@@ -28,8 +28,8 @@ from requests import HTTPError
 
 from bos.common.utils import exc_type_msg
 from bos.common.values import Action, Status
-import bos.operators.utils.clients.bss as bss
-import bos.operators.utils.clients.pcs as pcs
+from bos.operators.utils.clients import bss
+from bos.operators.utils.clients import pcs
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
