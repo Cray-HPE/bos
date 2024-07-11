@@ -46,4 +46,4 @@ class BootImageMetaDataFactory(object):
         if path_type:
             if path_type == 's3':
                 return S3BootImageMetaData(self.boot_set)
-            raise BootImageMetaDataUnknown("No BootImageMetaData class for type %s", path_type)
+            raise BootImageMetaDataUnknown("No BootImageMetaData class for type %s" % path_type)
