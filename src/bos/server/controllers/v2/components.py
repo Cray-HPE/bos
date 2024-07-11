@@ -391,21 +391,21 @@ def patch_v2_component(component_id):
 
 
 def validate_actual_state_change_is_allowed(component_id):
-        current_data = DB.get(component_id)
-        if not current_data["enabled"]:
-            # This component is not being managed on by BOS
-            return True
-        if _calculate_status(current_data) == Status.stable:
-            # BOS believes the component is in the correct state
-            return True
-        if current_data["last_action"]["action"] == Action.power_on:
-            # BOS just powered-on the component and is waiting for the new state to be reported
-            return True
-        # The component is being actively changed by BOS, and is going to be powered off or
-        #   is in a state where the next action hasn't been determined.  Allowing the actual
-        #   state to be updated can interfere with BOS' ability to determine the next action.
-        #   e.g. When the actual_state is deleted by the setup operator to trigger a reboot
-        return False
+    current_data = DB.get(component_id)
+    if not current_data["enabled"]:
+        # This component is not being managed on by BOS
+        return True
+    if _calculate_status(current_data) == Status.stable:
+        # BOS believes the component is in the correct state
+        return True
+    if current_data["last_action"]["action"] == Action.power_on:
+        # BOS just powered-on the component and is waiting for the new state to be reported
+        return True
+    # The component is being actively changed by BOS, and is going to be powered off or
+    #   is in a state where the next action hasn't been determined.  Allowing the actual
+    #   state to be updated can interfere with BOS' ability to determine the next action.
+    #   e.g. When the actual_state is deleted by the setup operator to trigger a reboot
+    return False
 
 
 @tenant_error_handler

@@ -119,6 +119,6 @@ def validate_boot_sets(session_template: dict,
                     warning_flag = True
                     warn_msg = warn_msg + msg
             if warning_flag:
-                    return BOOT_SET_WARNING, warn_msg
+                return BOOT_SET_WARNING, warn_msg
 
     return BOOT_SET_SUCCESS, "Valid"
