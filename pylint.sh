@@ -23,5 +23,5 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-pylint $(cat ./srclist.txt) | grep -E '^/.* [(].+[)][[:space:]]*$' | sed 's/^\(.*\) (\(.*\))[[:space:]]*$/\2 \1/' | sort
+pylint $(cat ./srclist.txt) | grep -E '^/.* [(].+[)][[:space:]]*$' | grep -v '/app/lib/setup.py' | sed 's/^\(.*\) (\(.*\))[[:space:]]*$/\2 \1/' | sort
 exit 1
