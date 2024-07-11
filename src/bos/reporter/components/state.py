@@ -70,7 +70,7 @@ def patch_component(component, properties, session=None):
         if response.status_code == 404:
             try:
                 json_response = json.loads(response.text)
-                raise UnknownComponent(json_response['detail'])
+                raise UnknownComponent(json_response['detail']) from hpe
             except json.JSONDecodeError as jde:
                 raise UnrecognizedResponse("BOS returned a non-json response: %s\n%s" % (response.text, jde)) from jde
         LOGGER.warning("Unexpected response from '%s':\n%s: %s", component_endpoint, response.status_code, response.text)

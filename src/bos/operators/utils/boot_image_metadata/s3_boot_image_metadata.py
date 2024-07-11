@@ -81,7 +81,7 @@ class S3BootImageMetaData(BootImageMetaData):
             return self.boot_artifacts.manifest_json
         except (ClientError, S3MissingConfiguration) as error:
             LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''), exc_type_msg(error))
-            raise BootImageMetaDataBadRead(error)
+            raise BootImageMetaDataBadRead(error) from error
 
     @property
     def kernel(self):
