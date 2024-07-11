@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-class BootImageMetaData(object):
+class BootImageMetaData:
     def __init__(self, boot_set):
         """
         Base class for BootImage Metadata object

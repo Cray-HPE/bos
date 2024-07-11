@@ -70,7 +70,7 @@ class S3ObjectNotFound(Exception):
     """
 
 
-class S3Url(object):
+class S3Url:
     """
     https://stackoverflow.com/questions/42641315/s3-urls-get-bucket-name-and-path/42641363
     """
