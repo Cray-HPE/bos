@@ -252,7 +252,7 @@ class Session:
                 op = limit_node_set.union
 
             limit_nodes = set([limit])
-            if limit == 'all' or limit == '*':
+            if limit in {'all', '*'}:
                 limit_nodes = nodes
             elif limit in self.inventory:
                 limit_nodes = self.inventory[limit]
