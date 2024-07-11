@@ -30,7 +30,7 @@ from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
-ENDPOINT = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
+ENDPOINT = "%s/%s" % (BASE_ENDPOINT, __name__.lower().rsplit('.', maxsplit=1)[-1])
 
 
 class Options:
