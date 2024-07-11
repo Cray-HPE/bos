@@ -126,16 +126,16 @@ def _calculate_status(data):
             return Status.power_on_called
         LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_pending}")
         return Status.power_on_pending
-    elif phase == Phase.powering_off:
+    if phase == Phase.powering_off:
         if last_action == Action.power_off_gracefully:
             LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_gracefully_called}")
             return Status.power_off_gracefully_called
-        elif last_action == Action.power_off_forcefully:
+        if last_action == Action.power_off_forcefully:
             LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_forcefully_called}")
             return Status.power_off_forcefully_called
         LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_pending}")
         return Status.power_off_pending
-    elif phase == Phase.configuring:
+    if phase == Phase.configuring:
         LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.configuring}")
         return Status.configuring
     LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.stable}")
