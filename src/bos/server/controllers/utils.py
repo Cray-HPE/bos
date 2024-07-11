@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -48,10 +48,10 @@ def url_for(endpoint, **values):
     Also, it always sets _external=True.
 
     """
-    LOGGER.debug('url_for(endpoint=%s)' % endpoint)
+    LOGGER.debug('url_for(endpoint=%s)', endpoint)
 
     url = flask.url_for(endpoint, _external=True, **values)
-    LOGGER.debug('url_for(url=%s)' % url)
+    LOGGER.debug('url_for(url=%s)', url)
 
     proxy_path = os.environ.get('PROXY_PATH')
     if not proxy_path:
