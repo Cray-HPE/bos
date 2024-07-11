@@ -81,8 +81,7 @@ def get_tenant_data(tenant, session=None):
         LOGGER.error("Failed getting tenant data from tapms: %s", exc_type_msg(e))
         if response.status_code == 404:
             raise InvalidTenantException(f"Data not found for tenant {tenant}") from e
-        else:
-            raise
+        raise
     return response.json()
 
 
