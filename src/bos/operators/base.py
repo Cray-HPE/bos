@@ -53,7 +53,6 @@ class MissingSessionData(BaseOperatorException):
     Operators are expected to update the session data, if they are updating a component's
     desired state.
     """
-    pass
 
 
 class BaseOperator(ABC):

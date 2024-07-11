@@ -45,7 +45,6 @@ LOGGER = logging.getLogger('bos.operators.session_setup')
 
 class SessionSetupException(Exception):
     """ The Session Set-up experienced a fatal error """
-    pass
 
 
 class SessionSetupOperator(BaseOperator):
