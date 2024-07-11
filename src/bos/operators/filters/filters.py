@@ -232,7 +232,7 @@ class DesiredBootStateIsNone(LocalFilter):
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desired_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
-        if not desired_boot_state or not any([bool(v) for v in desired_boot_state.values()]):
+        if not desired_boot_state or not any(bool(v) for v in desired_boot_state.values()):
             return True
         return False
 
@@ -285,6 +285,6 @@ class ActualBootStateIsSet(LocalFilter):
         # The timestamp field doesn't count as a set record we particularly care about
         if 'timestamp' in actual_state_boot_artifacts:
             del actual_state_boot_artifacts['timestamp']
-        if any([bool(v) for v in actual_state_boot_artifacts.values()]):
+        if any(bool(v) for v in actual_state_boot_artifacts.values()):
             return True
         return False
