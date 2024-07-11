@@ -319,13 +319,9 @@ class Session:
 
     def _generate_desired_state(self, boot_set, staged=False):
         if self.operation_type == "shutdown":
-            if staged:
-                return EMPTY_STAGED_STATE
-            else:
-                return EMPTY_DESIRED_STATE
-        else:
-            state = self._get_state_from_boot_set(boot_set)
-            return state
+            return EMPTY_STAGED_STATE if staged else EMPTY_DESIRED_STATE
+        state = self._get_state_from_boot_set(boot_set)
+        return state
 
     def _get_state_from_boot_set(self, boot_set):
         """

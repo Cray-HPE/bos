@@ -124,9 +124,8 @@ def _calculate_status(data):
         if last_action == Action.power_on and not data.get('last_action', {}).get('failed', False):
             LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_called}")
             return Status.power_on_called
-        else:
-            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_pending}")
-            return Status.power_on_pending
+        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_pending}")
+        return Status.power_on_pending
     elif phase == Phase.powering_off:
         if last_action == Action.power_off_gracefully:
             LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_gracefully_called}")
@@ -134,15 +133,13 @@ def _calculate_status(data):
         elif last_action == Action.power_off_forcefully:
             LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_forcefully_called}")
             return Status.power_off_forcefully_called
-        else:
-            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_pending}")
-            return Status.power_off_pending
+        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_pending}")
+        return Status.power_off_pending
     elif phase == Phase.configuring:
         LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.configuring}")
         return Status.configuring
-    else:
-        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.stable}")
-        return Status.stable
+    LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.stable}")
+    return Status.stable
 
 
 def _matches_filter(data, enabled, session, staged_session, phase, status):
@@ -224,7 +221,7 @@ def patch_v2_components():
             LOGGER.error("%s: %s", msg, exc_type_msg(err))
             return connexion.problem(status=400, title=msg,detail=str(err))
         return patch_v2_components_list(data)
-    elif type(data) == dict:
+    if type(data) == dict:
         try:
             # This call is just to ensure that the data
             # coming in is valid per the API schema
@@ -276,7 +273,7 @@ def patch_v2_components_dict(data):
         return connexion.problem(
             status=400, title="Only one filter may be provided.",
             detail="Only one filter may be provided.")
-    elif ids:
+    if ids:
         try:
             id_list = ids.split(',')
         except Exception as err:
@@ -457,14 +454,13 @@ def post_v2_apply_staged():
 
 def _apply_tenant_limit(component_list):
     tenant = get_tenant_from_header()
-    if tenant:
-        tenant_components = get_tenant_component_set(tenant)
-        component_set = set(component_list)
-        allowed_components = component_set.intersection(tenant_components)
-        rejected_components = component_set.difference(tenant_components)
-        return list(allowed_components), list(rejected_components)
-    else:
+    if not tenant:
         return component_list, []
+    tenant_components = get_tenant_component_set(tenant)
+    component_set = set(component_list)
+    allowed_components = component_set.intersection(tenant_components)
+    rejected_components = component_set.difference(tenant_components)
+    return list(allowed_components), list(rejected_components)
 
 
 def _is_valid_tenant_component(component_id):
@@ -472,9 +468,8 @@ def _is_valid_tenant_component(component_id):
     if tenant:
         tenant_components = get_tenant_component_set(tenant)
         return component_id in tenant_components
-    else:
-        # For an empty tenant, all components are valid
-        return True
+    # For an empty tenant, all components are valid
+    return True
 
 
 def _apply_staged(component_id, clear_staged=False):

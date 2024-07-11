@@ -86,8 +86,7 @@ class S3Url(object):
     def key(self):
         if self._parsed.query:
             return self._parsed.path.lstrip('/') + '?' + self._parsed.query
-        else:
-            return self._parsed.path.lstrip('/')
+        return self._parsed.path.lstrip('/')
 
     @property
     def url(self):

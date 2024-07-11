@@ -76,8 +76,7 @@ def post_v2_session():  # noqa: E501
         msg = "Session Template Name invalid: {}".format(template_name)
         LOGGER.error(msg)
         return msg, 400
-    else:
-        session_template, _ = session_template_response
+    session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name)
