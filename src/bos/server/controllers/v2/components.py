@@ -569,7 +569,7 @@ def _populate_boot_artifacts(data):
             try:
                 data['actual_state']['boot_artifacts'] = get_boot_artifacts(token)
             except BssTokenUnknown:
-                LOGGER.warn(f"Reported BSS Token: {token} is unknown.")
+                LOGGER.warning(f"Reported BSS Token: {token} is unknown.")
     return data
 
 
