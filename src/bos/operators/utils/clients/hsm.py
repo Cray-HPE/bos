@@ -74,8 +74,8 @@ def read_all_node_xnames():
         LOGGER.error("Non-JSON response from HSM: %s", response.text)
         raise HWStateManagerException(jde) from jde
     try:
-        return set([component['ID'] for component in json_body['Components']
-                    if component.get('Type', None) == 'Node'])
+        return {[component['ID'] for component in json_body['Components']
+                    if component.get('Type', None) == 'Node']}
     except KeyError as ke:
         LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
         raise HWStateManagerException(ke) from ke
