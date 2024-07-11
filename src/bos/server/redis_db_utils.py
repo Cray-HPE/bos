@@ -103,8 +103,8 @@ class DBWrapper():
         return self.get(key)
 
     def patch(self, key, new_data, data_handler=None):
-        """Patch data in the database."""
-        """data_handler provides a way to operate on the full patched data"""
+        """Patch data in the database.
+           data_handler provides a way to operate on the full patched data"""
         datastr = self.client.get(key)
         data = json.loads(datastr)
         data = self._update(data, new_data)

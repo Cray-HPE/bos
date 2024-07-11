@@ -56,7 +56,7 @@ def _init():
     log_level_updater = threading.Thread(target=check_v2_logging_level, args=())
     log_level_updater.start()
 
-    """ Cleanup old options """
+    # Cleanup old options
     while True:
         try:
             data = DB.get(OPTIONS_KEY)
