@@ -75,6 +75,9 @@ ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN pip3 install --no-cache-dir -U pip -c constraints.txt
 RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
 RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt
+COPY srclist.txt pylint.sh /app/venv/
+WORKDIR /app/venv
+RUN /app/venv/pylint.sh
 
 # Base testing image
 FROM base as testing
