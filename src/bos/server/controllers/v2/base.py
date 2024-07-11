@@ -21,15 +21,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import os.path
 import logging
-import subprocess
 import yaml
 
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.utils import url_for
 from bos.server.models import Version, Link
-from os import path
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.base')
 

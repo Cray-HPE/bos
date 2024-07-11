@@ -23,7 +23,7 @@
 #
 from collections import defaultdict
 import logging
-from requests.exceptions import HTTPError, ConnectionError
+from requests.exceptions import HTTPError
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
