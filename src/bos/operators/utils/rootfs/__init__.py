@@ -93,4 +93,3 @@ class RootfsProvider(object):
         parameter.
         """
         return None
-

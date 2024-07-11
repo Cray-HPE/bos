@@ -65,4 +65,3 @@ class ForcefulPowerOffOperator(BaseOperator):
 
 if __name__ == '__main__':
     main(ForcefulPowerOffOperator)
-

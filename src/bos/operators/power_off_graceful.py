@@ -61,5 +61,3 @@ class GracefulPowerOffOperator(BaseOperator):
 
 if __name__ == '__main__':
     main(GracefulPowerOffOperator)
-
-

@@ -122,4 +122,3 @@ def validate_boot_sets(session_template: dict,
                     return BOOT_SET_WARNING, warn_msg
 
     return BOOT_SET_SUCCESS, "Valid"
-
