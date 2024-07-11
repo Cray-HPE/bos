@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,8 +27,8 @@ from typing import Set
 from copy import copy
 
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
-from bos.operators.utils.clients.hsm import read_all_node_xnames, HWStateManagerException
-from bos.operators.base import BaseOperator, main, _update_log_level
+from bos.operators.utils.clients.hsm import read_all_node_xnames
+from bos.operators.base import BaseOperator, main
 
 LOGGER = logging.getLogger(__name__)
 
