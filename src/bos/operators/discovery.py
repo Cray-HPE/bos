@@ -70,16 +70,16 @@ class DiscoveryOperator(BaseOperator):
         """
         components_to_add = []
         for component in sorted(self.missing_components):
-            LOGGER.debug("Processing new xname entity '%s'"%(component))
+            LOGGER.debug("Processing new xname entity '%s'", component)
             new_component = copy(NEW_COMPONENT)
             new_component['id'] = component
             components_to_add.append(new_component)
         if not components_to_add:
             LOGGER.info("No new component(s) discovered.")
             return
-        LOGGER.info("%s new component(s) from HSM." %(len(components_to_add)))
+        LOGGER.info("%s new component(s) from HSM.", len(components_to_add))
         self.bos_client.components.put_components(components_to_add)
-        LOGGER.info("%s new component(s) added to BOS!" %(len(components_to_add)))
+        LOGGER.info("%s new component(s) added to BOS!", len(components_to_add))
 
     @property
     def bos_components(self) -> Set[str]:

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     setup_logging()
     timestamp = Timestamp.byref(TIMESTAMP_PATH)
     if timestamp.alive:
-        LOGGER.info("%s is considered valid; the application is alive!" % (timestamp))
+        LOGGER.info("%s is considered valid; the application is alive!", timestamp)
         sys.exit(0)
     else:
         LOGGER.warning("Timestamp is no longer considered valid.")

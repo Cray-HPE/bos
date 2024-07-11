@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -64,7 +64,7 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
             out = out.rstrip('\n')
             return out
         except subprocess.CalledProcessError as e:
-            LOGGER.error('get_auth_token failed to retrieve authorization token: code=%d: error=%s' % (e.returncode, e.output))
+            LOGGER.error('get_auth_token failed to retrieve authorization token: code=%d: error=%s', e.returncode, e.output)
         except Exception:
             LOGGER.exception('Unexpected exception')
         LOGGER.info("Spire Token not yet available; retrying in a few seconds.")

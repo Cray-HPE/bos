@@ -65,7 +65,7 @@ class ActualStateCleanupOperator(BaseOperator):
                          'actual_state': EMPTY_ACTUAL_STATE})
         if data:
             LOGGER.info('Found %d components that require updates', len(data))
-            LOGGER.debug('Calling to update with payload: %s' %(data))
+            LOGGER.debug('Calling to update with payload: %s', data)
             self.bos_client.components.update_components(data)
         return components
 
