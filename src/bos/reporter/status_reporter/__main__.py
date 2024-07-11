@@ -50,7 +50,7 @@ _stream_handler = logging.StreamHandler(sys.stdout)
 _stream_handler.setLevel(LOG_LEVEL)
 PROJECT_LOGGER.addHandler(_stream_handler)
 PROJECT_LOGGER.setLevel(LOG_LEVEL)
-TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M | re.S)
+TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
 
 # The percentage of the total Time To Live (TTL) to wait before reporting status, e.g.
 # a state TTL of 4 hours with a ratio of .75 means nodes report every 3 hours.

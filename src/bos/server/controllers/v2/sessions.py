@@ -371,7 +371,7 @@ def _get_v2_session_status(session_key, session=None):
 def _age_to_timestamp(age):
     delta = {}
     for interval in ['weeks', 'days', 'hours', 'minutes']:
-        result = re.search('(\d+)\w*{}'.format(interval[0]), age, re.IGNORECASE)
+        result = re.search(r'(\d+)\w*{}'.format(interval[0]), age, re.IGNORECASE)
         if result:
             delta[interval] = int(result.groups()[0])
     delta = timedelta(**delta)

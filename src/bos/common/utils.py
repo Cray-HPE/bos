@@ -30,7 +30,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 PROTOCOL = 'http'
-TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M|re.S)
+TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.
 def get_current_time() -> datetime.datetime:
