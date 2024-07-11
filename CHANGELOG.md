@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Code linting (no change in logic or outputs)
 - Modified API spec to enforce previously-recommended limits
 
+### Removed
+- Removed unused `BootSetNamePathParam` schema from the API spec (a vestige of BOS v1)
+
 ## [2.21.0]
 
 ### Fixed
