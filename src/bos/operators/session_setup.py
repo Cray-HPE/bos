@@ -136,10 +136,10 @@ class Session:
                 raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
             raise SessionSetupException(err) from err
-        else:
-            self._log(LOGGER.info, 'Found %d components that require updates', len(data))
-            self._log(LOGGER.debug, f'Updated components: {data}')
-            self.bos_client.components.update_components(data)
+        # No exception raised by previous block
+        self._log(LOGGER.info, 'Found %d components that require updates', len(data))
+        self._log(LOGGER.debug, f'Updated components: {data}')
+        self.bos_client.components.update_components(data)
         return list(set(all_component_ids))
 
     def _get_boot_set_component_list(self, boot_set) -> Set[str]:
