@@ -61,4 +61,3 @@ def get_value_from_proc_cmdline(key):
             # Single string values are not interesting to us
             continue
     raise KeyError("Key '%s' was not discovered on '/proc/cmdline'" % key)
-

@@ -148,5 +148,3 @@ class PowerOnOperator(BaseOperator):
 
 if __name__ == '__main__':
     main(PowerOnOperator)
-
-

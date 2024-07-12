@@ -288,4 +288,3 @@ class ActualBootStateIsSet(LocalFilter):
         if any(bool(v) for v in actual_state_boot_artifacts.values()):
             return True
         return False
-

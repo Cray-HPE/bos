@@ -228,5 +228,3 @@ class StatusOperator(BaseOperator):
 
 if __name__ == '__main__':
     main(StatusOperator)
-
-
