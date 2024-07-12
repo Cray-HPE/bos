@@ -38,7 +38,7 @@ class ProviderNotImplemented(Exception):
     """
 
 
-class RootfsProvider(object):
+class RootfsProvider:
     PROTOCOL = None
     DELIMITER = ':'
     """

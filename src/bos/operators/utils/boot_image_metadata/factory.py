@@ -33,7 +33,7 @@ class BootImageMetaDataUnknown(Exception):
     Raised when a user requests a Provider provisioning mechanism that is not known
     """
 
-class BootImageMetaDataFactory(object):
+class BootImageMetaDataFactory:
     """
     Conditionally create new instances of the BootImageMetadata based on
     the type of the BootImageMetaData specified

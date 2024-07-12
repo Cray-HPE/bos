@@ -38,7 +38,6 @@ class BssTokenUnknown(BssTokenException):
     """
     The BSS Token is not present in the database.
     """
-    pass
 
 
 def record_boot_artifacts(token: str,

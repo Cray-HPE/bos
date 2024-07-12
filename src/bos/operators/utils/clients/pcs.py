@@ -151,7 +151,7 @@ def status(nodes, session=None, **kwargs):
             status_bucket[power_status_entry['error']].add(xname)
             continue
         power_status = power_status_entry.get('powerState', '').lower()
-        if not(all([power_status, xname])):
+        if not all([power_status, xname]):
             continue
         status_bucket[power_status].add(xname)
     return status_bucket

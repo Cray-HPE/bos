@@ -146,7 +146,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     return components
 
 
-class Inventory(object):
+class Inventory:
     """
     Inventory handles the generation of a hardware inventory in a similar manner to how the
     dynamic inventory is generated for CFS.  To reduce the number of calls to HSM, everything is

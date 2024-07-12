@@ -55,7 +55,7 @@ def log_call_errors(func):
     return wrap
 
 
-class BaseBosEndpoint(object):
+class BaseBosEndpoint:
     """
     This base class provides generic access to the BOS API.
     The individual endpoint needs to be overridden for a specific endpoint.
