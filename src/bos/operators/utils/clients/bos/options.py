@@ -66,10 +66,9 @@ class Options:
     def get_option(self, key, value_type, default):
         if key in self.options:
             return value_type(self.options[key])
-        elif default:
+        if default:
             return value_type(default)
-        else:
-            raise KeyError('Option {} not found and no default exists'.format(key))
+        raise KeyError('Option {} not found and no default exists'.format(key))
 
     @property
     def logging_level(self):

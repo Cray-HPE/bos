@@ -57,8 +57,7 @@ class DBWrapper():
         """Converts a db name to the id used by Redis."""
         if isinstance(db, int):
             return db
-        else:
-            return DATABASES.index(db)
+        return DATABASES.index(db)
 
     def _get_client(self, db_id):
         """Create a connection with the database."""

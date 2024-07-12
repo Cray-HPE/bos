@@ -119,10 +119,7 @@ class BaseBosEndpoint(object):
         LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs)
         response.raise_for_status()
-        if response.text:
-            return json.loads(response.text)
-        else:
-            return None
+        return json.loads(response.text) if response.text else None
 
 
 class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
@@ -196,7 +193,4 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
             LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs, headers=headers)
         response.raise_for_status()
-        if response.text:
-            return json.loads(response.text)
-        else:
-            return None
+        return json.loads(response.text) if response.text else None
