@@ -46,27 +46,27 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             self.artifact_summary['kernel'] = self.kernel_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['initrd'] = self.initrd_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['rootfs'] = self.rootfs_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['rootfs_etag'] = self.rootfs_etag
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['boot_parameters'] = self.boot_parameters_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['boot_parameters_etag'] = self.boot_parameters_etag
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
 
     @property
     def metadata(self):
