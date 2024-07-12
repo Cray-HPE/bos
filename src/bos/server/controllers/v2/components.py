@@ -111,36 +111,34 @@ def _calculate_status(data):
     Calculates and returns the status of a component
     """
     if not 'status' in data:
-        LOGGER.debug(f"No status in data: {data}. This will have the effect of clearing any pre-existing phase.")
+        LOGGER.debug("No status in data: %s. This will have the effect of clearing any pre-existing phase.", data)
     status_data = data.get('status', {})
     override = status_data.get('status_override', '')
     if override:
         return override
 
     phase = status_data.get('phase', '')
-    last_action = data.get('last_action', {}).get('action', '')
     component = data.get('id', '')
-    now = get_current_timestamp()
+    last_action = data.get('last_action', {}).get('action', '')
+
+    status = status = Status.stable
     if phase == Phase.powering_on:
         if last_action == Action.power_on and not data.get('last_action', {}).get('failed', False):
-            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_called}")
-            return Status.power_on_called
-        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_on_pending}")
-        return Status.power_on_pending
-    if phase == Phase.powering_off:
+            status = Status.power_on_called
+        else:
+            status = Status.power_on_pending
+    elif phase == Phase.powering_off:
         if last_action == Action.power_off_gracefully:
-            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_gracefully_called}")
-            return Status.power_off_gracefully_called
-        if last_action == Action.power_off_forcefully:
-            LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_forcefully_called}")
-            return Status.power_off_forcefully_called
-        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.power_off_pending}")
-        return Status.power_off_pending
-    if phase == Phase.configuring:
-        LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.configuring}")
-        return Status.configuring
-    LOGGER.debug(f"{now} Component: {component} Phase: {phase} Status: {Status.stable}")
-    return Status.stable
+            status = Status.power_off_gracefully_called
+        elif last_action == Action.power_off_forcefully:
+            status = Status.power_off_forcefully_called
+        else:
+            status = Status.power_off_pending
+    elif phase == Phase.configuring:
+        status = Status.configuring
+
+    LOGGER.debug("Component: %s Last action: %s Phase: %s Status: %s", component, last_action, phase, status)
+    return status
 
 
 def _matches_filter(data, enabled, session, staged_session, phase, status):
@@ -570,7 +568,7 @@ def _populate_boot_artifacts(data):
             try:
                 data['actual_state']['boot_artifacts'] = get_boot_artifacts(token)
             except BssTokenUnknown:
-                LOGGER.warning(f"Reported BSS Token: {token} is unknown.")
+                LOGGER.warning("Reported BSS Token '%s' is unknown.", token)
     return data
 
 

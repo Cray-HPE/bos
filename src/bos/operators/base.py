@@ -200,7 +200,7 @@ class BaseOperator(ABC):
                 raise MissingSessionData
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
-        LOGGER.debug(f'Updated components: {data}')
+        LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
     def _preset_last_action(self, components: List[dict]) -> None:
@@ -226,7 +226,7 @@ class BaseOperator(ABC):
                 patch['last_action'] = last_action_data
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
-        LOGGER.debug(f'Updated components: {data}')
+        LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
     def _update_database_for_failure(self, components: List[dict]) -> None:
@@ -247,7 +247,7 @@ class BaseOperator(ABC):
                 patch['error'] = 'The retry limit has been hit for this component, but no services have reported specific errors'
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
-        LOGGER.debug(f'Updated components: {data}')
+        LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
 
