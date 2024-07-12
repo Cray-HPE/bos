@@ -25,11 +25,11 @@ import json
 import logging
 import os
 import threading
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
-from urllib.parse import urlparse
 
 from bos.common.utils import exc_type_msg
 

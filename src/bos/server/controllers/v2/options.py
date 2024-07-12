@@ -22,9 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
-import connexion
 import threading
 import time
+
+import connexion
 
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils

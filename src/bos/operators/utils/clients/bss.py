@@ -21,9 +21,10 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from requests.exceptions import HTTPError
 import logging
 import json
+
+from requests.exceptions import HTTPError
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 

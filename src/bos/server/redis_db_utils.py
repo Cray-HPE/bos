@@ -21,10 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import connexion
 import functools
 import json
 import logging
+
+import connexion
 import redis
 
 from bos.common.utils import exc_type_msg

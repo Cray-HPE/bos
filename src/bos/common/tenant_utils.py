@@ -22,10 +22,11 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-import connexion
 import functools
 import logging
 import hashlib
+
+import connexion
 from requests.exceptions import HTTPError
 from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
 

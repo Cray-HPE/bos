@@ -21,8 +21,9 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import connexion
 import logging
+
+import connexion
 
 from bos.common.utils import exc_type_msg, get_current_timestamp
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, tenant_error_handler, get_tenant_aware_key

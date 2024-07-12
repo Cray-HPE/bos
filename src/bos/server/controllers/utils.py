@@ -21,13 +21,13 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+import logging
 import os
 from urllib.parse import urlparse, urlunparse
 
 import connexion
 import flask
 
-import logging
 LOGGER = logging.getLogger('bos.server.controllers.utils')
 
 

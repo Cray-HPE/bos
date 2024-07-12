@@ -24,9 +24,8 @@
 #
 import copy
 import logging
-from botocore.exceptions import ClientError
 from typing import Set
-
+from botocore.exceptions import ClientError
 
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters.filters import HSMState

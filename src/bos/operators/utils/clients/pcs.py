@@ -26,9 +26,10 @@
 #       https://github.com/Cray-HPE/hms-power-control/blob/develop/api/swagger.yaml
 
 import logging
-import requests
 import json
 from collections import defaultdict
+
+import requests
 
 from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 

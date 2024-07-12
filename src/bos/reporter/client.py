@@ -27,14 +27,15 @@ fashion.
 """
 
 import os
-from . import PROTOCOL
-
 import logging
+import subprocess
+import time
+
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
-import subprocess
-import time
+
+from . import PROTOCOL
 
 LOGGER = logging.getLogger('bos.reporter.client')
 
