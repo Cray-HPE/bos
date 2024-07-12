@@ -235,5 +235,5 @@ class Inventory:
         try:
             return response.json()
         except ValueError:
-            LOGGER.error("Couldn't parse a JSON response: {}".format(response.text))
+            LOGGER.error("Couldn't parse a JSON response: %s", response.text)
             raise

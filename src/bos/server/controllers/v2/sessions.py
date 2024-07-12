@@ -284,13 +284,13 @@ def _get_filtered_sessions(tenant, min_age, max_age, status):
         try:
             max_start = _age_to_timestamp(min_age)
         except Exception as e:
-            LOGGER.warning('Unable to parse age: {}'.format(min_age))
+            LOGGER.warning('Unable to parse min_age: %s', min_age)
             raise ParsingException(e) from e
     if max_age:
         try:
             min_start = _age_to_timestamp(max_age)
         except Exception as e:
-            LOGGER.warning('Unable to parse age: {}'.format(max_age))
+            LOGGER.warning('Unable to parse max_age: %s', max_age)
             raise ParsingException(e) from e
     if any([min_start, max_start, status, tenant]):
         response = [r for r in response if _matches_filter(r, tenant, min_start, max_start, status)]

@@ -66,7 +66,7 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
         raise Exception("set_bss called with empty node_set")
 
     session = session or requests_retry_session()
-    LOGGER.info("Params: {}".format(kernel_params))
+    LOGGER.info("Params: %s", kernel_params)
     url = "%s/bootparameters" % (ENDPOINT)
 
     # Assignment payload

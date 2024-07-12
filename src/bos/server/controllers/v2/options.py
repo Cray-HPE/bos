@@ -131,12 +131,12 @@ def update_log_level(new_level_str):
     new_level = logging.getLevelName(new_level_str.upper())
     current_level = LOGGER.getEffectiveLevel()
     if current_level != new_level:
-        LOGGER.log(current_level, 'Changing logging level from {} to {}'.format(
-            logging.getLevelName(current_level), logging.getLevelName(new_level)))
+        LOGGER.log(current_level, 'Changing logging level from %s to %s',
+                   logging.getLevelName(current_level), new_level)
         logger = logging.getLogger()
         logger.setLevel(new_level)
-        LOGGER.log(new_level, 'Logging level changed from {} to {}'.format(
-            logging.getLevelName(current_level), logging.getLevelName(new_level)))
+        LOGGER.log(new_level, 'Logging level changed from %s to %s',
+                   logging.getLevelName(current_level), new_level)
 
 
 def check_v2_logging_level():

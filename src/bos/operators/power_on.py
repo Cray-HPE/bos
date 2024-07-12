@@ -143,7 +143,7 @@ class PowerOnOperator(BaseOperator):
               "session": comp["session"]
             }
             for comp in bss_tokens ]
-        LOGGER.debug('Updated components (minus desired_state data): {}'.format(redacted_component_updates))
+        LOGGER.debug('Updated components (minus desired_state data): %s', redacted_component_updates)
         self.bos_client.components.update_components(bss_tokens)
 
 if __name__ == '__main__':

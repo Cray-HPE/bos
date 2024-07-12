@@ -149,7 +149,7 @@ def redis_error_handler(func):
                 del kwargs['body']
             return func(*args, **kwargs)
         except redis.exceptions.ConnectionError as e:
-            LOGGER.error('Unable to connect to the Redis database: {}'.format(e))
+            LOGGER.error('Unable to connect to the Redis database: %s', e)
             return connexion.problem(
                 status=503, title='Unable to connect to the Redis database',
                 detail=str(e))

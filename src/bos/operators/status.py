@@ -87,8 +87,8 @@ class StatusOperator(BaseOperator):
         if not updated_components:
             LOGGER.debug('No components require status updates')
             return
-        LOGGER.info('Found {} components that require status updates'.format(len(updated_components)))
-        LOGGER.debug(f'Updated components: {updated_components}')
+        LOGGER.info('Found %d components that require status updates', len(updated_components))
+        LOGGER.debug('Updated components: %s', updated_components)
         self.bos_client.components.update_components(updated_components)
 
     @staticmethod

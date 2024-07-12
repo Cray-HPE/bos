@@ -98,14 +98,14 @@ class BaseOperator(ABC):
                 _update_log_level()
                 self._run()
             except Exception as e:
-                LOGGER.exception('Unhandled exception detected: {}'.format(e))
+                LOGGER.exception('Unhandled exception detected: %s', e)
 
             try:
                 sleep_time = getattr(options, self.frequency_option) - (time.time() - start_time)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             except Exception as e:
-                LOGGER.exception('Unhandled exception getting polling frequency: {}'.format(e))
+                LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
 
     def _run(self) -> None:
@@ -125,8 +125,8 @@ class BaseOperator(ABC):
         try:
             components = self._act(components)
         except Exception as e:
-            LOGGER.error("An unhandled exception was caught while trying to act on components: {}".format(e),
-                         exec_info=True)
+            LOGGER.error("An unhandled exception was caught while trying to act on components: %s",
+                         e, exec_info=True)
             for component in components:
                 component["error"] = str(e)
         self._update_database(components)
@@ -259,12 +259,12 @@ def _update_log_level() -> None:
         new_level = logging.getLevelName(options.logging_level.upper())
         current_level = LOGGER.getEffectiveLevel()
         if current_level != new_level:
-            LOGGER.log(current_level, 'Changing logging level from {} to {}'.format(
-                logging.getLevelName(current_level), logging.getLevelName(new_level)))
+            LOGGER.log(current_level, 'Changing logging level from %s to %s',
+                       logging.getLevelName(current_level), new_level)
             logger = logging.getLogger()
             logger.setLevel(new_level)
-            LOGGER.log(new_level, 'Logging level changed from {} to {}'.format(
-                logging.getLevelName(current_level), logging.getLevelName(new_level)))
+            LOGGER.log(new_level, 'Logging level changed from %s to %s',
+                       logging.getLevelName(current_level), new_level)
     except Exception as e:
         LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 

@@ -61,7 +61,7 @@ class ProviderFactory:
             module = importlib.import_module(provider_module)
         except ModuleNotFoundError as mnfe:
             # This is pretty much unrecoverable at this stage of development; make note and raise
-            LOGGER.error("Provider provisioning mechanism '{}' not yet implemented or not found.".format(provider_name))
+            LOGGER.error("Provider provisioning mechanism '%s' not yet implemented or not found.", provider_name)
             raise ProviderNotImplemented(mnfe) from mnfe
 
         class_def = getattr(module, provider_classname)
