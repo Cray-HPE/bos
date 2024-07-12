@@ -115,10 +115,12 @@ class BaseOperator(ABC):
             LOGGER.debug('Found 0 components that require action')
             return
         LOGGER.info('Found %d components that require action', len(components))
-        if self.retry_attempt_field:  # Only check for failed components if we track retries for this operator
+        # Only check for failed components if we track retries for this operator
+        if self.retry_attempt_field:
             components = self._handle_failed_components(components)
             if not components:
-                LOGGER.debug('After removing components that exceeded their retry limit, 0 components require action')
+                LOGGER.debug('After removing components that exceeded their retry limit, 0 '
+                             'components require action')
                 return
         for component in components:  # Unset old errors components
             component['error'] = ''
@@ -185,7 +187,10 @@ class BaseOperator(ABC):
                 patch['last_action'] = last_action_data
             if self.retry_attempt_field:
                 event_stats_data = {
-                    self.retry_attempt_field: component.get('event_stats', {}).get(self.retry_attempt_field, 0) + 1
+                    self.retry_attempt_field: component.get(
+                                                'event_stats',
+                                                {}
+                                              ).get(self.retry_attempt_field, 0) + 1
                 }
                 patch['event_stats']  = event_stats_data
 
@@ -204,8 +209,10 @@ class BaseOperator(ABC):
         self.bos_client.components.update_components(data)
 
     def _preset_last_action(self, components: List[dict]) -> None:
-        # This is done to eliminate the window between performing an action and marking the nodes as acted
-        # e.g. nodes could be powered-on without the correct power-on last action, causing status problems
+        # This is done to eliminate the window between performing an action and marking the
+        # nodes as acted
+        # e.g. nodes could be powered-on without the correct power-on last action, causing
+        # status problems
         if not self.name:
             return
         if not components:
@@ -244,7 +251,8 @@ class BaseOperator(ABC):
                 'status': {'status_override': Status.failed}
             }
             if not component['error']:
-                patch['error'] = 'The retry limit has been hit for this component, but no services have reported specific errors'
+                patch['error'] = ('The retry limit has been hit for this component, '
+                                  'but no services have reported specific errors')
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)

@@ -66,8 +66,10 @@ class SessionCompletionOperator(BaseOperator):
         return components
 
     def _mark_session_complete(self, session_id, tenant):
-        self.bos_client.sessions.update_session(session_id, tenant, {'status': {'status': 'complete',
-                                                                        'end_time': get_current_timestamp()}})
+        self.bos_client.sessions.update_session(session_id, tenant,
+                                                { 'status': { 'status': 'complete',
+                                                              'end_time': get_current_timestamp()
+                                                            }})
         # This call causes the session status to saved in the database.
         self.bos_client.session_status.post_session_status(session_id, tenant)
         LOGGER.info('Session %s is complete', session_id)

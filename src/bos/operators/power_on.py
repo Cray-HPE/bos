@@ -66,16 +66,16 @@ class PowerOnOperator(BaseOperator):
         try:
             self._set_bss(components)
         except Exception as e:
-            raise Exception("An error was encountered while setting BSS information: {}".format(e)) from e
+            raise Exception(f"Error encountered setting BSS information: {e}") from e
         try:
             set_cfs(components, enabled=False, clear_state=True)
         except Exception as e:
-            raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
+            raise Exception(f"Error encountered setting CFS information: {e}") from e
         component_ids = [component['id'] for component in components]
         try:
             pcs.power_on(component_ids)
         except Exception as e:
-            raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
+            raise Exception(f"Error encountered calling CAPMC to power on: {e}") from e
         return components
 
     def _set_bss(self, components, retries=5):
@@ -143,7 +143,8 @@ class PowerOnOperator(BaseOperator):
               "session": comp["session"]
             }
             for comp in bss_tokens ]
-        LOGGER.debug('Updated components (minus desired_state data): %s', redacted_component_updates)
+        LOGGER.debug('Updated components (minus desired_state data): %s',
+                     redacted_component_updates)
         self.bos_client.components.update_components(bss_tokens)
 
 if __name__ == '__main__':

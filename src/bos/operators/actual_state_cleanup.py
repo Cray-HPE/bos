@@ -55,7 +55,9 @@ class ActualStateCleanupOperator(BaseOperator):
         return [
             BOSQuery(),
             ActualBootStateIsSet(),
-            ActualStateAge(seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds())
+            ActualStateAge(
+                seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds()
+            )
         ]
 
     def _act(self, components):

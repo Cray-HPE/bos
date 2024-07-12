@@ -106,7 +106,8 @@ def validate_boot_sets(session_template: dict,
                 try:
                     artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
                     if not artifact:
-                        raise ArtifactNotFound(f"Session template: '{template_name}' boot set: '{bs_name}' " \
+                        raise ArtifactNotFound(f"Session template: '{template_name}' "
+                                               f"boot set: '{bs_name}' "
                                                f"does not contain a {boot_artifact}.")
                     path = artifact ['link']['path']
                     etag = artifact['link']['etag']

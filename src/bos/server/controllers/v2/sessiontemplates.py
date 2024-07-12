@@ -24,9 +24,10 @@
 import logging
 import connexion
 
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
+                                    reject_invalid_tenant
 from bos.common.utils import exc_type_msg
-from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
+from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate # noqa: E501
 from bos.server import redis_db_utils as dbutils
 from bos.server.utils import _canonize_xname
 from .boot_set import validate_boot_sets
@@ -170,7 +171,8 @@ def delete_v2_sessiontemplate(session_template_id):
 
     Delete the session template by session template ID
     """
-    LOGGER.debug("DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate", session_template_id)
+    LOGGER.debug("DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate",
+                 session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
@@ -187,7 +189,8 @@ def patch_v2_sessiontemplate(session_template_id):
 
     Patch the session template by session template ID
     """
-    LOGGER.debug("PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate", session_template_id)
+    LOGGER.debug("PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
+                 session_template_id)
     template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
@@ -238,7 +241,8 @@ def validate_v2_sessiontemplate(session_template_id: str):
     Validate a V2 session template. Look for missing elements or errors that would prevent
     a session from being launched using this template.
     """
-    LOGGER.debug("GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate", session_template_id)
+    LOGGER.debug("GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate",
+                 session_template_id)
     data, status_code = get_v2_sessiontemplate(session_template_id)
 
     if status_code != 200:

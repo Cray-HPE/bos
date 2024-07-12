@@ -30,7 +30,8 @@ import uuid
 import connexion
 from connexion.lifecycle import ConnexionResponse
 
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
+                                    reject_invalid_tenant
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
@@ -211,8 +212,9 @@ def delete_v2_session(session_id):  # noqa: E501
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
-    LOGGER.debug("DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
-                 min_age, max_age, status)
+    LOGGER.debug(
+            "DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
+            min_age, max_age, status)
     tenant = get_tenant_from_header()
     try:
         sessions = _get_filtered_sessions(tenant=tenant, min_age=min_age, max_age=max_age,
@@ -252,7 +254,8 @@ def get_v2_session_status(session_id):  # noqa: E501
             detail="Session {} could not be found".format(session_id))
     session = DB.get(session_key)
     if session.get("status", {}).get("status") == "complete" and session_key in STATUS_DB:
-        # If the session is complete and the status is saved, return the status from completion time
+        # If the session is complete and the status is saved,
+        # return the status from completion time
         return STATUS_DB.get(session_key), 200
     return _get_v2_session_status(session_key, session), 200
 
@@ -293,7 +296,8 @@ def _get_filtered_sessions(tenant, min_age, max_age, status):
             LOGGER.warning('Unable to parse max_age: %s', max_age)
             raise ParsingException(e) from e
     if any([min_start, max_start, status, tenant]):
-        response = [r for r in response if _matches_filter(r, tenant, min_start, max_start, status)]
+        response = [r for r in response if _matches_filter(r, tenant, min_start, max_start,
+                                                           status)]
     return response
 
 
@@ -323,11 +327,18 @@ def _get_v2_session_status(session_key, session=None):
     staged_components = get_v2_components_data(staged_session=session_id, tenant=tenant_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
-        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components if (c.get('enabled') and c.get('status').get('status_override') != Status.on_hold)])
-        component_phase_counts['successful'] = len([c for c in components if c.get('status', {}).get('status') == Status.stable])
-        component_phase_counts['failed'] = len([c for c in components if c.get('status', {}).get('status') == Status.failed])
+        component_phase_counts = Counter([
+            c.get('status', {}).get('phase') for c in components
+                                             if (c.get('enabled') and
+                                                 c.get('status').get('status_override') != Status.on_hold)])
+        component_phase_counts['successful'] = len([
+            c for c in components if c.get('status',{}).get('status') == Status.stable])
+        component_phase_counts['failed'] = len([
+            c for c in components if c.get('status', {}).get('status') == Status.failed])
         component_phase_counts['staged'] = len(staged_components)
-        component_phase_percents = {phase: (component_phase_counts[phase] / num_managed_components) * 100 for phase in component_phase_counts}
+        component_phase_percents = {
+            phase: (component_phase_counts[phase] / num_managed_components) * 100
+            for phase in component_phase_counts}
     else:
         component_phase_percents = {}
     component_errors_data = defaultdict(set)
@@ -351,7 +362,9 @@ def _get_v2_session_status(session_key, session=None):
         'status': session_status.get('status', ''),
         'managed_components_count': num_managed_components,
         'phases': {
-            'percent_complete': round(component_phase_percents.get('successful', 0) + component_phase_percents.get('failed', 0), 2),
+            'percent_complete': round(
+                component_phase_percents.get('successful',
+                                             0) + component_phase_percents.get('failed', 0), 2),
             'percent_powering_on': round(component_phase_percents.get(Phase.powering_on, 0), 2),
             'percent_powering_off': round(component_phase_percents.get(Phase.powering_off, 0), 2),
             'percent_configuring': round(component_phase_percents.get(Phase.configuring, 0), 2),

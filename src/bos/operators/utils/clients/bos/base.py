@@ -167,7 +167,8 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
     def update_items(self, tenant, data):
         """Update information for multiple BOS items"""
         LOGGER.debug("PATCH %s for tenant=%s with body=%s", self.base_url, tenant, data)
-        response = self.session.patch(self.base_url, json=data, headers=get_new_tenant_header(tenant))
+        response = self.session.patch(self.base_url, json=data,
+                                      headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         items = json.loads(response.text)
         return items

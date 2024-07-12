@@ -27,7 +27,8 @@ from botocore.exceptions import ClientError
 
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
-from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, ArtifactNotFound
+from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, \
+                                           ArtifactNotFound
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_image_metadata')
 
@@ -80,7 +81,8 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             return self.boot_artifacts.manifest_json
         except (ClientError, S3MissingConfiguration) as error:
-            LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''), exc_type_msg(error))
+            LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''),
+                         exc_type_msg(error))
             raise BootImageMetaDataBadRead(error) from error
 
     @property

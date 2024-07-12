@@ -65,7 +65,9 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
             out = out.rstrip('\n')
             return out
         except subprocess.CalledProcessError as e:
-            LOGGER.error('get_auth_token failed to retrieve authorization token: code=%d: error=%s', e.returncode, e.output)
+            LOGGER.error(
+                'get_auth_token failed to retrieve authorization token: code=%d: error=%s',
+                e.returncode, e.output)
         except Exception:
             LOGGER.exception('Unexpected exception')
         LOGGER.info("Spire Token not yet available; retrying in a few seconds.")

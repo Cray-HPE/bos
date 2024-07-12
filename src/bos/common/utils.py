@@ -63,9 +63,9 @@ def duration_to_timedelta(timestamp: str):
 
 class TimeoutHTTPAdapter(HTTPAdapter):
     """
-    An HTTP Adapter that allows a session level timeout for both read and connect attributes. This prevents interruption
-    to reads that happen as a function of time or istio resets that causes our applications to sit and wait forever on
-    a half open socket.
+    An HTTP Adapter that allows a session level timeout for both read and connect attributes.
+    This prevents interruption to reads that happen as a function of time or istio resets that
+    causes our applications to sit and wait forever on a half open socket.
     """
     def __init__(self, *args, **kwargs):
         if "timeout" in kwargs:
@@ -102,8 +102,8 @@ def requests_retry_session(retries=10, backoff_factor=0.5,
 def compact_response_text(response_text: str) -> str:
     """
     Often JSON is "pretty printed" in response text, which is undesirable for our logging.
-    This function transforms the response text into a single line, stripping leading and trailing whitespace from each line,
-    and then returns it.
+    This function transforms the response text into a single line, stripping leading and
+    trailing whitespace from each line, and then returns it.
     """
     if response_text:
         return ' '.join([ line.strip() for line in response_text.split('\n') ])
@@ -112,6 +112,7 @@ def compact_response_text(response_text: str) -> str:
 
 def exc_type_msg(exc: Exception) -> str:
     """
-    Given an exception, returns a string of its type and its text (e.g. TypeError: 'int' object is not subscriptable)
+    Given an exception, returns a string of its type and its text
+    (e.g. TypeError: 'int' object is not subscriptable)
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))

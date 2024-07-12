@@ -38,8 +38,10 @@ class ProviderFactory:
         Inputs:
             boot_set: A boot set from the session template data
             artifact_info: The artifact summary from the boot_set.
-                           This is a dictionary containing keys which are boot artifacts (kernel, initrd, roots, and kernel boot parameters)
-                           the values are the paths to those boot artifacts in S3. It also contains the etags for the rootfs and kerenl boot parameters.
+                           This is a dictionary containing keys which are boot artifacts
+                           (kernel, initrd, roots, and kernel boot parameters);
+                           the values are the paths to those boot artifacts in S3.
+                           It also contains the etags for the rootfs and kerenl boot parameters.
         """
         self.boot_set = boot_set
         self.artifact_info = artifact_info
@@ -61,7 +63,8 @@ class ProviderFactory:
             module = importlib.import_module(provider_module)
         except ModuleNotFoundError as mnfe:
             # This is pretty much unrecoverable at this stage of development; make note and raise
-            LOGGER.error("Provider provisioning mechanism '%s' not yet implemented or not found.", provider_name)
+            LOGGER.error("Provider provisioning mechanism '%s' not yet implemented or not found.",
+                         provider_name)
             raise ProviderNotImplemented(mnfe) from mnfe
 
         class_def = getattr(module, provider_classname)

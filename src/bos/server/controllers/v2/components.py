@@ -26,14 +26,16 @@ import logging
 import connexion
 
 from bos.common.utils import exc_type_msg, get_current_timestamp
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, tenant_error_handler, get_tenant_aware_key
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, \
+                                    tenant_error_handler, get_tenant_aware_key
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
-from bos.server.models.v2_component import V2Component as Component  # noqa: E501
-from bos.server.models.v2_component_array import V2ComponentArray as ComponentArray  # noqa: E501
-from bos.server.models.v2_components_update import V2ComponentsUpdate as ComponentsUpdate  # noqa: E501
+from bos.server.models.v2_component import V2Component as Component # noqa: E501
+from bos.server.models.v2_component_array import V2ComponentArray as ComponentArray # noqa: E501
+from bos.server.models.v2_components_update import V2ComponentsUpdate as \
+                                                   ComponentsUpdate # noqa: E501
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.components')
 DB = dbutils.get_wrapper(db='components')
@@ -42,7 +44,8 @@ SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None):
+def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None,
+                      status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -61,9 +64,11 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
                 detail=str(err))
     tenant = get_tenant_from_header()
     LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified", tenant, len(id_list))
-    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
+    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session,
+                                      staged_session=staged_session,
                                       phase=phase, status=status, tenant=tenant)
-    LOGGER.debug("GET /v2/components returning data for tenant=%s on %d components", tenant, len(response))
+    LOGGER.debug("GET /v2/components returning data for tenant=%s on %d components", tenant,
+                 len(response))
     for component in response:
         del_timestamp(component)
     return response, 200
@@ -85,13 +90,17 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
         # TODO: On large scale systems, this response may be too large
         # and require paging to be implemented
         response = DB.get_all()
-    # The status must be set before using _matches_filter as the status is one of the matching criteria.
+    # The status must be set before using _matches_filter as the status is one of the
+    # matching criteria.
     response = [_set_status(r) for r in response if r]
-    if enabled is not None or session is not None or staged_session is not None or phase is not None or status is not None:
-        response = [r for r in response if _matches_filter(r, enabled, session, staged_session, phase, status)]
+    if enabled is not None or session is not None or staged_session is not None or \
+       phase is not None or status is not None:
+        response = [r for r in response if _matches_filter(r, enabled, session, staged_session,
+                                                           phase, status)]
     if tenant:
         tenant_components = get_tenant_component_set(tenant)
-        limited_response = [component for component in response if component["id"] in tenant_components]
+        limited_response = [component for component in response
+                                      if component["id"] in tenant_components]
         response = limited_response
     return response
 
@@ -111,7 +120,9 @@ def _calculate_status(data):
     Calculates and returns the status of a component
     """
     if not 'status' in data:
-        LOGGER.debug("No status in data: %s. This will have the effect of clearing any pre-existing phase.", data)
+        LOGGER.debug(
+            "No status in data: %s. This will have the effect of clearing any pre-existing phase.",
+            data)
     status_data = data.get('status', {})
     override = status_data.get('status_override', '')
     if override:
@@ -137,7 +148,8 @@ def _calculate_status(data):
     elif phase == Phase.configuring:
         status = Status.configuring
 
-    LOGGER.debug("Component: %s Last action: %s Phase: %s Status: %s", component, last_action, phase, status)
+    LOGGER.debug("Component: %s Last action: %s Phase: %s Status: %s", component, last_action,
+                 phase, status)
     return status
 
 
@@ -146,7 +158,8 @@ def _matches_filter(data, enabled, session, staged_session, phase, status):
         return False
     if session is not None and data.get('session', None) != session:
         return False
-    if staged_session is not None and data.get('staged_state', {}).get('session', None) != staged_session:
+    if staged_session is not None and \
+       data.get('staged_state', {}).get('session', None) != staged_session:
         return False
     status_data = data.get('status')
     if phase is not None and status_data.get('phase') != phase:
@@ -288,7 +301,9 @@ def patch_v2_components_dict(data):
                     status=404, title="Component not found.",
                     detail="Component {} could not be found".format(component_id))
     elif session:
-        id_list = [component["id"] for component in get_v2_components_data(session=session, tenant=get_tenant_from_header())]
+        id_list = [component["id"] for component in get_v2_components_data(
+                                                        session=session,
+                                                        tenant=get_tenant_from_header())]
         LOGGER.debug("patch_v2_components_dict: %d IDs found for specified session", len(id_list))
     else:
         LOGGER.warning("No filter provided")
@@ -441,7 +456,8 @@ def post_v2_apply_staged():
                 else:
                     response["ignored"].append(xname)
             except Exception:
-                LOGGER.exception("An error was encountered while attempting to apply stage for node %s", xname)
+                LOGGER.exception(
+                    "An error was encountered while attempting to apply stage for node %s", xname)
                 response["failed"].append(xname)
     except Exception as err:
         LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
@@ -511,11 +527,13 @@ def _set_state_from_staged(data):
         _copy_staged_to_desired(data)
     elif operation == "boot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
-            raise Exception("Staged operation is boot but some boot artifacts have not been specified")
+            raise Exception(
+                "Staged operation is boot but some boot artifacts have not been specified")
         _copy_staged_to_desired(data)
     elif operation == "reboot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
-            raise Exception("Staged operation is reboot but some boot artifacts have not been specified")
+            raise Exception(
+                "Staged operation is reboot but some boot artifacts have not been specified")
         _copy_staged_to_desired(data)
         data["actual_state"] = {
             "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
@@ -588,7 +606,8 @@ def del_timestamp(data: dict):
 def _set_last_updated(data):
     timestamp = get_current_timestamp()
     for section in ['actual_state', 'desired_state', 'staged_state', 'last_action']:
-        if section in data and isinstance(data[section], dict) and data[section].keys() != {"bss_token"}:
+        if section in data and isinstance(data[section],
+                                          dict) and data[section].keys() != {"bss_token"}:
             data[section]['last_updated'] = timestamp
     return data
 
