@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [2.10.21]
 ### Fixed
 - The applystage operation works again. It was broken when multi-tenancy support was added.
+- Fix incorrect exception instantiation arguments in `boot_image_metadata/factory.py`
 
 ## [2.10.20] - 2024-06-05
 ### Fixed
