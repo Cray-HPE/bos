@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - The applystage operation works again. It was broken when multi-tenancy support was added.
+- Fix incorrect exception instantiation arguments in `boot_image_metadata/factory.py`
 
 ### Removed
 - Remove vestigial `BASEKEY` definition from sessions and templates server controller source files
