@@ -25,7 +25,7 @@ import connexion
 import logging
 
 from bos.common.utils import exc_type_msg, get_current_timestamp
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, tenant_error_handler
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, tenant_error_handler, get_tenant_aware_key
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.options import get_v2_options_data
@@ -504,7 +504,9 @@ def _apply_staged(component_id, clear_staged=False):
 
 def _set_state_from_staged(data):
     staged_state = data.get("staged_state", {})
-    staged_session_id = staged_state.get("session", "")
+    staged_session_id_sans_tenant = staged_state.get("session", "")
+    tenant = get_tenant_from_header()
+    staged_session_id = get_tenant_aware_key(staged_session_id_sans_tenant, tenant)
     if staged_session_id not in SESSIONS_DB:
         raise Exception("Staged session no longer exists")
     session = SESSIONS_DB.get(staged_session_id)

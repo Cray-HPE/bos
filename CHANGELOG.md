@@ -5,7 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## Unreleased
+
+## [2.21.0]
+
+### Fixed
+- The applystage operation works again. It was broken when multi-tenancy support was added.
+- Fix incorrect exception instantiation arguments in `boot_image_metadata/factory.py`
+
+### Removed
+- Remove vestigial `BASEKEY` definition from sessions and templates server controller source files
+- Remove unnecessary (and invalid) `__all__` assignment from `__init__.py` in filters module
 
 ## [2.20.0] - 2024-06-05
 ### Fixed
