@@ -211,7 +211,7 @@ def patch_v2_components():
     LOGGER.debug("type=%s", type(data))
     LOGGER.debug("Received: %s", data)
 
-    if type(data) == list:
+    if isinstance(data, list):
         try:
             # This call is just to ensure that the data
             # coming in is valid per the API schema
@@ -221,7 +221,7 @@ def patch_v2_components():
             LOGGER.error("%s: %s", msg, exc_type_msg(err))
             return connexion.problem(status=400, title=msg,detail=str(err))
         return patch_v2_components_list(data)
-    if type(data) == dict:
+    if isinstance(data, dict):
         try:
             # This call is just to ensure that the data
             # coming in is valid per the API schema
@@ -590,7 +590,7 @@ def del_timestamp(data: dict):
 def _set_last_updated(data):
     timestamp = get_current_timestamp()
     for section in ['actual_state', 'desired_state', 'staged_state', 'last_action']:
-        if section in data and type(data[section]) == dict and data[section].keys() != {"bss_token"}:
+        if section in data and isinstance(data[section], dict) and data[section].keys() != {"bss_token"}:
             data[section]['last_updated'] = timestamp
     return data
 

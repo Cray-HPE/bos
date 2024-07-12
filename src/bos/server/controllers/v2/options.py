@@ -101,9 +101,9 @@ def _check_defaults(data):
     if not data:
         data = {}
         put = True
-    for key in DEFAULTS:
+    for key, default_value in DEFAULTS.items():
         if key not in data:
-            data[key] = DEFAULTS[key]
+            data[key] = default_value
             put = True
     if put:
         return DB.put(OPTIONS_KEY, data)

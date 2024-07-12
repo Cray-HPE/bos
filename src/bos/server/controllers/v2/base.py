@@ -52,21 +52,13 @@ def calc_version(details):
 
     # parse open API spec file from docker image or local repository
     openapispec_f = '/app/lib/bos/server/openapi/openapi.yaml'
-    f = None
     try:
-        f = open(openapispec_f, 'r')
+        with open(openapispec_f, 'r') as f:
+            openapispec_map = yaml.safe_load(f)
+        major, minor, patch = openapispec_map['info']['version'].split('.')
+        return Version(major=major, minor=minor, patch=patch, links=links)
     except IOError as e:
         LOGGER.debug('error opening "%s" file: %s', openapispec_f, exc_type_msg(e))
-
-    openapispec_map = yaml.safe_load(f)
-    f.close()
-    major, minor, patch = openapispec_map['info']['version'].split('.')
-    return Version(
-        major=major,
-        minor=minor,
-        patch=patch,
-        links=links,
-    )
 
 
 def get_v2():

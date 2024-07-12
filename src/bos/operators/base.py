@@ -291,7 +291,7 @@ def _init_logging() -> None:
     requested_log_level = os.environ.get('BOS_OPERATOR_LOG_LEVEL', 'INFO')
     log_level = logging.getLevelName(requested_log_level)
 
-    if type(log_level) != int:
+    if not isinstance(log_level, int):
         LOGGER.warning('Log level %r is not valid. Falling back to INFO', requested_log_level)
         log_level = logging.INFO
     logging.basicConfig(level=log_level, format=log_format)
