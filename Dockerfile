@@ -78,6 +78,9 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir
     pip3 list --format freeze
 RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt && \
     pip3 list --format freeze
+COPY srclist.txt pylint.sh /app/venv/
+WORKDIR /app/venv
+RUN /app/venv/pylint.sh
 
 # Base testing image
 FROM base as testing
