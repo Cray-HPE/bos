@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -48,5 +48,4 @@ class BootImageMetaDataFactory(object):
             if path_type == 's3':
                 return S3BootImageMetaData(self.boot_set)
             else:
-                raise BootImageMetaDataUnknown("No BootImageMetaData class for "
-                                                      "type %s", path_type)
+                raise BootImageMetaDataUnknown(f"No BootImageMetaData class for type {path_type}")

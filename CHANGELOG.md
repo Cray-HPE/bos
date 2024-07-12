@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix incorrect exception instantiation arguments in `boot_image_metadata/factory.py`
+
 ## [2.0.41] - 05-31-2024
 ### Fixed
 - Instantiate S3 client in a thread-safe manner.
