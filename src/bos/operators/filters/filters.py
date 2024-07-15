@@ -120,8 +120,8 @@ class NOT(LocalFilter):
     def _filter(self, components: List[dict]) -> List[dict]:
         return self.negated_filter._filter(components)
 
-    def _match(self, components: dict):
-        return self.negated_filter._match(components)
+    def _match(self, component: dict):
+        return self.negated_filter._match(component)
 
 
 class TimeSinceLastAction(LocalFilter):
