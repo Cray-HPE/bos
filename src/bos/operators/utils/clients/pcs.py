@@ -176,7 +176,8 @@ def node_to_powerstate(nodes, session=None, **kwargs):
             power_states[node] = pstatus
     return power_states
 
-def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None, session=None):
+def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None,
+                       session=None):
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
     operation indicates what the desired operation should be, which is a string value containing
