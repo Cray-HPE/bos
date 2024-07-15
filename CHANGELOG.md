@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   boot set inside the session template that contains it
 - Modified session template creation and patching to validate boot set names
 - Require boot sets to have some form of node/group/role list specified
+- Sanitize session templates during migration to this BOS version, to ensure they comply with the API specification
 
 ### Dependencies
 - Move to `redis` Python library version 5.0
