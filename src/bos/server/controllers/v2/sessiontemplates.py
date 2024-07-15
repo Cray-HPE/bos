@@ -148,7 +148,7 @@ def get_v2_sessiontemplate(session_template_id):
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
-            detail="Sessiontemplate {} could not be found".format(session_template_id))
+            detail=f"Sessiontemplate {session_template_id} could not be found")
     template = DB.get(template_key)
     return template, 200
 
@@ -178,7 +178,7 @@ def delete_v2_sessiontemplate(session_template_id):
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
-            detail="Sessiontemplate {} could not be found".format(session_template_id))
+            detail=f"Sessiontemplate {session_template_id} could not be found")
     return DB.delete(template_key), 204
 
 
@@ -196,7 +196,7 @@ def patch_v2_sessiontemplate(session_template_id):
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404, title="Sessiontemplate could not found.",
-            detail="Sessiontemplate {} could not be found".format(session_template_id))
+            detail=f"Sessiontemplate {session_template_id} could not be found")
 
     if connexion.request.is_json:
         LOGGER.debug("connexion.request.is_json")

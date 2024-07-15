@@ -48,7 +48,7 @@ class BaseRootfsProvider(RootfsProvider):
         """
         fields = []
         if self.provider_field:
-            fields.append("url=%s" % self.provider_field)
+            fields.append(f"url={self.provider_field}")
         if self.provider_field_id:
-            fields.append("etag=%s" % self.provider_field_id)
-        return "nmd_data={}".format(",".join(fields)) if fields else ''
+            fields.append(f"etag={self.provider_field_id}")
+        return f"nmd_data={','.join(fields)}" if fields else ''

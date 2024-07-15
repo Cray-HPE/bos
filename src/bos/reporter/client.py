@@ -90,5 +90,6 @@ def requests_retry_session(retries=10, connect=10, backoff_factor=0.5,
     )
     adapter = HTTPAdapter(max_retries=retry)
     session.mount(PROTOCOL, adapter)
-    session.headers.update({'Authorization': 'Bearer %s' % (get_auth_token())})
+    auth_token = get_auth_token()
+    session.headers.update({'Authorization': f'Bearer {auth_token}'})
     return session

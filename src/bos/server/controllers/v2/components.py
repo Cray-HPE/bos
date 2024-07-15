@@ -247,7 +247,7 @@ def patch_v2_components():
     LOGGER.error("Unexpected data type %s", str(type(data)))
     return connexion.problem(
        status=400, title="Error parsing the data provided.",
-       detail="Unexpected data type {}".format(str(type(data))))
+       detail=f"Unexpected data type {type(data).__name__}")
 
 
 def patch_v2_components_list(data):
@@ -260,7 +260,7 @@ def patch_v2_components_list(data):
                 LOGGER.warning("Component %s could not be found", component_id)
                 return connexion.problem(
                     status=404, title="Component not found.",
-                    detail="Component {} could not be found".format(component_id))
+                    detail=f"Component {component_id} could not be found")
             components.append((component_id, component_data))
     except Exception as err:
         LOGGER.error("Error loading component data: %s", exc_type_msg(err))
@@ -299,7 +299,7 @@ def patch_v2_components_dict(data):
             if component_id not in DB or not _is_valid_tenant_component(component_id):
                 return connexion.problem(
                     status=404, title="Component not found.",
-                    detail="Component {} could not be found".format(component_id))
+                    detail=f"Component {component_id} could not be found")
     elif session:
         id_list = [component["id"] for component in get_v2_components_data(
                                                         session=session,
@@ -329,7 +329,7 @@ def get_v2_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
             status=404, title="Component not found.",
-            detail="Component {} could not be found".format(component_id))
+            detail=f"Component {component_id} could not be found")
     component = DB.get(component_id)
     component = _set_status(component)
     del_timestamp(component)
@@ -391,7 +391,7 @@ def patch_v2_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
             status=404, title="Component not found.",
-            detail="Component {} could not be found".format(component_id))
+            detail=f"Component {component_id} could not be found")
     if "actual_state" in data and not validate_actual_state_change_is_allowed(component_id):
         LOGGER.warning("Not able to update actual state")
         return connexion.problem(
@@ -431,7 +431,7 @@ def delete_v2_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
             status=404, title="Component not found.",
-            detail="Component {} could not be found".format(component_id))
+            detail=f"Component {component_id} could not be found")
     return DB.delete(component_id), 204
 
 

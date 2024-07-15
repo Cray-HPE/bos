@@ -58,7 +58,7 @@ def patch_component(component, properties, session=None):
     the BOS API endpoint.
     """
     session = session or requests_retry_session()
-    component_endpoint = '%s/%s' % (COMPONENT_ENDPOINT, component)
+    component_endpoint = f'{COMPONENT_ENDPOINT}/{component}'
     try:
         response = session.patch(component_endpoint, json=properties)
     except (ConnectionError, MaxRetryError) as ce:

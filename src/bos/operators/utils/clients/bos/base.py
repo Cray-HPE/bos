@@ -33,7 +33,7 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
 
 API_VERSION = 'v2'
 SERVICE_NAME = 'cray-bos'
-BASE_ENDPOINT = "%s://%s/%s" % (PROTOCOL, SERVICE_NAME, API_VERSION)
+BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/{API_VERSION}"
 
 
 def log_call_errors(func):
@@ -63,7 +63,7 @@ class BaseBosEndpoint:
     ENDPOINT = ''
 
     def __init__(self):
-        self.base_url = "%s/%s" % (BASE_ENDPOINT, self.ENDPOINT)
+        self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
         self.session = requests_retry_session()
 
     @log_call_errors

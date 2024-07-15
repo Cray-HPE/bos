@@ -24,7 +24,8 @@
 from bos.reporter import BOSException
 from bos.reporter import ENDPOINT as BOS_ENDPOINT
 
-ENDPOINT = "%s/%s" % (BOS_ENDPOINT, __name__.rsplit('.', maxsplit=1)[-1])
+__name = __name__.rsplit('.', maxsplit=1)[-1]
+ENDPOINT = f"{BOS_ENDPOINT}/{__name}"
 
 
 class BOSComponentException(BOSException):

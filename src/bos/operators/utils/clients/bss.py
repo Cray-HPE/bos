@@ -30,7 +30,7 @@ from bos.common.utils import compact_response_text, exc_type_msg, requests_retry
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
-ENDPOINT = "%s://%s/boot/v1" % (PROTOCOL, SERVICE_NAME)
+ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/boot/v1"
 
 
 def set_bss(node_set, kernel_params, kernel, initrd, session=None):
@@ -67,7 +67,7 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
 
     session = session or requests_retry_session()
     LOGGER.info("Params: %s", kernel_params)
-    url = "%s/bootparameters" % (ENDPOINT)
+    url = f"{ENDPOINT}/bootparameters"
 
     # Assignment payload
     payload = {"hosts": list(node_set),

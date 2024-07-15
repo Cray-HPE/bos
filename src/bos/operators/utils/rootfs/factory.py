@@ -51,8 +51,8 @@ class ProviderFactory:
 
         if provider_name:
             # When a provisioning protocol is specified...
-            provider_module = 'bos.operators.utils.rootfs.{}'.format(provider_name)
-            provider_classname = '{}Provider'.format(provider_name.upper())
+            provider_module = f'bos.operators.utils.rootfs.{provider_name}'
+            provider_classname = f'{provider_name.upper()}Provider'
         else:
             # none specified or blank
             provider_module = 'bos.operators.utils.rootfs'

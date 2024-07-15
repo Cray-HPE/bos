@@ -75,7 +75,7 @@ def post_v2_session():  # noqa: E501
     # Check that the template_name exists.
     session_template_response = get_v2_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
-        msg = "Session Template Name invalid: {}".format(template_name)
+        msg = f"Session Template Name invalid: {template_name}"
         LOGGER.error(msg)
         return msg, 400
     session_template, _ = session_template_response
@@ -93,7 +93,7 @@ def post_v2_session():  # noqa: E501
     if session_key in DB:
         LOGGER.warning("v2 session named %s already exists", session.name)
         return connexion.problem(
-            detail="A session with the name {} already exists".format(session.name),
+            detail=f"A session with the name {session.name} already exists",
             status=409,
             title="Conflicting session name"
         )
@@ -151,7 +151,7 @@ def patch_v2_session(session_id):
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
 
     component = DB.patch(session_key, patch_data_json)
     return component, 200
@@ -172,7 +172,7 @@ def get_v2_session(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     session = DB.get(session_key)
     return session, 200
 
@@ -204,7 +204,7 @@ def delete_v2_session(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     if session_key in STATUS_DB:
         STATUS_DB.delete(session_key)
     return DB.delete(session_key), 204
@@ -251,7 +251,7 @@ def get_v2_session_status(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     session = DB.get(session_key)
     if session.get("status", {}).get("status") == "complete" and session_key in STATUS_DB:
         # If the session is complete and the status is saved,
@@ -275,7 +275,7 @@ def save_v2_session_status(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
@@ -386,7 +386,7 @@ def _get_v2_session_status(session_key, session=None):
 def _age_to_timestamp(age):
     delta = {}
     for interval in ['weeks', 'days', 'hours', 'minutes']:
-        result = re.search(r'(\d+)\w*{}'.format(interval[0]), age, re.IGNORECASE)
+        result = re.search(fr'(\d+)\w*{interval[0]}', age, re.IGNORECASE)
         if result:
             delta[interval] = int(result.groups()[0])
     delta = timedelta(**delta)

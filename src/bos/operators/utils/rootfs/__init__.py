@@ -76,7 +76,7 @@ class RootfsProvider:
             fields.append(rootfs_provider_passthrough)
 
         stripped_fields = [field for field in fields if field]
-        return "root={}".format(self.DELIMITER.join(fields)) if stripped_fields else ''
+        return f"root={self.DELIMITER.join(fields)}" if stripped_fields else ''
 
     @property
     def provider_field(self):

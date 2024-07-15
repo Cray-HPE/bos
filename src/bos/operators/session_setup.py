@@ -302,10 +302,10 @@ class Session:
             self.name, self.tenant, {'status': {'error': err}})
         sco = SessionCompletionOperator()
         sco._mark_session_complete(self.name, self.tenant)
-        self._log(LOGGER.info, f'Session {self.name} has failed.')
+        self._log(LOGGER.info, 'Session %s has failed.', self.name)
 
     def _log(self, logger, message, *xargs):
-        logger('Session {}: {}'.format(self.name, message), *xargs)
+        logger(f'Session {self.name}: {message}', *xargs)
 
     # Operations
     def _operate(self, component_id, state):
@@ -439,7 +439,7 @@ class Session:
             boot_param_pieces.append(nmd_parameters)
 
         # Add the bos actual state ttl value so nodes know how frequently to report
-        boot_param_pieces.append('bos_update_frequency=%s' % (options.component_actual_state_ttl))
+        boot_param_pieces.append(f'bos_update_frequency={options.component_actual_state_ttl}')
 
         return ' '.join(boot_param_pieces)
 

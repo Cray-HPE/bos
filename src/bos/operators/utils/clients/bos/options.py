@@ -30,7 +30,8 @@ from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
-ENDPOINT = "%s/%s" % (BASE_ENDPOINT, __name__.lower().rsplit('.', maxsplit=1)[-1])
+__name = __name__.lower().rsplit('.', maxsplit=1)[-1]
+ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
 
 
 class Options:
@@ -68,7 +69,7 @@ class Options:
             return value_type(self.options[key])
         if default:
             return value_type(default)
-        raise KeyError('Option {} not found and no default exists'.format(key))
+        raise KeyError(f'Option {key} not found and no default exists')
 
     @property
     def logging_level(self):

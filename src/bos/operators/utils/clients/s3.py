@@ -283,7 +283,7 @@ class S3BootArtifacts(S3Object):
             LOGGER.info(msg)
             raise ArtifactNotFound(msg)
         if len(artifacts) > 1:
-            msg = "Multiple %s artifacts found in the manifest." % artifact_type
+            msg = f"Multiple {artifact_type} artifacts found in the manifest."
             LOGGER.info(msg)
             raise TooManyArtifacts(msg)
         return artifacts[0]

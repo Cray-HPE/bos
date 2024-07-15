@@ -35,9 +35,9 @@ from bos.common.utils import compact_response_text, requests_retry_session, PROT
 
 SERVICE_NAME = 'cray-power-control'
 POWER_CONTROL_VERSION = 'v1'
-ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
-POWER_STATUS_ENDPOINT = '%s/power-status' % (ENDPOINT)
-TRANSITION_ENDPOINT = "%s/transitions" %(ENDPOINT)
+ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
+POWER_STATUS_ENDPOINT = f'{ENDPOINT}/power-status'
+TRANSITION_ENDPOINT = f"{ENDPOINT}/transitions"
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
 
@@ -209,7 +209,7 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     """
     if not xnames:
         raise PowerControlComponentsEmptyException(
-                "_transition_create called with no xnames! (operation=%s)" % operation)
+                f"_transition_create called with no xnames! (operation={operation})")
     session = session or requests_retry_session()
     try:
         assert operation in {'On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init',

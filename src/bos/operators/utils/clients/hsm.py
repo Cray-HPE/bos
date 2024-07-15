@@ -31,7 +31,7 @@ from urllib3.exceptions import MaxRetryError
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
-BASE_ENDPOINT = "%s://%s/hsm/v2/" % (PROTOCOL, SERVICE_NAME)
+BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2/"
 ENDPOINT = os.path.join(BASE_ENDPOINT, 'State/Components/Query')
 VERIFY = True
 
@@ -54,7 +54,7 @@ def read_all_node_xnames():
     have been discovered; return these as a set.
     """
     session = requests_retry_session()
-    endpoint = '%s/State/Components/' % (BASE_ENDPOINT)
+    endpoint = f'{BASE_ENDPOINT}/State/Components/'
     LOGGER.debug("GET %s", endpoint)
     try:
         response = session.get(endpoint)

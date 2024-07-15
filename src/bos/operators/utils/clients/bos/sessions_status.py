@@ -35,7 +35,7 @@ class SessionStatusEndpoint:
     ENDPOINT = 'sessions'
 
     def __init__(self):
-        self.base_url = "%s/%s" % (BASE_ENDPOINT, self.ENDPOINT)
+        self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
 
     @log_call_errors
     def get_session_status(self, session_id, tenant):

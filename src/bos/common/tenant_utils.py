@@ -34,8 +34,8 @@ LOGGER = logging.getLogger('bos.common.tenant_utils')
 
 TENANT_HEADER = "Cray-Tenant-Name"
 SERVICE_NAME = 'cray-tapms/v1alpha2'
-BASE_ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
-TENANT_ENDPOINT = "%s/tenants" % BASE_ENDPOINT ## CASMPET-6433 changed this from tenant to tenants
+BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
+TENANT_ENDPOINT = f"{BASE_ENDPOINT}/tenants" # CASMPET-6433 changed this from tenant to tenants
 
 
 class InvalidTenantException(Exception):
