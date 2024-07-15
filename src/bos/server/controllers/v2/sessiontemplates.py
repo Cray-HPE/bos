@@ -117,7 +117,8 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     try:
         template_data = _get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing PUT '%s' request data: %s", session_template_id, exc_type_msg(err))
+        LOGGER.error("Error parsing PUT '%s' request data: %s", session_template_id,
+                     exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -127,7 +128,8 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     try:
         _validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
-        LOGGER.error("Error creating session template '%s': %s", session_template_id, exc_type_msg(err))
+        LOGGER.error("Error creating session template '%s': %s", session_template_id,
+                     exc_type_msg(err))
         return connexion.problem(
             status=400, title="The session template could not be created.",
             detail=str(err))
@@ -217,7 +219,8 @@ def patch_v2_sessiontemplate(session_template_id):
     try:
         template_data = _get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing PATCH '%s' request data: %s", session_template_id, exc_type_msg(err))
+        LOGGER.error("Error parsing PATCH '%s' request data: %s", session_template_id,
+                     exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
@@ -227,7 +230,8 @@ def patch_v2_sessiontemplate(session_template_id):
     try:
         _validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
-        LOGGER.error("Error patching session template '%s': %s", session_template_id, exc_type_msg(err))
+        LOGGER.error("Error patching session template '%s': %s", session_template_id,
+                     exc_type_msg(err))
         return connexion.problem(
             status=400, title="The session template could not be patched.",
             detail=str(err))
