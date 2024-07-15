@@ -22,10 +22,11 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-import connexion
 import functools
 import logging
 import hashlib
+
+import connexion
 from requests.exceptions import HTTPError
 from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
 
@@ -33,8 +34,8 @@ LOGGER = logging.getLogger('bos.common.tenant_utils')
 
 TENANT_HEADER = "Cray-Tenant-Name"
 SERVICE_NAME = 'cray-tapms/v1alpha2'
-BASE_ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
-TENANT_ENDPOINT = "%s/tenants" % BASE_ENDPOINT ## CASMPET-6433 changed this from tenant to tenants
+BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
+TENANT_ENDPOINT = f"{BASE_ENDPOINT}/tenants" # CASMPET-6433 changed this from tenant to tenants
 
 
 class InvalidTenantException(Exception):
@@ -81,8 +82,7 @@ def get_tenant_data(tenant, session=None):
         LOGGER.error("Failed getting tenant data from tapms: %s", exc_type_msg(e))
         if response.status_code == 404:
             raise InvalidTenantException(f"Data not found for tenant {tenant}") from e
-        else:
-            raise
+        raise
     return response.json()
 
 

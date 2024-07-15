@@ -38,7 +38,7 @@ class ProviderNotImplemented(Exception):
     """
 
 
-class RootfsProvider(object):
+class RootfsProvider:
     PROTOCOL = None
     DELIMITER = ':'
     """
@@ -76,10 +76,7 @@ class RootfsProvider(object):
             fields.append(rootfs_provider_passthrough)
 
         stripped_fields = [field for field in fields if field]
-        if stripped_fields:
-            return "root={}".format(self.DELIMITER.join(fields))
-        else:
-            return ''
+        return f"root={self.DELIMITER.join(fields)}" if stripped_fields else ''
 
     @property
     def provider_field(self):
@@ -96,4 +93,3 @@ class RootfsProvider(object):
         parameter.
         """
         return None
-

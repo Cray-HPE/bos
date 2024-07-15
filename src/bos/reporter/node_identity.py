@@ -61,7 +61,8 @@ def identity_from_environment():
     try:
         return os.environ[ident_string]
     except KeyError as exc:
-        raise UnknownIdentity("Node identity not passed in via environment '%s'" % (ident_string)) from exc
+        raise UnknownIdentity(
+                f"Node identity not passed in via environment '{ident_string}'") from exc
 
 
 def read_identity():

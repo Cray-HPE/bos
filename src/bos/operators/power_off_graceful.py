@@ -25,7 +25,7 @@
 import logging
 
 from bos.common.values import Action, Status
-import bos.operators.utils.clients.pcs as pcs
+from bos.operators.utils.clients import pcs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
 
@@ -61,5 +61,3 @@ class GracefulPowerOffOperator(BaseOperator):
 
 if __name__ == '__main__':
     main(GracefulPowerOffOperator)
-
-

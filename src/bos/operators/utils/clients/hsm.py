@@ -31,7 +31,7 @@ from urllib3.exceptions import MaxRetryError
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
-BASE_ENDPOINT = "%s://%s/hsm/v2/" % (PROTOCOL, SERVICE_NAME)
+BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2/"
 ENDPOINT = os.path.join(BASE_ENDPOINT, 'State/Components/Query')
 VERIFY = True
 
@@ -54,7 +54,7 @@ def read_all_node_xnames():
     have been discovered; return these as a set.
     """
     session = requests_retry_session()
-    endpoint = '%s/State/Components/' % (BASE_ENDPOINT)
+    endpoint = f'{BASE_ENDPOINT}/State/Components/'
     LOGGER.debug("GET %s", endpoint)
     try:
         response = session.get(endpoint)
@@ -74,8 +74,8 @@ def read_all_node_xnames():
         LOGGER.error("Non-JSON response from HSM: %s", response.text)
         raise HWStateManagerException(jde) from jde
     try:
-        return set([component['ID'] for component in json_body['Components']
-                    if component.get('Type', None) == 'Node'])
+        return {[component['ID'] for component in json_body['Components']
+                    if component.get('Type', None) == 'Node']}
     except KeyError as ke:
         LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
         raise HWStateManagerException(ke) from ke
@@ -146,7 +146,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     return components
 
 
-class Inventory(object):
+class Inventory:
     """
     Inventory handles the generation of a hardware inventory in a similar manner to how the
     dynamic inventory is generated for CFS.  To reduce the number of calls to HSM, everything is
@@ -235,5 +235,5 @@ class Inventory(object):
         try:
             return response.json()
         except ValueError:
-            LOGGER.error("Couldn't parse a JSON response: {}".format(response.text))
+            LOGGER.error("Couldn't parse a JSON response: %s", response.text)
             raise

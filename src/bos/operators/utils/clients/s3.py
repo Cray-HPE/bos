@@ -25,11 +25,11 @@ import json
 import logging
 import os
 import threading
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
-from urllib.parse import urlparse
 
 from bos.common.utils import exc_type_msg
 
@@ -70,7 +70,7 @@ class S3ObjectNotFound(Exception):
     """
 
 
-class S3Url(object):
+class S3Url:
     """
     https://stackoverflow.com/questions/42641315/s3-urls-get-bucket-name-and-path/42641363
     """
@@ -86,8 +86,7 @@ class S3Url(object):
     def key(self):
         if self._parsed.query:
             return self._parsed.path.lstrip('/') + '?' + self._parsed.query
-        else:
-            return self._parsed.path.lstrip('/')
+        return self._parsed.path.lstrip('/')
 
     @property
     def url(self):
@@ -284,7 +283,7 @@ class S3BootArtifacts(S3Object):
             LOGGER.info(msg)
             raise ArtifactNotFound(msg)
         if len(artifacts) > 1:
-            msg = "Multiple %s artifacts found in the manifest." % artifact_type
+            msg = f"Multiple {artifact_type} artifacts found in the manifest."
             LOGGER.info(msg)
             raise TooManyArtifacts(msg)
         return artifacts[0]

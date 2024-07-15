@@ -22,9 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
-import connexion
 import threading
 import time
+
+import connexion
 
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
@@ -56,7 +57,7 @@ def _init():
     log_level_updater = threading.Thread(target=check_v2_logging_level, args=())
     log_level_updater.start()
 
-    """ Cleanup old options """
+    # Cleanup old options
     while True:
         try:
             data = DB.get(OPTIONS_KEY)
@@ -101,9 +102,9 @@ def _check_defaults(data):
     if not data:
         data = {}
         put = True
-    for key in DEFAULTS:
+    for key, default_value in DEFAULTS.items():
         if key not in data:
-            data[key] = DEFAULTS[key]
+            data[key] = default_value
             put = True
     if put:
         return DB.put(OPTIONS_KEY, data)
@@ -130,12 +131,12 @@ def update_log_level(new_level_str):
     new_level = logging.getLevelName(new_level_str.upper())
     current_level = LOGGER.getEffectiveLevel()
     if current_level != new_level:
-        LOGGER.log(current_level, 'Changing logging level from {} to {}'.format(
-            logging.getLevelName(current_level), logging.getLevelName(new_level)))
+        LOGGER.log(current_level, 'Changing logging level from %s to %s',
+                   logging.getLevelName(current_level), new_level)
         logger = logging.getLogger()
         logger.setLevel(new_level)
-        LOGGER.log(new_level, 'Logging level changed from {} to {}'.format(
-            logging.getLevelName(current_level), logging.getLevelName(new_level)))
+        LOGGER.log(new_level, 'Logging level changed from %s to %s',
+                   logging.getLevelName(current_level), new_level)
 
 
 def check_v2_logging_level():

@@ -1321,6 +1321,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Version'
+        500:
+          $ref: '#/components/responses/InternalError'
 
   /v2:
     get:
@@ -1335,7 +1337,7 @@ paths:
         200:
           $ref: '#/components/responses/Version'
         500:
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/InternalError'
   /v2/healthz:
     get:
       summary: Get service health details

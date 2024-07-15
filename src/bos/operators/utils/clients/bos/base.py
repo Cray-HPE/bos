@@ -33,7 +33,7 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
 
 API_VERSION = 'v2'
 SERVICE_NAME = 'cray-bos'
-BASE_ENDPOINT = "%s://%s/%s" % (PROTOCOL, SERVICE_NAME, API_VERSION)
+BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/{API_VERSION}"
 
 
 def log_call_errors(func):
@@ -55,7 +55,7 @@ def log_call_errors(func):
     return wrap
 
 
-class BaseBosEndpoint(object):
+class BaseBosEndpoint:
     """
     This base class provides generic access to the BOS API.
     The individual endpoint needs to be overridden for a specific endpoint.
@@ -63,7 +63,7 @@ class BaseBosEndpoint(object):
     ENDPOINT = ''
 
     def __init__(self):
-        self.base_url = "%s/%s" % (BASE_ENDPOINT, self.ENDPOINT)
+        self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
         self.session = requests_retry_session()
 
     @log_call_errors
@@ -119,10 +119,7 @@ class BaseBosEndpoint(object):
         LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs)
         response.raise_for_status()
-        if response.text:
-            return json.loads(response.text)
-        else:
-            return None
+        return json.loads(response.text) if response.text else None
 
 
 class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
@@ -170,7 +167,8 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
     def update_items(self, tenant, data):
         """Update information for multiple BOS items"""
         LOGGER.debug("PATCH %s for tenant=%s with body=%s", self.base_url, tenant, data)
-        response = self.session.patch(self.base_url, json=data, headers=get_new_tenant_header(tenant))
+        response = self.session.patch(self.base_url, json=data,
+                                      headers=get_new_tenant_header(tenant))
         response.raise_for_status()
         items = json.loads(response.text)
         return items
@@ -196,7 +194,4 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
             LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs, headers=headers)
         response.raise_for_status()
-        if response.text:
-            return json.loads(response.text)
-        else:
-            return None
+        return json.loads(response.text) if response.text else None

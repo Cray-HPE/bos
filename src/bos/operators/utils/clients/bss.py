@@ -21,15 +21,16 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from requests.exceptions import HTTPError
 import logging
 import json
+
+from requests.exceptions import HTTPError
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
-ENDPOINT = "%s://%s/boot/v1" % (PROTOCOL, SERVICE_NAME)
+ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/boot/v1"
 
 
 def set_bss(node_set, kernel_params, kernel, initrd, session=None):
@@ -65,8 +66,8 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
         raise Exception("set_bss called with empty node_set")
 
     session = session or requests_retry_session()
-    LOGGER.info("Params: {}".format(kernel_params))
-    url = "%s/bootparameters" % (ENDPOINT)
+    LOGGER.info("Params: %s", kernel_params)
+    url = f"{ENDPOINT}/bootparameters"
 
     # Assignment payload
     payload = {"hosts": list(node_set),

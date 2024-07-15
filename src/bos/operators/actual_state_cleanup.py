@@ -55,7 +55,9 @@ class ActualStateCleanupOperator(BaseOperator):
         return [
             BOSQuery(),
             ActualBootStateIsSet(),
-            ActualStateAge(seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds())
+            ActualStateAge(
+                seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds()
+            )
         ]
 
     def _act(self, components):
@@ -65,7 +67,7 @@ class ActualStateCleanupOperator(BaseOperator):
                          'actual_state': EMPTY_ACTUAL_STATE})
         if data:
             LOGGER.info('Found %d components that require updates', len(data))
-            LOGGER.debug('Calling to update with payload: %s' %(data))
+            LOGGER.debug('Calling to update with payload: %s', data)
             self.bos_client.components.update_components(data)
         return components
 

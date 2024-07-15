@@ -26,17 +26,18 @@
 #       https://github.com/Cray-HPE/hms-power-control/blob/develop/api/swagger.yaml
 
 import logging
-import requests
 import json
 from collections import defaultdict
+
+import requests
 
 from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-power-control'
 POWER_CONTROL_VERSION = 'v1'
-ENDPOINT = "%s://%s" % (PROTOCOL, SERVICE_NAME)
-POWER_STATUS_ENDPOINT = '%s/power-status' % (ENDPOINT)
-TRANSITION_ENDPOINT = "%s/transitions" %(ENDPOINT)
+ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
+POWER_STATUS_ENDPOINT = f'{ENDPOINT}/power-status'
+TRANSITION_ENDPOINT = f"{ENDPOINT}/transitions"
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
 
@@ -107,7 +108,9 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     try:
         response.raise_for_status()
         if not response.ok:
-            raise PowerControlException("Non-2XX response to power_status query: response %s: %s" %(response.status_c))
+            raise PowerControlException(f"Non-2XX response ({response.status_code}) to "
+                                        f"power_status query; {response.reason} "
+                                        f"{compact_response_text(response.text)}")
     except requests.exceptions.HTTPError as err:
         raise PowerControlException(err) from err
     try:
@@ -145,20 +148,22 @@ def status(nodes, session=None, **kwargs):
     power_status_all = _power_status(xname=list(nodes), session=session, **kwargs)
     for power_status_entry in power_status_all['status']:
         # If the returned xname has an error, it itself is the status regardless of
-        # what the powerState field suggests. This is a major departure from how CAPMC handled errors.
+        # what the powerState field suggests. This is a major departure from how CAPMC
+        # handled errors.
         xname = power_status_entry.get('xname', '')
         if power_status_entry['error']:
             status_bucket[power_status_entry['error']].add(xname)
             continue
         power_status = power_status_entry.get('powerState', '').lower()
-        if not(all([power_status, xname])):
+        if not all([power_status, xname]):
             continue
         status_bucket[power_status].add(xname)
     return status_bucket
 
 def node_to_powerstate(nodes, session=None, **kwargs):
     """
-    For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for the node in question.
+    For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for
+    the node in question.
     """
     power_states = {}
     if not nodes:
@@ -171,41 +176,47 @@ def node_to_powerstate(nodes, session=None, **kwargs):
             power_states[node] = pstatus
     return power_states
 
-def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None, session=None):
+def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None,
+                       session=None):
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
     operation indicates what the desired operation should be, which is a string value containing
-    one or more of the supported transition names for the given hardware, e.g. 'on', 'off', or 'force-off'.
+    one or more of the supported transition names for the given hardware, e.g. 'on', 'off', or
+    'force-off'.
 
-    Once created, one of two responses are returned. A 2XX response results in a transition_start_output
-    object, or, an invalid request results in a 4XX and subsequent raised PCS exception.
+    Once created, one of two responses are returned. A 2XX response results in a
+    transition_start_output object, or, an invalid request results in a 4XX and subsequent
+    raised PCS exception.
 
     Args:
         xnames: an iterable of xnames
         operation: A string/enum for what the nodes should transition to
-        task_deadline_minutes: How long should PCS operate on the nodes to bring them to complete the operation;
-          typecast to an integer value.
-        deputy_key: An optional string value that can be used to further handle instructing PCS to perform
-          state transitions on behalf of a known existing reservation.
+        task_deadline_minutes: How long should PCS operate on the nodes to bring them to complete
+          the operation; typecast to an integer value.
+        deputy_key: An optional string value that can be used to further handle instructing PCS
+          to perform state transitions on behalf of a known existing reservation.
         session: An already existing session to use with PCS, if any
 
     Returns:
-        A transition_start_output object, which is a record for the transition that was created. The most important
-        field of which is the 'transitionID' value, which allows subsequent follow-on to the created request.
+        A transition_start_output object, which is a record for the transition that was created.
+        The most important field of which is the 'transitionID' value, which allows subsequent
+        follow-on to the created request.
 
     Raises:
-        PowerControlException: Any non-nominal response from PCS, typically as a result of an unexpected payload
-          response, or a failure to create a transition record.
+        PowerControlException: Any non-nominal response from PCS, typically as a result of an
+          unexpected payload response, or a failure to create a transition record.
         PowerControlComponentsEmptyException: No xnames specified
     """
     if not xnames:
         raise PowerControlComponentsEmptyException(
-                "_transition_create called with no xnames! (operation=%s)" % operation)
+                f"_transition_create called with no xnames! (operation={operation})")
     session = session or requests_retry_session()
     try:
-        assert operation in set(['On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init', 'Force-Off'])
+        assert operation in {'On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init',
+                             'Force-Off'}
     except AssertionError as err:
-        raise PowerControlSyntaxException("Operation '%s' is not supported or implemented." %(operation)) from err
+        raise PowerControlSyntaxException(
+                f"Operation '{operation}' is not supported or implemented.") from err
     params = {'location': [], 'operation': operation}
     if task_deadline_minutes:
         params['taskDeadlineMinutes'] = int(task_deadline_minutes)
@@ -221,7 +232,11 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     try:
         response.raise_for_status()
         if not response.ok:
-            raise PowerControlException("Non-2XX response to power_status query: response %s: %s" %(response.status_c))
+            raise PowerControlException(f"Non-2XX response ({response.status_code}) to "
+                                        f"{operation} power transition creation; "
+                                        f"{response.reason} "
+                                        f"{compact_response_text(response.text)}")
+
     except requests.exceptions.HTTPError as err:
         raise PowerControlException(err) from err
     try:
@@ -238,7 +253,8 @@ def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
     if not nodes:
         raise PowerControlComponentsEmptyException("power_on called with no nodes!")
     session = session or requests_retry_session()
-    return _transition_create(xnames=nodes, operation='On', task_deadline_minutes=task_deadline_minutes,
+    return _transition_create(xnames=nodes, operation='On',
+                              task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     """
@@ -248,7 +264,8 @@ def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     if not nodes:
         raise PowerControlComponentsEmptyException("power_off called with no nodes!")
     session = session or requests_retry_session()
-    return _transition_create(xnames=nodes, operation='Off', task_deadline_minutes=task_deadline_minutes,
+    return _transition_create(xnames=nodes, operation='Off',
+                              task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     """
@@ -258,7 +275,8 @@ def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     if not nodes:
         raise PowerControlComponentsEmptyException("soft_off called with no nodes!")
     session = session or requests_retry_session()
-    return _transition_create(xnames=nodes, operation='Soft-Off', task_deadline_minutes=task_deadline_minutes,
+    return _transition_create(xnames=nodes, operation='Soft-Off',
+                              task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     """
@@ -268,5 +286,6 @@ def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     if not nodes:
         raise PowerControlComponentsEmptyException("force_off called with no nodes!")
     session = session or requests_retry_session()
-    return _transition_create(xnames=nodes, operation='Force-Off', task_deadline_minutes=task_deadline_minutes,
+    return _transition_create(xnames=nodes, operation='Force-Off',
+                              task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)

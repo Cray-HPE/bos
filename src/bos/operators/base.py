@@ -41,7 +41,7 @@ from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 LOGGER = logging.getLogger('bos.operators.base')
-MAIN_THREAD = threading.currentThread()
+MAIN_THREAD = threading.current_thread()
 
 
 class BaseOperatorException(Exception):
@@ -53,7 +53,6 @@ class MissingSessionData(BaseOperatorException):
     Operators are expected to update the session data, if they are updating a component's
     desired state.
     """
-    pass
 
 
 class BaseOperator(ABC):
@@ -99,14 +98,14 @@ class BaseOperator(ABC):
                 _update_log_level()
                 self._run()
             except Exception as e:
-                LOGGER.exception('Unhandled exception detected: {}'.format(e))
+                LOGGER.exception('Unhandled exception detected: %s', e)
 
             try:
                 sleep_time = getattr(options, self.frequency_option) - (time.time() - start_time)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             except Exception as e:
-                LOGGER.exception('Unhandled exception getting polling frequency: {}'.format(e))
+                LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
 
     def _run(self) -> None:
@@ -116,18 +115,20 @@ class BaseOperator(ABC):
             LOGGER.debug('Found 0 components that require action')
             return
         LOGGER.info('Found %d components that require action', len(components))
-        if self.retry_attempt_field:  # Only check for failed components if we track retries for this operator
+        # Only check for failed components if we track retries for this operator
+        if self.retry_attempt_field:
             components = self._handle_failed_components(components)
             if not components:
-                LOGGER.debug('After removing components that exceeded their retry limit, 0 components require action')
+                LOGGER.debug('After removing components that exceeded their retry limit, 0 '
+                             'components require action')
                 return
         for component in components:  # Unset old errors components
             component['error'] = ''
         try:
             components = self._act(components)
         except Exception as e:
-            LOGGER.error("An unhandled exception was caught while trying to act on components: {}".format(e),
-                         exec_info=True)
+            LOGGER.error("An unhandled exception was caught while trying to act on components: %s",
+                         e, exec_info=True)
             for component in components:
                 component["error"] = str(e)
         self._update_database(components)
@@ -186,7 +187,10 @@ class BaseOperator(ABC):
                 patch['last_action'] = last_action_data
             if self.retry_attempt_field:
                 event_stats_data = {
-                    self.retry_attempt_field: component.get('event_stats', {}).get(self.retry_attempt_field, 0) + 1
+                    self.retry_attempt_field: component.get(
+                                                'event_stats',
+                                                {}
+                                              ).get(self.retry_attempt_field, 0) + 1
                 }
                 patch['event_stats']  = event_stats_data
 
@@ -201,12 +205,14 @@ class BaseOperator(ABC):
                 raise MissingSessionData
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
-        LOGGER.debug(f'Updated components: {data}')
+        LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
     def _preset_last_action(self, components: List[dict]) -> None:
-        # This is done to eliminate the window between performing an action and marking the nodes as acted
-        # e.g. nodes could be powered-on without the correct power-on last action, causing status problems
+        # This is done to eliminate the window between performing an action and marking the
+        # nodes as acted
+        # e.g. nodes could be powered-on without the correct power-on last action, causing
+        # status problems
         if not self.name:
             return
         if not components:
@@ -227,7 +233,7 @@ class BaseOperator(ABC):
                 patch['last_action'] = last_action_data
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
-        LOGGER.debug(f'Updated components: {data}')
+        LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
     def _update_database_for_failure(self, components: List[dict]) -> None:
@@ -245,10 +251,11 @@ class BaseOperator(ABC):
                 'status': {'status_override': Status.failed}
             }
             if not component['error']:
-                patch['error'] = 'The retry limit has been hit for this component, but no services have reported specific errors'
+                patch['error'] = ('The retry limit has been hit for this component, '
+                                  'but no services have reported specific errors')
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
-        LOGGER.debug(f'Updated components: {data}')
+        LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
 
@@ -260,12 +267,12 @@ def _update_log_level() -> None:
         new_level = logging.getLevelName(options.logging_level.upper())
         current_level = LOGGER.getEffectiveLevel()
         if current_level != new_level:
-            LOGGER.log(current_level, 'Changing logging level from {} to {}'.format(
-                logging.getLevelName(current_level), logging.getLevelName(new_level)))
+            LOGGER.log(current_level, 'Changing logging level from %s to %s',
+                       logging.getLevelName(current_level), new_level)
             logger = logging.getLogger()
             logger.setLevel(new_level)
-            LOGGER.log(new_level, 'Logging level changed from {} to {}'.format(
-                logging.getLevelName(current_level), logging.getLevelName(new_level)))
+            LOGGER.log(new_level, 'Logging level changed from %s to %s',
+                       logging.getLevelName(current_level), new_level)
     except Exception as e:
         LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 
@@ -291,7 +298,7 @@ def _init_logging() -> None:
     requested_log_level = os.environ.get('BOS_OPERATOR_LOG_LEVEL', 'INFO')
     log_level = logging.getLevelName(requested_log_level)
 
-    if type(log_level) != int:
+    if not isinstance(log_level, int):
         LOGGER.warning('Log level %r is not valid. Falling back to INFO', requested_log_level)
         log_level = logging.INFO
     logging.basicConfig(level=log_level, format=log_format)

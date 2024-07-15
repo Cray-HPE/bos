@@ -30,7 +30,8 @@ from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
-ENDPOINT = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
+__name = __name__.lower().rsplit('.', maxsplit=1)[-1]
+ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
 
 
 class Options:
@@ -66,10 +67,9 @@ class Options:
     def get_option(self, key, value_type, default):
         if key in self.options:
             return value_type(self.options[key])
-        elif default:
+        if default:
             return value_type(default)
-        else:
-            raise KeyError('Option {} not found and no default exists'.format(key))
+        raise KeyError(f'Option {key} not found and no default exists')
 
     @property
     def logging_level(self):
@@ -101,7 +101,8 @@ class Options:
 
     @property
     def cleanup_completed_session_ttl(self):
-        return self.get_option('cleanup_completed_session_ttl', str, '7d') # Defaults to 7 days (168 hours).
+        # Defaults to 7 days (168 hours).
+        return self.get_option('cleanup_completed_session_ttl', str, '7d')
 
     @property
     def clear_stage(self):

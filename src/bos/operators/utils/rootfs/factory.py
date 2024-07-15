@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,7 +28,7 @@ from . import ProviderNotImplemented
 
 LOGGER = logging.getLogger(__name__)
 
-class ProviderFactory(object):
+class ProviderFactory:
     """
     Conditionally creates new instances of rootfilesystem providers based on
     a given agent instance.
@@ -38,8 +38,10 @@ class ProviderFactory(object):
         Inputs:
             boot_set: A boot set from the session template data
             artifact_info: The artifact summary from the boot_set.
-                           This is a dictionary containing keys which are boot artifacts (kernel, initrd, roots, and kernel boot parameters)
-                           the values are the paths to those boot artifacts in S3. It also contains the etags for the rootfs and kerenl boot parameters.
+                           This is a dictionary containing keys which are boot artifacts
+                           (kernel, initrd, roots, and kernel boot parameters);
+                           the values are the paths to those boot artifacts in S3.
+                           It also contains the etags for the rootfs and kerenl boot parameters.
         """
         self.boot_set = boot_set
         self.artifact_info = artifact_info
@@ -49,8 +51,8 @@ class ProviderFactory(object):
 
         if provider_name:
             # When a provisioning protocol is specified...
-            provider_module = 'bos.operators.utils.rootfs.{}'.format(provider_name)
-            provider_classname = '{}Provider'.format(provider_name.upper())
+            provider_module = f'bos.operators.utils.rootfs.{provider_name}'
+            provider_classname = f'{provider_name.upper()}Provider'
         else:
             # none specified or blank
             provider_module = 'bos.operators.utils.rootfs'
@@ -61,7 +63,8 @@ class ProviderFactory(object):
             module = importlib.import_module(provider_module)
         except ModuleNotFoundError as mnfe:
             # This is pretty much unrecoverable at this stage of development; make note and raise
-            LOGGER.error("Provider provisioning mechanism '{}' not yet implemented or not found.".format(provider_name))
+            LOGGER.error("Provider provisioning mechanism '%s' not yet implemented or not found.",
+                         provider_name)
             raise ProviderNotImplemented(mnfe) from mnfe
 
         class_def = getattr(module, provider_classname)

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,7 +29,7 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
 
 
 class ComponentEndpoint(BaseBosEndpoint):
-    ENDPOINT = __name__.lower().split('.')[-1]
+    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
 
     def get_component(self, component_id):
         return self.get_item(component_id)
