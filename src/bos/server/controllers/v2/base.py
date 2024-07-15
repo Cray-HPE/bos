@@ -55,7 +55,8 @@ def calc_version(details):
         major, minor, patch = openapispec_map['info']['version'].split('.')
         return Version(major=major, minor=minor, patch=patch, links=links)
     except IOError as e:
-        LOGGER.debug('error opening "%s" file: %s', openapispec_f, exc_type_msg(e))
+        LOGGER.exception('error opening "%s" file: %s', openapispec_f, exc_type_msg(e))
+        raise
 
 
 def get_v2():
