@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Code linting (no functional changes)
+
 ### Fixed
 - Handle case where no path value is set in boot set in `boot_image_metadata/factory.py`
 - Raise exception when there is an error getting the service version
