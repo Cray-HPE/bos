@@ -27,7 +27,7 @@ import logging
 from typing import Set
 from botocore.exceptions import ClientError
 
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import BaseOperator, main, chunk_components
 from bos.operators.filters.filters import HSMState
 from bos.operators.utils.clients.hsm import Inventory
 from bos.operators.utils.clients.s3 import S3Object, S3ObjectNotFound
@@ -74,7 +74,7 @@ class SessionSetupOperator(BaseOperator):
         inventory_cache = Inventory()
         for data in sessions:
             session = Session(data, inventory_cache, self.bos_client)
-            session.setup()
+            session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self):
         return self.bos_client.sessions.get_sessions(status='pending')
@@ -108,15 +108,15 @@ class Session:
                                                                                     self.tenant)
         return self._template
 
-    def setup(self):
+    def setup(self, max_batch_size: int):
         try:
-            component_ids = self._setup_components()
+            component_ids = self._setup_components(max_batch_size)
         except SessionSetupException as err:
             self._mark_failed(str(err))
         else:
             self._mark_running(component_ids)
 
-    def _setup_components(self):
+    def _setup_components(self, max_batch_size: int):
         all_component_ids = []
         data = []
         stage = self.session_data.get("stage", False)
@@ -138,8 +138,9 @@ class Session:
             raise SessionSetupException(err) from err
         # No exception raised by previous block
         self._log(LOGGER.info, 'Found %d components that require updates', len(data))
-        self._log(LOGGER.debug, f'Updated components: {data}')
-        self.bos_client.components.update_components(data)
+        for chunk in chunk_components(data, max_batch_size):
+            self._log(LOGGER.debug, f'Updated components: {chunk}')
+            self.bos_client.components.update_components(chunk)
         return list(set(all_component_ids))
 
     def _get_boot_set_component_list(self, boot_set) -> Set[str]:

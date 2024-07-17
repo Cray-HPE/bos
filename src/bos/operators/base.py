@@ -27,11 +27,13 @@ BOS Operator - A Python operator for the Boot Orchestration Service.
 """
 
 from abc import ABC, abstractmethod
+import itertools
 import logging
+import math
 import threading
 import os
 import time
-from typing import List, NoReturn, Type
+from typing import Generator, List, NoReturn, Type
 
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
@@ -74,6 +76,7 @@ class BaseOperator(ABC):
 
     def __init__(self) -> NoReturn:
         self.bos_client = BOSClient()
+        self.__max_batch_size = 0
 
     @property
     @abstractmethod
@@ -108,6 +111,23 @@ class BaseOperator(ABC):
                 LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
 
+    @property
+    def max_batch_size(self) -> int:
+        max_batch_size = options.max_component_batch_size
+        if max_batch_size != self.__max_batch_size:
+            LOGGER.info("max_component_batch_size option set to %d", max_batch_size)
+            self.__max_batch_size = max_batch_size
+        return max_batch_size
+
+    def _chunk_components(self, components: List[dict]) -> Generator[List[dict], None, None]:
+        """
+        Break up the components into groups of no more than max_batch_size nodes,
+        and yield each group in turn.
+        If the max size is set to 0, just yield the entire list.
+        """
+        for chunk in chunk_components(components, self.max_batch_size):
+            yield chunk
+
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
         components = self._get_components()
@@ -115,6 +135,14 @@ class BaseOperator(ABC):
             LOGGER.debug('Found 0 components that require action')
             return
         LOGGER.info('Found %d components that require action', len(components))
+        for chunk in self._chunk_components(components):
+            self._run_on_chunk(chunk)
+
+    def _run_on_chunk(self, components: List[dict]) -> None:
+        """
+        Acts on a chunk of components
+        """
+        LOGGER.debug("Processing %d components", len(components))
         # Only check for failed components if we track retries for this operator
         if self.retry_attempt_field:
             components = self._handle_failed_components(components)
@@ -257,6 +285,32 @@ class BaseOperator(ABC):
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
+
+
+def _chunk_size(components: List[dict], max_batch_size: int) -> int:
+    """
+    Given the list of components and the max batch size, return the largest subgroup size
+    that can be used to evenly subdivide it, without exceeding the max batch size
+    """
+    num_components = len(components)
+    # If no maximum batch size is set, or if our max batch size is larger than this list of
+    # components, then we use a single batch
+    if max_batch_size == 0 or max_batch_size >= num_components:
+        return num_components
+    num_groups = math.ceil(num_components / max_batch_size)
+    return num_components // num_groups
+
+
+def chunk_components(components: List[dict],
+                     max_batch_size: int) -> Generator[List[dict], None, None]:
+    """
+    Break up the components into groups of no more than max_batch_size nodes,
+    and yield each group in turn.
+    If the max size is set to 0, just yield the entire list.
+    """
+    chunk_size = _chunk_size(components, max_batch_size)
+    for chunk in itertools.batched(components, chunk_size):
+        yield chunk
 
 
 def _update_log_level() -> None:
