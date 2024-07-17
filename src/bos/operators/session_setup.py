@@ -66,7 +66,7 @@ class SessionSetupOperator(BaseOperator):
         return components
 
     def _run(self) -> None:
-        """ A single pass of complete sessions """
+        """ A single pass of pending sessions """
         sessions = self._get_pending_sessions()
         if not sessions:
             return
