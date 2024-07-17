@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.42] - 07-17-2024
 ### Changed
 - Create new BOS v2 `max_component_batch_size` option to limit number of components a BOS operator
   will work on at once.
