@@ -6,9 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-### Changed
-- Create new BOS v2 `max_component_batch_size` option to limit number of components a BOS operator
-  will work on at once.
+### Added
+- New BOS v2 options:
+  - `max_component_batch_size` limits number of components a BOS operator will work on at once
+  - `session_limit_required` if set, new sessions must have a limit specified
+- When creating a BOS session, specifying a limit value of `all` has the effect of not limiting
+  the session, which is how to create a non-limited session if `session_limit_required` is set.
 
 ### Changed
 - Code linting (no functional changes)

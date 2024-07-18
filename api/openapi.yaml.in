@@ -363,6 +363,8 @@ components:
         will be limited. Components are treated as OR operations unless
         preceded by "&" for AND or "!" for NOT.
 
+        Alternatively, the limit can be set to "all", which means no limit.
+
         It is recommended that this should be 1-65535 characters in length.
 
         This restriction is not enforced in this version of BOS, but it is
@@ -517,7 +519,8 @@ components:
             Shutdown             Power down Components that are on.
     V2SessionCreate:
       description: |
-        A Session Creation object. A UUID name is generated if a name is not provided.
+        A Session Creation object. A UUID name is generated if a name is not provided. The limit parameter is
+        required if the session_limit_required option is true.
       type: object
       properties:
         name:
@@ -1049,10 +1052,13 @@ components:
           maximum: 1048576
         max_component_batch_size:
           type: integer
-          description: The maximum number of components that a BOS operator will process at once. 0 means no limit.
+          description: The maximum number of Components that a BOS operator will process at once. 0 means no limit.
           example: 1000
           minimum: 0
           maximum: 131071
+        session_limit_required:
+          type: boolean
+          description: If true, Sessions cannot be created without specifying the limit parameter.
       additionalProperties: true
 
   requestBodies:

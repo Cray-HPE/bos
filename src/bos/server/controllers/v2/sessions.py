@@ -36,6 +36,7 @@ from bos.common.utils import exc_type_msg, get_current_time, get_current_timesta
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.components import get_v2_components_data
+from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
@@ -70,6 +71,18 @@ def post_v2_session():  # noqa: E501
         msg = "Post must be in JSON format"
         LOGGER.error(msg)
         return msg, 400
+
+    # If no limit is specified, check to see if we require one
+    if not session_create.limit and get_v2_options_data().get('session_limit_required', False):
+        msg = "session_limit_required option is set, but this session has no limit specified"
+        LOGGER.error(msg)
+        return msg, 400
+
+    # If the limit field is present and set to "all", then clear it, because "all" is just
+    # the way to create an un-limited session when session_limit_required is set
+    if session_create.limit == "all":
+        session_create.limit = None
+
     template_name = session_create.template_name
     LOGGER.debug("Template Name: %s operation: %s", template_name, session_create.operation)
     # Check that the template_name exists.
