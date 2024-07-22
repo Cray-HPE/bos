@@ -30,10 +30,9 @@ import os
 import logging
 import subprocess
 import time
+from functools import partial
 
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from bos.common.utils import requests_retry_session as common_requests_retry_session
 
 from . import PROTOCOL
 
@@ -74,22 +73,4 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
         time.sleep(2)
 
 
-def requests_retry_session(retries=10, connect=10, backoff_factor=0.5,
-                           status_forcelist=(500, 502, 503, 504),
-                           session=None):
-    """
-    Returns a session with retries built into it.
-    """
-    session = session or requests.Session()
-    retry = Retry(
-        total=retries,
-        read=retries,
-        connect=retries,
-        backoff_factor=backoff_factor,
-        status_forcelist=status_forcelist,
-    )
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount(PROTOCOL, adapter)
-    auth_token = get_auth_token()
-    session.headers.update({'Authorization': f'Bearer {auth_token}'})
-    return session
+requests_retry_session = partial(common_requests_retry_session, protocol=PROTOCOL)

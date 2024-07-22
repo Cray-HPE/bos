@@ -28,7 +28,7 @@ import re
 import datetime
 from time import sleep
 
-from bos.common.utils import exc_type_msg
+from bos.common.utils import duration_to_timedelta, exc_type_msg
 from bos.reporter.client import requests_retry_session
 from bos.reporter.node_identity import read_identity
 from bos.reporter.components.state import report_state, BOSComponentException, UnknownComponent
@@ -91,22 +91,6 @@ def report_state_until_success(component):
             continue
         LOGGER.info("Updated the actual_state record for BOS component '%s'.", component)
         return
-
-
-def duration_to_timedelta(timestamp: str):
-    """
-    Converts a <digit><duration string> to a timedelta object.
-    """
-    # Calculate the corresponding multiplier for each time value
-    seconds_table = {'s': 1,
-                     'm': 60,
-                     'h': 60 * 60,
-                     'd': 60 * 60 * 24,
-                     'w': 60 * 60 * 24 * 7}
-    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
-    timeval = float(timeval)
-    seconds = timeval * seconds_table[durationval]
-    return datetime.timedelta(seconds = seconds)
 
 
 def main():
