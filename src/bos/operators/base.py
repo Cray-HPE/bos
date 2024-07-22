@@ -42,6 +42,7 @@ from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 LOGGER = logging.getLogger('bos.operators.base')
+MAIN_THREAD = threading.current_thread()
 
 
 class BaseOperatorException(Exception):
@@ -333,6 +334,9 @@ def _liveliness_heartbeat() -> NoReturn:
     period of time.
     """
     while True:
+        if not MAIN_THREAD.is_alive():
+            # All hope abandon ye who enter here
+            return
         Timestamp()
         time.sleep(10)
 

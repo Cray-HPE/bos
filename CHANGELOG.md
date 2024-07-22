@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [2.0.42] - 07-17-2024
+### Added
+- Global read timeout values for all objects and operations which leverage requests_retry handler.
+- Heartbeat threads now exit when main thread is no longer alive.
+
 ### Changed
 - Create new BOS v2 `max_component_batch_size` option to limit number of components a BOS operator
   will work on at once.
