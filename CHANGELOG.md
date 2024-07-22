@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Add request timeouts to BOS reporter API calls
 
 ### Changed
 - Code linting (no functional changes)
@@ -13,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Handle case where no path value is set in boot set in `boot_image_metadata/factory.py`
 - Raise exception when there is an error getting the service version
+
+### Removed
+- Removed redundant `duration_to_timedelta` function definition from BOS reporter source.
 
 ## [2.21.0]
 
