@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
+### Added
+- Add request timeouts to BOS reporter
 - Create new BOS v2 `max_component_batch_size` option to limit number of components a BOS operator
   will work on at once.
 
