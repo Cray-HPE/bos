@@ -50,15 +50,15 @@ spec:
         - name: "{{ .Release.Name }}-test"
           image: {{ .Values.tests.image | quote }}
           command:
-            - /usr/bin/curl 
+            - /usr/bin/curl
             - -v
-            - --connect-timeout 
+            - --connect-timeout
             - "5"
-            - --max-time 
+            - --max-time
             - "10"
-            - --retry 
+            - --retry
             - "5"
-            - --retry-delay 
+            - --retry-delay
             - "1"
             - --retry-connrefused
             - http://cray-bos/v2/version

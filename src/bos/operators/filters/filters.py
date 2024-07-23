@@ -31,7 +31,8 @@ from typing import List, Type
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
-from bos.operators.utils.clients.cfs import get_components_from_id_list as get_cfs_components_from_id_list
+from bos.operators.utils.clients.cfs import get_components_from_id_list as \
+                                            get_cfs_components_from_id_list
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
 LOGGER = logging.getLogger('bos.operators.filters.filters')
@@ -92,9 +93,10 @@ class HSMState(IDFilter):
 
     def filter_by_arch(self, nodes, arch):
         """
-        Given a list of component names, query HSM for state information pertaining to arch. Components that match one
-        of the arch values specified are returned as a list of component IDs. HSM components that do not have arch
-        information are considered to be of type 'Unknown' for reasons of compatibility.
+        Given a list of component names, query HSM for state information pertaining to arch.
+        Components that match one of the arch values specified are returned as a list of
+        component IDs. HSM components that do not have arch information are considered to be
+        of type 'Unknown' for reasons of compatibility.
         args:
           components: a set of xnames
           arch: a set containing HSM archs as represented by strings
@@ -118,8 +120,8 @@ class NOT(LocalFilter):
     def _filter(self, components: List[dict]) -> List[dict]:
         return self.negated_filter._filter(components)
 
-    def _match(self, components: dict):
-        return self.negated_filter._match(components)
+    def _match(self, component: dict):
+        return self.negated_filter._match(component)
 
 
 class TimeSinceLastAction(LocalFilter):
@@ -135,8 +137,10 @@ class TimeSinceLastAction(LocalFilter):
 
     def _match(self, component: dict) -> bool:
         last_action_time = component.get('last_action', {}).get('last_updated')
+        if not last_action_time:
+            return True
         now = get_current_time()
-        if not last_action_time or now > load_timestamp(last_action_time) + timedelta(**self.kwargs):
+        if now > load_timestamp(last_action_time) + timedelta(**self.kwargs):
             return True
         return False
 
@@ -167,8 +171,10 @@ class BootArtifactStatesMatch(LocalFilter):
             if desired_boot_state.get(key, None) != actual_boot_state.get(key, None):
                 return False
         # Filter out kernel parameters that dynamically change.
-        actual_kernel_parameters = self._sanitize_kernel_parameters(actual_boot_state.get('kernel_parameters', None))
-        desired_kernel_parameters = self._sanitize_kernel_parameters(desired_boot_state.get('kernel_parameters', None))
+        actual_kernel_parameters = self._sanitize_kernel_parameters(
+                                            actual_boot_state.get('kernel_parameters', None))
+        desired_kernel_parameters = self._sanitize_kernel_parameters(
+                                            desired_boot_state.get('kernel_parameters', None))
 
         if actual_kernel_parameters != desired_kernel_parameters:
             return False
@@ -232,7 +238,7 @@ class DesiredBootStateIsNone(LocalFilter):
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desired_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
-        if not desired_boot_state or not any([bool(v) for v in desired_boot_state.values()]):
+        if not desired_boot_state or not any(bool(v) for v in desired_boot_state.values()):
             return True
         return False
 
@@ -285,7 +291,6 @@ class ActualBootStateIsSet(LocalFilter):
         # The timestamp field doesn't count as a set record we particularly care about
         if 'timestamp' in actual_state_boot_artifacts:
             del actual_state_boot_artifacts['timestamp']
-        if any([bool(v) for v in actual_state_boot_artifacts.values()]):
+        if any(bool(v) for v in actual_state_boot_artifacts.values()):
             return True
         return False
-

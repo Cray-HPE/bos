@@ -22,14 +22,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from collections import defaultdict
 import logging
 
 from bos.common.values import Status
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, \
-    BootArtifactStatesMatch, NOT
+from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, NOT
 
 LOGGER = logging.getLogger('bos.operators.configuration')
 

@@ -58,7 +58,7 @@ def patch_component(component, properties, session=None):
     the BOS API endpoint.
     """
     session = session or requests_retry_session()
-    component_endpoint = '%s/%s' % (COMPONENT_ENDPOINT, component)
+    component_endpoint = f'{COMPONENT_ENDPOINT}/{component}'
     try:
         response = session.patch(component_endpoint, json=properties)
     except (ConnectionError, MaxRetryError) as ce:
@@ -70,10 +70,12 @@ def patch_component(component, properties, session=None):
         if response.status_code == 404:
             try:
                 json_response = json.loads(response.text)
-                raise UnknownComponent(json_response['detail'])
+                raise UnknownComponent(json_response['detail']) from hpe
             except json.JSONDecodeError as jde:
-                raise UnrecognizedResponse("BOS returned a non-json response: %s\n%s" % (response.text, jde)) from jde
-        LOGGER.warning("Unexpected response from '%s':\n%s: %s", component_endpoint, response.status_code, response.text)
+                raise UnrecognizedResponse(
+                        f"BOS returned a non-json response: {response.text}\n{jde}") from jde
+        LOGGER.warning("Unexpected response from '%s':\n%s: %s", component_endpoint,
+                       response.status_code, response.text)
         raise BOSComponentException(hpe) from hpe
 
 

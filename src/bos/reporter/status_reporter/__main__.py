@@ -28,7 +28,7 @@ import re
 import datetime
 from time import sleep
 
-from bos.common.utils import exc_type_msg
+from bos.common.utils import duration_to_timedelta, exc_type_msg
 from bos.reporter.client import requests_retry_session
 from bos.reporter.node_identity import read_identity
 from bos.reporter.components.state import report_state, BOSComponentException, UnknownComponent
@@ -50,7 +50,7 @@ _stream_handler = logging.StreamHandler(sys.stdout)
 _stream_handler.setLevel(LOG_LEVEL)
 PROJECT_LOGGER.addHandler(_stream_handler)
 PROJECT_LOGGER.setLevel(LOG_LEVEL)
-TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M | re.S)
+TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
 
 # The percentage of the total Time To Live (TTL) to wait before reporting status, e.g.
 # a state TTL of 4 hours with a ratio of .75 means nodes report every 3 hours.
@@ -73,40 +73,24 @@ def report_state_until_success(component):
         time_to_wait = min([backoff_ceiling, time_to_wait])
         sleep(time_to_wait)
         attempt += 1
-        LOGGER.info("Attempt %s of contacting BOS..." % (attempt))
+        LOGGER.info("Attempt %s of contacting BOS...", attempt)
         session = requests_retry_session()
         try:
             bss_referral_token = get_value_from_proc_cmdline('bss_referral_token')
             state = {'bss_token': bss_referral_token}
             report_state(component, state, session)
         except UnknownComponent:
-            LOGGER.warning("BOS has no record of component '%s'; nothing to report." % (component))
+            LOGGER.warning("BOS has no record of component '%s'; nothing to report.", component)
             LOGGER.warning("Will re-attempt patch operation as necessary.")
             continue
         except BOSComponentException as cce:
-            LOGGER.warning("Unable to contact BOS to report component status: %s" % (cce))
+            LOGGER.warning("Unable to contact BOS to report component status: %s", cce)
             continue
         except OSError as exc:
             LOGGER.error("BOS client encountered an error: %s", exc_type_msg(exc))
             continue
-        LOGGER.info("Updated the actual_state record for BOS component '%s'." % (component))
+        LOGGER.info("Updated the actual_state record for BOS component '%s'.", component)
         return
-
-
-def duration_to_timedelta(timestamp: str):
-    """
-    Converts a <digit><duration string> to a timedelta object.
-    """
-    # Calculate the corresponding multiplier for each time value
-    seconds_table = {'s': 1,
-                     'm': 60,
-                     'h': 60 * 60,
-                     'd': 60 * 60 * 24,
-                     'w': 60 * 60 * 24 * 7}
-    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
-    timeval = float(timeval)
-    seconds = timeval * seconds_table[durationval]
-    return datetime.timedelta(seconds = seconds)
 
 
 def main():
@@ -130,7 +114,7 @@ def main():
     has_slept_before = False
 
     while True:
-        LOGGER.info("Attempting to report status for '%s'" % (component))
+        LOGGER.info("Attempting to report status for '%s'", component)
         try:
             report_state_until_success(component)
         except Exception as exp:

@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -66,11 +66,13 @@ class SessionCompletionOperator(BaseOperator):
         return components
 
     def _mark_session_complete(self, session_id, tenant):
-        self.bos_client.sessions.update_session(session_id, tenant, {'status': {'status': 'complete',
-                                                                        'end_time': get_current_timestamp()}})
+        self.bos_client.sessions.update_session(session_id, tenant,
+                                                { 'status': { 'status': 'complete',
+                                                              'end_time': get_current_timestamp()
+                                                            }})
         # This call causes the session status to saved in the database.
         self.bos_client.session_status.post_session_status(session_id, tenant)
-        LOGGER.info('Session {} is complete'.format(session_id))
+        LOGGER.info('Session %s is complete', session_id)
 
 
 if __name__ == '__main__':

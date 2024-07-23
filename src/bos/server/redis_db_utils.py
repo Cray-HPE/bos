@@ -21,16 +21,18 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import connexion
 import functools
 import json
 import logging
+
+import connexion
 import redis
 
 from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
-DATABASES = ["options", "components", "session_templates", "sessions", "bss_tokens_boot_artifacts", "session_status"]  # Index is the db id.
+DATABASES = ["options", "components", "session_templates", "sessions", "bss_tokens_boot_artifacts",
+             "session_status"]  # Index is the db id.
 
 DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
@@ -57,8 +59,7 @@ class DBWrapper():
         """Converts a db name to the id used by Redis."""
         if isinstance(db, int):
             return db
-        else:
-            return DATABASES.index(db)
+        return DATABASES.index(db)
 
     def _get_client(self, db_id):
         """Create a connection with the database."""
@@ -104,8 +105,8 @@ class DBWrapper():
         return self.get(key)
 
     def patch(self, key, new_data, data_handler=None):
-        """Patch data in the database."""
-        """data_handler provides a way to operate on the full patched data"""
+        """Patch data in the database.
+           data_handler provides a way to operate on the full patched data"""
         datastr = self.client.get(key)
         data = json.loads(datastr)
         data = self._update(data, new_data)
@@ -149,7 +150,7 @@ def redis_error_handler(func):
                 del kwargs['body']
             return func(*args, **kwargs)
         except redis.exceptions.ConnectionError as e:
-            LOGGER.error('Unable to connect to the Redis database: {}'.format(e))
+            LOGGER.error('Unable to connect to the Redis database: %s', e)
             return connexion.problem(
                 status=503, title='Unable to connect to the Redis database',
                 detail=str(e))

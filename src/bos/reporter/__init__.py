@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2020-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2020-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,8 +28,7 @@ PROTOCOL = 'https'
 API_GATEWAY_DNS_NAME = os.environ.get('API_GATEWAY_HOST', 'api-gw-service-nmn.local')
 SERVICE = 'bos'
 API_VERSION = 'v2'
-ENDPOINT = '%s://%s/apis/%s/%s' % (PROTOCOL, API_GATEWAY_DNS_NAME,
-                                   SERVICE, API_VERSION)
+ENDPOINT = f'{PROTOCOL}://{API_GATEWAY_DNS_NAME}/apis/{SERVICE}/{API_VERSION}'
 
 
 class BOSException(Exception):

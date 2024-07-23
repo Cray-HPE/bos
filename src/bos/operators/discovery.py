@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,8 +27,8 @@ from typing import Set
 from copy import copy
 
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
-from bos.operators.utils.clients.hsm import read_all_node_xnames, HWStateManagerException
-from bos.operators.base import BaseOperator, main, _update_log_level
+from bos.operators.utils.clients.hsm import read_all_node_xnames
+from bos.operators.base import BaseOperator, main
 
 LOGGER = logging.getLogger(__name__)
 
@@ -70,16 +70,17 @@ class DiscoveryOperator(BaseOperator):
         """
         components_to_add = []
         for component in sorted(self.missing_components):
-            LOGGER.debug("Processing new xname entity '%s'"%(component))
+            LOGGER.debug("Processing new xname entity '%s'", component)
             new_component = copy(NEW_COMPONENT)
             new_component['id'] = component
             components_to_add.append(new_component)
         if not components_to_add:
             LOGGER.info("No new component(s) discovered.")
             return
-        LOGGER.info("%s new component(s) from HSM." %(len(components_to_add)))
-        self.bos_client.components.put_components(components_to_add)
-        LOGGER.info("%s new component(s) added to BOS!" %(len(components_to_add)))
+        LOGGER.info("%s new component(s) from HSM.", len(components_to_add))
+        for chunk in self._chunk_components(components_to_add):
+            self.bos_client.components.put_components(chunk)
+            LOGGER.info("%s new component(s) added to BOS!", len(chunk))
 
     @property
     def bos_components(self) -> Set[str]:

@@ -18,7 +18,7 @@ next. Nodes consult BSS for their target artifacts and boot parameters when node
 boot, reboot, or initially power on.
 
 *Configuration Framework Service* (CFS) is a CRD-enabled API that launches and
-aggregates status from one or more ansible instances against 
+aggregates status from one or more ansible instances against
 nodes (Node Personalization) or Images (Image Customization).
 
 ## Terminology
@@ -147,7 +147,7 @@ $ ./regenerate_server.sh
 
 ## Build Helpers
 
-This repository uses some build helper scripts from the 
+This repository uses some build helper scripts from the
 [`cms-meta-tools`](https://github.com/Cray-HPE/cms-meta-tools) repository. See that repository for more details.
 
 ## Local Builds

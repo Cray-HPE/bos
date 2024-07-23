@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,14 +27,14 @@ fashion.
 """
 
 import os
-from . import PROTOCOL
-
 import logging
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 import subprocess
 import time
+from functools import partial
+
+from bos.common.utils import requests_retry_session as common_requests_retry_session
+
+from . import PROTOCOL
 
 LOGGER = logging.getLogger('bos.reporter.client')
 
@@ -64,28 +64,13 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
             out = out.rstrip('\n')
             return out
         except subprocess.CalledProcessError as e:
-            LOGGER.error('get_auth_token failed to retrieve authorization token: code=%d: error=%s' % (e.returncode, e.output))
+            LOGGER.error(
+                'get_auth_token failed to retrieve authorization token: code=%d: error=%s',
+                e.returncode, e.output)
         except Exception:
             LOGGER.exception('Unexpected exception')
         LOGGER.info("Spire Token not yet available; retrying in a few seconds.")
         time.sleep(2)
 
 
-def requests_retry_session(retries=10, connect=10, backoff_factor=0.5,
-                           status_forcelist=(500, 502, 503, 504),
-                           session=None):
-    """
-    Returns a session with retries built into it.
-    """
-    session = session or requests.Session()
-    retry = Retry(
-        total=retries,
-        read=retries,
-        connect=retries,
-        backoff_factor=backoff_factor,
-        status_forcelist=status_forcelist,
-    )
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount(PROTOCOL, adapter)
-    session.headers.update({'Authorization': 'Bearer %s' % (get_auth_token())})
-    return session
+requests_retry_session = partial(common_requests_retry_session, protocol=PROTOCOL)

@@ -24,18 +24,18 @@
 import json
 import logging
 
-from .base import BASE_ENDPOINT, log_call_errors
 from bos.common.tenant_utils import get_new_tenant_header
 from bos.common.utils import requests_retry_session
+from .base import BASE_ENDPOINT, log_call_errors
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions_status')
 
 
-class SessionStatusEndpoint(object):
+class SessionStatusEndpoint:
     ENDPOINT = 'sessions'
 
     def __init__(self):
-        self.base_url = "%s/%s" % (BASE_ENDPOINT, self.ENDPOINT)
+        self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
 
     @log_call_errors
     def get_session_status(self, session_id, tenant):

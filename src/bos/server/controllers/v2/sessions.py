@@ -21,15 +21,17 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import connexion
 from datetime import timedelta
 from collections import defaultdict, Counter
 import re
 import logging
 import uuid
+
+import connexion
 from connexion.lifecycle import ConnexionResponse
 
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, reject_invalid_tenant
+from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
+                                    reject_invalid_tenant
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
@@ -69,15 +71,14 @@ def post_v2_session():  # noqa: E501
         LOGGER.error(msg)
         return msg, 400
     template_name = session_create.template_name
-    LOGGER.debug(f"Template Name: {template_name} operation: {session_create.operation}")
+    LOGGER.debug("Template Name: %s operation: %s", template_name, session_create.operation)
     # Check that the template_name exists.
     session_template_response = get_v2_sessiontemplate(template_name)
     if isinstance(session_template_response, ConnexionResponse):
-        msg = "Session Template Name invalid: {}".format(template_name)
+        msg = f"Session Template Name invalid: {template_name}"
         LOGGER.error(msg)
         return msg, 400
-    else:
-        session_template, _ = session_template_response
+    session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name)
@@ -92,7 +93,7 @@ def post_v2_session():  # noqa: E501
     if session_key in DB:
         LOGGER.warning("v2 session named %s already exists", session.name)
         return connexion.problem(
-            detail="A session with the name {} already exists".format(session.name),
+            detail=f"A session with the name {session.name} already exists",
             status=409,
             title="Conflicting session name"
         )
@@ -150,7 +151,7 @@ def patch_v2_session(session_id):
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
 
     component = DB.patch(session_key, patch_data_json)
     return component, 200
@@ -171,7 +172,7 @@ def get_v2_session(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     session = DB.get(session_key)
     return session, 200
 
@@ -203,7 +204,7 @@ def delete_v2_session(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     if session_key in STATUS_DB:
         STATUS_DB.delete(session_key)
     return DB.delete(session_key), 204
@@ -211,8 +212,9 @@ def delete_v2_session(session_id):  # noqa: E501
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
-    LOGGER.debug("DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
-                 min_age, max_age, status)
+    LOGGER.debug(
+            "DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
+            min_age, max_age, status)
     tenant = get_tenant_from_header()
     try:
         sessions = _get_filtered_sessions(tenant=tenant, min_age=min_age, max_age=max_age,
@@ -249,10 +251,11 @@ def get_v2_session_status(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     session = DB.get(session_key)
     if session.get("status", {}).get("status") == "complete" and session_key in STATUS_DB:
-        # If the session is complete and the status is saved, return the status from completion time
+        # If the session is complete and the status is saved,
+        # return the status from completion time
         return STATUS_DB.get(session_key), 200
     return _get_v2_session_status(session_key, session), 200
 
@@ -272,7 +275,7 @@ def save_v2_session_status(session_id):  # noqa: E501
         LOGGER.warning("Could not find v2 session %s", session_id)
         return connexion.problem(
             status=404, title="Session could not found.",
-            detail="Session {} could not be found".format(session_id))
+            detail=f"Session {session_id} could not be found")
     return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
@@ -284,16 +287,17 @@ def _get_filtered_sessions(tenant, min_age, max_age, status):
         try:
             max_start = _age_to_timestamp(min_age)
         except Exception as e:
-            LOGGER.warning('Unable to parse age: {}'.format(min_age))
+            LOGGER.warning('Unable to parse min_age: %s', min_age)
             raise ParsingException(e) from e
     if max_age:
         try:
             min_start = _age_to_timestamp(max_age)
         except Exception as e:
-            LOGGER.warning('Unable to parse age: {}'.format(max_age))
+            LOGGER.warning('Unable to parse max_age: %s', max_age)
             raise ParsingException(e) from e
     if any([min_start, max_start, status, tenant]):
-        response = [r for r in response if _matches_filter(r, tenant, min_start, max_start, status)]
+        response = [r for r in response if _matches_filter(r, tenant, min_start, max_start,
+                                                           status)]
     return response
 
 
@@ -323,11 +327,19 @@ def _get_v2_session_status(session_key, session=None):
     staged_components = get_v2_components_data(staged_session=session_id, tenant=tenant_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
-        component_phase_counts = Counter([c.get('status', {}).get('phase') for c in components if (c.get('enabled') and c.get('status').get('status_override') != Status.on_hold)])
-        component_phase_counts['successful'] = len([c for c in components if c.get('status', {}).get('status') == Status.stable])
-        component_phase_counts['failed'] = len([c for c in components if c.get('status', {}).get('status') == Status.failed])
+        component_phase_counts = Counter([
+            c.get('status', {}).get('phase')
+                for c in components
+                if (c.get('enabled') and
+                    c.get('status').get('status_override') != Status.on_hold)])
+        component_phase_counts['successful'] = len([
+            c for c in components if c.get('status',{}).get('status') == Status.stable])
+        component_phase_counts['failed'] = len([
+            c for c in components if c.get('status', {}).get('status') == Status.failed])
         component_phase_counts['staged'] = len(staged_components)
-        component_phase_percents = {phase: (component_phase_counts[phase] / num_managed_components) * 100 for phase in component_phase_counts}
+        component_phase_percents = {
+            phase: (component_phase_counts[phase] / num_managed_components) * 100
+            for phase in component_phase_counts}
     else:
         component_phase_percents = {}
     component_errors_data = defaultdict(set)
@@ -351,7 +363,9 @@ def _get_v2_session_status(session_key, session=None):
         'status': session_status.get('status', ''),
         'managed_components_count': num_managed_components,
         'phases': {
-            'percent_complete': round(component_phase_percents.get('successful', 0) + component_phase_percents.get('failed', 0), 2),
+            'percent_complete': round(
+                component_phase_percents.get('successful',
+                                             0) + component_phase_percents.get('failed', 0), 2),
             'percent_powering_on': round(component_phase_percents.get(Phase.powering_on, 0), 2),
             'percent_powering_off': round(component_phase_percents.get(Phase.powering_off, 0), 2),
             'percent_configuring': round(component_phase_percents.get(Phase.configuring, 0), 2),
@@ -372,7 +386,7 @@ def _get_v2_session_status(session_key, session=None):
 def _age_to_timestamp(age):
     delta = {}
     for interval in ['weeks', 'days', 'hours', 'minutes']:
-        result = re.search('(\d+)\w*{}'.format(interval[0]), age, re.IGNORECASE)
+        result = re.search(fr'(\d+)\w*{interval[0]}', age, re.IGNORECASE)
         if result:
             delta[interval] = int(result.groups()[0])
     delta = timedelta(**delta)

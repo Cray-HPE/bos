@@ -27,7 +27,8 @@ from botocore.exceptions import ClientError
 
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
-from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, ArtifactNotFound
+from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, \
+                                           ArtifactNotFound
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_image_metadata')
 
@@ -46,27 +47,27 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             self.artifact_summary['kernel'] = self.kernel_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['initrd'] = self.initrd_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['rootfs'] = self.rootfs_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['rootfs_etag'] = self.rootfs_etag
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['boot_parameters'] = self.boot_parameters_path
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
         try:
             self.artifact_summary['boot_parameters_etag'] = self.boot_parameters_etag
         except ArtifactNotFound as err:
-            LOGGER.warn(exc_type_msg(err))
+            LOGGER.warning(exc_type_msg(err))
 
     @property
     def metadata(self):
@@ -80,8 +81,9 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             return self.boot_artifacts.manifest_json
         except (ClientError, S3MissingConfiguration) as error:
-            LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''), exc_type_msg(error))
-            raise BootImageMetaDataBadRead(error)
+            LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''),
+                         exc_type_msg(error))
+            raise BootImageMetaDataBadRead(error) from error
 
     @property
     def kernel(self):

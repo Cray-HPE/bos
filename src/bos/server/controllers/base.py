@@ -23,10 +23,10 @@
 #
 # Cray-provided base controllers for the Boot Orchestration Service
 
+import logging
 
 from bos.server.controllers.v2 import base as v2_base
 
-import logging
 LOGGER = logging.getLogger('bos.server.controllers.base')
 
 

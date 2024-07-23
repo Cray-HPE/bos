@@ -38,7 +38,6 @@ class BssTokenUnknown(BssTokenException):
     """
     The BSS Token is not present in the database.
     """
-    pass
 
 
 def record_boot_artifacts(token: str,
@@ -49,10 +48,8 @@ def record_boot_artifacts(token: str,
     Associate the BSS token with the boot artifacts.
     BSS returns a token after BOS asks it to create or update the boot artifacts.
     """
-    LOGGER.info(f"Logging BSS token: {token} and boot artifacts: "
-                f"\nkernel: {kernel}"
-                f"\nkernel_parameters: {kernel_parameters}"
-                f"\ninitrd: {initrd}")
+    LOGGER.info("Logging BSS token and boot artifacts: token='%s' kernel='%s' "
+                "kernel_parameters='%s' initrd='%s'", token, kernel, kernel_parameters, initrd)
     TOKENS_DB.put(token, {"kernel": kernel,
                           "kernel_parameters": kernel_parameters,
                           "initrd": initrd,

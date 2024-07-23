@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -48,10 +48,7 @@ class BaseRootfsProvider(RootfsProvider):
         """
         fields = []
         if self.provider_field:
-            fields.append("url=%s" % self.provider_field)
+            fields.append(f"url={self.provider_field}")
         if self.provider_field_id:
-            fields.append("etag=%s" % self.provider_field_id)
-        if fields:
-            return "nmd_data={}".format(",".join(fields))
-        else:
-            return ''
+            fields.append(f"etag={self.provider_field_id}")
+        return f"nmd_data={','.join(fields)}" if fields else ''

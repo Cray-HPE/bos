@@ -24,7 +24,7 @@
 import logging
 
 from bos.common.utils import exc_type_msg
-from bos.server.models.healthz import Healthz as Healthz
+from bos.server.models.healthz import Healthz
 from bos.server import redis_db_utils
 
 DB = redis_db_utils.get_wrapper(db='options')
