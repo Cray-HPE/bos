@@ -489,12 +489,15 @@ components:
             Error which prevented the Session from running.
             A null value means the Session has not encountered an error.
       additionalProperties: false
-    V2BootSet:
+    V2BootSetData:
       description: |
         A Boot Set is a collection of nodes defined by an explicit list, their functional
         role, and their logical groupings. This collection of nodes is associated with one
         set of boot artifacts and optional additional records for configuration and root
         filesystem provisioning.
+
+        A boot set requires at least one of the following fields to be specified:
+        node_list, node_roles_groups, node_groups
 
         If specified, the name field must match the key mapping to this boot set in the
         boot_sets field of the containing V2SessionTemplate.
@@ -532,6 +535,13 @@ components:
           $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
       additionalProperties: false
       required: [path, type]
+    V2BootSet:
+      allOf:
+        - $ref: '#/components/schemas/V2BootSetData'
+        - anyOf:
+          - required: [node_list]
+          - required: [node_roles_groups]
+          - required: [node_groups]
     V2SessionTemplateArray:
       description: An array of Session Templates.
       type: array
