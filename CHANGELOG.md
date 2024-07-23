@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Removed unused `BootSetNamePathParam` schema from the API spec (a vestige of BOS v1)
+- Removed inaccurate docstring from `_sanitize_xnames`; removed unnecessary return value
 
 ### Dependencies
 - Pin major/minor versions for Python packages, but use latest patch version
