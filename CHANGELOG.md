@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - List Python packages after installing, for build log purposes
 
+### Removed
+- Removed unused `BootSetNamePathParam` schema from the API spec (a vestige of BOS v1)
+
 ### Dependencies
 - Pin major/minor versions for Python packages, but use latest patch version
 
