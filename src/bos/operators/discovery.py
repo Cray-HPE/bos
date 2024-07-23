@@ -78,8 +78,9 @@ class DiscoveryOperator(BaseOperator):
             LOGGER.info("No new component(s) discovered.")
             return
         LOGGER.info("%s new component(s) from HSM.", len(components_to_add))
-        self.bos_client.components.put_components(components_to_add)
-        LOGGER.info("%s new component(s) added to BOS!", len(components_to_add))
+        for chunk in self._chunk_components(components_to_add):
+            self.bos_client.components.put_components(chunk)
+            LOGGER.info("%s new component(s) added to BOS!", len(chunk))
 
     @property
     def bos_components(self) -> Set[str]:

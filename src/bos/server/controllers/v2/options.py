@@ -49,6 +49,7 @@ DEFAULTS = {
     'max_power_off_wait_time': 300,
     'polling_frequency': 15,
     'default_retry_policy': 3,
+    'max_component_batch_size': 2800
 }
 
 
