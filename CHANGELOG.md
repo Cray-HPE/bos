@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.22] - 2024-07-22
+### Added
+- Add request timeouts to BOS reporter
+- Create new BOS v2 `max_component_batch_size` option to limit number of components a BOS operator
+  will work on at once.
+
 ## [2.10.21] - 2024-07-12
 ### Fixed
 - The applystage operation works again. It was broken when multi-tenancy support was added.

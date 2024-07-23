@@ -115,6 +115,9 @@ class Options:
     def default_retry_policy(self):
         return self.get_option('default_retry_policy', int, 3)
 
+    @property
+    def max_component_batch_size(self):
+        return self.get_option('max_component_batch_size', int, 2800)
 
 
 options = Options()
