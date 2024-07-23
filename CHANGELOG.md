@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Create new BOS v2 `max_component_batch_size` option to limit number of components a BOS operator
+  will work on at once.
+
 ### Fixed
 - Fix incorrect exception instantiation arguments in `boot_image_metadata/factory.py`
 
