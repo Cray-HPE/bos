@@ -74,6 +74,15 @@ class StatusOperator(BaseOperator):
         if not components:
             LOGGER.debug('No enabled components found')
             return
+        LOGGER.debug('Found %d components that require action', len(components))
+        for chunk in self._chunk_components(components):
+            self._run_on_chunk(chunk)
+
+    def _run_on_chunk(self, components) -> None:
+        """
+        Acts on a chunk of components
+        """
+        LOGGER.debug("Processing %d components", len(components))
         component_ids = [component['id'] for component in components]
         power_states = node_to_powerstate(component_ids)
         cfs_states = self._get_cfs_components()
