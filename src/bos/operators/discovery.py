@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -78,8 +78,9 @@ class DiscoveryOperator(BaseOperator):
             LOGGER.info("No new component(s) discovered.")
             return
         LOGGER.info("%s new component(s) from HSM." %(len(components_to_add)))
-        self.bos_client.components.put_components(components_to_add)
-        LOGGER.info("%s new component(s) added to BOS!" %(len(components_to_add)))
+        for chunk in self._chunk_components(components_to_add):
+            self.bos_client.components.put_components(chunk)
+            LOGGER.info("%s new component(s) added to BOS!" %(len(chunk)))
 
     @property
     def bos_components(self) -> Set[str]:
