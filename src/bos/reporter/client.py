@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -71,12 +71,29 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
         time.sleep(2)
 
 
-def requests_retry_session(retries=10, connect=10, backoff_factor=0.5,
+class TimeoutHTTPAdapter(HTTPAdapter):
+    """
+    An HTTP Adapter that allows a session level timeout for both read and connect attributes. This prevents interruption
+    to reads that happen as a function of time or istio resets that causes our applications to sit and wait forever on
+    a half open socket.
+    """
+    def __init__(self, *args, **kwargs):
+        if "timeout" in kwargs:
+            self.timeout = kwargs["timeout"]
+            del kwargs["timeout"]
+        super().__init__(*args, **kwargs)
+
+    def send(self, request, **kwargs):
+        timeout = kwargs.get("timeout")
+        if timeout is None and hasattr(self, 'timeout'):
+            kwargs["timeout"] = self.timeout
+        return super().send(request, **kwargs)
+
+
+def requests_retry_session(retries=10, backoff_factor=0.5,
                            status_forcelist=(500, 502, 503, 504),
-                           session=None):
-    """
-    Returns a session with retries built into it.
-    """
+                           connect_timeout=3, read_timeout=10,
+                           session=None, protocol=PROTOCOL):
     session = session or requests.Session()
     retry = Retry(
         total=retries,
@@ -85,7 +102,8 @@ def requests_retry_session(retries=10, connect=10, backoff_factor=0.5,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
     )
-    adapter = HTTPAdapter(max_retries=retry)
-    session.mount(PROTOCOL, adapter)
-    session.headers.update({'Authorization': 'Bearer %s' % (get_auth_token())})
+    adapter = TimeoutHTTPAdapter(max_retries=retry, timeout=(connect_timeout, read_timeout))
+    # Must mount to http://
+    # Mounting to only http will not work!
+    session.mount("%s://" % protocol, adapter)
     return session

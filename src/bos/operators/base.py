@@ -31,7 +31,7 @@ import logging
 import threading
 import os
 import time
-from typing import List, NoReturn, Type
+from typing import Generator, List, NoReturn, Type
 
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
@@ -41,6 +41,7 @@ from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 LOGGER = logging.getLogger('bos.operators.base')
+MAIN_THREAD = threading.current_thread()
 
 
 class BaseOperatorException(Exception):
@@ -74,6 +75,7 @@ class BaseOperator(ABC):
 
     def __init__(self) -> NoReturn:
         self.bos_client = BOSClient()
+        self.__max_batch_size = 0
 
     @property
     @abstractmethod
@@ -108,6 +110,23 @@ class BaseOperator(ABC):
                 LOGGER.exception('Unhandled exception getting polling frequency: {}'.format(e))
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
 
+    @property
+    def max_batch_size(self) -> int:
+        max_batch_size = options.max_component_batch_size
+        if max_batch_size != self.__max_batch_size:
+            LOGGER.info("max_component_batch_size option set to %d", max_batch_size)
+            self.__max_batch_size = max_batch_size
+        return max_batch_size
+
+    def _chunk_components(self, components: List[dict]) -> Generator[List[dict], None, None]:
+        """
+        Break up the components into groups of no more than max_batch_size nodes,
+        and yield each group in turn.
+        If the max size is set to 0, just yield the entire list.
+        """
+        for chunk in chunk_components(components, self.max_batch_size):
+            yield chunk
+
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
         components = self._get_components()
@@ -115,6 +134,14 @@ class BaseOperator(ABC):
             LOGGER.debug('Found 0 components that require action')
             return
         LOGGER.info('Found %d components that require action', len(components))
+        for chunk in self._chunk_components(components):
+            self._run_on_chunk(chunk)
+
+    def _run_on_chunk(self, components: List[dict]) -> None:
+        """
+        Acts on a chunk of components
+        """
+        LOGGER.debug("Processing %d components", len(components))
         if self.retry_attempt_field:  # Only check for failed components if we track retries for this operator
             components = self._handle_failed_components(components)
             if not components:
@@ -253,6 +280,19 @@ class BaseOperator(ABC):
         self.bos_client.components.update_components(data)
 
 
+def chunk_components(components: List[dict],
+                     max_batch_size: int) -> Generator[List[dict], None, None]:
+    """
+    Break up the components into groups of no more than max_batch_size nodes,
+    and yield each group in turn.
+    If the max size is set to 0, just yield the entire list.
+    """
+    chunk_size = max_batch_size if max_batch_size > 0 else len(components)
+    while components:
+        yield components[:chunk_size]
+        components = components[chunk_size:]
+
+
 def _update_log_level() -> None:
     """ Updates the current logging level base on the value in the options database """
     try:
@@ -279,6 +319,9 @@ def _liveliness_heartbeat() -> NoReturn:
     period of time.
     """
     while True:
+        if not MAIN_THREAD.is_alive():
+            # All hope abandon ye who enter here
+            return
         Timestamp()
         time.sleep(10)
 
