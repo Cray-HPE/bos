@@ -34,10 +34,10 @@ metadata:
   annotations:
     "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
 
 
 spec:
+  ttlSecondsAfterFinished: 86400
   template:
     metadata:
       name: "{{ .Release.Name }}"
