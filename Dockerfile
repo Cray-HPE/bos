@@ -68,15 +68,20 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
 ENV VIRTUAL_ENV=/app/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN pip3 install --no-cache-dir -U pip -c constraints.txt
-RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
-RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt
+RUN pip3 install --no-cache-dir -U pip -c constraints.txt && \
+    pip3 list --format freeze
+RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt && \
+    pip3 list --format freeze
+RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt && \
+    pip3 list --format freeze
 
 # Base testing image
 FROM base as testing
 WORKDIR /app
 COPY test-requirements.txt .
-RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && pip3 install --no-cache-dir -r test-requirements.txt
+RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && \
+    pip3 install --no-cache-dir -r test-requirements.txt && \
+    pip3 list --format freeze
 
 # Codestyle reporting
 FROM testing as codestyle
@@ -104,7 +109,8 @@ FROM intermediate as debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app
 RUN apk add --no-cache busybox-extras && \
-    pip3 install --no-cache-dir rpdb -c constraints.txt
+    pip3 install --no-cache-dir rpdb -c constraints.txt && \
+    pip3 list --format freeze
 
 # Application image
 FROM intermediate as application

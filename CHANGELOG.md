@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- List Python packages after installing, for build log purposes
+
 ## [2.22.0]
 ### Added
 - Add request timeouts to BOS reporter API calls
