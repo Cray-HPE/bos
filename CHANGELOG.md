@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - List Python packages after installing, for build log purposes
 
+### Dependencies
+- Pin major/minor versions for Python packages, but use latest patch version
+
 ## [2.22.0]
 ### Added
 - Add request timeouts to BOS reporter API calls
