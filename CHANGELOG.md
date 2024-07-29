@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.43] - 07-29-2024
+### Added
+- New BOS v2 option `session_limit_required`
+  - If set, new sessions must have a limit specified
+  - When creating a BOS session, specifying a limit value of `*` has the effect of not limiting
+    the session, which is one way to create a non-limited session if `session_limit_required` is set.
+
 ## [2.0.42] - 07-22-2024
 ### Added
 - Global read timeout values for all objects and operations which leverage requests_retry handler.
