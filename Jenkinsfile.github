@@ -23,7 +23,7 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  *
  */
-@Library('cms-meta-tools') _
+@Library('cms-meta-tools@mitchtest') _
 @Library('csm-shared-library') __
 
 pipeline {
@@ -59,12 +59,6 @@ pipeline {
             steps {
                 // This function is defined in cms-meta-tools:vars/setVersionFiles.groovy
                 setVersionFiles()
-                sh "which gitversion"
-                sh "ls -al /usr/local/bin/gitversion"
-                sh "ls -alR /usr/local/lib/gitversion"                
-                sh "rpm -qf /usr/local/lib/gitversion/dotnet-gitversion"
-                sh 'cat /etc/*release* /etc/*os*'
-                sh "gitversion /output json /format {PreReleaseTag} /nonormalize"
             }
         }
         stage("runBuildPrep") {
