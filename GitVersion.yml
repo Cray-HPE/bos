@@ -37,7 +37,7 @@ branches:
     regex: ^release\/[\d.]+
     mode: ContinuousDelivery
   feature:
-    regex: ^features?[/-]
+    regex: ^features?[/-](.*)
     mode: ContinuousDelivery
   pull-request:
     regex: ^(pull|pull\-requests|pr)[/-]
