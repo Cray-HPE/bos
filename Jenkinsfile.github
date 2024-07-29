@@ -61,7 +61,8 @@ pipeline {
                 setVersionFiles()
                 sh "which gitversion"
                 sh "ls -al /usr/local/bin/gitversion"
-                sh "rpm -qf /usr/local/bin/gitversion"
+                sh "ls -alR /usr/local/lib/gitversion"                
+                sh "rpm -qf /usr/local/lib/gitversion/dotnet-gitversion"
                 sh 'cat /etc/*release* /etc/*os*'
                 sh "gitversion /output json /format {PreReleaseTag} /nonormalize"
             }
