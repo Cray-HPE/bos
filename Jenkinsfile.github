@@ -59,6 +59,8 @@ pipeline {
             steps {
                 // This function is defined in cms-meta-tools:vars/setVersionFiles.groovy
                 setVersionFiles()
+                sh "which gitversion"
+                sh 'cat /etc/*release* /etc/*os*'
                 sh "gitversion /output json /format {PreReleaseTag} /nonormalize"
             }
         }
