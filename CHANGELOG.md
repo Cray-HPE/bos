@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Modified API spec to enforce previously-recommended limits
+
 ## [2.24.0] - 2024-08-09
 ### Fixed
 - Added the authorization token back into the bos-reporter.
@@ -85,8 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set UWSGI `max-requests` and `harakiri` options to help avoid OOM and scaling issues.
 
 ### Dependencies
-- Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
-  spec to OAS 3.1
+- Bumped `openapi-generator-cli` from v6.6.0 to v7.6.0
 
 ### Fixed
 - Addressed linter complaints
