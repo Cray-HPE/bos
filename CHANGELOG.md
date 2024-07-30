@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.23.0] - 2024-07-30
 ### Added
 - New BOS v2 option `session_limit_required`
   - If set, new sessions must have a limit specified
@@ -23,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Dependencies
 - Pin major/minor versions for Python packages, but use latest patch version
 
-## [2.22.0]
+## [2.22.0] - 2024-07-23
 ### Added
 - Add request timeouts to BOS reporter API calls
 - Create new BOS v2 `max_component_batch_size` option to limit number of components a BOS operator
@@ -39,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - Removed redundant `duration_to_timedelta` function definition from BOS reporter source.
 
-## [2.21.0]
+## [2.21.0] - 2024-07-12
 
 ### Fixed
 - The applystage operation works again. It was broken when multi-tenancy support was added.
