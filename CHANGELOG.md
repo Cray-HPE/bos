@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- New BOS v2 option `session_limit_required`
+  - If set, new sessions must have a limit specified
+  - When creating a BOS session, specifying a limit value of `*` has the effect of not limiting
+    the session, which is one way to create a non-limited session if `session_limit_required` is set.
+
 ### Changed
 - List Python packages after installing, for build log purposes
 

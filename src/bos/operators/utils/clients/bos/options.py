@@ -120,5 +120,8 @@ class Options:
     def max_component_batch_size(self):
         return self.get_option('max_component_batch_size', int, 2800)
 
+    @property
+    def session_limit_required(self):
+        return self.get_option('session_limit_required', bool, False)
 
 options = Options()
