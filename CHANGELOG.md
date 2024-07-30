@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Modified API spec to enforce previously-recommended limits
+
 ### Dependencies
 - Move to `redis` Python library version 5.0
 - Move Redis container from 7.2-alpine3.18 to 5.0-alpine3.12
@@ -81,8 +84,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set UWSGI `max-requests` and `harakiri` options to help avoid OOM and scaling issues.
 
 ### Dependencies
-- Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
-  spec to OAS 3.1
+- Bumped `openapi-generator-cli` from v6.6.0 to v7.6.0
 
 ### Fixed
 - Addressed linter complaints
