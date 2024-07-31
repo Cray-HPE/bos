@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- Move to `redis` Python library version 5.0
+
 ## [2.23.0] - 2024-07-30
 ### Added
 - New BOS v2 option `session_limit_required`
