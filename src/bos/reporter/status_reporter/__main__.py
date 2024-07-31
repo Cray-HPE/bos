@@ -25,7 +25,6 @@ import logging
 import sys
 import random
 import re
-import datetime
 from time import sleep
 
 from bos.common.utils import duration_to_timedelta, exc_type_msg
