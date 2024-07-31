@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Move to `redis` Python library version 5.0
+- Move Redis container from 7.2-alpine3.18 to 5.0-alpine3.12
 
 ## [2.23.0] - 2024-07-30
 ### Added
