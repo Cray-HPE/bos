@@ -21,11 +21,13 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
 import copy
 import logging
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
+from bos.server.backup import backup_bos_data
 from bos.server.utils import _validate_sanitize_session_template
 import bos.server.redis_db_utils as dbutils
 
@@ -88,13 +90,14 @@ def sanitize_session_templates():
             # This means that the template contents did not change, but its DB key did.
             # I don't anticipate this happening, but better to be sure that our keys are correct,
             # since in the past our patching code did not have a lot of safeguards.
-            LOGGER.warning("Session template database key changing, but template contents "
-                           "unchanged: %s", data)
-        else:
-            # Finally, this means that the template contents changed AND the DB key did
-            # I also don't anticipate this happening
-            LOGGER.warning("Modifying session template and DB key (old key: '%s', new key: '%s'). "
-                        "Before: %s After: %s", st_key, new_key, data, new_data)
+            LOGGER.warning("Session template database key changing (old key: '%s', new key: '%s') "
+                           "but template contents unchanged: %s", st_key, new_key, data)
+            db.rename(st_key, new_key)
+            continue
+        # Finally, this means that the template contents changed AND the DB key did
+        # I also don't anticipate this happening
+        LOGGER.warning("Modifying session template and DB key (old key: '%s', new key: '%s'). "
+                       "Before: %s After: %s", st_key, new_key, data, new_data)
         LOGGER.info("Removing old entry from database")
         db.delete(st_key)
         LOGGER.info("Adding modified session template under new key")
@@ -103,8 +106,16 @@ def sanitize_session_templates():
 
 
 def perform_migrations():
+    # sanitize_options()
     sanitize_session_templates()
+    # sanitize_sessions()
+    # sanitize_session_statuses()
+    # sanitize_components()
+    # sanitize_bss_tokens_boot_artifacts()
+
 
 
 if __name__ == "__main__":
+    backup_bos_data("pre-migration")
     perform_migrations()
+    backup_bos_data("post-migration")

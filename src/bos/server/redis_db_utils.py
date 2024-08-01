@@ -91,6 +91,20 @@ class DBWrapper():
             data.append(single_data)
         return data
 
+    def get_all_as_dict(self):
+        """Return a mapping from all keys to their corresponding data
+           Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
+        """
+        data = {}
+        cursor = '0'
+        while cursor != 0:
+            cursor, keys = self.client.scan(cursor=cursor, count=1000)
+            values = [ json.loads(datastr) if datastr else None
+                       for datastr in self.client.mget(keys) ]
+            keys = [ k.decode() for k in keys ]
+            data.update(dict(zip(keys, values)))
+        return data
+
     def get_keys(self):
         """Get an array of all keys"""
         data = []
@@ -115,6 +129,12 @@ class DBWrapper():
         datastr = json.dumps(data)
         self.client.set(key, datastr)
         return self.get(key)
+
+    def rename(self, old_key, new_key):
+        """
+        Store data from old_key under new_key instead
+        """
+        self.client.rename(old_key, new_key)
 
     def _update(self, data, new_data):
         """Recursively patches json to allow sub-fields to be patched.
