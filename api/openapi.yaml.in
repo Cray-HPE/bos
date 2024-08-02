@@ -182,11 +182,13 @@ components:
       type: string
       description: An empty string value.
       enum: [ '' ]
+      maxLength: 0
     EmptyStringNullable:
       type: string
       description: An empty string value.
       enum: [ '' ]
       nullable: true
+      maxLength: 0
     EnableCfs:
       type: boolean
       description: |
@@ -300,7 +302,7 @@ components:
         Alternatively, the limit can be set to "*", which means no limit.
 
         An empty string or null value is the same as specifying no limit.
-      maxLength: 65535
+      maxLength: 524288
       nullable: true
     SessionTemplateDescription:
       type: string
@@ -351,6 +353,7 @@ components:
         the same.
       nullable: true
       readOnly: true
+      maxLength: 127
     V2CfsParameters:
       type: object
       description: |
@@ -467,10 +470,12 @@ components:
     V2SessionStartTime:
       type: string
       description: When the Session was created.
+      maxLength: 127
     V2SessionEndTime:
       type: string
       nullable: true
       description: When the Session was completed. A null value means the Session has not ended.
+      maxLength: 127
     V2SessionStatus:
       type: object
       description: |
@@ -488,6 +493,7 @@ components:
           description: |
             Error which prevented the Session from running.
             A null value means the Session has not encountered an error.
+          maxLength: 65536
       additionalProperties: false
     V2BootSetData:
       description: |
@@ -577,6 +583,7 @@ components:
             A comma-separated list of nodes, representing the initial list of nodes
             the Session should operate against.  The list will remain even if
             other Sessions have taken over management of the nodes.
+          maxLength: 524288
         include_disabled:
           type: boolean
           description: |
@@ -600,6 +607,7 @@ components:
             A comma-separated list of nodes, representing the initial list of nodes
             the Session should operate against.  The list will remain even if
             other Sessions have taken over management of the nodes.
+          maxLength: 524288
         status:
           $ref: '#/components/schemas/V2SessionStatus'
       additionalProperties: false
@@ -702,6 +710,7 @@ components:
     V2ComponentIdList:
       description: A list of Component IDs (xnames)
       type: array
+      maxItems: 32768
       items:
         $ref: '#/components/schemas/V2ComponentId'
     V2ComponentLastUpdated:
@@ -763,6 +772,7 @@ components:
         action:
           type: string
           description: A description of the most recent operator/action to impact the Component.
+          maxLength: 1024
         failed:
           type: boolean
           description: Denotes if the last action failed to accomplish its task
@@ -775,20 +785,29 @@ components:
         power_on_attempts:
           type: integer
           description: How many attempts have been made to power-on since the last time the node was in the desired state.
+          minimum: 0
+          maximum: 1048576
         power_off_graceful_attempts:
           type: integer
           description: How many attempts have been made to power-off gracefully since the last time the node was in the desired state.
+          minimum: 0
+          maximum: 1048576
         power_off_forceful_attempts:
           type: integer
           description: How many attempts have been made to power-off forcefully since the last time the node was in the desired state.
+          minimum: 0
+          maximum: 1048576
       additionalProperties: false
+    V2ComponentPhase:
+      type: string
+      description: The current phase of the Component in the boot process.
+      maxLength: 128
     V2ComponentStatus:
       description: Status information for the Component
       type: object
       properties:
         phase:
-          type: string
-          description: The current phase of the Component in the boot process.
+          $ref: '#/components/schemas/V2ComponentPhase'
         status:
           type: string
           description: The current status of the Component.  More detailed than phase.
@@ -796,6 +815,7 @@ components:
         status_override:
           type: string
           description: If set, this will override the status value.
+          maxLength: 65536
       additionalProperties: false
     V2Component:
       description: |
@@ -823,6 +843,7 @@ components:
         error:
           type: string
           description: A description of the most recent error to impact the Component.
+          maxLength: 65536
         session:
           oneOf:
             - $ref: '#/components/schemas/V2SessionName'
@@ -1047,12 +1068,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Healthz'
-    SessionTemplateName:
-      description: Session Template name
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SessionTemplateName'
     Version:
       description: |
         Get version details
@@ -1198,7 +1213,7 @@ components:
       description: Session ID
       required: true
       schema:
-        type: string
+        $ref: '#/components/schemas/V2SessionName'
     V2SessionsMaxAgeQueryParam:
       name: max_age
       schema:
@@ -1560,13 +1575,13 @@ paths:
             for selecting groups of Components.
         - name: session
           schema:
-            type: string
+            $ref: '#/components/schemas/V2SessionName'
           in: query
           description: |-
             Retrieve the Components with the given Session ID.
         - name: staged_session
           schema:
-            type: string
+            $ref: '#/components/schemas/V2SessionName'
           in: query
           description: |-
             Retrieve the Components with the given staged Session ID.
@@ -1578,13 +1593,14 @@ paths:
             Retrieve the Components with the "enabled" state.
         - name: phase
           schema:
-            type: string
+            $ref: '#/components/schemas/V2ComponentPhase'
           in: query
           description: |-
             Retrieve the Components in the given phase.
         - name: status
           schema:
             type: string
+            maxLength: 512
           in: query
           description: |-
             Retrieve the Components with the given status.
