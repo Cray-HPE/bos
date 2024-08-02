@@ -28,6 +28,7 @@ import logging
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
 from bos.server.backup import backup_bos_data
+import bos.server.controllers.v2.options as options
 from bos.server.models.v2_component import V2Component as Component
 from bos.server.models.v2_component_actual_state import V2ComponentActualState as ComponentActualState
 from bos.server.models.v2_options import V2Options as Options
@@ -85,11 +86,13 @@ def sanitize_session_templates():
             # No changes for this template
             continue
         # Either the key has changed, the data has changed, or both
+
+        # If the template data has been modified but not the key, just update it
         if new_key == st_key:
-            # The template data has been modified
             LOGGER.warning("Modifying session template. Before: %s After: %s", data, new_data)
             db.put(st_key, new_data)
             continue
+
         # This means that the DB key changed.
         # I don't anticipate this happening, but better to be sure that our keys are correct,
         # since in the past our patching code did not have a lot of safeguards.
@@ -124,19 +127,20 @@ def sanitize_session_templates():
 def sanitize_options():
     LOGGER.info("Sanitizing options")
     db=dbutils.get_wrapper(db='options')
-    options = db.get_all_as_dict()
+    options_data = db.get(options.OPTIONS_KEY)
     try:
-        Options.from_dict(options)
+        Options.from_dict(options_data)
     except:
         LOGGER.warning("options = %s", options)
         LOGGER.exception("Error with options")
-    response = db.get_keys()
-    for st_key in response:
-        data = db.get(st_key)
+    for opt_name, opt_value in options_data.items():
+        if opt_name not in options.DEFAULTS:
+            LOGGER.warning("Unknown option '%s' with value '%s'", opt_name, opt_value)
+            continue
         try:
-            Options.from_dict({ str(st_key): data })
+            Options.from_dict({ opt_name: opt_value })
         except:
-            LOGGER.exception("Error with option '%s' = '%s'", st_key, data)
+            LOGGER.exception("Error with option '%s' = '%s'", opt_name, opt_value)
     LOGGER.info("Done sanitizing options")
 
 
@@ -151,6 +155,23 @@ def sanitize_sessions():
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
             LOGGER.exception("Error with session")
+        for req_field in [ 'name', 'template_name', 'operation' ]:
+            try:
+                if data[req_field]:
+                    continue
+            except KeyError:
+                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
+                               st_key, data)
+                break
+            finally: # No exception raised
+                LOGGER.warning("Empty value for required field '%s': key = %s, data = %s",
+                               req_field, st_key, data)
+                break
+        finally: # No errors in for loop
+            new_key = get_tenant_aware_key(data['name'], data.get("tenant", None)).encode()
+            if new_key != st_key:
+                LOGGER.warning("old key '%s' != new key '%s'", st_key, new_key)
+
     LOGGER.info("Done sanitizing sessions")
 
 
@@ -178,7 +199,23 @@ def sanitize_components():
             Component.from_dict(data)
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
-            LOGGER.exception("Error with component")
+            LOGGER.exception("Error with component")      
+        for req_field in [ 'id' ]:
+            try:
+                if data[req_field]:
+                    continue
+            except KeyError:
+                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
+                               st_key, data)
+                break
+            finally: # No exception raised
+                LOGGER.warning("Empty value for required field '%s': key = %s, data = %s",
+                               req_field, st_key, data)
+                break
+        for req_field in [ 'actual_state', 'desired_state', 'status', 'enabled', 'retry_policy' ]:
+            if req_field not in data:
+                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
+                               st_key, data)
     LOGGER.info("Done sanitizing components")
 
 
@@ -210,7 +247,6 @@ def perform_migrations():
     sanitize_session_statuses()
     sanitize_components()
     sanitize_bss_tokens_boot_artifacts()
-
 
 
 if __name__ == "__main__":
