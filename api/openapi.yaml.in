@@ -584,6 +584,7 @@ components:
         status:
           $ref: '#/components/schemas/V2SessionStatus'
       additionalProperties: false
+      required: [name, operation]
     V2SessionUpdate:
       description: |
         A Session update object

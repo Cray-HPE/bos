@@ -90,16 +90,28 @@ def sanitize_session_templates():
             LOGGER.warning("Modifying session template. Before: %s After: %s", data, new_data)
             db.put(st_key, new_data)
             continue
+        # This means that the DB key changed.
+        # I don't anticipate this happening, but better to be sure that our keys are correct,
+        # since in the past our patching code did not have a lot of safeguards.
+        # Essentially this means that the name and/or tenant inside the template record generate
+        # a hash key that does not match the one we are using. This is not good.
+        LOGGER.warning("Template db key should be '%s' but actually is '%s'. Template = %s", new_key, st_key, data)
+
+        # If the "correct" key is already in use, then we will delete this template.
+        if new_key in db:
+            LOGGER.warning("DB key '%s' already in use, so deleting template under key '%s'", new_key, st_key)
+            db.delete(st_key)
+            continue
+
+        # This means the "correct" key is not already in use. 
+        
+        # If the data inside the template has not changed, then we will just move it to be under the new key.
         if new_data == data:
-            # This means that the template contents did not change, but its DB key did.
-            # I don't anticipate this happening, but better to be sure that our keys are correct,
-            # since in the past our patching code did not have a lot of safeguards.
-            LOGGER.warning("Session template database key changing (old key: '%s', new key: '%s') "
-                           "but template contents unchanged: %s", st_key, new_key, data)
+            LOGGER.warning("Moving template from key '%s' to '%s' without changing its contents", st_key, new_key)
             db.rename(st_key, new_key)
             continue
-        # Finally, this means that the template contents changed AND the DB key did
-        # I also don't anticipate this happening
+
+        # Otherwise, we will delete the old key entry and create the new key entry with the updated template body.
         LOGGER.warning("Modifying session template and DB key (old key: '%s', new key: '%s'). "
                        "Before: %s After: %s", st_key, new_key, data, new_data)
         LOGGER.info("Removing old entry from database")
@@ -125,6 +137,7 @@ def sanitize_options():
             Options.from_dict({ str(st_key): data })
         except:
             LOGGER.exception("Error with option '%s' = '%s'", st_key, data)
+    LOGGER.info("Done sanitizing options")
 
 
 def sanitize_sessions():
@@ -138,6 +151,7 @@ def sanitize_sessions():
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
             LOGGER.exception("Error with session")
+    LOGGER.info("Done sanitizing sessions")
 
 
 def sanitize_session_statuses():
@@ -151,6 +165,7 @@ def sanitize_session_statuses():
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
             LOGGER.exception("Error with session status")
+    LOGGER.info("Done sanitizing session statuses")
 
 
 def sanitize_components():
@@ -164,6 +179,8 @@ def sanitize_components():
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
             LOGGER.exception("Error with component")
+    LOGGER.info("Done sanitizing components")
+
 
 def sanitize_bss_tokens_boot_artifacts():
     LOGGER.info("Sanitizing bss_tokens_boot_artifacts")
@@ -183,6 +200,7 @@ def sanitize_bss_tokens_boot_artifacts():
         except:
             LOGGER.warning("key = %s, data = %s, cas = %s", st_key, data, comp_actual_state)
             LOGGER.exception("Error with bss_tokens_boot_artifacts")
+    LOGGER.info("Done sanitizing bss_tokens_boot_artifacts")
 
 
 def perform_migrations():
