@@ -28,8 +28,14 @@ import logging
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
 from bos.server.backup import backup_bos_data
-from bos.server.utils import _validate_sanitize_session_template
+from bos.server.models.v2_component import V2Component as Component
+from bos.server.models.v2_component_actual_state import V2ComponentActualState as ComponentActualState
+from bos.server.models.v2_options import V2Options as Options
+from bos.server.models.v2_session import V2Session as Session
+from bos.server.models.v2_session_status import V2SessionStatus as SessionStatus
 import bos.server.redis_db_utils as dbutils
+from bos.server.utils import _validate_sanitize_session_template
+
 
 LOGGER = logging.getLogger('bos.server.migration')
 
@@ -67,7 +73,6 @@ def sanitize_session_templates():
     LOGGER.info("Sanitizing session templates")
     db=dbutils.get_wrapper(db='session_templates')
     response = db.get_keys()
-    changed=0
     for st_key in response:
         data = db.get(st_key)
         try:
@@ -80,7 +85,6 @@ def sanitize_session_templates():
             # No changes for this template
             continue
         # Either the key has changed, the data has changed, or both
-        changed+=1
         if new_key == st_key:
             # The template data has been modified
             LOGGER.warning("Modifying session template. Before: %s After: %s", data, new_data)
@@ -105,13 +109,89 @@ def sanitize_session_templates():
     LOGGER.info("Done sanitizing session templates")
 
 
+def sanitize_options():
+    LOGGER.info("Sanitizing options")
+    db=dbutils.get_wrapper(db='options')
+    options = db.get_all_as_dict()
+    try:
+        Options.from_dict(options)
+    except:
+        LOGGER.warning("options = %s", options)
+        LOGGER.exception("Error with options")
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            Options.from_dict({ str(st_key): data })
+        except:
+            LOGGER.exception("Error with option '%s' = '%s'", st_key, data)
+
+
+def sanitize_sessions():
+    LOGGER.info("Sanitizing sessions")
+    db=dbutils.get_wrapper(db='sessions')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            Session.from_dict(data)
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with session")
+
+
+def sanitize_session_statuses():
+    LOGGER.info("Sanitizing session statuses")
+    db=dbutils.get_wrapper(db='session_status')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            SessionStatus.from_dict(data)
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with session status")
+
+
+def sanitize_components():
+    LOGGER.info("Sanitizing components")
+    db=dbutils.get_wrapper(db='components')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            Component.from_dict(data)
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with component")
+
+def sanitize_bss_tokens_boot_artifacts():
+    LOGGER.info("Sanitizing bss_tokens_boot_artifacts")
+    db=dbutils.get_wrapper(db='bss_tokens_boot_artifacts')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            timestamp = data.pop("timestamp")
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with bss_tokens_boot_artifacts timestamp")
+            continue
+        comp_actual_state = { "boot_artifacts": data, "bss_token": str(st_key), "last_updated": timestamp }
+        try:
+            ComponentActualState.from_dict(comp_actual_state)
+        except:
+            LOGGER.warning("key = %s, data = %s, cas = %s", st_key, data, comp_actual_state)
+            LOGGER.exception("Error with bss_tokens_boot_artifacts")
+
+
 def perform_migrations():
-    # sanitize_options()
+    sanitize_options()
     sanitize_session_templates()
-    # sanitize_sessions()
-    # sanitize_session_statuses()
-    # sanitize_components()
-    # sanitize_bss_tokens_boot_artifacts()
+    sanitize_sessions()
+    sanitize_session_statuses()
+    sanitize_components()
+    sanitize_bss_tokens_boot_artifacts()
 
 
 
