@@ -28,7 +28,7 @@ ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitoo
 ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 # Generate Code
-FROM $OPENAPI_IMAGE as codegen
+FROM $OPENAPI_IMAGE AS codegen
 WORKDIR /app
 COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
@@ -40,7 +40,7 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     --generate-alias-as-model
 
 # Base image
-FROM $ALPINE_BASE_IMAGE as base
+FROM $ALPINE_BASE_IMAGE AS base
 WORKDIR /app
 # We apply all generated code first
 COPY --from=codegen /app/lib/ /app/lib
@@ -76,7 +76,7 @@ RUN cd lib && pip3 install --no-cache-dir . -c ../constraints.txt && \
     pip3 list --format freeze
 
 # Base testing image
-FROM base as testing
+FROM base AS testing
 WORKDIR /app
 COPY test-requirements.txt .
 RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && \
@@ -84,20 +84,20 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && \
     pip3 list --format freeze
 
 # Codestyle reporting
-FROM testing as codestyle
+FROM testing AS codestyle
 WORKDIR /app
 COPY docker_codestyle_entry.sh setup.cfg ./
 CMD [ "./docker_codestyle_entry.sh" ]
 
 # API Testing image
-FROM testing as api-testing
+FROM testing AS api-testing
 WORKDIR /app
 COPY docker_api_test_entry.sh run_apitests.py ./
 COPY api_tests/ api_tests/
 CMD [ "./docker_api_test_entry.sh" ]
 
 # Intermediate image
-FROM base as intermediate
+FROM base AS intermediate
 WORKDIR /app
 EXPOSE 9000
 RUN apk add --no-cache uwsgi uwsgi-python3
@@ -105,7 +105,7 @@ COPY config/uwsgi.ini ./
 ENTRYPOINT ["uwsgi", "--ini", "/app/uwsgi.ini"]
 
 # Debug image
-FROM intermediate as debug
+FROM intermediate AS debug
 ENV PYTHONPATH "/app/lib/server"
 WORKDIR /app
 RUN apk add --no-cache busybox-extras && \
@@ -113,7 +113,7 @@ RUN apk add --no-cache busybox-extras && \
     pip3 list --format freeze
 
 # Application image
-FROM intermediate as application
+FROM intermediate AS application
 WORKDIR /app
 USER 65534:65534
 
