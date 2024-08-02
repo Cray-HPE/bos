@@ -584,7 +584,7 @@ components:
         status:
           $ref: '#/components/schemas/V2SessionStatus'
       additionalProperties: false
-      required: [name, operation]
+      required: [name, operation, template_name]
     V2SessionUpdate:
       description: |
         A Session update object
@@ -934,7 +934,7 @@ components:
             If false, BOS will continue to maintain the state of the nodes declaratively, even after a Session finishes.
         discovery_frequency:
           type: integer
-          description: How frequently the BOS discovery agent syncs new Components from HSM. (in seconds)
+          description: How frequently the BOS discovery agent syncs new Components from HSM (in seconds)
           minimum: 0
           # A little over a year
           maximum: 33554432
@@ -962,7 +962,7 @@ components:
           maximum: 1048576
         polling_frequency:
           type: integer
-          description: How frequently the BOS operators check Component state for needed actions. (in seconds)
+          description: How frequently the BOS operators check Component state for needed actions (in seconds)
           minimum: 0
           # Over 12 days
           maximum: 1048576
@@ -982,6 +982,8 @@ components:
           type: boolean
           description: If true, Sessions cannot be created without specifying the limit parameter.
       additionalProperties: true
+      minProperties: 1
+      maxProperties: 1024
 
   requestBodies:
     V2sessionCreateRequest:
