@@ -28,8 +28,15 @@ import logging
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
 from bos.server.backup import backup_bos_data
-from bos.server.utils import _validate_sanitize_session_template
+import bos.server.controllers.v2.options as options
+from bos.server.models.v2_component import V2Component as Component
+from bos.server.models.v2_component_actual_state import V2ComponentActualState as ComponentActualState
+from bos.server.models.v2_options import V2Options as Options
+from bos.server.models.v2_session import V2Session as Session
+from bos.server.models.v2_session_status import V2SessionStatus as SessionStatus
 import bos.server.redis_db_utils as dbutils
+from bos.server.utils import _validate_sanitize_session_template
+
 
 LOGGER = logging.getLogger('bos.server.migration')
 
@@ -67,7 +74,6 @@ def sanitize_session_templates():
     LOGGER.info("Sanitizing session templates")
     db=dbutils.get_wrapper(db='session_templates')
     response = db.get_keys()
-    changed=0
     for st_key in response:
         data = db.get(st_key)
         try:
@@ -80,22 +86,35 @@ def sanitize_session_templates():
             # No changes for this template
             continue
         # Either the key has changed, the data has changed, or both
-        changed+=1
+
+        # If the template data has been modified but not the key, just update it
         if new_key == st_key:
-            # The template data has been modified
             LOGGER.warning("Modifying session template. Before: %s After: %s", data, new_data)
             db.put(st_key, new_data)
             continue
+
+        # This means that the DB key changed.
+        # I don't anticipate this happening, but better to be sure that our keys are correct,
+        # since in the past our patching code did not have a lot of safeguards.
+        # Essentially this means that the name and/or tenant inside the template record generate
+        # a hash key that does not match the one we are using. This is not good.
+        LOGGER.warning("Template db key should be '%s' but actually is '%s'. Template = %s", new_key, st_key, data)
+
+        # If the "correct" key is already in use, then we will delete this template.
+        if new_key in db:
+            LOGGER.warning("DB key '%s' already in use, so deleting template under key '%s'", new_key, st_key)
+            db.delete(st_key)
+            continue
+
+        # This means the "correct" key is not already in use. 
+        
+        # If the data inside the template has not changed, then we will just move it to be under the new key.
         if new_data == data:
-            # This means that the template contents did not change, but its DB key did.
-            # I don't anticipate this happening, but better to be sure that our keys are correct,
-            # since in the past our patching code did not have a lot of safeguards.
-            LOGGER.warning("Session template database key changing (old key: '%s', new key: '%s') "
-                           "but template contents unchanged: %s", st_key, new_key, data)
+            LOGGER.warning("Moving template from key '%s' to '%s' without changing its contents", st_key, new_key)
             db.rename(st_key, new_key)
             continue
-        # Finally, this means that the template contents changed AND the DB key did
-        # I also don't anticipate this happening
+
+        # Otherwise, we will delete the old key entry and create the new key entry with the updated template body.
         LOGGER.warning("Modifying session template and DB key (old key: '%s', new key: '%s'). "
                        "Before: %s After: %s", st_key, new_key, data, new_data)
         LOGGER.info("Removing old entry from database")
@@ -105,14 +124,129 @@ def sanitize_session_templates():
     LOGGER.info("Done sanitizing session templates")
 
 
-def perform_migrations():
-    # sanitize_options()
-    sanitize_session_templates()
-    # sanitize_sessions()
-    # sanitize_session_statuses()
-    # sanitize_components()
-    # sanitize_bss_tokens_boot_artifacts()
+def sanitize_options():
+    LOGGER.info("Sanitizing options")
+    db=dbutils.get_wrapper(db='options')
+    options_data = db.get(options.OPTIONS_KEY)
+    try:
+        Options.from_dict(options_data)
+    except:
+        LOGGER.warning("options = %s", options)
+        LOGGER.exception("Error with options")
+    for opt_name, opt_value in options_data.items():
+        if opt_name not in options.DEFAULTS:
+            LOGGER.warning("Unknown option '%s' with value '%s'", opt_name, opt_value)
+            continue
+        try:
+            Options.from_dict({ opt_name: opt_value })
+        except:
+            LOGGER.exception("Error with option '%s' = '%s'", opt_name, opt_value)
+    LOGGER.info("Done sanitizing options")
 
+
+def sanitize_sessions():
+    LOGGER.info("Sanitizing sessions")
+    db=dbutils.get_wrapper(db='sessions')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            Session.from_dict(data)
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with session")
+        for req_field in [ 'name', 'template_name', 'operation' ]:
+            try:
+                if data[req_field]:
+                    continue
+            except KeyError:
+                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
+                               st_key, data)
+                break
+            finally: # No exception raised
+                LOGGER.warning("Empty value for required field '%s': key = %s, data = %s",
+                               req_field, st_key, data)
+                break
+        finally: # No errors in for loop
+            new_key = get_tenant_aware_key(data['name'], data.get("tenant", None)).encode()
+            if new_key != st_key:
+                LOGGER.warning("old key '%s' != new key '%s'", st_key, new_key)
+
+    LOGGER.info("Done sanitizing sessions")
+
+
+def sanitize_session_statuses():
+    LOGGER.info("Sanitizing session statuses")
+    db=dbutils.get_wrapper(db='session_status')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            SessionStatus.from_dict(data)
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with session status")
+    LOGGER.info("Done sanitizing session statuses")
+
+
+def sanitize_components():
+    LOGGER.info("Sanitizing components")
+    db=dbutils.get_wrapper(db='components')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            Component.from_dict(data)
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with component")      
+        for req_field in [ 'id' ]:
+            try:
+                if data[req_field]:
+                    continue
+            except KeyError:
+                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
+                               st_key, data)
+                break
+            finally: # No exception raised
+                LOGGER.warning("Empty value for required field '%s': key = %s, data = %s",
+                               req_field, st_key, data)
+                break
+        for req_field in [ 'actual_state', 'desired_state', 'status', 'enabled', 'retry_policy' ]:
+            if req_field not in data:
+                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
+                               st_key, data)
+    LOGGER.info("Done sanitizing components")
+
+
+def sanitize_bss_tokens_boot_artifacts():
+    LOGGER.info("Sanitizing bss_tokens_boot_artifacts")
+    db=dbutils.get_wrapper(db='bss_tokens_boot_artifacts')
+    response = db.get_keys()
+    for st_key in response:
+        data = db.get(st_key)
+        try:
+            timestamp = data.pop("timestamp")
+        except:
+            LOGGER.warning("key = %s, data = %s", st_key, data)
+            LOGGER.exception("Error with bss_tokens_boot_artifacts timestamp")
+            continue
+        comp_actual_state = { "boot_artifacts": data, "bss_token": str(st_key), "last_updated": timestamp }
+        try:
+            ComponentActualState.from_dict(comp_actual_state)
+        except:
+            LOGGER.warning("key = %s, data = %s, cas = %s", st_key, data, comp_actual_state)
+            LOGGER.exception("Error with bss_tokens_boot_artifacts")
+    LOGGER.info("Done sanitizing bss_tokens_boot_artifacts")
+
+
+def perform_migrations():
+    sanitize_options()
+    sanitize_session_templates()
+    sanitize_sessions()
+    sanitize_session_statuses()
+    sanitize_components()
+    sanitize_bss_tokens_boot_artifacts()
 
 
 if __name__ == "__main__":
