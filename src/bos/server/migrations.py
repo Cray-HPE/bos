@@ -208,6 +208,7 @@ def _replace_nullable(d):
     if isinstance(d, list):
         for item in d:
             _replace_nullable(item)
+        return
     elif not isinstance(d, dict):
         return
     if "nullable" in d and d["nullable"]:
