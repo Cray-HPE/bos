@@ -26,6 +26,7 @@ import copy
 import jsonref
 import jsonschema
 import logging
+import pkgutil
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
@@ -213,8 +214,8 @@ def sanitize_bss_tokens_boot_artifacts(api_schema):
 
 
 def perform_migrations():
-    with open("/app/lib/bos/server/openapi/openapi.json", "rt") as f:
-        oas_json = jsonref.load(f)
+    oas_data = pkgutil.get_data(__name__, "openapi/openapi.json")
+    oas_json = jsonref.load(oas_data)
     api_schema = oas_json["components"]["schemas"]
     sanitize_options(api_schema)
     sanitize_session_templates(api_schema)
