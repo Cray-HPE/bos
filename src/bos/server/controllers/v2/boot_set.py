@@ -59,9 +59,8 @@ def validate_boot_sets(session_template: dict,
 
     """
     # Verify boot sets exist.
-    if 'boot_sets' not in session_template or not session_template['boot_sets']:
-        msg = f"Session template '{template_name}' must have one or more defined boot sets for " \
-        "the creation of a session. It has none."
+    if not session_template.get('boot_sets', None):
+        msg = f"Session template '{template_name}' requires at least 1 boot set."
         return BOOT_SET_ERROR, msg
 
     hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')

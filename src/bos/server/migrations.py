@@ -29,20 +29,17 @@ from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
 from bos.server.backup import backup_bos_data
 import bos.server.controllers.v2.options as options
+from bos.server.controllers.v2.sessiontemplates import validate_sanitize_session_template
 from bos.server.models.v2_component import V2Component as Component
 from bos.server.models.v2_component_actual_state import V2ComponentActualState as ComponentActualState
 from bos.server.models.v2_options import V2Options as Options
 from bos.server.models.v2_session import V2Session as Session
 from bos.server.models.v2_session_status import V2SessionStatus as SessionStatus
 import bos.server.redis_db_utils as dbutils
-from bos.server.utils import _validate_sanitize_session_template
+from bos.server.utils import ParsingException
 
 
 LOGGER = logging.getLogger('bos.server.migration')
-
-
-class ValidationError(Exception):
-    pass
 
 
 def create_sanitized_session_template(data):
@@ -57,14 +54,14 @@ def create_sanitized_session_template(data):
         st_name = data["name"]
     except KeyError as exc:
         # In the unlikely event that this template has no name field, we don't want to keep it
-        raise ValidationError("Missing required 'name' field") from exc
+        raise ParsingException("Missing required 'name' field") from exc
 
     new_data = copy.deepcopy(data)
     try:
         # Validate that the session template follows the API schema, and sanitize it
         _validate_sanitize_session_template(st_name, new_data)
     except Exception as exc:
-        raise ValidationError(f"Validation failure: {exc_type_msg(exc)}") from exc
+        raise ParsingException(f"Validation failure: {exc_type_msg(exc)}") from exc
 
     new_key = get_tenant_aware_key(st_name, new_data.get("tenant", None)).encode()
     return new_key, new_data
@@ -78,13 +75,15 @@ def sanitize_session_templates():
         data = db.get(st_key)
         try:
             new_key, new_data = create_sanitized_session_template(data)
-        except ValidationError as exc:
+        except ParsingException as exc:
             LOGGER.warning("Deleting session template (reason: %s): %s", exc, data)
             db.delete(st_key)
             continue
+
         if new_key == st_key and new_data == data:
             # No changes for this template
             continue
+
         # Either the key has changed, the data has changed, or both
 
         # If the template data has been modified but not the key, just update it
@@ -98,29 +97,9 @@ def sanitize_session_templates():
         # since in the past our patching code did not have a lot of safeguards.
         # Essentially this means that the name and/or tenant inside the template record generate
         # a hash key that does not match the one we are using. This is not good.
-        LOGGER.warning("Template db key should be '%s' but actually is '%s'. Template = %s", new_key, st_key, data)
-
-        # If the "correct" key is already in use, then we will delete this template.
-        if new_key in db:
-            LOGGER.warning("DB key '%s' already in use, so deleting template under key '%s'", new_key, st_key)
-            db.delete(st_key)
-            continue
-
-        # This means the "correct" key is not already in use. 
-        
-        # If the data inside the template has not changed, then we will just move it to be under the new key.
-        if new_data == data:
-            LOGGER.warning("Moving template from key '%s' to '%s' without changing its contents", st_key, new_key)
-            db.rename(st_key, new_key)
-            continue
-
-        # Otherwise, we will delete the old key entry and create the new key entry with the updated template body.
-        LOGGER.warning("Modifying session template and DB key (old key: '%s', new key: '%s'). "
-                       "Before: %s After: %s", st_key, new_key, data, new_data)
-        LOGGER.info("Removing old entry from database")
+        LOGGER.warning("Deleting session template. Reason: db key should be '%s' but actually is "
+                       "'%s'. Template = %s", new_key, st_key, data)
         db.delete(st_key)
-        LOGGER.info("Adding modified session template under new key")
-        db.put(new_key, new_data)
     LOGGER.info("Done sanitizing session templates")
 
 
@@ -128,49 +107,64 @@ def sanitize_options():
     LOGGER.info("Sanitizing options")
     db=dbutils.get_wrapper(db='options')
     options_data = db.get(options.OPTIONS_KEY)
-    try:
-        Options.from_dict(options_data)
-    except:
-        LOGGER.warning("options = %s", options)
-        LOGGER.exception("Error with options")
+    new_options_data = {}
     for opt_name, opt_value in options_data.items():
         if opt_name not in options.DEFAULTS:
-            LOGGER.warning("Unknown option '%s' with value '%s'", opt_name, opt_value)
+            LOGGER.warning("Removing unknown option '%s' with value '%s'", opt_name, opt_value)
             continue
         try:
             Options.from_dict({ opt_name: opt_value })
-        except:
-            LOGGER.exception("Error with option '%s' = '%s'", opt_name, opt_value)
+        except Exception as exc:
+            LOGGER.warning("Deleting option '%s' with value '%s'; reason: %s", opt_name, opt_value, exc)
+            continue
+        new_options_data[opt_name] = opt_value
+    if options_data != new_options_data:
+        LOGGER.info("Updating options. Old: %s; new: %s", options_data, new_options_data)
+        db.put(options.OPTIONS_KEY, new_options_data)
     LOGGER.info("Done sanitizing options")
+
+
+def validate_session(data):
+    try:
+        Session.from_dict(data)
+    except Exception as exc:
+        raise ParsingException from exc
+    for req_field in [ 'name', 'template_name', 'operation' ]:
+        try:
+            if data[req_field]:
+                continue
+        except KeyError as exc:
+            raise ParsingException("Missing required field '%s'", req_field) from exc
+        raise ParsingException("Empty value for required field '%s'", req_field)
 
 
 def sanitize_sessions():
     LOGGER.info("Sanitizing sessions")
     db=dbutils.get_wrapper(db='sessions')
+    statusdb=dbutils.get_wrapper(db='session_status')
     response = db.get_keys()
     for st_key in response:
         data = db.get(st_key)
         try:
-            Session.from_dict(data)
-        except:
-            LOGGER.warning("key = %s, data = %s", st_key, data)
-            LOGGER.exception("Error with session")
-        for req_field in [ 'name', 'template_name', 'operation' ]:
-            try:
-                if data[req_field]:
-                    continue
-            except KeyError:
-                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
-                               st_key, data)
-                break
-            finally: # No exception raised
-                LOGGER.warning("Empty value for required field '%s': key = %s, data = %s",
-                               req_field, st_key, data)
-                break
-        finally: # No errors in for loop
-            new_key = get_tenant_aware_key(data['name'], data.get("tenant", None)).encode()
-            if new_key != st_key:
-                LOGGER.warning("old key '%s' != new key '%s'", st_key, new_key)
+            validate_session(data)
+        except ParsingException as exc:
+            LOGGER.warning("Deleting session (reason: %s): %s", exc, data)
+            db.delete(st_key)
+            if st_key in statusdb:
+                LOGGER.warning("Deleting session status %s", st_key)
+                statusdb.delete(st_key)
+            continue
+
+        new_key = get_tenant_aware_key(data['name'], data.get("tenant", None)).encode()
+        if new_key == st_key:
+            continue
+
+        LOGGER.warning("Deleting session. Reason: db key should be '%s' but actually is "
+                       "'%s'. Template = %s", new_key, st_key, data)
+        db.delete(st_key)
+        if st_key in statusdb:
+            LOGGER.warning("Deleting session status %s", st_key)
+            statusdb.delete(st_key)
 
     LOGGER.info("Done sanitizing sessions")
 
