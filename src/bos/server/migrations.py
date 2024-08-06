@@ -23,6 +23,8 @@
 #
 
 import copy
+import jsonref
+import jsonschema
 import logging
 
 from bos.common.tenant_utils import get_tenant_aware_key
@@ -42,7 +44,7 @@ from bos.server.utils import ParsingException
 LOGGER = logging.getLogger('bos.server.migration')
 
 
-def create_sanitized_session_template(data):
+def create_sanitized_session_template(data, api_schema):
     """
     If there are any problems with the template, raise an exception
     Otherwise, return a tuple of the session template DB key and the session template itself
@@ -60,6 +62,7 @@ def create_sanitized_session_template(data):
     try:
         # Validate that the session template follows the API schema, and sanitize it
         _validate_sanitize_session_template(st_name, new_data)
+        jsonschema.validate(new_data, api_schema["V2SessionTemplate"])
     except Exception as exc:
         raise ParsingException(f"Validation failure: {exc_type_msg(exc)}") from exc
 
@@ -67,17 +70,17 @@ def create_sanitized_session_template(data):
     return new_key, new_data
 
 
-def sanitize_session_templates():
+def sanitize_session_templates(api_schema):
     LOGGER.info("Sanitizing session templates")
     db=dbutils.get_wrapper(db='session_templates')
     response = db.get_keys()
     for st_key in response:
         data = db.get(st_key)
         try:
-            new_key, new_data = create_sanitized_session_template(data)
+            new_key, new_data = create_sanitized_session_template(data, api_schema)
         except ParsingException as exc:
             LOGGER.warning("Deleting session template (reason: %s): %s", exc, data)
-            db.delete(st_key)
+            #db.delete(st_key)
             continue
 
         if new_key == st_key and new_data == data:
@@ -89,7 +92,7 @@ def sanitize_session_templates():
         # If the template data has been modified but not the key, just update it
         if new_key == st_key:
             LOGGER.warning("Modifying session template. Before: %s After: %s", data, new_data)
-            db.put(st_key, new_data)
+            #db.put(st_key, new_data)
             continue
 
         # This means that the DB key changed.
@@ -99,11 +102,11 @@ def sanitize_session_templates():
         # a hash key that does not match the one we are using. This is not good.
         LOGGER.warning("Deleting session template. Reason: db key should be '%s' but actually is "
                        "'%s'. Template = %s", new_key, st_key, data)
-        db.delete(st_key)
+        #db.delete(st_key)
     LOGGER.info("Done sanitizing session templates")
 
 
-def sanitize_options():
+def sanitize_options(api_schema):
     LOGGER.info("Sanitizing options")
     db=dbutils.get_wrapper(db='options')
     options_data = db.get(options.OPTIONS_KEY)
@@ -114,31 +117,18 @@ def sanitize_options():
             continue
         try:
             Options.from_dict({ opt_name: opt_value })
+            jsonschema.validate({ opt_name: opt_value }, api_schema["V2Options"])
         except Exception as exc:
             LOGGER.warning("Deleting option '%s' with value '%s'; reason: %s", opt_name, opt_value, exc)
             continue
         new_options_data[opt_name] = opt_value
     if options_data != new_options_data:
         LOGGER.info("Updating options. Old: %s; new: %s", options_data, new_options_data)
-        db.put(options.OPTIONS_KEY, new_options_data)
+        #db.put(options.OPTIONS_KEY, new_options_data)
     LOGGER.info("Done sanitizing options")
 
 
-def validate_session(data):
-    try:
-        Session.from_dict(data)
-    except Exception as exc:
-        raise ParsingException from exc
-    for req_field in [ 'name', 'template_name', 'operation' ]:
-        try:
-            if data[req_field]:
-                continue
-        except KeyError as exc:
-            raise ParsingException("Missing required field '%s'", req_field) from exc
-        raise ParsingException("Empty value for required field '%s'", req_field)
-
-
-def sanitize_sessions():
+def sanitize_sessions(api_schema):
     LOGGER.info("Sanitizing sessions")
     db=dbutils.get_wrapper(db='sessions')
     statusdb=dbutils.get_wrapper(db='session_status')
@@ -146,13 +136,14 @@ def sanitize_sessions():
     for st_key in response:
         data = db.get(st_key)
         try:
-            validate_session(data)
-        except ParsingException as exc:
+            Session.from_dict(data)
+            jsonschema.validate(data, api_schema["V2Session"])
+        except Exception as exc:
             LOGGER.warning("Deleting session (reason: %s): %s", exc, data)
-            db.delete(st_key)
+            #db.delete(st_key)
             if st_key in statusdb:
                 LOGGER.warning("Deleting session status %s", st_key)
-                statusdb.delete(st_key)
+                #statusdb.delete(st_key)
             continue
 
         new_key = get_tenant_aware_key(data['name'], data.get("tenant", None)).encode()
@@ -161,15 +152,15 @@ def sanitize_sessions():
 
         LOGGER.warning("Deleting session. Reason: db key should be '%s' but actually is "
                        "'%s'. Template = %s", new_key, st_key, data)
-        db.delete(st_key)
+        #db.delete(st_key)
         if st_key in statusdb:
             LOGGER.warning("Deleting session status %s", st_key)
-            statusdb.delete(st_key)
+            #statusdb.delete(st_key)
 
     LOGGER.info("Done sanitizing sessions")
 
 
-def sanitize_session_statuses():
+def sanitize_session_statuses(api_schema):
     LOGGER.info("Sanitizing session statuses")
     db=dbutils.get_wrapper(db='session_status')
     response = db.get_keys()
@@ -177,13 +168,14 @@ def sanitize_session_statuses():
         data = db.get(st_key)
         try:
             SessionStatus.from_dict(data)
+            jsonschema.validate(data, api_schema["V2SessionStatus"])
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
             LOGGER.exception("Error with session status")
     LOGGER.info("Done sanitizing session statuses")
 
 
-def sanitize_components():
+def sanitize_components(api_schema):
     LOGGER.info("Sanitizing components")
     db=dbutils.get_wrapper(db='components')
     response = db.get_keys()
@@ -191,29 +183,14 @@ def sanitize_components():
         data = db.get(st_key)
         try:
             Component.from_dict(data)
+            jsonschema.validate(data, api_schema["V2ComponentWithId"])
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
             LOGGER.exception("Error with component")      
-        for req_field in [ 'id' ]:
-            try:
-                if data[req_field]:
-                    continue
-            except KeyError:
-                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
-                               st_key, data)
-                break
-            finally: # No exception raised
-                LOGGER.warning("Empty value for required field '%s': key = %s, data = %s",
-                               req_field, st_key, data)
-                break
-        for req_field in [ 'actual_state', 'desired_state', 'status', 'enabled', 'retry_policy' ]:
-            if req_field not in data:
-                LOGGER.warning("Missing required field '%s': key = %s, data = %s", req_field,
-                               st_key, data)
     LOGGER.info("Done sanitizing components")
 
 
-def sanitize_bss_tokens_boot_artifacts():
+def sanitize_bss_tokens_boot_artifacts(api_schema):
     LOGGER.info("Sanitizing bss_tokens_boot_artifacts")
     db=dbutils.get_wrapper(db='bss_tokens_boot_artifacts')
     response = db.get_keys()
@@ -228,6 +205,7 @@ def sanitize_bss_tokens_boot_artifacts():
         comp_actual_state = { "boot_artifacts": data, "bss_token": str(st_key), "last_updated": timestamp }
         try:
             ComponentActualState.from_dict(comp_actual_state)
+            jsonschema.validate(comp_actual_state, api_schema["V2ComponentActualState"])
         except:
             LOGGER.warning("key = %s, data = %s, cas = %s", st_key, data, comp_actual_state)
             LOGGER.exception("Error with bss_tokens_boot_artifacts")
@@ -235,16 +213,19 @@ def sanitize_bss_tokens_boot_artifacts():
 
 
 def perform_migrations():
-    sanitize_options()
-    sanitize_session_templates()
-    sanitize_sessions()
-    sanitize_session_statuses()
-    sanitize_components()
-    sanitize_bss_tokens_boot_artifacts()
+    with open("/app/lib/bos/server/openapi/openapi.json", "rt") as f:
+        oas_json = jsonref.load(f)
+    api_schema = oas_json["components"]["schemas"]
+    sanitize_options(api_schema)
+    sanitize_session_templates(api_schema)
+    sanitize_sessions(api_schema)
+    sanitize_session_statuses(api_schema)
+    sanitize_components(api_schema)
+    sanitize_bss_tokens_boot_artifacts(api_schema)
 
 
 if __name__ == "__main__":    
     #backup_bos_data("pre-migration")
-    #perform_migrations()
+    perform_migrations()
     #backup_bos_data("post-migration")
     pass

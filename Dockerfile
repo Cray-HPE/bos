@@ -53,7 +53,7 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
     apk update && \
     apk add --no-cache yq && \
     apk -U upgrade --no-cache
-RUN yq -j /app/lib/bos/server/openapi/openapi.yaml > /app/lib/bos/server/openapi/openapi.json
+RUN yq -o=json /app/lib/bos/server/openapi/openapi.yaml > /app/lib/bos/server/openapi/openapi.json
 
 # Base image
 FROM $ALPINE_BASE_IMAGE AS base
@@ -77,7 +77,7 @@ COPY constraints.txt requirements.txt /app/
 # Update packages to avoid security problems
 RUN apk add --upgrade --no-cache apk-tools busybox && \
     apk update && \
-    apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev jq yq && \
+    apk add --no-cache gcc g++ python3-dev py3-pip musl-dev libffi-dev openssl-dev && \
     apk -U upgrade --no-cache
 # Create a virtual environment in which we can install Python packages. This
 # isolates our installation from the system installation.
