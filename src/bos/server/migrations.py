@@ -196,7 +196,6 @@ def sanitize_bss_tokens_boot_artifacts(api_schema):
             continue
         comp_actual_state = { "boot_artifacts": data, "bss_token": str(st_key), "last_updated": timestamp }
         try:
-            ComponentActualState.from_dict(comp_actual_state)
             jsonschema.validate(comp_actual_state, api_schema["V2ComponentActualState"])
         except:
             LOGGER.warning("key = %s, data = %s, cas = %s", st_key, data, comp_actual_state)
