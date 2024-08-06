@@ -222,7 +222,7 @@ def _replace_nullable(d):
         _replace_nullable(v)
 
 def perform_migrations():
-    with open("/app/lib/bos/server/openapi/openapi.json") as f:
+    with open("/app/lib/bos/server/openapi.json") as f:
         oas_json = jsonref.load(f)
     api_schema = oas_json["components"]["schemas"]
 

@@ -53,7 +53,8 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
     apk update && \
     apk add --no-cache yq && \
     apk -U upgrade --no-cache
-RUN yq -o=json /app/lib/bos/server/openapi/openapi.yaml > /app/lib/bos/server/openapi/openapi.json
+COPY api/openapi.yaml openapi.yaml
+RUN yq -o=json /app/openapi.yaml > /app/lib/bos/server/openapi.json
 
 # Base image
 FROM $ALPINE_BASE_IMAGE AS base
