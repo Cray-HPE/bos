@@ -218,8 +218,8 @@ def _replace_nullable(d: dict):
 
 
 def perform_migrations():
-    oas_data = pkgutil.get_data(__name__, "openapi/openapi.json")
-    oas_json = jsonref.load(oas_data)
+    with open("/app/lib/bos/server/openapi/openapi.json") as f:
+        oas_json = jsonref.load(f)
     api_schema = oas_json["components"]["schemas"]
 
     # The nullable keyword works for OAS but not for jsonschema
