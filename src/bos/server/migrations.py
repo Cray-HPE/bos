@@ -213,7 +213,8 @@ def _replace_nullable(d):
     if "nullable" in d and d["nullable"]:
         try:
             if isinstance(d["type"], list):
-                d["type"].append("null")
+                if "null" not in d["type"]:
+                    d["type"].append("null")
             else:
                 d["type"] = [ d["type"], "null" ]
         except KeyError:
