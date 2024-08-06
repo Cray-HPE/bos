@@ -204,7 +204,12 @@ def sanitize_bss_tokens_boot_artifacts(api_schema):
     LOGGER.info("Done sanitizing bss_tokens_boot_artifacts")
 
 
-def _replace_nullable(d: dict):
+def _replace_nullable(d):
+    if isinstance(d, list):
+        for item in d:
+            _replace_nullable(item)
+    elif not isinstance(d, dict):
+        return
     if "nullable" in d and d["nullable"]:
         try:
             if isinstance(d["type"], list):
@@ -215,7 +220,6 @@ def _replace_nullable(d: dict):
             d["type"] = [ "object", "null" ]
     for v in d.values():
         _replace_nullable(v)
-
 
 def perform_migrations():
     with open("/app/lib/bos/server/openapi/openapi.json") as f:
