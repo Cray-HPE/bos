@@ -62,7 +62,7 @@ def create_sanitized_session_template(data, api_schema):
     new_data = copy.deepcopy(data)
     try:
         # Validate that the session template follows the API schema, and sanitize it
-        _validate_sanitize_session_template(st_name, new_data)
+        validate_sanitize_session_template(st_name, new_data)
         jsonschema.validate(new_data, api_schema["V2SessionTemplate"])
     except Exception as exc:
         raise ParsingException(f"Validation failure: {exc_type_msg(exc)}") from exc
@@ -213,10 +213,27 @@ def sanitize_bss_tokens_boot_artifacts(api_schema):
     LOGGER.info("Done sanitizing bss_tokens_boot_artifacts")
 
 
+def _replace_nullable(d: dict):
+    if "nullable" in d and d["nullable"]:
+        try:
+            if isinstance(d["type"], list):
+                d["type"].append("null")
+            else:
+                d["type"] = [ d["type"], "null" ]
+        except KeyError:
+            d["type"] = [ "object", "null" ]
+    for v in d.values():
+        _replace_nullable(v)
+
+
 def perform_migrations():
     oas_data = pkgutil.get_data(__name__, "openapi/openapi.json")
     oas_json = jsonref.load(oas_data)
     api_schema = oas_json["components"]["schemas"]
+
+    # The nullable keyword works for OAS but not for jsonschema
+    _replace_nullable(api_schema)
+
     sanitize_options(api_schema)
     sanitize_session_templates(api_schema)
     sanitize_sessions(api_schema)
