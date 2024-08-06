@@ -243,7 +243,8 @@ def perform_migrations():
     sanitize_bss_tokens_boot_artifacts()
 
 
-if __name__ == "__main__":
-    backup_bos_data("pre-migration")
-    perform_migrations()
-    backup_bos_data("post-migration")
+if __name__ == "__main__":    
+    #backup_bos_data("pre-migration")
+    #perform_migrations()
+    #backup_bos_data("post-migration")
+    pass
