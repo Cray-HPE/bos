@@ -33,11 +33,6 @@ from bos.common.utils import exc_type_msg
 from bos.server.backup import backup_bos_data
 import bos.server.controllers.v2.options as options
 from bos.server.controllers.v2.sessiontemplates import validate_sanitize_session_template
-from bos.server.models.v2_component import V2Component as Component
-from bos.server.models.v2_component_actual_state import V2ComponentActualState as ComponentActualState
-from bos.server.models.v2_options import V2Options as Options
-from bos.server.models.v2_session import V2Session as Session
-from bos.server.models.v2_session_status import V2SessionStatus as SessionStatus
 import bos.server.redis_db_utils as dbutils
 from bos.server.utils import ParsingException
 
@@ -117,7 +112,6 @@ def sanitize_options(api_schema):
             LOGGER.warning("Removing unknown option '%s' with value '%s'", opt_name, opt_value)
             continue
         try:
-            Options.from_dict({ opt_name: opt_value })
             jsonschema.validate({ opt_name: opt_value }, api_schema["V2Options"])
         except Exception as exc:
             LOGGER.warning("Deleting option '%s' with value '%s'; reason: %s", opt_name, opt_value, exc)
@@ -137,7 +131,6 @@ def sanitize_sessions(api_schema):
     for st_key in response:
         data = db.get(st_key)
         try:
-            Session.from_dict(data)
             jsonschema.validate(data, api_schema["V2Session"])
         except Exception as exc:
             LOGGER.warning("Deleting session (reason: %s): %s", exc, data)
@@ -168,8 +161,7 @@ def sanitize_session_statuses(api_schema):
     for st_key in response:
         data = db.get(st_key)
         try:
-            SessionStatus.from_dict(data)
-            jsonschema.validate(data, api_schema["V2SessionStatus"])
+            jsonschema.validate(data, api_schema["V2SessionExtendedStatus"])
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
             LOGGER.exception("Error with session status")
@@ -183,7 +175,6 @@ def sanitize_components(api_schema):
     for st_key in response:
         data = db.get(st_key)
         try:
-            Component.from_dict(data)
             jsonschema.validate(data, api_schema["V2ComponentWithId"])
         except:
             LOGGER.warning("key = %s, data = %s", st_key, data)
