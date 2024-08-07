@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Added the authorization token back into the bos-reporter.
+
 ### Dependencies
 - Move to `redis` Python library version 5.0
 - Move Redis container from 7.2-alpine3.18 to 5.0-alpine3.12

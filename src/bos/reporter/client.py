@@ -29,6 +29,7 @@ fashion.
 import os
 import logging
 import subprocess
+import requests
 import time
 from functools import partial
 
@@ -67,10 +68,19 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
             LOGGER.error(
                 'get_auth_token failed to retrieve authorization token: code=%d: error=%s',
                 e.returncode, e.output)
-        except Exception:
-            LOGGER.exception('Unexpected exception')
+        except Exception as e:
+            LOGGER.exception(f"Unexpected exception: {e}")
         LOGGER.info("Spire Token not yet available; retrying in a few seconds.")
         time.sleep(2)
 
-
-requests_retry_session = partial(common_requests_retry_session, protocol=PROTOCOL)
+def authorized_requests_retry_session(*pargs, **kwargs) -> requests.session:
+    """
+    Returns a session with the authorization token included in the headers of the session's requests.
+    """
+    if 'protocol' not in kwargs:
+        kwargs['protocol'] = PROTOCOL
+    session = common_requests_retry_session(*pargs, **kwargs)
+    auth_token = get_auth_token()
+    headers = {'Authorization': f'Bearer {auth_token}'}
+    session.headers.update(headers)
+    return session
