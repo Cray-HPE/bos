@@ -35,7 +35,7 @@ from urllib3.exceptions import MaxRetryError
 from bos.common.utils import exc_type_msg
 from bos.reporter.components import BOSComponentException
 from bos.reporter.components import ENDPOINT as COMPONENT_ENDPOINT
-from bos.reporter.client import requests_retry_session
+from bos.reporter.client import authorized_requests_retry_session
 
 LOGGER = logging.getLogger(__name__)
 
@@ -57,7 +57,7 @@ def patch_component(component, properties, session=None):
     For a given <component>, patch the component's <properties> using
     the BOS API endpoint.
     """
-    session = session or requests_retry_session()
+    session = session or authorized_requests_retry_session()
     component_endpoint = f'{COMPONENT_ENDPOINT}/{component}'
     try:
         response = session.patch(component_endpoint, json=properties)

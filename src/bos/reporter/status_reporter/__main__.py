@@ -28,7 +28,7 @@ import re
 from time import sleep
 
 from bos.common.utils import duration_to_timedelta, exc_type_msg
-from bos.reporter.client import requests_retry_session
+from bos.reporter.client import authorized_requests_retry_session
 from bos.reporter.node_identity import read_identity
 from bos.reporter.components.state import report_state, BOSComponentException, UnknownComponent
 from bos.reporter.proc_cmdline import get_value_from_proc_cmdline
@@ -73,7 +73,7 @@ def report_state_until_success(component):
         sleep(time_to_wait)
         attempt += 1
         LOGGER.info("Attempt %s of contacting BOS...", attempt)
-        session = requests_retry_session()
+        session = authorized_requests_retry_session()
         try:
             bss_referral_token = get_value_from_proc_cmdline('bss_referral_token')
             state = {'bss_token': bss_referral_token}
