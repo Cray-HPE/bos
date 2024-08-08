@@ -31,7 +31,6 @@ import logging
 import subprocess
 import requests
 import time
-from functools import partial
 
 from bos.common.utils import requests_retry_session as common_requests_retry_session
 
