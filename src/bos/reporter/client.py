@@ -106,4 +106,7 @@ def requests_retry_session(retries=10, backoff_factor=0.5,
     # Must mount to http://
     # Mounting to only http will not work!
     session.mount("%s://" % protocol, adapter)
+    auth_token = get_auth_token()
+    headers = {'Authorization': f'Bearer {auth_token}'}
+    session.headers.update(headers)
     return session
