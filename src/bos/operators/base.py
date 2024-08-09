@@ -124,8 +124,7 @@ class BaseOperator(ABC):
         and yield each group in turn.
         If the max size is set to 0, just yield the entire list.
         """
-        for chunk in chunk_components(components, self.max_batch_size):
-            yield chunk
+        yield from chunk_components(components, self.max_batch_size)
 
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
@@ -294,8 +293,7 @@ def chunk_components(components: List[dict],
     If the max size is set to 0, just yield the entire list.
     """
     chunk_size = max_batch_size if max_batch_size > 0 else len(components)
-    for chunk in itertools.batched(components, chunk_size):
-        yield chunk
+    yield from itertools.batched(components, chunk_size)
 
 
 def _update_log_level() -> None:

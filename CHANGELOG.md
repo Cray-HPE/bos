@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.24.0] - 2024-08-09
+### Fixed
+- Added the authorization token back into the bos-reporter.
+
+### Dependencies
+- Move to `redis` Python library version 5.0
+- Move Redis container from 5.0-alpine3.12 to 7.2-alpine3.18
+
 ## [2.23.0] - 2024-07-30
 ### Added
 - New BOS v2 option `session_limit_required`
