@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.24] - 2024-08-09
+
+### Fixed
+- Added the authorization token back into the bos-reporter API requests
+
 ## [2.10.23] - 2024-07-29
 ### Added
 - New BOS v2 option `session_limit_required`
