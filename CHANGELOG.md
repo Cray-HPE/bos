@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.24] - 2024-08-09
+
 ### Fixed
 - Added the authorization token back into the bos-reporter API requests
 
