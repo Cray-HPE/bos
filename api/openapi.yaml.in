@@ -304,6 +304,7 @@ components:
         An empty string or null value is the same as specifying no limit.
       maxLength: 524288
       nullable: true
+      default: ""
     SessionTemplateDescription:
       type: string
       description: An optional description for the Session Template.
@@ -411,6 +412,7 @@ components:
         links:
           $ref: '#/components/schemas/LinkListReadOnly'
       additionalProperties: false
+      required: [ boot_sets ]
     V2SessionTemplateValidation:
       description: |
         Message describing errors or incompleteness in a Session Template.
@@ -857,11 +859,58 @@ components:
           minimum: 0
           maximum: 1048576
       additionalProperties: false
+      minProperties: 1
+    V2ComponentWithId:
+      description: |
+        The current and desired artifacts state for a Component, and
+        the Session responsible for the Component's current state.
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/V2ComponentId'
+        actual_state:
+          $ref: '#/components/schemas/V2ComponentActualState'
+        desired_state:
+          $ref: '#/components/schemas/V2ComponentDesiredState'
+        staged_state:
+          $ref: '#/components/schemas/V2ComponentStagedState'
+        last_action:
+          $ref: '#/components/schemas/V2ComponentLastAction'
+        event_stats:
+          $ref: '#/components/schemas/V2ComponentEventStats'
+        status:
+          $ref: '#/components/schemas/V2ComponentStatus'
+        enabled:
+          type: boolean
+          description: A flag indicating if actions should be taken for this Component.
+        error:
+          type: string
+          description: A description of the most recent error to impact the Component.
+          maxLength: 65536
+        session:
+          oneOf:
+            - $ref: '#/components/schemas/V2SessionName'
+            - $ref: '#/components/schemas/EmptyString'
+        retry_policy:
+          type: integer
+          description: |
+            The maximum number attempts per action when actions fail.
+            Defaults to the global default_retry_policy if not set
+          example: 1
+          minimum: 0
+          maximum: 1048576
+      additionalProperties: false
+      required: [ id ]
     V2ComponentArray:
       description: An array of Component states.
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
+    V2ComponentArrayWithIds:
+      description: An array of Component states with associated Ids.
+      type: array
+      items:
+        $ref: '#/components/schemas/V2ComponentWithId'
     V2ComponentsFilterByIds:
       description: |
         Information for patching multiple Components by listing their IDs.
@@ -1027,7 +1076,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/V2ComponentArray'
+            $ref: '#/components/schemas/V2ComponentArrayWithIds'
     V2componentsUpdateRequest:
       description: The state for an array of Components
       required: true
@@ -1036,7 +1085,7 @@ components:
           schema:
             oneOf:
               - $ref: '#/components/schemas/V2ComponentsUpdate'
-              - $ref: '#/components/schemas/V2ComponentArray'
+              - $ref: '#/components/schemas/V2ComponentArrayWithIds'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
