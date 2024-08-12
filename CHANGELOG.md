@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- BOS automatically tags IMS images with the 'sbps-project: true' tag when using SBPS as the rootfs provider.
 
 ## [2.25.0] - 2024-08-15
 ### Changed
