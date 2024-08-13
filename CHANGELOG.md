@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Modified API spec to enforce previously-recommended limits
+- Make `BootSetName` a write-only property in a boot set, and require it to be equal to the name mapping to that
+  boot set inside the session template that contains it
+- Modified session template creation and patching to validate boot set names
+- Require boot sets to have some form of node/group/role list specified
+
+### Dependencies
+- Move to `openapi-generator-cli` v7.7.0
 
 ## [2.24.0] - 2024-08-09
 ### Fixed
@@ -85,8 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set UWSGI `max-requests` and `harakiri` options to help avoid OOM and scaling issues.
 
 ### Dependencies
-- Bump `openapi-generator-cli` from v6.6.0 to v7.6.0, in preparation for moving the API
-  spec to OAS 3.1
+- Bumped `openapi-generator-cli` from v6.6.0 to v7.6.0
 
 ### Fixed
 - Addressed linter complaints

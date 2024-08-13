@@ -1,5 +1,5 @@
 # Cray Boot Orchestration Service (BOS) API Specification
-openapi: "3.0.2"
+openapi: "3.0.3"
 
 info:
   title: "Boot Orchestration Service"
@@ -107,125 +107,88 @@ components:
     AgeString:
       type: string
       description: Age in minutes (e.g. "3m"), hours (e.g. "5h"), days (e.g. "10d"), or weeks (e.g. "2w").
-      example: 3d
+      example: "3d"
       pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
       minLength: 1
       # This allows for over 10 years using the smallest units (minutes)
       maxLength: 8
     BootInitrdPath:
       type: string
-      description: |
-        A path to the initrd to use for booting.
-
-        It is recommended that this should be no more than 4095 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: A path to the initrd to use for booting.
       example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/initrd"
+      maxLength: 4095
     BootKernelPath:
       type: string
-      description: |
-        A path to the kernel to use for booting.
-
-        It is recommended that this should be no more than 4095 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: A path to the kernel to use for booting.
       example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/kernel"
+      maxLength: 4095
     BootManifestPath:
       type: string
       description: |
         A path identifying the metadata describing the components of the boot image.
         This could be a URI, URL, etc, depending on the type of the Boot Set.
-
-        It is recommended that this should be 1-4095 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
       example: "s3://boot-images/9e3c75e1-ac42-42c7-873c-e758048897d6/manifest.json"
+      minLength: 1
+      maxLength: 4095
     BootKernelParameters:
       type: string
-      description: |
-        The kernel parameters to use to boot the nodes.
-
-        Linux kernel parameters may never exceed 4096 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The kernel parameters to use to boot the nodes.
       example: "console=ttyS0,115200 bad_page=panic crashkernel=340M hugepagelist=2m-2g intel_iommu=off intel_pstate=disable iommu=pt ip=dhcp numa_interleave_omit=headless numa_zonelist_order=node oops=panic pageblock_order=14 pcie_ports=native printk.synchronous=y rd.neednet=1 rd.retry=10 rd.shell turbo_boost_limit=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
+      maxLength: 4096
     BootSetEtag:
       type: string
-      description: |
-        This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
-
-        ETags are defined as being 1-65536 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: This is the 'entity tag'. It helps verify the version of metadata describing the components of the boot image we are working with.
       example: "1cc4eef4f407bd8a62d7d66ee4b9e9c8"
+      maxLength: 65536
     BootSetName:
       type: string
       description: |
         The Boot Set name.
 
-        It is recommended that:
-        * Boot Set names should be 1-127 characters in length.
-        * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
-        * Boot Set names should begin and end with a letter or digit.
-
-        These restrictions are not enforced in this version of BOS, but they are
-        targeted to start being enforced in an upcoming BOS version.
+        * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
+        * Boot Set names must begin and end with a letter or digit.
       example: "compute"
+      minLength: 1
+      maxLength: 127
+      pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
+      writeOnly: true
     BootSetRootfsProvider:
       type: string
-      description: |
-        The root file system provider.
-
-        It is recommended that this should be 1-511 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The root file system provider.
       example: "cpss3"
+      minLength: 1
+      maxLength: 511
     BootSetRootfsProviderPassthrough:
       type: string
       description: |
         The root file system provider passthrough.
         These are additional kernel parameters that will be appended to
         the 'rootfs=<protocol>' kernel parameter
-
-        Linux kernel parameters may never exceed 4096 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
       example: "dvs:api-gw-service-nmn.local:300:nmn0"
+      maxLength: 4096
     BootSetType:
       type: string
       description: |
         The MIME type of the metadata describing the components of the boot image. This type controls how BOS processes the path attribute.
-
-        It is recommended that this should be 1-127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
       example: "s3"
+      minLength: 1
+      maxLength: 127
     CfsConfiguration:
       type: string
-      description: |
-        The name of configuration to be applied.
-
-        It is recommended that this should be no more than 127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The name of configuration to be applied.
       example: "compute-23.4.0"
+      maxLength: 127
     EmptyString:
       type: string
       description: An empty string value.
       enum: [ '' ]
+      maxLength: 0
     EmptyStringNullable:
       type: string
       description: An empty string value.
       enum: [ '' ]
+      nullable: true
+      maxLength: 0
     EnableCfs:
       type: boolean
       description: |
@@ -233,14 +196,10 @@ components:
       default: true
     HardwareComponentName:
       type: string
-      description: |
-        Hardware component name (xname).
-
-        It is recommended that this should be 1-127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Hardware component name (xname).
       example: "x3001c0s39b0n0"
+      minLength: 1
+      maxLength: 127
     Healthz:
       description: Service health status
       type: object
@@ -272,57 +231,34 @@ components:
         $ref: '#/components/schemas/Link'
     NodeList:
       type: array
-      description: |
-        A node list that is required to have at least one node.
-
-        It is recommended that this list should be 1-65535 items in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: A node list that is required to have at least one node.
       minItems: 1
+      maxItems: 65535
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
       items:
         $ref: '#/components/schemas/HardwareComponentName'
     NodeGroupList:
       type: array
-      description: |
-        Node group list. Allows actions against associated nodes by logical groupings.
-
-        It is recommended that this list should be 1-4095 items in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Node group list. Allows actions against associated nodes by logical groupings.
       minItems: 1
+      maxItems: 4095
       items:
         type: string
-        description: |
-          Name of a user-defined logical group in the Hardware State Manager (HSM).
-
-          It is recommended that this should be 1-127 characters in length.
-
-          This restriction is not enforced in this version of BOS, but it is
-          targeted to start being enforced in an upcoming BOS version.
+        description: Name of a user-defined logical group in the Hardware State Manager (HSM).
+        minLength: 1
+        maxLength: 127
     NodeRoleList:
       type: array
-      description: |
-        Node role list. Allows actions against nodes with associated roles.
-
-        It is recommended that this list should be 1-1023 items in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Node role list. Allows actions against nodes with associated roles.
       minItems: 1
+      maxItems: 1023
       example: ["Compute", "Application"]
       items:
         type: string
-        description: |
-          Name of a role that is defined in the Hardware State Manager (HSM).
-
-          It is recommended that this should be 1-127 characters in length.
-
-          This restriction is not enforced in this version of BOS, but it is
-          targeted to start being enforced in an upcoming BOS version.
+        description: Name of a role that is defined in the Hardware State Manager (HSM).
         example: "Compute"
+        minLength: 1
+        maxLength: 127
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
       type: object
@@ -365,43 +301,32 @@ components:
 
         Alternatively, the limit can be set to "*", which means no limit.
 
-        It is recommended that this should be 1-65535 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+        An empty string or null value is the same as specifying no limit.
+      maxLength: 524288
+      nullable: true
+      default: ""
     SessionTemplateDescription:
       type: string
-      description: |
-        An optional description for the Session Template.
-
-        It is recommended that this should be 1-1023 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: An optional description for the Session Template.
+      minLength: 1
+      maxLength: 1023
     SessionTemplateName:
       type: string
       description: |
         Name of the Session Template.
 
-        It is recommended to use names which meet the following restrictions:
-        * Maximum length of 127 characters.
+        The name must:
         * Use only letters, digits, periods (.), dashes (-), and underscores (_).
         * Begin and end with a letter or digit.
-
-        These restrictions are not enforced in this version of BOS, but they are
-        targeted to start being enforced in an upcoming BOS version.
       minLength: 1
+      maxLength: 127
+      pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
       example: "cle-1.0.0"
     TenantName:
       type: string
-      description: |
-        Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
-
-        It is recommended that this should be no more than 127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: Name of a tenant. Used for multi-tenancy. An empty string means no tenant.
       example: "vcluster-my-tenant1"
+      maxLength: 127
     Version:
       description: Version data
       type: object
@@ -429,6 +354,7 @@ components:
         the same.
       nullable: true
       readOnly: true
+      maxLength: 127
     V2CfsParameters:
       type: object
       description: |
@@ -453,17 +379,15 @@ components:
         name:
           type: string
           minLength: 1
+          maxLength: 127
+          pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
           readOnly: true
           description: |
             Name of the Session Template.
 
-            It is recommended to use names which meet the following restrictions:
-            * Maximum length of 127 characters.
+            Names must:
             * Use only letters, digits, periods (.), dashes (-), and underscores (_).
             * Begin and end with a letter or digit.
-
-            These restrictions are not enforced in this version of BOS, but they are
-            targeted to start being enforced in an upcoming BOS version.
           example: "cle-1.0.0"
         tenant:
           $ref: '#/components/schemas/V2TenantName'
@@ -478,20 +402,17 @@ components:
           description: |
             Mapping from Boot Set names to Boot Sets.
 
-            It is recommended that:
-            * At least one Boot Set should be defined, because a Session Template with no
-              Boot Sets is not functional.
-            * Boot Set names should be 1-127 characters in length.
-            * Boot Set names should use only letters, digits, periods (.), dashes (-), and underscores (_).
-            * Boot Set names should begin and end with a letter or digit.
-
-            These restrictions are not enforced in this version of BOS, but they are
-            targeted to start being enforced in an upcoming BOS version.
+            * Boot Set names must be 1-127 characters in length.
+            * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names must begin and end with a letter or digit.
+          minProperties: 1
+          maxProperties: 127
           additionalProperties:
             $ref: '#/components/schemas/V2BootSet'
         links:
           $ref: '#/components/schemas/LinkListReadOnly'
       additionalProperties: false
+      required: [ boot_sets ]
     V2SessionTemplateValidation:
       description: |
         Message describing errors or incompleteness in a Session Template.
@@ -551,10 +472,12 @@ components:
     V2SessionStartTime:
       type: string
       description: When the Session was created.
+      maxLength: 127
     V2SessionEndTime:
       type: string
       nullable: true
       description: When the Session was completed. A null value means the Session has not ended.
+      maxLength: 127
     V2SessionStatus:
       type: object
       description: |
@@ -572,13 +495,20 @@ components:
           description: |
             Error which prevented the Session from running.
             A null value means the Session has not encountered an error.
+          maxLength: 65536
       additionalProperties: false
-    V2BootSet:
+    V2BootSetData:
       description: |
         A Boot Set is a collection of nodes defined by an explicit list, their functional
         role, and their logical groupings. This collection of nodes is associated with one
         set of boot artifacts and optional additional records for configuration and root
         filesystem provisioning.
+
+        A boot set requires at least one of the following fields to be specified:
+        node_list, node_roles_groups, node_groups
+
+        If specified, the name field must match the key mapping to this boot set in the
+        boot_sets field of the containing V2SessionTemplate.
       type: object
       properties:
         name:
@@ -613,6 +543,13 @@ components:
           $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
       additionalProperties: false
       required: [path, type]
+    V2BootSet:
+      allOf:
+        - $ref: '#/components/schemas/V2BootSetData'
+        - anyOf:
+          - required: [node_list]
+          - required: [node_roles_groups]
+          - required: [node_groups]
     V2SessionTemplateArray:
       description: An array of Session Templates.
       type: array
@@ -648,6 +585,7 @@ components:
             A comma-separated list of nodes, representing the initial list of nodes
             the Session should operate against.  The list will remain even if
             other Sessions have taken over management of the nodes.
+          maxLength: 524288
         include_disabled:
           type: boolean
           description: |
@@ -655,6 +593,7 @@ components:
         status:
           $ref: '#/components/schemas/V2SessionStatus'
       additionalProperties: false
+      required: [name, operation, template_name]
     V2SessionUpdate:
       description: |
         A Session update object
@@ -670,6 +609,7 @@ components:
             A comma-separated list of nodes, representing the initial list of nodes
             the Session should operate against.  The list will remain even if
             other Sessions have taken over management of the nodes.
+          maxLength: 524288
         status:
           $ref: '#/components/schemas/V2SessionStatus'
       additionalProperties: false
@@ -766,16 +706,13 @@ components:
       maxLength: 65535
     V2ComponentId:
       type: string
-      description: |
-        The Component's ID. (e.g. xname for hardware Components)
-
-        It is recommended that this should be 1-127 characters in length.
-
-        This restriction is not enforced in this version of BOS, but it is
-        targeted to start being enforced in an upcoming BOS version.
+      description: The Component's ID. (e.g. xname for hardware Components)
+      minLength: 1
+      maxLength: 127
     V2ComponentIdList:
       description: A list of Component IDs (xnames)
       type: array
+      maxItems: 32768
       items:
         $ref: '#/components/schemas/V2ComponentId'
     V2ComponentLastUpdated:
@@ -837,6 +774,7 @@ components:
         action:
           type: string
           description: A description of the most recent operator/action to impact the Component.
+          maxLength: 1024
         failed:
           type: boolean
           description: Denotes if the last action failed to accomplish its task
@@ -849,20 +787,29 @@ components:
         power_on_attempts:
           type: integer
           description: How many attempts have been made to power-on since the last time the node was in the desired state.
+          minimum: 0
+          maximum: 1048576
         power_off_graceful_attempts:
           type: integer
           description: How many attempts have been made to power-off gracefully since the last time the node was in the desired state.
+          minimum: 0
+          maximum: 1048576
         power_off_forceful_attempts:
           type: integer
           description: How many attempts have been made to power-off forcefully since the last time the node was in the desired state.
+          minimum: 0
+          maximum: 1048576
       additionalProperties: false
+    V2ComponentPhase:
+      type: string
+      description: The current phase of the Component in the boot process.
+      maxLength: 128
     V2ComponentStatus:
       description: Status information for the Component
       type: object
       properties:
         phase:
-          type: string
-          description: The current phase of the Component in the boot process.
+          $ref: '#/components/schemas/V2ComponentPhase'
         status:
           type: string
           description: The current status of the Component.  More detailed than phase.
@@ -870,6 +817,7 @@ components:
         status_override:
           type: string
           description: If set, this will override the status value.
+          maxLength: 65536
       additionalProperties: false
     V2Component:
       description: |
@@ -897,6 +845,7 @@ components:
         error:
           type: string
           description: A description of the most recent error to impact the Component.
+          maxLength: 65536
         session:
           oneOf:
             - $ref: '#/components/schemas/V2SessionName'
@@ -910,11 +859,58 @@ components:
           minimum: 0
           maximum: 1048576
       additionalProperties: false
+      minProperties: 1
+    V2ComponentWithId:
+      description: |
+        The current and desired artifacts state for a Component, and
+        the Session responsible for the Component's current state.
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/V2ComponentId'
+        actual_state:
+          $ref: '#/components/schemas/V2ComponentActualState'
+        desired_state:
+          $ref: '#/components/schemas/V2ComponentDesiredState'
+        staged_state:
+          $ref: '#/components/schemas/V2ComponentStagedState'
+        last_action:
+          $ref: '#/components/schemas/V2ComponentLastAction'
+        event_stats:
+          $ref: '#/components/schemas/V2ComponentEventStats'
+        status:
+          $ref: '#/components/schemas/V2ComponentStatus'
+        enabled:
+          type: boolean
+          description: A flag indicating if actions should be taken for this Component.
+        error:
+          type: string
+          description: A description of the most recent error to impact the Component.
+          maxLength: 65536
+        session:
+          oneOf:
+            - $ref: '#/components/schemas/V2SessionName'
+            - $ref: '#/components/schemas/EmptyString'
+        retry_policy:
+          type: integer
+          description: |
+            The maximum number attempts per action when actions fail.
+            Defaults to the global default_retry_policy if not set
+          example: 1
+          minimum: 0
+          maximum: 1048576
+      additionalProperties: false
+      required: [ id ]
     V2ComponentArray:
       description: An array of Component states.
       type: array
       items:
         $ref: '#/components/schemas/V2Component'
+    V2ComponentArrayWithIds:
+      description: An array of Component states with associated Ids.
+      type: array
+      items:
+        $ref: '#/components/schemas/V2ComponentWithId'
     V2ComponentsFilterByIds:
       description: |
         Information for patching multiple Components by listing their IDs.
@@ -922,14 +918,9 @@ components:
       properties:
         ids:
           type: string
-          description: |
-            A comma-separated list of Component IDs.
-
-            It is recommended that this should be 1-65535 characters in length.
-
-            This restriction is not enforced in this version of BOS, but it is
-            targeted to start being enforced in an upcoming BOS version.
+          description: A comma-separated list of Component IDs.
           minLength: 1
+          maxLength: 65535
         session:
           $ref: '#/components/schemas/EmptyStringNullable'
       required: [ids]
@@ -988,7 +979,7 @@ components:
           description: |
             Delete complete Sessions that are older than cleanup_completed_session_ttl (in minutes, hours, days, or weeks).
             0 disables cleanup behavior.
-          example: 3d
+          example: "3d"
           pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
@@ -1001,7 +992,7 @@ components:
           description: |
             The maximum amount of time a Component's actual state is considered valid (in minutes, hours, days, or weeks).
             0 disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
-          example: 6h
+          example: "6h"
           pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
           # This allows for over 10 years using the smallest units (minutes)
@@ -1013,13 +1004,14 @@ components:
             If false, BOS will continue to maintain the state of the nodes declaratively, even after a Session finishes.
         discovery_frequency:
           type: integer
-          description: How frequently the BOS discovery agent syncs new Components from HSM. (in seconds)
+          description: How frequently the BOS discovery agent syncs new Components from HSM (in seconds)
           minimum: 0
           # A little over a year
           maximum: 33554432
         logging_level:
           type: string
           description: The logging level for all BOS services
+          pattern: '^([dD][eE][bB][uU][gG]|[iI][nN][fF][oO]|[wW][aA][rR][nN][iI][nN][gG]|[eE][rR][rR][oO][rR]|[cC][rR][iI][tT][iI][cC][aA][lL])$'
         max_boot_wait_time:
           type: integer
           description: How long BOS will wait for a node to boot into a usable state before rebooting it again (in seconds)
@@ -1040,7 +1032,7 @@ components:
           maximum: 1048576
         polling_frequency:
           type: integer
-          description: How frequently the BOS operators check Component state for needed actions. (in seconds)
+          description: How frequently the BOS operators check Component state for needed actions (in seconds)
           minimum: 0
           # Over 12 days
           maximum: 1048576
@@ -1060,6 +1052,8 @@ components:
           type: boolean
           description: If true, Sessions cannot be created without specifying the limit parameter.
       additionalProperties: true
+      minProperties: 1
+      maxProperties: 1024
 
   requestBodies:
     V2sessionCreateRequest:
@@ -1082,7 +1076,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/V2ComponentArray'
+            $ref: '#/components/schemas/V2ComponentArrayWithIds'
     V2componentsUpdateRequest:
       description: The state for an array of Components
       required: true
@@ -1091,7 +1085,7 @@ components:
           schema:
             oneOf:
               - $ref: '#/components/schemas/V2ComponentsUpdate'
-              - $ref: '#/components/schemas/V2ComponentArray'
+              - $ref: '#/components/schemas/V2ComponentArrayWithIds'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
@@ -1123,12 +1117,6 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Healthz'
-    SessionTemplateName:
-      description: Session Template name
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/SessionTemplateName'
     Version:
       description: |
         Get version details
@@ -1274,7 +1262,7 @@ components:
       description: Session ID
       required: true
       schema:
-        type: string
+        $ref: '#/components/schemas/V2SessionName'
     V2SessionsMaxAgeQueryParam:
       name: max_age
       schema:
@@ -1317,6 +1305,7 @@ paths:
       tags:
         - version
       x-openapi-router-controller: bos.server.controllers.base
+      operationId: root_get
       responses:
         200:
           description: A collection of Versions
@@ -1635,13 +1624,13 @@ paths:
             for selecting groups of Components.
         - name: session
           schema:
-            type: string
+            $ref: '#/components/schemas/V2SessionName'
           in: query
           description: |-
             Retrieve the Components with the given Session ID.
         - name: staged_session
           schema:
-            type: string
+            $ref: '#/components/schemas/V2SessionName'
           in: query
           description: |-
             Retrieve the Components with the given staged Session ID.
@@ -1653,13 +1642,14 @@ paths:
             Retrieve the Components with the "enabled" state.
         - name: phase
           schema:
-            type: string
+            $ref: '#/components/schemas/V2ComponentPhase'
           in: query
           description: |-
             Retrieve the Components in the given phase.
         - name: status
           schema:
             type: string
+            maxLength: 512
           in: query
           description: |-
             Retrieve the Components with the given status.
