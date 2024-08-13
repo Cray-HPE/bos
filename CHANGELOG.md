@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified session template creation and patching to validate boot set names
 - Require boot sets to have some form of node/group/role list specified
 
+### Dependencies
+- Move to `openapi-generator-cli` v7.7.0
+
 ## [2.24.0] - 2024-08-09
 ### Fixed
 - Added the authorization token back into the bos-reporter.
