@@ -41,6 +41,7 @@ from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
 from bos.server.models.v2_session_update import V2SessionUpdate as SessionUpdate  # noqa: E501
+from bos.server.utils import ParsingException
 from .boot_set import validate_boot_sets, BOOT_SET_ERROR
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
@@ -399,7 +400,3 @@ def _age_to_timestamp(age):
             delta[interval] = int(result.groups()[0])
     delta = timedelta(**delta)
     return get_current_time() - delta
-
-
-class ParsingException(Exception):
-    pass
