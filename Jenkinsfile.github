@@ -23,7 +23,7 @@
  *  OTHER DEALINGS IN THE SOFTWARE.
  *
  */
-@Library('cms-meta-tools') _
+@Library('cms-meta-tools@gitclone') _
 @Library('csm-shared-library') __
 
 pipeline {
