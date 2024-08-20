@@ -154,7 +154,7 @@ class BaseOperator(ABC):
             components = self._act(components)
         except Exception as e:
             LOGGER.error("An unhandled exception was caught while trying to act on components: %s",
-                         e, exec_info=True)
+                         e, exc_info=True)
             for component in components:
                 component["error"] = str(e)
         self._update_database(components)
