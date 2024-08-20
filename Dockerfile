@@ -58,6 +58,12 @@ RUN mv lib/requirements.txt lib/bos/server/requirements.txt
 # Accordingly, we relax their requirements file.
 RUN cat lib/bos/server/requirements.txt && \
     sed -i 's/Flask == 2\(.*\)$/Flask >= 2\1\nFlask < 3/' lib/bos/server/requirements.txt && \
+# The openapi-generator creates a requirements file that specifies exactly connexion[swagger-ui] <= 2.14.2
+# However, using connexion[swagger-ui] >] 3 is also compatible, and helps resolves a CVE.
+# Accordingly, we relax their requirements file.
+    cat lib/bos/server/requirements.txt && \
+    sed -i 's/connexion\[swagger-ui\] <= 2.14.2\(.*\)$/connexion\[swagger-ui\] >= 3\1/' lib/bos/server/requirements.txt && \
+# Cat out the file, so we can see it in the log.
     cat lib/bos/server/requirements.txt
 # Then copy all src into the base image
 COPY src/bos/ /app/lib/bos/
