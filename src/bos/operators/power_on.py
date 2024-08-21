@@ -25,11 +25,13 @@
 from collections import defaultdict
 import logging
 from requests import HTTPError
+from typing import Dict, List, Set, Tuple, Union
 
-from bos.common.utils import exc_type_msg
+from bos.common.utils import exc_type_msg, get_image_id_from_kernel, using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
 from bos.operators.utils.clients import bss
 from bos.operators.utils.clients import pcs
+from bos.operators.utils.clients.ims import tag_image
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
@@ -59,12 +61,19 @@ class PowerOnOperator(BaseOperator):
             HSMState()
         ]
 
-    def _act(self, components):
+    def _act(self, components: Union[List[dict],None]):
         if not components:
             return components
         self._preset_last_action(components)
+
+        boot_artifacts, sessions = self._sort_components_by_boot_artifacts(components)
+
         try:
-            self._set_bss(components)
+            self._tag_images(boot_artifacts, components)
+        except Exception as e:
+            raise Exception(f"Error encountered tagging images {e}.")
+        try:
+            self._set_bss(boot_artifacts, bos_sessions=sessions)
         except Exception as e:
             raise Exception(f"Error encountered setting BSS information: {e}") from e
         try:
@@ -78,7 +87,43 @@ class PowerOnOperator(BaseOperator):
             raise Exception(f"Error encountered calling CAPMC to power on: {e}") from e
         return components
 
-    def _set_bss(self, components, retries=5):
+    def _sort_components_by_boot_artifacts(self, components: List[dict]) -> tuple[Dict, Dict]:
+        """
+        Create a two dictionaries.
+        The first dictionary has keys with a unique combination of boot artifacts associated with
+        a single boot image. They appear in this order:
+         * kernel
+         * kernel parameters
+         * initrd
+        The first dictionary's values are a set of the nodes that boot with those boot
+        artifacts.
+
+        The second dictionary has keys that are nodes and values are that node's BOS
+        session.
+
+        Inputs:
+        * components: A list where each element is a component describe by a dictionary
+
+        Returns: A tuple containing the first and second dictionary.
+        """
+        boot_artifacts = defaultdict(set)
+        bos_sessions = {}
+        for component in components:
+            # Handle the boot artifacts
+            nodes_boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
+            kernel = nodes_boot_artifacts.get('kernel')
+            kernel_parameters = nodes_boot_artifacts.get('kernel_parameters')
+            initrd = nodes_boot_artifacts.get('initrd')
+            if not any([kernel, kernel_parameters, initrd]):
+                continue
+            key = (kernel, kernel_parameters, initrd)
+            boot_artifacts[key].add(component['id'])
+            # Handle the session
+            bos_sessions[component['id']] = component.get('session', "")
+
+        return (boot_artifacts, bos_sessions)
+
+    def _set_bss(self, boot_artifacts, bos_sessions, retries=5):
         """
         Set the boot artifacts (kernel, kernel parameters, and initrd) in BSS.
         Receive a BSS_REFERRAL_TOKEN from BSS.
@@ -88,26 +133,12 @@ class PowerOnOperator(BaseOperator):
         Because the connection to the BSS tokens database can be lost due to
         infrequent use, retry up to retries number of times.
         """
-        if not components:
+        if not boot_artifacts:
             # If we have been passed an empty list, there is nothing to do.
             LOGGER.debug("_set_bss: No components to act on")
             return
-        parameters = defaultdict(set)
-        sessions = {}
-        for component in components:
-            # Handle the boot artifacts
-            boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
-            kernel = boot_artifacts.get('kernel')
-            kernel_parameters = boot_artifacts.get('kernel_parameters')
-            initrd = boot_artifacts.get('initrd')
-            if not any([kernel, kernel_parameters, initrd]):
-                continue
-            key = (kernel, kernel_parameters, initrd)
-            parameters[key].add(component['id'])
-            # Handle the session
-            sessions[component['id']] = component.get('session', "")
         bss_tokens = []
-        for key, nodes in parameters.items():
+        for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
                 resp = bss.set_bss(node_set=nodes, kernel_params=kernel_parameters,
@@ -134,7 +165,7 @@ class PowerOnOperator(BaseOperator):
                 for node in nodes:
                     bss_tokens.append({"id": node,
                                        "desired_state": {"bss_token": token},
-                                       "session": sessions[node]})
+                                       "session": bos_sessions[node]})
         LOGGER.info('Found %d components that require BSS token updates', len(bss_tokens))
         if not bss_tokens:
             return
@@ -146,6 +177,56 @@ class PowerOnOperator(BaseOperator):
         LOGGER.debug('Updated components (minus desired_state data): %s',
                      redacted_component_updates)
         self.bos_client.components.update_components(bss_tokens)
+
+    def _tag_images(self, boot_artifacts: Dict[Tuple[str, str, str], Set[str]], components: List[dict]) -> None:
+        """
+        If the component is receiving its root file system via the SBPS provisioner,
+        then tag that image in IMS, so that SBPS makes it available.
+        This requires finding the IMS image ID associated with each component.
+        Many components may be booted with the same image, but the image only needs to
+        be tagged once.
+
+        Inputs:
+        * boot_artifacts: A dictionary keyed with a unique combination of boot artifacts
+                          in this order:
+                          * kernel
+                          * kernel parameters
+                          * initrd
+                          These boot artifacts together represent a unique boot image
+                          and are used to identify that image.
+                          The values are the set of components being booted with that image.
+        * components: A list where each element is a component describe by a dictionary
+                      This is used to update the component with an error should one
+                      occur.
+        """
+        if not boot_artifacts:
+            # If we have been passed an empty dictionary, there is nothing to do.
+            LOGGER.debug("_tag_images: No components to act on.")
+            return
+
+        image_ids = set()
+        image_id_to_nodes = {}
+        for boot_artifact, components_list in boot_artifacts.items():
+            kernel_parameters = boot_artifact[1]
+            if using_sbps_check_kernel_parameters(kernel_parameters):
+                # Get the image ID
+                kernel = boot_artifact[0]
+                image_id = get_image_id_from_kernel(kernel)
+                # Add it to the set.
+                image_ids.add(image_id)
+                # Map image IDs to nodes
+                image_id_to_nodes[image_id] = components_list
+
+        my_components_by_id = components_by_id(components)
+        for image in image_ids:
+            try:
+                tag_image(image, "set", "sbps-project", "true")
+            except Exception as e:
+                components_to_update = []
+                for node in image_id_to_nodes[image]:
+                    my_components_by_id[node]["error"] = str(e)
+                    components_to_update.append(my_components_by_id[node])
+                self._update_database(components_to_update)
 
 if __name__ == '__main__':
     main(PowerOnOperator)

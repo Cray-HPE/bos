@@ -28,6 +28,7 @@ from dateutil.parser import parse
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
+from typing import List
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
@@ -116,3 +117,87 @@ def exc_type_msg(exc: Exception) -> str:
     (e.g. TypeError: 'int' object is not subscriptable)
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
+
+def get_image_id(component: str) -> str:
+    """
+    Extract the IMS image ID from the path to the kernel
+    We expect it to look something like this:
+    s3://boot-images/fbcc5b02-b6a4-46a8-9402-2b7138adc327/kernel
+    """
+    # Get kernel's path
+    boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
+    kernel = boot_artifacts.get('kernel')
+    image_id = get_image_id_from_kernel(kernel)
+    return image_id
+
+
+def get_image_id_from_kernel(kernel_path: str) -> str:
+    # Extract image ID from kernel path
+    pattern = re.compile('.*//.*/(.*)/kernel')
+    match = pattern.match(kernel_path)
+    image_id = match.group(1)
+    return image_id
+
+def using_sbps(component: str) -> bool:
+    """
+    If the component is using the Scalable Boot Provisioning Service (SBPS) to
+    provide the root filesystem, then return True.
+    Otherwise, return False.
+
+    The kernel parameters will contain the string root=sbps-s3 if it is using
+    SBPS.
+
+    Return True if it is and False if it is not.
+    """
+    # Get the kernel boot parameters
+    boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
+    kernel_parameters = boot_artifacts.get('kernel_parameters')
+    return using_sbps_check_kernel_parameters(kernel_parameters)
+
+def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
+    """
+    Check the kernel boot parameters to see if the image is using the
+    rootfs provider 'sbps'.
+    SBPS is the Scalable Boot Provisioning Service (SBPS).
+    The kernel parameters will contain the string root=sbps-s3 if it is using
+    SBPS.
+
+    Return True if it is and False if it is not.
+    """
+    # Check for the 'root=sbps-s3' string.
+    pattern = re.compile("root=sbps-s3")
+    match = pattern.search(kernel_parameters)
+    if match:
+        return True
+    return False
+
+def components_by_id(components: List[dict]) -> dict:
+    """
+    Input:
+    * components: a list containing individual components
+    Return:
+    A dictionary with the name of each component as the
+    key and the value being the entire component itself.
+
+    Purpose: It makes searching more efficient because you can
+    index by component name.
+    """
+    components_by_id = {}
+    for component in components:
+        id = component["id"]
+        components_by_id[id] = component
+
+    return components_by_id
+
+def reverse_components_by_id(components_by_id: dict) -> List[dict]:
+    """
+    Input:
+    components_by_id: a dictionary with the name of each component as the
+    key and the value being the entire component itself.
+    Return:
+    A list with each component as an element
+
+    Purpose: Reverse the effect of components_by_id.
+    """
+    components = [component for component in components_by_id.values()]
+    return components
