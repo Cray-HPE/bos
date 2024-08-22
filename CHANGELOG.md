@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.26.1] - 2024-08-22
+### Fixed
+- Fix boot set schema validation bug preventing valid session templates from being created
+
 ## [2.26.0] - 2024-08-20
 ### Added
 - BOS automatically tags IMS images with the 'sbps-project: true' tag when using SBPS as the rootfs provider.
