@@ -54,6 +54,7 @@ EXAMPLE_SESSION_TEMPLATE = {
     "enable_cfs": True,
     "name": "name-your-template"}
 
+BOOT_SET_NODE_FIELDS = [ "node_list", "node_roles_groups", "node_groups" ]
 
 def _sanitize_xnames(st_json):
     """
@@ -79,10 +80,10 @@ def _validate_sanitize_session_template(session_template_id, template_data):
     # The boot_sets field is required.
     if "boot_sets" not in template_data:
             raise ParsingException("Missing required 'boot_sets' field")
-
-    # All keys in the boot_sets mapping must match the 'name' fields in the
-    # boot sets to which they map (if they contain a 'name' field).
+    
     for bs_name, bs in template_data["boot_sets"].items():
+        # All keys in the boot_sets mapping must match the 'name' fields in the
+        # boot sets to which they map (if they contain a 'name' field).
         if "name" not in bs:
             # Set the field here -- this allows the name to be validated
             # per the schema later
@@ -90,6 +91,11 @@ def _validate_sanitize_session_template(session_template_id, template_data):
         elif bs["name"] != bs_name:
             raise ParsingException(f"boot_sets key ({bs_name}) does not match 'name' "
                                    f"field of corresponding boot set ({bs["name"]})")
+
+        # Also, validate that each boot set has at least one of the BOOT_SET_NODE_FIELDS
+        if not any(field_name in bs for field_name in BOOT_SET_NODE_FIELDS):
+            raise ParsingException(f"Boot set {bs_name} has none of the following "
+                                   f"fields: {BOOT_SET_NODE_FIELDS}")
 
     # Convert the JSON request data into a SessionTemplate object.
     # Any exceptions raised here would be generated from the model
@@ -130,6 +136,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     except Exception as err:
         LOGGER.error("Error creating session template '%s': %s", session_template_id,
                      exc_type_msg(err))
+        LOGGER.debug("Full template: %s", template_data)
         return connexion.problem(
             status=400, title="The session template could not be created.",
             detail=str(err))

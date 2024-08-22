@@ -497,7 +497,7 @@ components:
             A null value means the Session has not encountered an error.
           maxLength: 65536
       additionalProperties: false
-    V2BootSetData:
+    V2BootSet:
       description: |
         A Boot Set is a collection of nodes defined by an explicit list, their functional
         role, and their logical groupings. This collection of nodes is associated with one
@@ -543,13 +543,6 @@ components:
           $ref: '#/components/schemas/BootSetRootfsProviderPassthrough'
       additionalProperties: false
       required: [path, type]
-    V2BootSet:
-      allOf:
-        - $ref: '#/components/schemas/V2BootSetData'
-        - anyOf:
-          - required: [node_list]
-          - required: [node_roles_groups]
-          - required: [node_groups]
     V2SessionTemplateArray:
       description: An array of Session Templates.
       type: array
