@@ -91,6 +91,7 @@ rptr_rpm_prepare:
 		cat $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/bos-reporter.spec
 
 image:
+		find src -type f -name \*.py -print | sed 's#^src/#/app/lib/#' | tr '\n' ' ' > srclist.txt
 		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
 
 chart_package:

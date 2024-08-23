@@ -60,6 +60,9 @@ RUN apk add --upgrade --no-cache apk-tools busybox && \
     pip3 install --no-cache-dir -U pip
 RUN --mount=type=secret,id=netrc,target=/root/.netrc pip3 install --no-cache-dir -r requirements.txt
 RUN cd lib && pip3 install --no-cache-dir .
+COPY srclist.txt pylint.sh /app/venv/
+WORKDIR /app/venv
+RUN /app/venv/pylint.sh
 
 # Testing image
 FROM base as testing

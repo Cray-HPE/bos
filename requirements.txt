@@ -11,6 +11,7 @@ etcd3
 boto3
 liveness
 Jinja2==3.0.3
+pylint
 
 # The purpose of this file is to contain python runtime requirements
 # for controller code, e.g., code authored by developers, as opposed to
