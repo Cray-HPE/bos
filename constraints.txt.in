@@ -20,7 +20,7 @@ Jinja2==3.0.3
 jmespath==1.0.1
 jsonschema==4.17.3
 kubernetes==26.1.0
-liveness==0.0.0-liveness
+liveness>=1.4,<1.5
 MarkupSafe==2.1.3
 oauthlib==3.2.2
 packaging==21.3
