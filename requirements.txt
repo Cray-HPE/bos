@@ -11,6 +11,7 @@ flask
 jsonschema
 kubernetes
 liveness
+pylint
 PyYAML
 redis
 requests
