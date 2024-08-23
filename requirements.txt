@@ -11,6 +11,7 @@ flask
 jsonschema
 kubernetes
 liveness
+pylint
 python-dateutil
 PyYAML
 redis
