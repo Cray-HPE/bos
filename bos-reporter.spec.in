@@ -35,7 +35,9 @@ BuildRequires: python-rpm-macros
 BuildRequires: systemd-rpm-macros
 BuildRequires: python3-base
 Requires: python3-base
+Requires: python3-liveness
 Requires: python3-requests
+Requires: python3-requests-retry-session
 Requires: systemd
 Requires: cray-auth-utils
 Requires: spire-agent
