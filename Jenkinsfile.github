@@ -2,7 +2,7 @@
  *
  *  MIT License
  *
- *  (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+ *  (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a
  *  copy of this software and associated documentation files (the "Software"),
@@ -66,6 +66,28 @@ pipeline {
                  withCredentials([usernamePassword(credentialsId: 'artifactory-algol60-readonly', passwordVariable: 'ARTIFACTORY_PASSWORD', usernameVariable: 'ARTIFACTORY_USERNAME')]) {
                     sh "make runbuildprep"
                 }
+            }
+        }
+        // Since this is a support branch, it is less risky to copy the requests_retry_session
+        // Python module into this repo's source, rather than install it separately
+        stage("Get requests_retry_session") {
+            environment {
+                // Get the correct version of requests_retry_session from requests-retry-session.version,
+                // generated during the runBuildPrep stage
+                RRS_VERSION = readFile("requests-retry-session.version").trim()
+            }
+            steps {
+                // Clone the repo -- this function is defined in cms-meta-tools:vars/cloneGitRepo.groovy
+                cloneGitRepo('https://github.com/Cray-HPE/requests-retry-session.git', branchName: "")
+
+                // Check out the tag for the desired version
+                sh "git -C ./requests-retry-session checkout 'tags/v${env.RRS_VERSION}'"
+
+                // Copy the source files into server source tree
+                sh "cp -r ./requests-retry-session/requests_retry_session ./src/bos/common"
+
+                // Copy the source files into BOS reporter source tree
+                sh "cp -r ./requests-retry-session/requests_retry_session ./src/bos/reporter"
             }
         }
         stage("Lint") {

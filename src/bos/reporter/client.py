@@ -27,14 +27,12 @@ fashion.
 """
 
 import os
-from . import PROTOCOL
-
 import logging
-import requests
-from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
 import subprocess
 import time
+
+from . import PROTOCOL
+from bos.reporter.requests_retry_session import requests_retry_session as base_requests_retry_session
 
 LOGGER = logging.getLogger('bos.reporter.client')
 
@@ -71,41 +69,18 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
         time.sleep(2)
 
 
-class TimeoutHTTPAdapter(HTTPAdapter):
-    """
-    An HTTP Adapter that allows a session level timeout for both read and connect attributes. This prevents interruption
-    to reads that happen as a function of time or istio resets that causes our applications to sit and wait forever on
-    a half open socket.
-    """
-    def __init__(self, *args, **kwargs):
-        if "timeout" in kwargs:
-            self.timeout = kwargs["timeout"]
-            del kwargs["timeout"]
-        super().__init__(*args, **kwargs)
-
-    def send(self, request, **kwargs):
-        timeout = kwargs.get("timeout")
-        if timeout is None and hasattr(self, 'timeout'):
-            kwargs["timeout"] = self.timeout
-        return super().send(request, **kwargs)
-
-
 def requests_retry_session(retries=10, backoff_factor=0.5,
                            status_forcelist=(500, 502, 503, 504),
                            connect_timeout=3, read_timeout=10,
                            session=None, protocol=PROTOCOL):
-    session = session or requests.Session()
-    retry = Retry(
-        total=retries,
-        read=retries,
-        connect=retries,
+    session = base_requests_retry_session(\
+        retries=retries,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
-    )
-    adapter = TimeoutHTTPAdapter(max_retries=retry, timeout=(connect_timeout, read_timeout))
-    # Must mount to http://
-    # Mounting to only http will not work!
-    session.mount("%s://" % protocol, adapter)
+        connect_timeout=connect_timeout,
+        read_timeout=read_timeout,
+        session=session,
+        protocol=protocol)
     auth_token = get_auth_token()
     headers = {'Authorization': f'Bearer {auth_token}'}
     session.headers.update(headers)
