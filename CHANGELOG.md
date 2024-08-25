@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Dependencies
 - Simplify how latest patch version of `liveness` is determined
+- Use code from `requests_retry_session` Python package instead of duplicating its code
 
 ## [2.0.44] - 08-09-2024
 
