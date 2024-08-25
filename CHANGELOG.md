@@ -6,12 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.0.45] - 08-25-2024
 ### Dependencies
 - Simplify how latest patch version of `liveness` is determined
 - Use code from `requests_retry_session` Python package instead of duplicating its code
 
 ## [2.0.44] - 08-09-2024
-
 ### Fixed
 - Added the authorization token back into the bos-reporter API requests
 
