@@ -132,6 +132,7 @@ deploymentDefaults:
   volumes: []
 
 operatorDefaults:
+  serviceAccountName: cray-bos
   containers:
     operator:
       name: operator
@@ -241,6 +242,8 @@ operators:
     Values:
       nameOverride: cray-bos-operator-session-setup
       fullnameOverride: cray-bos-operator-session-setup
+      service:
+        enabled: True
       containers:
         operator:
           command:
