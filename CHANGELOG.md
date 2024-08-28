@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.26.3] - 2024-08-28
+### Fixed
+- Update TAPMS endpoint for CSM 1.6.
+
 ## [2.26.2] - 2024-08-23
 ### Dependencies
 - Simplify how latest patch version of `liveness` is determined

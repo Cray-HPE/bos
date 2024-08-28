@@ -33,7 +33,9 @@ from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
 LOGGER = logging.getLogger('bos.common.tenant_utils')
 
 TENANT_HEADER = "Cray-Tenant-Name"
-SERVICE_NAME = 'cray-tapms/v1alpha2'
+SERVICE_NAME = 'cray-tapms/v1alpha3' # CASMCMS-9125: Currently when TAPMS bumps this version, it
+                                     # breaks backwards compatiblity, so BOS needs to update this
+                                     # whenever TAPMS does.
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
 TENANT_ENDPOINT = f"{BASE_ENDPOINT}/tenants" # CASMPET-6433 changed this from tenant to tenants
 
