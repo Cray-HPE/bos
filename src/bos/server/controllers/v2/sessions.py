@@ -40,8 +40,7 @@ from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
-from bos.server.models.v2_session_update import V2SessionUpdate as SessionUpdate  # noqa: E501
-from bos.server.utils import ParsingException
+from bos.server.utils import get_request_json, ParsingException
 from .boot_set import validate_boot_sets, BOOT_SET_ERROR
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
@@ -63,15 +62,13 @@ def post_v2_session():  # noqa: E501
     """
     LOGGER.debug("POST /v2/sessions invoked post_v2_session")
     # -- Validation --
-    if connexion.request.is_json:
-        LOGGER.debug("connexion.request.is_json")
-        LOGGER.debug("type=%s", type(connexion.request.get_json()))
-        LOGGER.debug("Received: %s", connexion.request.get_json())
-        session_create = SessionCreate.from_dict(connexion.request.get_json())  # noqa: E501
-    else:
-        msg = "Post must be in JSON format"
-        LOGGER.error(msg)
-        return msg, 400
+    try:
+        session_create = SessionCreate.from_dict(get_request_json())  # noqa: E501
+    except Exception as err:
+        LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
 
     # If no limit is specified, check to see if we require one
     if not session_create.limit and get_v2_options_data().get('session_limit_required', False):
@@ -141,19 +138,13 @@ def patch_v2_session(session_id):
       Session Dictionary, Status Code
     """
     LOGGER.debug("PATCH /v2/sessions/%s invoked patch_v2_session", session_id)
-    if not connexion.request.is_json:
-        msg = "Post must be in JSON format"
-        LOGGER.error(msg)
-        return msg, 400
-
-    LOGGER.debug("connexion.request.is_json")
-    patch_data_json=connexion.request.get_json()
-    LOGGER.debug("type=%s", type(patch_data_json))
-    LOGGER.debug("Received: %s", patch_data_json)
-
-    # This call is just to ensure that the patch data
-    # coming in is valid per the API schema
-    SessionUpdate.from_dict(patch_data_json)  # noqa: E501
+    try:
+        patch_data_json = get_request_json()
+    except Exception as err:
+        LOGGER.error("Error parsing PATCH '%s' request data: %s", session_id, exc_type_msg(err))
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
 
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:

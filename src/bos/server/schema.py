@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,41 +21,41 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+import json
 import logging
-import re
 
-import connexion
-
-LOGGER = logging.getLogger('bos.server.utils')
+import jsonschema
 
 
-class ParsingException(Exception):
-    pass
+LOGGER = logging.getLogger('bos.server.schema')
+
+API_JSON_SCHEMA_PATH = "/app/lib/bos/server/openapi.jsonschema"
 
 
-def canonize_xname(xname):
-    """Ensure the xname is canonical.
-    * Its components should be lowercase.
-    * Any leading zeros should be stripped off.
+class Validator:
+    def __init__(self):
+        LOGGER.info("Loading API schema from %s", API_JSON_SCHEMA_PATH)
+        with open(API_JSON_SCHEMA_PATH, "rt") as f:
+            oas = json.load(f)
+        self.api_schema = oas["components"]["schemas"]
 
-    :param xname: xname to canonize
-    :type xname: string
+    def validate(self, data, schema_name):
+        jsonschema.validate(data, self.api_schema[schema_name])
 
-    :return: canonized xname
-    :rtype: string
-    """
-    return re.sub(r'x0*(\d+)c0*(\d+)s0*(\d+)b0*(\d+)n0*(\d+)', r'x\1c\2s\3b\4n\5', xname.lower())
+    def validate_component(self, data):
+        self.validate(data, "V2ComponentWithId")
 
+    def validate_extended_session_status(self, data):
+        self.validate(data, "V2SessionExtendedStatus")
 
-def get_request_json(log_data = True):
-    """
-    Used by endpoints which are expecting a JSON payload in the request body.
-    Returns the JSON payload.
-    Raises an Exception otherwise
-    """
-    if not connexion.request.is_json:
-        raise ParsingException("Non-JSON request received")
-    json_data = connexion.request.get_json()
-    if log_data:
-        LOGGER.debug("type=%s content=%s", type(json_data).__name__, json_data)
-    return json_data
+    def validate_options(self, data):
+        self.validate(data, "V2Options")
+
+    def validate_session(self, data):
+        self.validate(data, "V2Session")
+
+    def validate_session_template(self, data):
+        self.validate(data, "V2SessionTemplate")
+
+validator = Validator()

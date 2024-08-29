@@ -27,10 +27,10 @@ import connexion
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
 from bos.common.utils import exc_type_msg
-from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate # noqa: E501
 from bos.server import redis_db_utils as dbutils
-from bos.server.utils import _canonize_xname, _get_request_json, ParsingException
-from .boot_set import validate_boot_sets
+from bos.server.schema import validator
+from bos.server.utils import canonize_xname, get_request_json, ParsingException
+from .boot_set import validate_boot_sets, HARDWARE_SPECIFIER_FIELDS
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
 DB = dbutils.get_wrapper(db='session_templates')
@@ -54,63 +54,6 @@ EXAMPLE_SESSION_TEMPLATE = {
     "enable_cfs": True,
     "name": "name-your-template"}
 
-BOOT_SET_NODE_FIELDS = [ "node_list", "node_roles_groups", "node_groups" ]
-
-def _sanitize_xnames(st_json):
-    """
-    Sanitize xnames - Canonize the xnames
-    Args:
-      st_json (dict): The Session Template as a JSON object
-
-    Returns:
-      Nothing
-    """
-    # There should always be a boot_sets field -- this function
-    # is only called after the template has been verified
-    for boot_set in st_json['boot_sets'].values():
-        if 'node_list' not in boot_set:
-            continue
-        boot_set['node_list'] = [_canonize_xname(node) for node in boot_set['node_list']]
-
-
-def _validate_sanitize_session_template(session_template_id, template_data):
-    """
-    Used when creating or patching session templates
-    """
-    # The boot_sets field is required.
-    if "boot_sets" not in template_data:
-            raise ParsingException("Missing required 'boot_sets' field")
-
-    for bs_name, bs in template_data["boot_sets"].items():
-        # All keys in the boot_sets mapping must match the 'name' fields in the
-        # boot sets to which they map (if they contain a 'name' field).
-        if "name" not in bs:
-            # Set the field here -- this allows the name to be validated
-            # per the schema later
-            bs["name"] = bs_name
-        elif bs["name"] != bs_name:
-            raise ParsingException(f"boot_sets key ({bs_name}) does not match 'name' "
-                                   f"field of corresponding boot set ({bs["name"]})")
-
-        # Also, validate that each boot set has at least one of the BOOT_SET_NODE_FIELDS
-        if not any(field_name in bs for field_name in BOOT_SET_NODE_FIELDS):
-            raise ParsingException(f"Boot set {bs_name} has none of the following "
-                                   f"fields: {BOOT_SET_NODE_FIELDS}")
-
-    # Convert the JSON request data into a SessionTemplate object.
-    # Any exceptions raised here would be generated from the model
-    # (i.e. bos.server.models.v2_session_template).
-    SessionTemplate.from_dict(template_data)
-
-    # We do not bother storing the boot set names inside the boot sets, so delete them.
-    # We know every boot set has a name field because we verified that earlier.
-    for bs in template_data["boot_sets"].values():
-        del bs["name"]
-
-    _sanitize_xnames(template_data)
-    template_data['name'] = session_template_id
-    return
-
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
@@ -121,18 +64,16 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     """
     LOGGER.debug("PUT /v2/sessiontemplates/%s invoked put_v2_sessiontemplate", session_template_id)
     try:
-        template_data = _get_request_json()
+        template_data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PUT '%s' request data: %s", session_template_id,
                      exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
-    LOGGER.debug("type=%s", type(template_data))
-    LOGGER.debug("Received: %s", template_data)
 
     try:
-        _validate_sanitize_session_template(session_template_id, template_data)
+        validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
         LOGGER.error("Error creating session template '%s': %s", session_template_id,
                      exc_type_msg(err))
@@ -224,18 +165,16 @@ def patch_v2_sessiontemplate(session_template_id):
             detail=f"Sessiontemplate {session_template_id} could not be found")
 
     try:
-        template_data = _get_request_json()
+        template_data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", session_template_id,
                      exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
-    LOGGER.debug("type=%s", type(template_data))
-    LOGGER.debug("Received: %s", template_data)
 
     try:
-        _validate_sanitize_session_template(session_template_id, template_data)
+        validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
         LOGGER.error("Error patching session template '%s': %s", session_template_id,
                      exc_type_msg(err))
@@ -280,3 +219,57 @@ def _matches_filter(data, tenant):
     if tenant and tenant != data.get("tenant"):
         return False
     return True
+
+
+def _sanitize_xnames(st_json):
+    """
+    Sanitize xnames - Canonize the xnames
+    Args:
+      st_json (dict): The Session Template as a JSON object
+
+    Returns:
+      Nothing
+    """
+    # There should always be a boot_sets field -- this function
+    # is only called after the template has been verified
+    for boot_set in st_json['boot_sets'].values():
+        if 'node_list' not in boot_set:
+            continue
+        boot_set['node_list'] = [canonize_xname(node) for node in boot_set['node_list']]
+
+
+def validate_sanitize_session_template(session_template_id, template_data):
+    """
+    Used when creating or patching session templates
+    """
+    # The boot_sets field is required.
+    if "boot_sets" not in template_data:
+        raise ParsingException("Missing required 'boot_sets' field")
+
+    # All keys in the boot_sets mapping must match the 'name' fields in the
+    # boot sets to which they map (if they contain a 'name' field).
+    for bs_name, bs in template_data["boot_sets"].items():
+        if "name" not in bs:
+            # Set the field here -- this allows the name to be validated
+            # per the schema later
+            bs["name"] = bs_name
+        elif bs["name"] != bs_name:
+            raise ParsingException(f"boot_sets key ({bs_name}) does not match 'name' "
+                                   f"field of corresponding boot set ({bs['name']})")
+
+        # Also, validate that each boot set has at least one of the HARDWARE_SPECIFIER_FIELDS
+        if not any(field_name in bs for field_name in HARDWARE_SPECIFIER_FIELDS):
+            raise ParsingException(f"Boot set {bs_name} has none of the following "
+                                   f"fields: {HARDWARE_SPECIFIER_FIELDS}")
+
+    # We do not bother storing the boot set names inside the boot sets, so delete them.
+    # We know every boot set has a name field because we verified that earlier.
+    for bs in template_data["boot_sets"].values():
+        del bs["name"]
+
+    _sanitize_xnames(template_data)
+    template_data['name'] = session_template_id
+
+    # Finally, validate this against the API schema
+    # An exception will be raised if it does not follow it
+    validator.validate_session_template(template_data)
