@@ -80,7 +80,7 @@ def _validate_sanitize_session_template(session_template_id, template_data):
     # The boot_sets field is required.
     if "boot_sets" not in template_data:
             raise ParsingException("Missing required 'boot_sets' field")
-    
+
     for bs_name, bs in template_data["boot_sets"].items():
         # All keys in the boot_sets mapping must match the 'name' fields in the
         # boot sets to which they map (if they contain a 'name' field).
