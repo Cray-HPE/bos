@@ -72,7 +72,7 @@ class PowerOnOperator(BaseOperator):
         try:
             self._tag_images(boot_artifacts, components)
         except Exception as e:
-            raise Exception(f"Error encountered tagging images {e}.")
+            raise Exception(f"Error encountered tagging images {e}.") from e
         try:
             self._set_bss(boot_artifacts, bos_sessions=sessions)
         except Exception as e:
