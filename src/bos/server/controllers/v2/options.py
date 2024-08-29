@@ -30,6 +30,7 @@ import connexion
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v2_options import V2Options as Options
+from bos.server.utils import get_request_json
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.options')
 DB = dbutils.get_wrapper(db='options')
@@ -118,12 +119,13 @@ def patch_v2_options():
     """Used by the PATCH /options API operation"""
     LOGGER.debug("PATCH /v2/options invoked patch_v2_options")
     try:
-        data = connexion.request.get_json()
+        data = get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
+        LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return connexion.problem(
             status=400, title="Error parsing the data provided.",
             detail=str(err))
+
     if OPTIONS_KEY not in DB:
         DB.put(OPTIONS_KEY, {})
     return DB.patch(OPTIONS_KEY, data), 200

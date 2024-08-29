@@ -18,7 +18,8 @@ inflection>=0.5.1,<0.6
 itsdangerous>=2.1.2,<2.2
 Jinja2>=3.0.3,<3.1
 jmespath>=1.0.1,<1.1
-jsonschema>=4.17.3,<4.18
+jsonref>=1.1,<1.2
+jsonschema>=4.23,<4.24
 # CSM 1.6 uses Kubernetes 1.22, so use client v22.x to ensure compatability
 kubernetes>=22.6.0,<22.7
 liveness>=1.4,<1.5

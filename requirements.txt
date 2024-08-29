@@ -8,6 +8,7 @@ boto3
 botocore
 connexion
 flask
+jsonschema
 kubernetes
 liveness
 PyYAML

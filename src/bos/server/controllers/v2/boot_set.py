@@ -33,6 +33,9 @@ BOOT_SET_SUCCESS = 0
 BOOT_SET_WARNING = 1
 BOOT_SET_ERROR = 2
 
+# Valid boot sets are required to have at least one of these fields
+HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
+
 
 def validate_boot_sets(session_template: dict,
                        operation: str,
@@ -40,7 +43,7 @@ def validate_boot_sets(session_template: dict,
     """
     Validates the boot sets listed in a session template.
     It ensures that there are boot sets.
-    It checks that each boot set specifies nodes via one of the specifier fields.
+    It checks that each boot set specifies nodes via at least one of the specifier fields.
     Ensures that the boot artifacts exist.
 
     Inputs:
@@ -63,16 +66,15 @@ def validate_boot_sets(session_template: dict,
         msg = f"Session template '{template_name}' requires at least 1 boot set."
         return BOOT_SET_ERROR, msg
 
-    hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
     for bs_name, bs in session_template['boot_sets'].items():
         # Verify that the hardware is specified
         specified = [bs.get(field, None)
-                     for field in hardware_specifier_fields]
+                     for field in HARDWARE_SPECIFIER_FIELDS]
         if not any(specified):
             msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
                   f"must have at least one " \
                 f"hardware specifier field provided (%s); None were provided." \
-                % (', '.join(sorted(hardware_specifier_fields)))
+                % (', '.join(sorted(HARDWARE_SPECIFIER_FIELDS)))
             LOGGER.error(msg)
             return BOOT_SET_ERROR, msg
         if operation in ['boot', 'reboot']:

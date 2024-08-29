@@ -32,10 +32,7 @@ from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_B
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
-from bos.server.models.v2_component import V2Component as Component # noqa: E501
-from bos.server.models.v2_component_array import V2ComponentArray as ComponentArray # noqa: E501
-from bos.server.models.v2_components_update import V2ComponentsUpdate as \
-                                                   ComponentsUpdate # noqa: E501
+from bos.server.utils import get_request_json
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.components')
 DB = dbutils.get_wrapper(db='components')
@@ -173,24 +170,13 @@ def _matches_filter(data, enabled, session, staged_session, phase, status):
 def put_v2_components():
     """Used by the PUT /components API operation"""
     LOGGER.debug("PUT /v2/components invoked put_v2_components")
-    if not connexion.request.is_json:
-        msg = "Must be in JSON format"
-        LOGGER.error(msg)
-        return msg, 400
-
-    LOGGER.debug("connexion.request.is_json")
-    data=connexion.request.get_json()
-    LOGGER.debug("type=%s", type(data))
-    LOGGER.debug("Received: %s", data)
-
     try:
-        # This call is just to ensure that the data
-        # coming in is valid per the API schema
-        ComponentArray.from_dict(data)  # noqa: E501
+        data = get_request_json()
     except Exception as err:
-        msg="Provided data does not follow API spec"
-        LOGGER.error("%s: %s", msg, exc_type_msg(err))
-        return connexion.problem(status=400, title=msg,detail=str(err))
+        LOGGER.error("Error parsing PUT request data: %s", exc_type_msg(err))
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
 
     components = []
     for component_data in data:
@@ -213,35 +199,17 @@ def put_v2_components():
 def patch_v2_components():
     """Used by the PATCH /components API operation"""
     LOGGER.debug("PATCH /v2/components invoked patch_v2_components")
-    if not connexion.request.is_json:
-        msg = "Must be in JSON format"
-        LOGGER.error(msg)
-        return msg, 400
-
-    LOGGER.debug("connexion.request.is_json")
-    data=connexion.request.get_json()
-    LOGGER.debug("type=%s", type(data))
-    LOGGER.debug("Received: %s", data)
+    try:
+        data = get_request_json()
+    except Exception as err:
+        LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
 
     if isinstance(data, list):
-        try:
-            # This call is just to ensure that the data
-            # coming in is valid per the API schema
-            ComponentArray.from_dict(data)  # noqa: E501
-        except Exception as err:
-            msg="Provided data does not follow API spec"
-            LOGGER.error("%s: %s", msg, exc_type_msg(err))
-            return connexion.problem(status=400, title=msg,detail=str(err))
         return patch_v2_components_list(data)
     if isinstance(data, dict):
-        try:
-            # This call is just to ensure that the data
-            # coming in is valid per the API schema
-            ComponentsUpdate.from_dict(data)  # noqa: E501
-        except Exception as err:
-            msg="Provided data does not follow API spec"
-            LOGGER.error("%s: %s", msg, exc_type_msg(err))
-            return connexion.problem(status=400, title=msg,detail=str(err))
         return patch_v2_components_dict(data)
 
     LOGGER.error("Unexpected data type %s", str(type(data)))
@@ -340,24 +308,14 @@ def get_v2_component(component_id):
 def put_v2_component(component_id):
     """Used by the PUT /components/{component_id} API operation"""
     LOGGER.debug("PUT /v2/components/%s invoked put_v2_component", component_id)
-    if not connexion.request.is_json:
-        msg = "Must be in JSON format"
-        LOGGER.error(msg)
-        return msg, 400
-
-    LOGGER.debug("connexion.request.is_json")
-    data=connexion.request.get_json()
-    LOGGER.debug("type=%s", type(data))
-    LOGGER.debug("Received: %s", data)
-
     try:
-        # This call is just to ensure that the data
-        # coming in is valid per the API schema
-        Component.from_dict(data)  # noqa: E501
+        data = get_request_json()
     except Exception as err:
-        msg="Provided data does not follow API spec"
-        LOGGER.error("%s: %s", msg, exc_type_msg(err))
-        return connexion.problem(status=400, title=msg,detail=str(err))
+        LOGGER.error("Error parsing PUT '%s' request data: %s", component_id, exc_type_msg(err))
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
+
     data['id'] = component_id
     data = _set_auto_fields(data)
     return DB.put(component_id, data), 200
@@ -368,24 +326,13 @@ def put_v2_component(component_id):
 def patch_v2_component(component_id):
     """Used by the PATCH /components/{component_id} API operation"""
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component", component_id)
-    if not connexion.request.is_json:
-        msg = "Must be in JSON format"
-        LOGGER.error(msg)
-        return msg, 400
-
-    LOGGER.debug("connexion.request.is_json")
-    data=connexion.request.get_json()
-    LOGGER.debug("type=%s", type(data))
-    LOGGER.debug("Received: %s", data)
-
     try:
-        # This call is just to ensure that the data
-        # coming in is valid per the API schema
-        Component.from_dict(data)  # noqa: E501
+        data = get_request_json()
     except Exception as err:
-        msg="Provided data does not follow API spec"
-        LOGGER.error("%s: %s", msg, exc_type_msg(err))
-        return connexion.problem(status=400, title=msg,detail=str(err))
+        LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id, exc_type_msg(err))
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
 
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
@@ -440,12 +387,19 @@ def delete_v2_component(component_id):
 def post_v2_apply_staged():
     """Used by the POST /applystaged API operation"""
     LOGGER.debug("POST /v2/applystaged invoked post_v2_apply_staged")
+    try:
+        data = get_request_json()
+    except Exception as err:
+        LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
+        return connexion.problem(
+            status=400, title="Error parsing the data provided.",
+            detail=str(err))
+
     response = {"succeeded": [], "failed": [], "ignored": []}
     # Obtain latest desired behavior for how to clear staging information
     # for all components
     clear_staged = get_v2_options_data().get('clear_stage', False)
     try:
-        data = connexion.request.get_json()
         xnames = data.get("xnames", [])
         allowed_xnames, rejected_xnames = _apply_tenant_limit(xnames)
         response["ignored"] = rejected_xnames
