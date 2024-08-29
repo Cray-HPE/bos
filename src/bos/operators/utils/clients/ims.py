@@ -66,9 +66,9 @@ def tag_image(image_id: str, operation: str, key: str, value: str = None, sessio
         raise TagFailure(msg)
 
     if value:
-        LOGGER.debug(f"Patching image {image_id} {operation}ing key: {key} value: {value}")
+        LOGGER.debug("Patching image %s %sing key: %s value: %s", image_id, operation, key, value)
     else:
-        LOGGER.debug(f"Patching image {image_id} {operation}ing key: {key}")
+        LOGGER.debug("Patching image %s %sing key: %s", image_id, operation, key)
 
     if not session:
         session = requests_retry_session()
@@ -81,4 +81,3 @@ def tag_image(image_id: str, operation: str, key: str, value: str = None, sessio
             }
     }
     patch_image(image_id=image_id, data=data, session=session)
-

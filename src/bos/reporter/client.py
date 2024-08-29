@@ -67,14 +67,15 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
             LOGGER.error(
                 'get_auth_token failed to retrieve authorization token: code=%d: error=%s',
                 e.returncode, e.output)
-        except Exception as e:
-            LOGGER.exception(f"Unexpected exception: {e}")
+        except Exception as exc:
+            LOGGER.exception("Unexpected exception: %s", exc)
         LOGGER.info("Spire Token not yet available; retrying in a few seconds.")
         time.sleep(2)
 
 def authorized_requests_retry_session(*pargs, **kwargs) -> requests.session:
     """
-    Returns a session with the authorization token included in the headers of the session's requests.
+    Returns a session with the authorization token included in the headers of the session's
+    requests.
     """
     if 'protocol' not in kwargs:
         kwargs['protocol'] = PROTOCOL

@@ -27,7 +27,8 @@ import logging
 from requests import HTTPError
 from typing import Dict, List, Set, Tuple, Union
 
-from bos.common.utils import exc_type_msg, get_image_id_from_kernel, using_sbps_check_kernel_parameters, components_by_id
+from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
+                             using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
 from bos.operators.utils.clients import bss
 from bos.operators.utils.clients import pcs
@@ -178,7 +179,8 @@ class PowerOnOperator(BaseOperator):
                      redacted_component_updates)
         self.bos_client.components.update_components(bss_tokens)
 
-    def _tag_images(self, boot_artifacts: Dict[Tuple[str, str, str], Set[str]], components: List[dict]) -> None:
+    def _tag_images(self, boot_artifacts: Dict[Tuple[str, str, str], Set[str]],
+                    components: List[dict]) -> None:
         """
         If the component is receiving its root file system via the SBPS provisioner,
         then tag that image in IMS, so that SBPS makes it available.

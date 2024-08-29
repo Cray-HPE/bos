@@ -132,11 +132,7 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     Return True if it is and False if it is not.
     """
     # Check for the 'root=sbps-s3' string.
-    pattern = re.compile("root=sbps-s3")
-    match = pattern.search(kernel_parameters)
-    if match:
-        return True
-    return False
+    return "root=sbps-s3" in kernel_parameters
 
 def components_by_id(components: List[dict]) -> dict:
     """
@@ -149,12 +145,7 @@ def components_by_id(components: List[dict]) -> dict:
     Purpose: It makes searching more efficient because you can
     index by component name.
     """
-    components_by_id = {}
-    for component in components:
-        id = component["id"]
-        components_by_id[id] = component
-
-    return components_by_id
+    return { component["id"]: component for component in components }
 
 def reverse_components_by_id(components_by_id: dict) -> List[dict]:
     """
@@ -166,5 +157,4 @@ def reverse_components_by_id(components_by_id: dict) -> List[dict]:
 
     Purpose: Reverse the effect of components_by_id.
     """
-    components = [component for component in components_by_id.values()]
-    return components
+    return list(components_by_id.values())
