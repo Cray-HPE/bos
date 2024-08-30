@@ -75,7 +75,7 @@ class DiscoveryOperator(BaseOperator):
             new_component['id'] = component
             components_to_add.append(new_component)
         if not components_to_add:
-            LOGGER.info("No new component(s) discovered.")
+            LOGGER.debug("No new component(s) discovered.")
             return
         LOGGER.info("%s new component(s) from HSM.", len(components_to_add))
         for chunk in self._chunk_components(components_to_add):
