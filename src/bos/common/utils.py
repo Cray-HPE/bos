@@ -21,13 +21,16 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+# Standard imports
 import datetime
 from functools import partial
 import re
 import traceback
-from dateutil.parser import parse
 from typing import List
 
+# Third party imports
+from dateutil.parser import parse
 from requests_retry_session import requests_retry_session as base_requests_retry_session
 
 PROTOCOL = 'http'

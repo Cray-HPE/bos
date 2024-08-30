@@ -26,14 +26,19 @@ This module is responsible for interacting with BOS in a reliable, authorized
 fashion.
 """
 
+# Standard imports
 import os
 import logging
 import subprocess
-import requests
 import time
 
+# 3rd party imports
+import requests
+
+# Imports from BOS module
 from bos.common.utils import requests_retry_session as common_requests_retry_session
 
+# Local imports
 from . import PROTOCOL
 
 LOGGER = logging.getLogger('bos.reporter.client')
