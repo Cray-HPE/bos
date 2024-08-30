@@ -419,12 +419,16 @@ components:
       type: string
     V2SessionName:
       type: string
-      description: Name of the Session.
-      example: "session-20190728032600"
-      # These validation parameters are restricted by Kubernetes naming conventions.
+      description: |
+        Name of the Session.
+
+        The name must:
+        * Use only letters, digits, periods (.), dashes (-), and underscores (_).
+        * Begin and end with a letter or digit.
       minLength: 1
-      maxLength: 45
-      pattern: '^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$'
+      maxLength: 127
+      pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
+      example: "session-20190728032600"
     V2SessionOperation:
       type: string
       enum: ['boot', 'reboot', 'shutdown']

@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Changed
 - Improve server code that validates incoming data
+- Relax session naming restrictions to match template naming restrictions, removing unnecessary constraints
 
 ### Fixed
 - Added missing required Python modules to `requirements.txt`
