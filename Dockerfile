@@ -71,14 +71,13 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
 FROM alpine-base AS openapi-json-converter
 WORKDIR /app
 COPY api/openapi.yaml convert-oas-requirements.txt /app
-COPY utils/convert_oas/ /app/convert_oas
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     apk add --no-cache yq && \
     apk -U upgrade --no-cache && \
     yq -o=json /app/openapi.yaml > /app/openapi.json && \
     pip3 install --no-cache-dir -r convert-oas-requirements.txt && \
     pip3 list --format freeze && \
-    python3 /app/convert_oas/convert_oas.py /app/openapi.json /app/lib/bos/server/openapi.jsonschema && \
+    python3 -m convert_oas30_schemas /app/openapi.json /app/lib/bos/server/openapi.jsonschema && \
     cat /app/lib/bos/server/openapi.jsonschema
 
 
