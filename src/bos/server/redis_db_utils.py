@@ -116,6 +116,12 @@ class DBWrapper():
         self.client.set(key, datastr)
         return self.get(key)
 
+    def rename(self, old_key, new_key):
+        """
+        Store data from old_key under new_key instead
+        """
+        self.client.rename(old_key, new_key)
+
     def _update(self, data, new_data):
         """Recursively patches json to allow sub-fields to be patched.
 
