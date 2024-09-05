@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Move to `openapi-generator-cli` v7.8.0
+- Move to `cray-service` base chart version v11.0
 
 ## [2.26.3] - 2024-08-28
 ### Fixed
