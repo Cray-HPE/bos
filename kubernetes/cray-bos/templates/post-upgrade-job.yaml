@@ -34,10 +34,13 @@ metadata:
   annotations:
     "helm.sh/hook": post-upgrade
     "helm.sh/hook-weight": "-1"
-    "helm.sh/hook-delete-policy": hook-succeeded,before-hook-creation
 
 
 spec:
+  # Set ttlSecondsAfterFinished to 28 days.
+  # Because the migration can delete BOS data, but logs when it does so,
+  # this allows its logs to be easily accesible for longer post-upgrade
+  ttlSecondsAfterFinished: 2419200
   template:
     metadata:
       name: "{{ .Release.Name }}"
