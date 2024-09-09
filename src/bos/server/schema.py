@@ -58,4 +58,19 @@ class Validator:
     def validate_session_template(self, data):
         self.validate(data, "V2SessionTemplate")
 
+    def get_schema_fields(self, schema_name: str):
+        return set(self.api_schema[schema_name]["properties"])
+
+    @property
+    def session_template_fields(self):
+        return self.get_schema_fields("V2SessionTemplate")
+
+    @property
+    def boot_set_fields(self):
+        return self.get_schema_fields("V2BootSet")
+
+    @property
+    def cfs_fields(self):
+        return self.get_schema_fields("V2CfsParameters")
+
 validator = Validator()

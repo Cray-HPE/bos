@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Sanitize BOS data during migration to this BOS version, to ensure it complies with the API specification.
+  - For components and sessions, only validate the fields used to identify them (name, id, tenant). Delete them
+    from the database if these fields have problems.
+  - For templates, validate all fields, but do a more complete attempt to automatically clean them up,
+    only deleting them as a last resort.
+- Do not delete migration job after it completes; instead, set a TTL value for it, to allow time for its logs to be
+  collected after it completes.
 
 ## [2.27.0] - 2024-09-05
 ### Changed

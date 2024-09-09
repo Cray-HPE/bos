@@ -49,8 +49,8 @@ class DBWrapper():
     """
 
     def __init__(self, db):
-        db_id = self._get_db_id(db)
-        self.client = self._get_client(db_id)
+        self.db_id = self._get_db_id(db)
+        self.client = self._get_client(self.db_id)
 
     def __contains__(self, key):
         return self.client.exists(key)
@@ -73,10 +73,23 @@ class DBWrapper():
                          db_id, exc_type_msg(err))
             raise
 
+    @property
+    def db_string(self) -> str:
+        """Returns the string name of the database, from the DATABASES array"""
+        return DATABASES[self.db_id]
+
     # The following methods act like REST calls for single items
     def get(self, key):
         """Get the data for the given key."""
         datastr = self.client.get(key)
+        if not datastr:
+            return None
+        data = json.loads(datastr)
+        return data
+
+    def get_and_delete(self, key):
+        """Get the data for the given key and delete it from the DB."""
+        datastr = self.client.getdel(key)
         if not datastr:
             return None
         data = json.loads(datastr)
@@ -89,6 +102,20 @@ class DBWrapper():
             datastr = self.client.get(key)
             single_data = json.loads(datastr)
             data.append(single_data)
+        return data
+
+    def get_all_as_dict(self):
+        """Return a mapping from all keys to their corresponding data
+           Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
+        """
+        data = {}
+        cursor = '0'
+        while cursor != 0:
+            cursor, keys = self.client.scan(cursor=cursor, count=1000)
+            values = [ json.loads(datastr) if datastr else None
+                       for datastr in self.client.mget(keys) ]
+            keys = [ k.decode() for k in keys ]
+            data.update(dict(zip(keys, values)))
         return data
 
     def get_keys(self):

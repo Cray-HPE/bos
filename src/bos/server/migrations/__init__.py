@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,17 +21,3 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
-
-LOGGER = logging.getLogger('bos.server.migration')
-
-
-def perform_migrations():
-    # Not removing this file entirely because we are going to be adding
-    # code here to migrate the previous BOS data to enforce API field
-    # restrictions
-    pass
-
-
-if __name__ == "__main__":
-    perform_migrations()
