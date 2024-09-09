@@ -26,17 +26,15 @@ import copy
 import itertools
 import logging
 import string
-from typing import Any
 
 from bos.common.tenant_utils import get_tenant_aware_key
-from bos.common.utils import exc_type_msg
 from bos.server.controllers.v2.boot_set import HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
 
 from .db import TEMP_DB, delete_component, delete_session, delete_template
 from .validate import ValidationError, check_component, check_session, check_keys, \
-                      get_required_field, get_validate_bootset_path, get_validate_tenant, \
-                      is_valid_available_template_name, validate_against_schema
+                      get_required_field, get_validate_tenant, is_valid_available_template_name, \
+                      validate_bootset_path, validate_against_schema
 
 
 LOGGER = logging.getLogger('bos.server.migration')
@@ -94,7 +92,8 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
 
     # Make a copy of the session template. If we identify problems, we will see if we can correct
     # them in the copy. While copying, remove any fields that are no longer in the spec
-    new_data = { k: copy.deepcopy(v) for k,v in data.items() if k in validator.session_template_fields }
+    new_data = { k: copy.deepcopy(v) for k,v in data.items()
+                 if k in validator.session_template_fields }
 
     # Check and sanitize each boot set
     for bsname, bsdata in new_data["boot_sets"].items():
@@ -176,7 +175,7 @@ def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
     Otherwise returns None.
     """
     # Every boot_set must have a valid path set
-    path = get_validate_bootset_path(bsname, bsdata)
+    validate_bootset_path(bsname, bsdata)
 
     # The type field is required and 's3' is its only legal value
     # So rather than even checking it, just set it to 's3'
@@ -275,33 +274,37 @@ def get_unused_legal_template_name(name: str, tenant: str|None) -> str:
         validate_against_schema(name, "SessionTemplateName")
         return name
     except ValidationError:
-        # If the name has no legal characters at all, or in the (hopefully unlikely) case that it is 0 length,
-        # make no attempt to salvage it. Otherwise, we will try to find a good name
+        # If the name has no legal characters at all, or in the (hopefully unlikely) case that it
+        # is 0 length, make no attempt to salvage it. Otherwise, we will try to find a good name
         if not name or not any(c in TEMPLATE_NAME_CHARACTERS for c in name):
             raise
 
-    LOGGER.warning("Session template name '%s' (tenant: %s) does not follow schema. Will attempt to rename to a legal name", name, tenant)
+    LOGGER.warning("Session template name '%s' (tenant: %s) does not follow schema. "
+                   "Will attempt to rename to a legal name", name, tenant)
 
-    # Strip out illegal characters, but replace spaces with underscores, and prepend 'auto_renamed_'
-    new_name_base = 'auto_renamed_' + ''.join([ c for c in name.replace(' ','_') if c in TEMPLATE_NAME_CHARACTERS ])
+    # Strip out illegal characters, but replace spaces with underscores and prepend 'auto_renamed_'
+    new_name_base = 'auto_renamed_' + ''.join([ c for c in name.replace(' ','_')
+                                                if c in TEMPLATE_NAME_CHARACTERS ])
 
     # Trim to 127 characters, if it exceeds that
     new_name = new_name_base[:127]
 
-    # At this point the only thing preventing this from being a legal name would be if the final character is not
-    # alphanumeric
+    # At this point the only thing preventing this from being a legal name would be if the final
+    # character is not alphanumeric
     if new_name[-1] in ALPHANUMERIC:
         if is_valid_available_template_name(new_name, tenant):
             return new_name
 
-    # Trying all 2 character alphanumeric suffixes gives 1953 options, which is enough of an effort for us to make here.
+    # Trying all 2 character alphanumeric suffixes gives 1953 options, which is enough of an effort
+    # for us to make here.
     for suffix_length in range(1, 3):
         for suffix in itertools.combinations_with_replacement(ALPHANUMERIC, suffix_length):
             new_name = f'{new_name_base[:126-suffix_length]}_{suffix}'
             if is_valid_available_template_name(new_name, tenant):
                 return new_name
 
-    LOGGER.error("Unable to find unused valid new name for session template name '%s' (tenant: %s)", name, tenant)
+    LOGGER.error("Unable to find unused valid new name for session template '%s' (tenant: %s)",
+                 name, tenant)
     raise ValidationError("Name does not follow schema")
 
 

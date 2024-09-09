@@ -73,16 +73,15 @@ def get_validate_tenant(data: dict) -> str|None:
     return tenant
 
 
-def get_validate_bootset_path(bsname: str, bsdata: dict) -> str:    
+def validate_bootset_path(bsname: str, bsdata: dict) -> None:
     try:
         path = get_required_field("path", bsdata)
     except ValidationError as exc:
         raise ValidationError(f"Boot set '{bsname}': {exc}") from exc
     try:
         validate_against_schema(path, "BootManifestPath")
-    except ValidationError as exc:        
+    except ValidationError as exc:
         raise ValidationError(f"Boot set '{bsname}' has invalid 'path' field: {exc}") from exc
-    return path
 
 
 def check_keys(actual: str|bytes, expected: str|bytes) -> str|None:
@@ -95,7 +94,8 @@ def check_keys(actual: str|bytes, expected: str|bytes) -> str|None:
     if isinstance(expected, bytes):
         expected = expected.decode()
     if actual != expected:
-        raise ValidationError(f"Actual DB key ('{actual}') does not match expected key ('{expected}')")
+        raise ValidationError(
+            f"Actual DB key ('{actual}') does not match expected key ('{expected}')")
 
 
 def is_valid_available_template_name(name: str, tenant: str|None) -> bool:
