@@ -23,7 +23,6 @@
 #
 
 import logging
-import string
 
 import bos.server.redis_db_utils as dbutils
 
@@ -34,13 +33,6 @@ SESS_DB=dbutils.get_wrapper(db='sessions')
 STAT_DB=dbutils.get_wrapper(db='session_status')
 COMP_DB=dbutils.get_wrapper(db='components')
 
-ALPHANUMERIC = string.ascii_letters + string.digits
-TEMPLATE_NAME_CHARACTERS = ALPHANUMERIC + '-._'
-
-class ValidationError(Exception):
-    """
-    Raised by validation functions when they find problems
-    """
 
 def delete_from_db(db: dbutils.DBWrapper, key: str, err_msg: str|None=None) -> None:
     if err_msg is None:

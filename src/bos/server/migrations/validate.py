@@ -22,44 +22,43 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+import logging
+from typing import Any
+
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
 from bos.server.schema import validator
 
-from .defs import LOGGER, TEMP_DB, ValidationError
+from .db import TEMP_DB
+
+
+LOGGER = logging.getLogger('bos.server.migration')
+
+
+class ValidationError(Exception):
+    """
+    Raised by validation functions when they find problems
+    """
 
 
 def check_session(key: str|bytes, data: dict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
-    try:
-        name = data["name"]
-    except KeyError as exc:
-        raise ValidationError("Missing required 'name' field") from exc
-    try:
-        validator.validate(name, "V2SessionName")
-    except Exception as exc:
-        LOGGER.error(exc_type_msg(exc))
-        raise ValidationError("Name does not follow schema") from exc
+    name = get_required_field("name", data)
+    validate_against_schema(name, "V2SessionName")
     tenant = get_validate_tenant(data)
-    check_keys(key, get_tenant_aware_key(name, tenant))
+    expected_db_key = get_tenant_aware_key(name, tenant)
+    check_keys(key, expected_db_key)
 
 
 def check_component(key: str|bytes, data: dict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
-    try:
-        name = data["id"]
-    except KeyError as exc:
-        raise ValidationError("Missing required 'id' field") from exc
-    try:
-        validator.validate(name, "V2ComponentId")
-    except Exception as exc:
-        LOGGER.error(exc_type_msg(exc))
-        raise ValidationError("id does not follow schema") from exc
-    check_keys(key, name)
+    compid = get_required_field("id", data)
+    validate_against_schema(compid, "V2ComponentId")
+    check_keys(key, compid)
 
 
 def get_validate_tenant(data: dict) -> str|None:
@@ -70,24 +69,19 @@ def get_validate_tenant(data: dict) -> str|None:
     """
     tenant = data.get("tenant", None)
     if tenant is not None:
-        try:
-            validator.validate(tenant, "V2TenantName")
-        except Exception as exc:
-            LOGGER.error(exc_type_msg(exc))
-            raise ValidationError("Tenant name does not follow schema") from exc
+        validate_against_schema(tenant, "V2TenantName")
     return tenant
 
 
-def get_validate_bootset_path(bsname: str, bsdata: dict) -> str:
+def get_validate_bootset_path(bsname: str, bsdata: dict) -> str:    
     try:
-        path = bsdata["path"]
-    except KeyError as exc:
-        raise ValidationError(f"Boot set '{bsname}' missing required 'path' field") from exc
+        path = get_required_field("path", bsdata)
+    except ValidationError as exc:
+        raise ValidationError(f"Boot set '{bsname}': {exc}") from exc
     try:
-        validator.validate(path, "BootManifestPath")
-    except Exception as exc:
-        LOGGER.error(exc_type_msg(exc))
-        raise ValidationError(f"Boot set '{bsname}' has invalid 'path' field") from exc
+        validate_against_schema(path, "BootManifestPath")
+    except ValidationError as exc:        
+        raise ValidationError(f"Boot set '{bsname}' has invalid 'path' field: {exc}") from exc
     return path
 
 
@@ -108,7 +102,29 @@ def is_valid_available_template_name(name: str, tenant: str|None) -> bool:
     if get_tenant_aware_key(name, tenant) in TEMP_DB:
         return False
     try:
-        validator.validate(name, "SessionTemplateName")
-    except Exception:
+        validate_against_schema(name, "SessionTemplateName")
+    except ValidationError:
         return False
     return True
+
+
+def validate_against_schema(obj: Any, schema_name: str) -> None:
+    """
+    Raises a ValidationError if it does not follow the schema
+    """
+    try:
+        validator.validate(obj, schema_name)
+    except Exception as exc:
+        LOGGER.error(exc_type_msg(exc))
+        raise ValidationError(f"Does not follow {schema_name} schema: {obj}") from exc
+
+
+def get_required_field(field: str, data: dict) -> Any:
+    """
+    Returns the value of the field in the dict
+    Raises ValiationError otherwise
+    """
+    try:
+        return data[field]
+    except KeyError as exc:
+        raise ValidationError(f"Missing required '{field}' field") from exc

@@ -24,14 +24,25 @@
 
 import copy
 import itertools
+import logging
+import string
+from typing import Any
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.v2.boot_set import HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
 
-from .defs import ALPHANUMERIC, LOGGER, TEMP_DB, TEMPLATE_NAME_CHARACTERS, ValidationError, delete_component, delete_session, delete_template
-from .validate import check_component, check_session, check_keys, is_valid_available_template_name, get_validate_bootset_path, get_validate_tenant
+from .db import TEMP_DB, delete_component, delete_session, delete_template
+from .validate import ValidationError, check_component, check_session, check_keys, \
+                      get_required_field, get_validate_bootset_path, get_validate_tenant, \
+                      is_valid_available_template_name, validate_against_schema
+
+
+LOGGER = logging.getLogger('bos.server.migration')
+
+ALPHANUMERIC = string.ascii_letters + string.digits
+TEMPLATE_NAME_CHARACTERS = ALPHANUMERIC + '-._'
 
 
 def sanitize_component(key: str|bytes, data: dict) -> None:
@@ -69,11 +80,8 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
     If there are uncorrectable errors, the function deletes the template.
     """
     # Validate presence of required name and boot_sets fields
-    try:
-        name = data["name"]
-        boot_sets = data["boot_sets"]
-    except KeyError as exc:
-        raise ValidationError(f"Session template missing required '{exc}' field") from exc
+    name = get_required_field("name", data)
+    boot_sets = get_required_field("boot_sets", data)
 
     # Validate that if there is a non-None tenant field, it follows the schema
     tenant = get_validate_tenant(data)
@@ -101,11 +109,7 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
         # Name did not change
         check_keys(key, get_tenant_aware_key(name, tenant))
 
-        try:
-            validator.validate(new_data, "V2SessionTemplate")
-        except Exception as exc:
-            LOGGER.error(exc_type_msg(exc))
-            raise ValidationError("Session template does not follow schema") from exc
+        validate_against_schema(new_data, "V2SessionTemplate")
 
         if data == new_data:
             # Data did not change, so nothing to do
@@ -136,10 +140,9 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
     LOGGER.warning("Old template data: %s", data)
     LOGGER.warning("New template data: %s", new_data)
     try:
-        validator.validate(new_data, "V2SessionTemplate")
-    except Exception as exc:
-        LOGGER.error(exc_type_msg(exc))
-        LOGGER.error("New session template does not follow schema")
+        validate_against_schema(new_data, "V2SessionTemplate")
+    except ValidationError:
+        LOGGER.error("New session template does not follow schema -- it will not be saved")
         return
 
     TEMP_DB.put(new_key, new_data)
@@ -176,6 +179,7 @@ def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
     path = get_validate_bootset_path(bsname, bsdata)
 
     # The type field is required and 's3' is its only legal value
+    # So rather than even checking it, just set it to 's3'
     bsdata["type"] == "s3"
 
     # Delete the name field, if it is present -- it is redundant and should not
@@ -268,16 +272,13 @@ def get_unused_legal_template_name(name: str, tenant: str|None) -> str:
     Returns the new name if successful, otherwise raises ValidationError
     """
     try:
-        validator.validate(name, "SessionTemplateName")
+        validate_against_schema(name, "SessionTemplateName")
         return name
-    except Exception as exc:
+    except ValidationError:
         # If the name has no legal characters at all, or in the (hopefully unlikely) case that it is 0 length,
         # make no attempt to salvage it. Otherwise, we will try to find a good name
-        if name and any(c in TEMPLATE_NAME_CHARACTERS for c in name):
-            LOGGER.warning(exc_type_msg(exc))
-        else:
-            LOGGER.error(exc_type_msg(exc))
-            raise ValidationError("Name does not follow schema") from exc
+        if not name or not any(c in TEMPLATE_NAME_CHARACTERS for c in name):
+            raise
 
     LOGGER.warning("Session template name '%s' (tenant: %s) does not follow schema. Will attempt to rename to a legal name", name, tenant)
 

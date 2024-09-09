@@ -54,8 +54,12 @@ so that it stays around for much longer after completing.
 
 import logging
 
-from .defs import COMP_DB, LOGGER, SESS_DB, TEMP_DB
+from .db import COMP_DB, SESS_DB, TEMP_DB
 from .sanitize import sanitize_component, sanitize_session, sanitize_session_template
+
+
+LOGGER = logging.getLogger('bos.server.migration')
+
 
 def main():
     LOGGER.info("Sanitizing session templates")
