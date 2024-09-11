@@ -1045,6 +1045,16 @@ components:
           example: 1000
           minimum: 0
           maximum: 131071
+        reject_nids:
+          type: boolean
+          description: |
+            If true, then BOS will attempt to prevent Sessions and Session Templates that reference NIDs (which BOS does not support).
+            Specifically, if this option is true, then:
+            - When creating a Session, if the Session limit or a Session Template node list appear to contain NID values, then Session creation will fail.
+            - When creating a Session Template, if a node list appears to contain a NID value, then the Session Template creation will fail.
+            - When validating an existing Session Template, if a node list appears to contain a NID value, then the validation will report an error.
+
+            This option does NOT have an effect on sessions that were created previously.
         session_limit_required:
           type: boolean
           description: If true, Sessions cannot be created without specifying the limit parameter.

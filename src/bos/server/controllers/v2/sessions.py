@@ -48,7 +48,7 @@ DB = dbutils.get_wrapper(db='sessions')
 COMPONENTS_DB = dbutils.get_wrapper(db='components')
 STATUS_DB = dbutils.get_wrapper(db='session_status')
 MAX_COMPONENTS_IN_ERROR_DETAILS = 10
-
+LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
@@ -76,6 +76,20 @@ def post_v2_session():  # noqa: E501
         LOGGER.error(msg)
         return msg, 400
 
+    reject_nids = get_v2_options_data().get('reject_nids', False)
+    # If reject_nids is specified, and a limit is specified, check the limit for nids
+    if session_create.limit and any(LIMIT_NID_RE.match(limit_item)
+                                    for limit_item in session_create.limit.split(',')):
+        msg = f"session limit appears to contain NIDs: {session_create.limit}"
+        if reject_nids:
+            msg = f"reject_nids: {msg}"
+            LOGGER.error(msg)
+            return msg, 400
+        # Since BOS does not support NIDs, still log this as a warning.
+        # There is a chance that a node group has a name with a name resembling
+        # a NID
+        LOGGER.warning(msg)
+
     template_name = session_create.template_name
     LOGGER.debug("Template Name: %s operation: %s", template_name, session_create.operation)
     # Check that the template_name exists.
@@ -87,7 +101,8 @@ def post_v2_session():  # noqa: E501
     session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
-    error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name)
+    error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name,
+                                         reject_nids=reject_nids)
     if error_code >= BOOT_SET_ERROR:
         LOGGER.error("Session template fails check: %s", msg)
         return msg, 400
