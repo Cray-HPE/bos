@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.28.0] - 2024-09-11
+### Added
+- Added `reject_nids` BOS option, to reject Sessions and Session Template which appear to reference NIDs.
+
+### Changed
+- Sanitize BOS data during migration to this BOS version, to ensure it complies with the API specification.
+  - For components and sessions, only validate the fields used to identify them (name, id, tenant). Delete them
+    from the database if these fields have problems.
+  - For templates, validate all fields, but do a more complete attempt to automatically clean them up,
+    only deleting them as a last resort.
+- Do not delete migration job after it completes; instead, set a TTL value for it, to allow time for its logs to be
+  collected after it completes.
+
 ## [2.27.0] - 2024-09-05
 ### Changed
 - Improve server code that validates incoming data
