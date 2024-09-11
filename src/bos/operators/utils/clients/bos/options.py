@@ -124,4 +124,9 @@ class Options:
     def session_limit_required(self):
         return self.get_option('session_limit_required', bool, False)
 
+    @property
+    def reject_nids(self):
+        return self.get_option('reject_nids', bool, False)
+
+
 options = Options()

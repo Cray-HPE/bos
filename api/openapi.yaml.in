@@ -231,7 +231,11 @@ components:
         $ref: '#/components/schemas/Link'
     NodeList:
       type: array
-      description: A node list that is required to have at least one node.
+      description: |
+        A node list that is required to have at least one node.
+        Nodes must be specified by component name (xname). NIDs are not supported.
+        If the reject_nids option is enabled, then Session Template creation or validation will fail if
+        any of the boot sets contain a NodeList that appears to contain a NID.
       minItems: 1
       maxItems: 65535
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
@@ -302,6 +306,9 @@ components:
         Alternatively, the limit can be set to "*", which means no limit.
 
         An empty string or null value is the same as specifying no limit.
+
+        If the reject_nids option is enabled, then Session creation will fail if its
+        limit appears to contain a NID value.
       maxLength: 524288
       nullable: true
       default: ""
@@ -1045,6 +1052,16 @@ components:
           example: 1000
           minimum: 0
           maximum: 131071
+        reject_nids:
+          type: boolean
+          description: |
+            If true, then BOS will attempt to prevent Sessions and Session Templates that reference NIDs (which BOS does not support).
+            Specifically, if this option is true, then:
+            - When creating a Session, if the Session limit or a Session Template node list appear to contain NID values, then Session creation will fail.
+            - When creating a Session Template, if a node list appears to contain a NID value, then the Session Template creation will fail.
+            - When validating an existing Session Template, if a node list appears to contain a NID value, then the validation will report an error.
+
+            This option does NOT have an effect on Sessions that were created prior to it being enabled (even if they have not yet started).
         session_limit_required:
           type: boolean
           description: If true, Sessions cannot be created without specifying the limit parameter.
