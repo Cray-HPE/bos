@@ -1054,7 +1054,7 @@ components:
             - When creating a Session Template, if a node list appears to contain a NID value, then the Session Template creation will fail.
             - When validating an existing Session Template, if a node list appears to contain a NID value, then the validation will report an error.
 
-            This option does NOT have an effect on sessions that were created previously.
+            This option does NOT have an effect on Sessions that were created prior to it being enabled (even if they have not yet started).
         session_limit_required:
           type: boolean
           description: If true, Sessions cannot be created without specifying the limit parameter.
