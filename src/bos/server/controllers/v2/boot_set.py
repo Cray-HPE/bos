@@ -155,7 +155,7 @@ def validate_sanitize_boot_sets(template_data: dict) -> None:
     try:
         boot_sets = template_data["boot_sets"]
     except KeyError as exc:
-        raise ParsingException("Missing required 'boot_sets' field") frome exc
+        raise ParsingException("Missing required 'boot_sets' field") from exc
 
     # The boot_sets field must map to a dict
     if not isinstance(boot_sets, dict):
