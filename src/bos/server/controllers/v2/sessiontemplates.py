@@ -30,7 +30,7 @@ from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.schema import validator
 from bos.server.utils import get_request_json
-from .boot_set import validate_boot_sets, validate_sanitize_boot_set
+from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
 DB = dbutils.get_wrapper(db='session_templates')
