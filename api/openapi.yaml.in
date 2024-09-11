@@ -231,7 +231,10 @@ components:
         $ref: '#/components/schemas/Link'
     NodeList:
       type: array
-      description: A node list that is required to have at least one node.
+      description: |
+        A node list that is required to have at least one node.
+        If the reject_nids option is enabled, then Session Template creation or validation will fail if
+        any of the boot sets contain a NodeList that appears to contain a NID.
       minItems: 1
       maxItems: 65535
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
@@ -302,6 +305,9 @@ components:
         Alternatively, the limit can be set to "*", which means no limit.
 
         An empty string or null value is the same as specifying no limit.
+
+        If the reject_nids option is enabled, then Session creation will fail if the
+        Session limits appears to contain a NID value.
       maxLength: 524288
       nullable: true
       default: ""
