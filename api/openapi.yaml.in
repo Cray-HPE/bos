@@ -306,8 +306,8 @@ components:
 
         An empty string or null value is the same as specifying no limit.
 
-        If the reject_nids option is enabled, then Session creation will fail if the
-        Session limits appears to contain a NID value.
+        If the reject_nids option is enabled, then Session creation will fail if its
+        limit appears to contain a NID value.
       maxLength: 524288
       nullable: true
       default: ""
