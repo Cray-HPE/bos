@@ -1567,6 +1567,7 @@ paths:
       tags:
         - v2
         - sessions
+        - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: patch_v2_session
       requestBody:
