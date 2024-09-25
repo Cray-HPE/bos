@@ -27,8 +27,10 @@ from botocore.exceptions import ClientError
 
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
+from bos.operators.utils.clients.ims import get_image, get_ims_id_from_s3_url, ImageNotFound
 from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, \
                                            ArtifactNotFound
+
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_image_metadata')
 
@@ -196,4 +198,42 @@ class S3BootImageMetaData(BootImageMetaData):
         bp = self.boot_parameters
         if bp:
             return bp['link']['etag']
+        return None
+
+    @property
+    def arch(self):
+        """
+        Extract the IMS image ID from the S3 manifest path.
+        Query IMS to get the architecture of the image.
+        Return the 'arch' field from the IMS image
+        If image is not in IMS, or 'arch' field not set, log warnings and return None.
+        (since technically BOS does not require the images to be in IMS)
+        """
+        s3_url = self.boot_artifacts.s3url
+        ims_id = get_ims_id_from_s3_url(s3_url)
+        if not ims_id:
+            LOGGER.warning(
+                "Boot artifact S3 URL '%s' does not follow the expected IMS image convention",
+                s3_url)
+            return None
+        try:
+            ims_image_data = get_image(ims_id)
+        except ImageNotFound:
+            LOGGER.warning(
+                "Can't determine architecture of '%s' because image '%s' does not exist in IMS",
+                s3_url, ims_id)
+            return None
+        except Exception as err:
+            LOGGER.error("Error getting IMS image data for '%s' (S3 path '%s'): %s", ims_id,
+                         s3_url, exc_type_msg(err))
+            return None
+        try:
+            return ims_image_data["arch"]
+        except KeyError:
+            LOGGER.warning("Can't determine architecture of '%s' because 'arch' field not set in "
+                           "IMS image '%s': %s", s3_url, ims_id, ims_image_data)
+        except Exception as err:
+            LOGGER.error("IMS image '%s' (s3 path '%s'): %s", ims_id, s3_url, ims_image_data)
+            LOGGER.error("Error getting 'arch' field for IMS image '%s': %s", ims_id,
+                         exc_type_msg(err))
         return None
