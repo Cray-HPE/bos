@@ -61,7 +61,7 @@ def validate_boot_sets(session_template: dict,
     # Verify boot sets exist.
     if 'boot_sets' not in session_template or not session_template['boot_sets']:
         msg = f"Session template '{template_name}' must have one or more defined boot sets for " \
-        "the creation of a session. It has none."
+              "the creation of a session. It has none."
         return BOOT_SET_ERROR, msg
 
     hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
@@ -72,8 +72,8 @@ def validate_boot_sets(session_template: dict,
         if not any(specified):
             msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
                   f"must have at least one " \
-                f"hardware specifier field provided (%s); None were provided." \
-                % (', '.join(sorted(hardware_specifier_fields)))
+                  f"hardware specifier field provided (%s); None were provided." \
+                  % (', '.join(sorted(hardware_specifier_fields)))
             LOGGER.error(msg)
             return BOOT_SET_ERROR, msg
         if operation in ['boot', 'reboot']:
@@ -82,7 +82,7 @@ def validate_boot_sets(session_template: dict,
                 image_metadata = BootImageMetaDataFactory(bs)()
             except Exception as err:
                 msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its boot artifacts. Error: " + exc_type_msg(err)
+                      f"could not locate its boot artifacts. Error: " + exc_type_msg(err)
                 LOGGER.error(msg)
                 return BOOT_SET_ERROR, msg
 
@@ -96,7 +96,7 @@ def validate_boot_sets(session_template: dict,
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Error: " + exc_type_msg(err)
+                          f"could not locate its {boot_artifact}. Error: " + exc_type_msg(err)
                     LOGGER.error(msg)
                     return BOOT_SET_ERROR, msg
 
@@ -114,7 +114,7 @@ def validate_boot_sets(session_template: dict,
                     _ = obj.object_header
                 except Exception as err:
                     msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Warning: " + exc_type_msg(err)
+                          f"could not locate its {boot_artifact}. Warning: " + exc_type_msg(err)
                     LOGGER.warn(msg)
                     warning_flag = True
                     warn_msg = warn_msg + msg
@@ -122,4 +122,3 @@ def validate_boot_sets(session_template: dict,
                     return BOOT_SET_WARNING, warn_msg
 
     return BOOT_SET_SUCCESS, "Valid"
-
