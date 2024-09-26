@@ -65,6 +65,8 @@ def validate_boot_sets(session_template: dict,
         return BOOT_SET_ERROR, msg
 
     hardware_specifier_fields = ('node_roles_groups', 'node_list', 'node_groups')
+    warning_flag = False
+    warn_msg = ""
     for bs_name, bs in session_template['boot_sets'].items():
         # Verify that the hardware is specified
         specified = [bs.get(field, None)
@@ -100,8 +102,6 @@ def validate_boot_sets(session_template: dict,
                     LOGGER.error(msg)
                     return BOOT_SET_ERROR, msg
 
-            warning_flag = False
-            warn_msg = ""
             for boot_artifact in ["initrd", "boot_parameters"]:
                 try:
                     artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
@@ -118,7 +118,8 @@ def validate_boot_sets(session_template: dict,
                     LOGGER.warn(msg)
                     warning_flag = True
                     warn_msg = warn_msg + msg
-            if warning_flag:
-                    return BOOT_SET_WARNING, warn_msg
+
+    if warning_flag:
+        return BOOT_SET_WARNING, warn_msg
 
     return BOOT_SET_SUCCESS, "Valid"
