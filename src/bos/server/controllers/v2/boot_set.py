@@ -80,8 +80,8 @@ def validate_boot_sets(session_template: dict,
     if reject_nids is None:
         reject_nids = get_v2_options_data().get('reject_nids', False)
 
-    for bs_name, bs in session_template['boot_sets'].items():
-        warning_msgs = []
+    warning_msgs = []
+    for bs_name, bs in session_template['boot_sets'].items():        
         bs_msg = partial(_bs_msg, template_name=template_name, bs_name=bs_name)
 
         # Verify that the hardware is specified
@@ -140,8 +140,9 @@ def validate_boot_sets(session_template: dict,
                     msg = bs_msg(f"Can't locate its {boot_artifact}. Warning: {exc_type_msg(err)}")
                     LOGGER.warning(msg)
                     warning_msgs.append(msg)
-            if warning_msgs:
-                return BOOT_SET_WARNING, "; ".join(warning_msgs)
+
+    if warning_msgs:
+        return BOOT_SET_WARNING, "; ".join(warning_msgs)
 
     return BOOT_SET_SUCCESS, "Valid"
 
