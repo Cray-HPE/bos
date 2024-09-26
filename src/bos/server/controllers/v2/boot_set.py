@@ -22,6 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+from functools import partial
 import logging
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
@@ -37,6 +38,13 @@ BOOT_SET_ERROR = 2
 
 # Valid boot sets are required to have at least one of these fields
 HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
+
+
+def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
+    """
+    Shortcut for creating validation error/warning messages for a specific bootset
+    """
+    return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
 
 
 def validate_boot_sets(session_template: dict,
@@ -74,21 +82,18 @@ def validate_boot_sets(session_template: dict,
 
     for bs_name, bs in session_template['boot_sets'].items():
         warning_msgs = []
+        bs_msg = partial(_bs_msg, template_name=template_name, bs_name=bs_name)
 
         # Verify that the hardware is specified
         specified = [bs.get(field, None)
                      for field in HARDWARE_SPECIFIER_FIELDS]
         if not any(specified):
-            msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                  f"must have at least one non-empty" \
-                  f"hardware specifier field provided (%s); None were provided." \
-                  % (', '.join(sorted(HARDWARE_SPECIFIER_FIELDS)))
+            msg = bs_msg(f"No non-empty hardware specifier field {HARDWARE_SPECIFIER_FIELDS}")
             LOGGER.error(msg)
             return BOOT_SET_ERROR, msg
         try:
             if any(node[:3] == "nid" for node in bs["node_list"]):
-                msg = f"Session template: '{template_name}' boot set: '{bs_name}' "\
-                      "has NID in 'node_list'"
+                msg = bs_msg("Has NID in 'node_list'")
                 if reject_nids:
                     LOGGER.error(msg)
                     return BOOT_SET_ERROR, msg
@@ -105,8 +110,7 @@ def validate_boot_sets(session_template: dict,
             try:
                 image_metadata = BootImageMetaDataFactory(bs)()
             except Exception as err:
-                msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its boot artifacts. Error: " + exc_type_msg(err)
+                msg = bs_msg(f"Can't locate boot artifacts. Error: {exc_type_msg(err)}")
                 LOGGER.error(msg)
                 return BOOT_SET_ERROR, msg
 
@@ -119,8 +123,7 @@ def validate_boot_sets(session_template: dict,
                     obj = S3Object(path, etag)
                     _ = obj.object_header
                 except Exception as err:
-                    msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Error: " + exc_type_msg(err)
+                    msg = bs_msg(f"Can't locate its {boot_artifact}. Error: {exc_type_msg(err)}")
                     LOGGER.error(msg)
                     return BOOT_SET_ERROR, msg
 
@@ -128,16 +131,13 @@ def validate_boot_sets(session_template: dict,
                 try:
                     artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
                     if not artifact:
-                        raise ArtifactNotFound(f"Session template: '{template_name}' "
-                                               f"boot set: '{bs_name}' "
-                                               f"does not contain a {boot_artifact}.")
+                        raise ArtifactNotFound(f"Doesn't contain a {boot_artifact}")
                     path = artifact ['link']['path']
                     etag = artifact['link']['etag']
                     obj = S3Object(path, etag)
                     _ = obj.object_header
                 except Exception as err:
-                    msg = f"Session template: '{template_name}' boot set: '{bs_name}' " \
-                    f"could not locate its {boot_artifact}. Warning: " + exc_type_msg(err)
+                    msg = bs_msg(f"Can't locate its {boot_artifact}. Warning: {exc_type_msg(err)}")
                     LOGGER.warning(msg)
                     warning_msgs.append(msg)
             if warning_msgs:
