@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.46] - 2024-09-26
+### Fixed
+- When validating boot sets, check all boot sets for severe errors before returning only warnings
+
 ## [2.0.45] - 08-25-2024
 ### Dependencies
 - Simplify how latest patch version of `liveness` is determined
