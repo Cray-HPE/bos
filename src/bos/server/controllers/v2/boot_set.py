@@ -39,12 +39,10 @@ BOOT_SET_ERROR = 2
 # Valid boot sets are required to have at least one of these fields
 HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
 
-
-def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
+class BootSetError(Exception):
     """
-    Shortcut for creating validation error/warning messages for a specific bootset
+    Generic error class for fatal problems found during boot set validation
     """
-    return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
 
 
 def validate_boot_sets(session_template: dict,
@@ -69,8 +67,6 @@ def validate_boot_sets(session_template: dict,
             0 -- Success
             1 -- Warning, not fatal
             2 -- Error, fatal
-
-
     """
     # Verify boot sets exist.
     if not session_template.get('boot_sets', None):
@@ -81,71 +77,93 @@ def validate_boot_sets(session_template: dict,
         reject_nids = get_v2_options_data().get('reject_nids', False)
 
     warning_msgs = []
-    for bs_name, bs in session_template['boot_sets'].items():        
+    for bs_name, bs in session_template['boot_sets'].items():
         bs_msg = partial(_bs_msg, template_name=template_name, bs_name=bs_name)
-
-        # Verify that the hardware is specified
-        specified = [bs.get(field, None)
-                     for field in HARDWARE_SPECIFIER_FIELDS]
-        if not any(specified):
-            msg = bs_msg(f"No non-empty hardware specifier field {HARDWARE_SPECIFIER_FIELDS}")
+        try:
+            bs_warning_msgs = _validate_boot_set(bs=bs, operation=operation,
+                                                 reject_nids=reject_nids)
+        except BootSetError as err:
+            msg = bs_msg(str(err))
             LOGGER.error(msg)
             return BOOT_SET_ERROR, msg
-        try:
-            if any(node[:3] == "nid" for node in bs["node_list"]):
-                msg = bs_msg("Has NID in 'node_list'")
-                if reject_nids:
-                    LOGGER.error(msg)
-                    return BOOT_SET_ERROR, msg
-                # Otherwise, log this as a warning -- even if reject_nids is not set,
-                # BOS still doesn't support NIDs, so this is still undesirable
-                LOGGER.warning(msg)
-                warning_msgs.append(msg)
-        except KeyError:
-            # If there is no node_list field, not a problem
-            pass
-
-        if operation in ['boot', 'reboot']:
-            # Verify that the boot artifacts exist
-            try:
-                image_metadata = BootImageMetaDataFactory(bs)()
-            except Exception as err:
-                msg = bs_msg(f"Can't locate boot artifacts. Error: {exc_type_msg(err)}")
-                LOGGER.error(msg)
-                return BOOT_SET_ERROR, msg
-
-            # Check boot artifacts' S3 headers
-            for boot_artifact in ["kernel"]:
-                try:
-                    artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
-                    path = artifact ['link']['path']
-                    etag = artifact['link']['etag']
-                    obj = S3Object(path, etag)
-                    _ = obj.object_header
-                except Exception as err:
-                    msg = bs_msg(f"Can't locate its {boot_artifact}. Error: {exc_type_msg(err)}")
-                    LOGGER.error(msg)
-                    return BOOT_SET_ERROR, msg
-
-            for boot_artifact in ["initrd", "boot_parameters"]:
-                try:
-                    artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
-                    if not artifact:
-                        raise ArtifactNotFound(f"Doesn't contain a {boot_artifact}")
-                    path = artifact ['link']['path']
-                    etag = artifact['link']['etag']
-                    obj = S3Object(path, etag)
-                    _ = obj.object_header
-                except Exception as err:
-                    msg = bs_msg(f"Can't locate its {boot_artifact}. Warning: {exc_type_msg(err)}")
-                    LOGGER.warning(msg)
-                    warning_msgs.append(msg)
+        except Exception as err:
+            LOGGER.error(
+                bs_msg(f"Unexpected exception in _validate_boot_set: {exc_type_msg(err)}"))
+            raise
+        for msg in map(bs_msg, bs_warning_msgs):
+            LOGGER.warning(msg)
+            warning_msgs.append(msg)
 
     if warning_msgs:
         return BOOT_SET_WARNING, "; ".join(warning_msgs)
 
     return BOOT_SET_SUCCESS, "Valid"
 
+
+def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
+    """
+    Shortcut for creating validation error/warning messages for a specific bootset
+    """
+    return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
+
+
+def _validate_boot_set(bs: dict, operation: str, reject_nids: bool) -> list[str]:
+    """
+    Helper function for validate_boot_sets that performs validation on a single boot set.
+    Raises BootSetError if fatal errors found.
+    Returns a list of warning messages (if any)
+    """
+    warning_msgs = []
+
+    # Verify that the hardware is specified
+    specified = [bs.get(field, None)
+                 for field in HARDWARE_SPECIFIER_FIELDS]
+    if not any(specified):
+        raise BootSetError(f"No non-empty hardware specifier field {HARDWARE_SPECIFIER_FIELDS}")
+    try:
+        if any(node[:3] == "nid" for node in bs["node_list"]):
+            msg = "Has NID in 'node_list'"
+            if reject_nids:
+                raise BootSetError(msg)
+            # Otherwise, log this as a warning -- even if reject_nids is not set,
+            # BOS still doesn't support NIDs, so this is still undesirable
+            warning_msgs.append(msg)
+    except KeyError:
+        # If there is no node_list field, not a problem
+        pass
+
+    if operation in ['boot', 'reboot']:
+        # Verify that the boot artifacts exist
+        try:
+            image_metadata = BootImageMetaDataFactory(bs)()
+        except Exception as err:
+            raise BootSetError(f"Can't find boot artifacts. Error: {exc_type_msg(err)}") from err
+
+        # Check boot artifacts' S3 headers
+        for boot_artifact in ["kernel"]:
+            try:
+                artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
+                path = artifact ['link']['path']
+                etag = artifact['link']['etag']
+                obj = S3Object(path, etag)
+                _ = obj.object_header
+            except Exception as err:
+                raise BootSetError(
+                    f"Can't find {boot_artifact}. Error: {exc_type_msg(err)}") from err
+
+        for boot_artifact in ["initrd", "boot_parameters"]:
+            try:
+                artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
+                if not artifact:
+                    raise ArtifactNotFound(f"Doesn't contain a {boot_artifact}")
+                path = artifact ['link']['path']
+                etag = artifact['link']['etag']
+                obj = S3Object(path, etag)
+                _ = obj.object_header
+            except Exception as err:
+                warning_msgs.append(f"Can't find {boot_artifact}. Warning: {exc_type_msg(err)}")
+
+    return warning_msgs
 
 def validate_sanitize_boot_sets(template_data: dict) -> None:
     """
