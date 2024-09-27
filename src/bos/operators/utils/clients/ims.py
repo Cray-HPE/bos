@@ -35,8 +35,18 @@ IMAGES_ENDPOINT = f"{BASE_ENDPOINT}/images"
 LOGGER = logging.getLogger('bos.operators.utils.clients.ims')
 IMS_TAG_OPERATIONS = ['set', 'remove']
 
+
 class TagFailure(Exception):
     pass
+
+
+class ImageNotFound(Exception):
+    """
+    Raised if querying IMS for an image and it is not found
+    """
+    def __init__(self, image_id: str):
+        super().__init__(self, f"IMS image id '{image_id}' does not exist in IMS")
+
 
 def patch_image(image_id, data, session=None):
     if not data:
@@ -44,15 +54,19 @@ def patch_image(image_id, data, session=None):
         return
     if not session:
         session = requests_retry_session()
-    LOGGER.debug("PATCH %s with body=%s", IMAGES_ENDPOINT, data)
-    response = session.patch(f"{IMAGES_ENDPOINT}/{image_id}", json=data)
+    url=f"{IMAGES_ENDPOINT}/{image_id}"
+    LOGGER.debug("PATCH %s with body=%s", url, data)
+    response = session.patch(url, json=data)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
                  response.reason, compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:
-        LOGGER.error("Failed asking IMS to tag image: %s", exc_type_msg(err))
+        LOGGER.error("Failed asking IMS to patch image %s: %s", image_id, exc_type_msg(err))
+        if response.status_code == 404:
+            raise ImageNotFound(image_id) from err
         raise
+
 
 def tag_image(image_id: str, operation: str, key: str, value: str = None, session=None) -> None:
     if operation not in IMS_TAG_OPERATIONS:
