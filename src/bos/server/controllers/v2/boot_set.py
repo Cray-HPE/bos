@@ -25,6 +25,7 @@
 from functools import partial
 import logging
 from bos.common.utils import exc_type_msg
+from bos.operators.utils.boot_image_metadata import BootImageMetaData
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
 from bos.server.controllers.v2.options import get_v2_options_data
@@ -39,10 +40,32 @@ BOOT_SET_ERROR = 2
 # Valid boot sets are required to have at least one of these fields
 HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
 
+DEFAULT_ARCH = "X86"
+
+# Mapping from BOS boot set arch values to expected IMS image arch values
+# Omits BOS Other value, since there is no corresponding IMS image arch value
+EXPECTED_IMS_ARCH = {
+    "ARM": "aarch64",
+    "Unknown": "x86_64",
+    "X86": "x86_64"
+}
+
+
 class BootSetError(Exception):
     """
     Generic error class for fatal problems found during boot set validation
     """
+
+
+class BootSetArchMismatch(BootSetError):
+    def __init__(self, bs_arch: str, expected_ims_arch: str, actual_ims_arch: str):
+        super().__init__(f"Boot set arch '{bs_arch}' means IMS image arch should be "
+                         f"'{expected_ims_arch}', but actual IMS image arch is '{actual_ims_arch}'")
+
+
+class CannotValidateBootSetArch(BootSetError):
+    def __init__(self, msg: str):
+        super().__init__(f"Can't validate boot image arch: {msg}")
 
 
 def validate_boot_sets(session_template: dict,
@@ -139,6 +162,15 @@ def _validate_boot_set(bs: dict, operation: str, reject_nids: bool) -> list[str]
         except Exception as err:
             raise BootSetError(f"Can't find boot artifacts. Error: {exc_type_msg(err)}") from err
 
+        try:
+            validate_boot_set_arch(bs, image_metadata)
+        except CannotValidateBootSetArch as err:
+            warning_msgs.append(str(err))
+        except BootSetError as err:
+            raise BootSetError(f"Arch validation error: {err}") from err
+        except Exception as err:
+            raise BootSetError(f"Arch validation error: {exc_type_msg(err)}") from err
+
         # Check boot artifacts' S3 headers
         for boot_artifact in ["kernel"]:
             try:
@@ -170,6 +202,36 @@ def _validate_boot_set(bs: dict, operation: str, reject_nids: bool) -> list[str]
                                     f"Warning: {exc_type_msg(err)}")
 
     return warning_msgs
+
+
+def validate_boot_set_arch(bs: dict, image_metadata: BootImageMetaData|None=None) -> None:
+    """
+    If the boot set architecture is not set to Other, check that the IMS image
+    architecture matches the boot set architecture (treating a boot set architecture
+    of Unknown as X86)
+    """
+    arch = bs.get("arch", DEFAULT_ARCH)
+    if arch == 'Other':
+        raise CannotValidateBootSetArch("Boot set arch set to 'Other'")
+
+    if image_metadata is None:
+        try:
+            image_metadata = BootImageMetaDataFactory(bs)()
+        except Exception as err:
+            raise CannotValidateBootSetArch(
+                f"Can't find boot artifacts: {exc_type_msg(err)}") from err
+
+    try:
+        ims_image_arch = image_metadata.arch
+    except Exception as err:
+        raise CannotValidateBootSetArch(exc_type_msg(err)) from err
+
+    if ims_image_arch is None:
+        raise CannotValidateBootSetArch("Can't determine architecture of boot artifacts")
+    if EXPECTED_IMS_ARCH[arch] != ims_image_arch:
+        raise BootSetArchMismatch(bs_arch=arch, expected_ims_arch=EXPECTED_IMS_ARCH[arch],
+                                  actual_ims_arch=ims_image_arch)
+
 
 def validate_sanitize_boot_sets(template_data: dict) -> None:
     """
@@ -212,6 +274,16 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict, reject_nids: bool=Fa
         # boot sets to which they map (if they contain a 'name' field).
         raise ParsingException(f"boot_sets key ({bs_name}) does not match 'name' "
                                f"field of corresponding boot set ({bs_data['name']})")
+
+    # Validate the boot set architecture
+    try:
+        validate_boot_set_arch(bs_data)
+    except CannotValidateBootSetArch as err:
+        LOGGER.warning('%s', bs_data)
+        LOGGER.warning("Bboot set '%s': %s", bs_name, err)
+    except Exception as err:
+        raise ParsingException(
+            f"Error found validating arch of boot set '{bs_name}': {exc_type_msg(err)}") from err
 
     # Validate that the boot set has at least one of the HARDWARE_SPECIFIER_FIELDS
     if not any(field_name in bs_data for field_name in HARDWARE_SPECIFIER_FIELDS):
