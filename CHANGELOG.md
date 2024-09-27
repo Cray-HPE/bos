@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Run `pylint` during builds
 - When validating boot sets, if a boot artifact is missing from a manifest, include the manifest S3 URL
   in the associated message.
+- Add check that at least one hardware-specifier field is non-empty to `validate_sanitize_boot_sets`
 
 ### Changed
 - Marked PATCH session status endpoint to be ignored by the CLI.

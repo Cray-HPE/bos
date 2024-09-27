@@ -218,6 +218,11 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict, reject_nids: bool=Fa
         raise ParsingException(f"Boot set {bs_name} has none of the following "
                                f"fields: {HARDWARE_SPECIFIER_FIELDS}")
 
+    # Validate that at least one of the HARDWARE_SPECIFIER_FIELDS is non-empty
+    if not any(field_name in bs_data and bs_data[field_name] for field_name in HARDWARE_SPECIFIER_FIELDS):
+        raise ParsingException(f"Boot set {bs_name} has no non-empty hardware-specifier fields: "
+                               f"{HARDWARE_SPECIFIER_FIELDS}")
+
     # Last thing to do is validate/sanitize the node_list field, if it is present
     try:
         node_list = bs_data["node_list"]
