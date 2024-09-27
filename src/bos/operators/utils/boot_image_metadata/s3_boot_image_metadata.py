@@ -27,7 +27,7 @@ from botocore.exceptions import ClientError
 
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
-from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, \
+from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, S3Url, \
                                            ArtifactNotFound
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_image_metadata')
@@ -197,3 +197,10 @@ class S3BootImageMetaData(BootImageMetaData):
         if bp:
             return bp['link']['etag']
         return None
+
+    @property
+    def manifest_s3_url(self) -> S3Url:
+        """
+        Returns the S3 URL to the boot manifest
+        """
+        return self.boot_artifacts.s3url

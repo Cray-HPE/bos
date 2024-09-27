@@ -148,20 +148,26 @@ def _validate_boot_set(bs: dict, operation: str, reject_nids: bool) -> list[str]
                 obj = S3Object(path, etag)
                 _ = obj.object_header
             except Exception as err:
-                raise BootSetError(
-                    f"Can't find {boot_artifact}. Error: {exc_type_msg(err)}") from err
+                raise BootSetError(f"Can't find {boot_artifact} in "
+                                   f"{image_metadata.manifest_s3_url.url}. "
+                                   f"Error: {exc_type_msg(err)}") from err
 
         for boot_artifact in ["initrd", "boot_parameters"]:
             try:
                 artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
                 if not artifact:
-                    raise ArtifactNotFound(f"Doesn't contain a {boot_artifact}")
+                    raise ArtifactNotFound()
                 path = artifact ['link']['path']
                 etag = artifact['link']['etag']
                 obj = S3Object(path, etag)
                 _ = obj.object_header
+            except ArtifactNotFound as err:
+                warning_msgs.append(
+                    f"{image_metadata.manifest_s3_url.url} doesn't contain a {boot_artifact}")
             except Exception as err:
-                warning_msgs.append(f"Can't find {boot_artifact}. Warning: {exc_type_msg(err)}")
+                warning_msgs.append(f"Can't find {boot_artifact} in "
+                                    f"{image_metadata.manifest_s3_url.url}. "
+                                    f"Warning: {exc_type_msg(err)}")
 
     return warning_msgs
 
