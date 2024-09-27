@@ -45,7 +45,7 @@ class ImageNotFound(Exception):
     Raised if querying IMS for an image and it is not found
     """
     def __init__(self, image_id: str):
-        super().__init__(self, f"IMS image id '{image_id}' does not exist in IMS")
+        super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
 def patch_image(image_id, data, session=None):
