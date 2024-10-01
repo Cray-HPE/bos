@@ -25,6 +25,7 @@
 import logging
 import re
 from requests.exceptions import HTTPError
+from requests.sessions import Session as RequestsSession
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 from bos.operators.utils.clients.s3 import S3Url
@@ -58,7 +59,7 @@ class ImageNotFound(Exception):
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-def get_image(image_id, session=None) -> dict:
+def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
