@@ -150,14 +150,14 @@ def components_by_id(components: List[dict]) -> dict:
     """
     return { component["id"]: component for component in components }
 
-def reverse_components_by_id(components_by_id: dict) -> List[dict]:
+def reverse_components_by_id(components_by_id_map: dict) -> List[dict]:
     """
     Input:
-    components_by_id: a dictionary with the name of each component as the
+    components_by_id_map: a dictionary with the name of each component as the
     key and the value being the entire component itself.
     Return:
     A list with each component as an element
 
     Purpose: Reverse the effect of components_by_id.
     """
-    return list(components_by_id.values())
+    return list(components_by_id_map.values())

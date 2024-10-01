@@ -79,7 +79,7 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     pip3 list --format freeze && \
     python3 -m convert_oas30_schemas /app/openapi.json /app/lib/bos/server/openapi.jsonschema && \
     cat /app/lib/bos/server/openapi.jsonschema
-
+RUN pylint /app/convert_oas/convert_oas.py || true
 
 # Base image
 FROM alpine-base AS base
@@ -120,10 +120,29 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
 FROM base AS testing
 WORKDIR /app
 COPY test-requirements.txt .
-RUN --mount=type=secret,id=netrc,target=/root/.netrc cd /app && \
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    cd /app && \
     pip3 install --no-cache-dir -r test-requirements.txt && \
     pip3 list --format freeze
 
+
+# Pylint reporting
+FROM base AS pylint-base
+COPY srclist.txt docker_pylint.sh /app/venv/
+WORKDIR /app
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    pip3 install --no-cache-dir pylint -c constraints.txt && \
+    pip3 list --format freeze
+
+# Pylint errors-only
+FROM pylint-base AS pylint-errors-only
+WORKDIR /app/venv
+CMD [ "./docker_pylint.sh", "--errors-only" ]
+
+# Pylint full
+FROM pylint-base AS pylint-full
+WORKDIR /app/venv
+CMD [ "./docker_pylint.sh", "--fail-under", "9" ]
 
 # Codestyle reporting
 FROM testing AS codestyle

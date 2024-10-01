@@ -93,7 +93,12 @@ pipeline {
                     }
                     steps {
                         echo "Docker args are ${env.DOCKER_ARGS}"
-                        sh "make image"
+                        sh "make image_setup"
+                        sh "make image_build"
+                        sh "make image_build_pylint_errors"
+                        sh "make image_run_pylint_errors"
+                        sh "make image_build_pylint_full"
+                        sh "make image_run_pylint_full"
                     }
                 }
                 stage('Chart') {

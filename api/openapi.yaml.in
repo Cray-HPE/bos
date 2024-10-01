@@ -436,6 +436,10 @@ components:
       maxLength: 127
       pattern: '^[a-zA-Z0-9](?:[-._a-zA-Z0-9]{0,125}[a-zA-Z0-9])?$'
       example: "session-20190728032600"
+    V2SessionNameOrEmpty:
+      oneOf:
+        - $ref: '#/components/schemas/V2SessionName'
+        - $ref: '#/components/schemas/EmptyString'
     V2SessionOperation:
       type: string
       enum: ['boot', 'reboot', 'shutdown']
@@ -762,9 +766,7 @@ components:
         configuration:
           $ref: '#/components/schemas/CfsConfiguration'
         session:
-          oneOf:
-            - $ref: '#/components/schemas/V2SessionName'
-            - $ref: '#/components/schemas/EmptyString'
+          $ref: '#/components/schemas/V2SessionNameOrEmpty'
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
       additionalProperties: false
@@ -851,9 +853,7 @@ components:
           description: A description of the most recent error to impact the Component.
           maxLength: 65536
         session:
-          oneOf:
-            - $ref: '#/components/schemas/V2SessionName'
-            - $ref: '#/components/schemas/EmptyString'
+          $ref: '#/components/schemas/V2SessionNameOrEmpty'
         retry_policy:
           type: integer
           description: |
@@ -892,9 +892,7 @@ components:
           description: A description of the most recent error to impact the Component.
           maxLength: 65536
         session:
-          oneOf:
-            - $ref: '#/components/schemas/V2SessionName'
-            - $ref: '#/components/schemas/EmptyString'
+          $ref: '#/components/schemas/V2SessionNameOrEmpty'
         retry_policy:
           type: integer
           description: |
@@ -1567,6 +1565,7 @@ paths:
       tags:
         - v2
         - sessions
+        - cli_ignore
       x-openapi-router-controller: bos.server.controllers.v2.sessions
       operationId: patch_v2_session
       requestBody:

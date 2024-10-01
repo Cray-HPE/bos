@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.29.0] - 2024-10-01
+### Added
+- Run `pylint` during builds
+- When validating boot sets, if a boot artifact is missing from a manifest, include the manifest S3 URL
+  in the associated message.
+- Add check that at least one hardware-specifier field is non-empty to `validate_sanitize_boot_sets`
+- When validating boot sets (at session template patch/creation/validation or session creation),
+  attempt to validate that the specified architecture matches that of the corresponding IMS image.
+  Mismatches are fatal errors.
+
+### Changed
+- Marked PATCH session status endpoint to be ignored by the CLI.
+- Eliminate redundancies in API spec by defining `V2SessionNameOrEmpty` schema.
+- Refactor `validate_boot_sets` function into multiple functions to make it easier to understand.
+- During migration to this BOS version, for boot sets with no `arch` field, add the field with its
+  default value.
+
+### Fixed
+- When validating boot sets, check all boot sets for severe errors before returning only warnings
+
 ## [2.28.0] - 2024-09-11
 ### Added
 - Added `reject_nids` BOS option, to reject Sessions and Session Template which appear to reference NIDs.

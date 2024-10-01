@@ -66,6 +66,12 @@ class BootImageMetaData:
         """
         return None
 
+    @property
+    def arch(self):
+        """
+        Get the arch
+        """
+        return None
 
 class BootImageMetaDataBadRead(Exception):
     """
