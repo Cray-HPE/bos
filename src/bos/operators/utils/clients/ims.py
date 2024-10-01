@@ -23,9 +23,12 @@
 #
 
 import logging
+import re
 from requests.exceptions import HTTPError
+from requests.sessions import Session as RequestsSession
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.s3 import S3Url
 
 SERVICE_NAME = 'cray-ims'
 IMS_VERSION = 'v3'
@@ -35,6 +38,14 @@ IMAGES_ENDPOINT = f"{BASE_ENDPOINT}/images"
 LOGGER = logging.getLogger('bos.operators.utils.clients.ims')
 IMS_TAG_OPERATIONS = ['set', 'remove']
 
+# Making minimal assumptions about the IMS ID itself, this pattern just makes sure that the
+# S3 key is some string, then a /, then at least one more character.
+IMS_S3_KEY_RE = r'^([^/]+)/.+'
+IMS_S3_KEY_RE_PROG = re.compile(IMS_S3_KEY_RE)
+
+# If an IMS image does not have the arch field, default to x86_64 for purposes of
+# backward-compatibility
+DEFAULT_IMS_IMAGE_ARCH = 'x86_64'
 
 class TagFailure(Exception):
     pass
@@ -46,6 +57,38 @@ class ImageNotFound(Exception):
     """
     def __init__(self, image_id: str):
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
+
+
+def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
+    """
+    Queries IMS to retrieve the specified image and return it.
+    If the image does not exist, raise ImageNotFound.
+    Other errors (like a failure to query IMS) will result in appropriate exceptions being raised.
+    """
+    if not session:
+        session = requests_retry_session()
+    url=f"{IMAGES_ENDPOINT}/{image_id}"
+    LOGGER.debug("GET %s", url)
+    response = session.get(url)
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, compact_response_text(response.text))
+    try:
+        response.raise_for_status()
+    except HTTPError as err:
+        msg = f"Failed asking IMS to get image {image_id}: {exc_type_msg(err)}"
+        if response.status_code == 404:
+            # If it's not found, we just log it as a warning, because we may be
+            # okay with that -- that will be for the caller to decide
+            LOGGER.warning(msg)
+            raise ImageNotFound(image_id) from err
+        LOGGER.error(msg)
+        raise
+    try:
+        return response.json()
+    except Exception as err:
+        LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id,
+                     exc_type_msg(err))
+        raise
 
 
 def patch_image(image_id, data, session=None):
@@ -95,3 +138,14 @@ def tag_image(image_id: str, operation: str, key: str, value: str = None, sessio
             }
     }
     patch_image(image_id=image_id, data=data, session=session)
+
+
+def get_ims_id_from_s3_url(s3_url: S3Url) -> str|None:
+    """
+    If the s3_url matches the expected format of an IMS image path, then return the IMS image ID.
+    Otherwise return None.
+    """
+    try:
+        return IMS_S3_KEY_RE_PROG.match(s3_url.key).group(1)
+    except (AttributeError, IndexError):
+        return None
