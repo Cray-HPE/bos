@@ -27,7 +27,8 @@ from botocore.exceptions import ClientError
 
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
-from bos.operators.utils.clients.ims import get_image, get_ims_id_from_s3_url, ImageNotFound
+from bos.operators.utils.clients.ims import get_image, get_ims_id_from_s3_url, ImageNotFound, \
+                                            DEFAULT_IMS_IMAGE_ARCH
 from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, S3Url, \
                                            ArtifactNotFound
 
@@ -236,8 +237,10 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             return ims_image_data["arch"]
         except KeyError:
-            LOGGER.warning("Can't determine architecture of '%s' because 'arch' field not set in "
-                           "IMS image '%s': %s", s3_url.url, ims_id, ims_image_data)
+            LOGGER.warning("Defaulting to '%s' because 'arch' field not set in IMS image '%s' "
+                           "(s3 path '%s'): %s", DEFAULT_IMS_IMAGE_ARCH, ims_id, s3_url.url,
+                           ims_image_data)
+            return DEFAULT_IMS_IMAGE_ARCH
         except Exception as err:
             LOGGER.error("IMS image '%s' (s3 path '%s'): %s", ims_id, s3_url.url, ims_image_data)
             LOGGER.error("Error getting 'arch' field for IMS image '%s': %s", ims_id,

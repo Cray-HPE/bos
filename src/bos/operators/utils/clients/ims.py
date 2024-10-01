@@ -42,6 +42,9 @@ IMS_TAG_OPERATIONS = ['set', 'remove']
 IMS_S3_KEY_RE = r'^([^/]+)/.+'
 IMS_S3_KEY_RE_PROG = re.compile(IMS_S3_KEY_RE)
 
+# If an IMS image does not have the arch field, default to x86_64 for purposes of
+# backward-compatibility
+DEFAULT_IMS_IMAGE_ARCH = 'x86_64'
 
 class TagFailure(Exception):
     pass
