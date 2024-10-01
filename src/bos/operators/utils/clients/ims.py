@@ -91,7 +91,7 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
         raise
 
 
-def patch_image(image_id, data, session=None):
+def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -> None:
     if not data:
         LOGGER.warning("patch_image called without data; returning without action.")
         return
@@ -111,7 +111,8 @@ def patch_image(image_id, data, session=None):
         raise
 
 
-def tag_image(image_id: str, operation: str, key: str, value: str = None, session=None) -> None:
+def tag_image(image_id: str, operation: str, key: str, value: str=None,
+              session: RequestsSession|None=None) -> None:
     if operation not in IMS_TAG_OPERATIONS:
         msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
         LOGGER.error(msg)
