@@ -28,7 +28,7 @@ import logging
 import string
 
 from bos.common.tenant_utils import get_tenant_aware_key
-from bos.server.controllers.v2.boot_set import HARDWARE_SPECIFIER_FIELDS
+from bos.server.controllers.v2.boot_set import DEFAULT_ARCH, HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
 
 from .db import TEMP_DB, delete_component, delete_session, delete_template
@@ -195,6 +195,10 @@ def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
     # Delete the name field, if it is present -- it is redundant and should not
     # be stored inside the boot set under the current API spec
     bsdata.pop("name", None)
+
+    # If the arch field is not present, set it to its default value
+    if "arch" not in bsdata:
+        bsdata["arch"] = DEFAULT_ARCH
 
     # Remove any fields that are no longer in the spec
     bad_fields = [ field for field in bsdata if field not in validator.boot_set_fields ]

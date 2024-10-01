@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Marked PATCH session status endpoint to be ignored by the CLI.
 - Eliminate redundancies in API spec by defining `V2SessionNameOrEmpty` schema.
 - Refactor `validate_boot_sets` function into multiple functions to make it easier to understand.
+- During migration to this BOS version, for boot sets with no `arch` field, add the field with its
+  default value.
 
 ### Fixed
 - When validating boot sets, check all boot sets for severe errors before returning only warnings
