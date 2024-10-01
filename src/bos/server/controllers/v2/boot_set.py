@@ -221,10 +221,7 @@ def validate_boot_set_arch(bs: dict, image_metadata: BootImageMetaData|None=None
             raise CannotValidateBootSetArch(
                 f"Can't find boot artifacts: {exc_type_msg(err)}") from err
 
-    try:
-        ims_image_arch = image_metadata.arch
-    except Exception as err:
-        raise CannotValidateBootSetArch(exc_type_msg(err)) from err
+    ims_image_arch = image_metadata.arch
 
     if ims_image_arch is None:
         raise CannotValidateBootSetArch("Can't determine architecture of boot artifacts")
