@@ -27,7 +27,7 @@ import time
 
 import connexion
 
-from bos.common.options import DEFAULTS, OptionsWithDefaults
+from bos.common.options import DEFAULTS, OptionsCache
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v2_options import V2Options as Options
@@ -41,7 +41,7 @@ DB = dbutils.get_wrapper(db='options')
 OPTIONS_KEY = 'options'
 
 
-class OptionsData(OptionsWithDefaults):
+class OptionsData(OptionsCache):
     """
     Handler for reading configuration options from the BOS DB
 

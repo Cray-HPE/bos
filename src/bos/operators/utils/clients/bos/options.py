@@ -27,7 +27,7 @@ import json
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.options import OptionsWithDefaults
+from bos.common.options import OptionsCache
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
@@ -36,7 +36,7 @@ __name = __name__.lower().rsplit('.', maxsplit=1)[-1]
 ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
 
 
-class Options(OptionsWithDefaults):
+class Options(OptionsCache):
     """
     Handler for reading configuration options from the BOS API
 

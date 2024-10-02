@@ -43,149 +43,87 @@ DEFAULTS = {
 
 class BaseOptions(ABC):
     """
-    Base class for an object that has properties for each BOS option
+    Abstract base class for getting BOS option values
     """
 
-    # These properties call the abstract properties responsible for
-    # getting the option values. All these do is convert the response
-    # to the appropriate type for the option, and return it.
+    @abstractmethod
+    def get_option(self, key: str) -> Any:
+        """
+        Return the value for the specified option
+        """
+
+    # These properties call the method responsible for getting the option value.
+    # All these do is convert the response to the appropriate type for the option,
+    # and return it.
 
     @property
     def cleanup_completed_session_ttl(self) -> str:
-        return str(self._cleanup_completed_session_ttl)
+        return str(self.get_option('cleanup_completed_session_ttl'))
 
     @property
     def clear_stage(self) -> bool:
-        return bool(self._clear_stage)
+        return bool(self.get_option('clear_stage'))
 
     @property
     def component_actual_state_ttl(self) -> str:
-        return str(self._component_actual_state_ttl)
+        return str(self.get_option('component_actual_state_ttl'))
 
     @property
     def default_retry_policy(self) -> int:
-        return int(self._default_retry_policy)
+        return int(self.get_option('default_retry_policy'))
 
     @property
     def disable_components_on_completion(self) -> bool:
-        return bool(self._disable_components_on_completion)
+        return bool(self.get_option('disable_components_on_completion'))
 
     @property
     def discovery_frequency(self) -> int:
-        return int(self._discovery_frequency)
+        return int(self.get_option('discovery_frequency'))
 
     @property
     def logging_level(self) -> str:
-        return str(self._logging_level)
+        return str(self.get_option('logging_level'))
 
     @property
     def max_boot_wait_time(self) -> int:
-        return int(self._max_boot_wait_time)
+        return int(self.get_option('max_boot_wait_time'))
 
     @property
     def max_component_batch_size(self) -> int:
-        return int(self._max_component_batch_size)
+        return int(self.get_option('max_component_batch_size'))
 
     @property
     def max_power_off_wait_time(self) -> int:
-        return int(self._max_power_off_wait_time)
+        return int(self.get_option('max_power_off_wait_time'))
 
     @property
     def max_power_on_wait_time(self) -> int:
-        return int(self._max_power_on_wait_time)
+        return int(self.get_option('max_power_on_wait_time'))
 
     @property
     def polling_frequency(self) -> int:
-        return int(self._polling_frequency)
+        return int(self.get_option('polling_frequency'))
 
     @property
     def reject_nids(self) -> bool:
-        return bool(self._reject_nids)
+        return bool(self.get_option('reject_nids'))
 
     @property
     def session_limit_required(self) -> bool:
-        return bool(self._session_limit_required)
-
-    # The following abstract properties must be implemented by
-    # the classes that inherit from this base class. They are
-    # responsible for returning a value for the option. The return
-    # type is specified as Any because we allow for the possibility
-    # that they return an unexpected type (which is then converted
-    # by the above properties). That said, ideally they should just
-    # return the correct type for the option.
-
-    @property
-    @abstractmethod
-    def _cleanup_completed_session_ttl(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _clear_stage(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _component_actual_state_ttl(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _default_retry_policy(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _disable_components_on_completion(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _discovery_frequency(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _logging_level(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _max_boot_wait_time(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _max_component_batch_size(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _max_power_off_wait_time(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _max_power_on_wait_time(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _polling_frequency(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _reject_nids(self) -> Any:
-        pass
-
-    @property
-    @abstractmethod
-    def _session_limit_required(self) -> Any:
-        pass
+        return bool(self.get_option('session_limit_required'))
 
 
-class OptionsWithDefaults(BaseOptions):
+class DefaultOptions(BaseOptions):
+    """
+    Returns the default value for each option
+    """
+    def get_option(self, key: str) -> Any:
+        if key in DEFAULTS:
+            return DEFAULTS[key]
+        raise KeyError(key)
+
+
+class OptionsCache(DefaultOptions, ABC):
     """
     Handler for reading configuration options from the BOS API/DB
 
@@ -193,6 +131,7 @@ class OptionsWithDefaults(BaseOptions):
     result in network/DB calls.
     """
     def __init__(self):
+        super().__init__()
         self.options = {}
 
     def update(self) -> None:
@@ -206,62 +145,7 @@ class OptionsWithDefaults(BaseOptions):
     def get_option(self, key: str) -> Any:
         if key in self.options:
             return self.options[key]
-        if key in DEFAULTS:
-            return DEFAULTS[key]
-        raise KeyError(f'Option {key} not found and no default exists')
-
-    @property
-    def _cleanup_completed_session_ttl(self) -> Any:
-        return self.get_option('cleanup_completed_session_ttl')
-
-    @property
-    def _clear_stage(self) -> Any:
-        return self.get_option('clear_stage')
-
-    @property
-    def _component_actual_state_ttl(self) -> Any:
-        return self.get_option('component_actual_state_ttl')
-
-    @property
-    def _default_retry_policy(self) -> Any:
-        return self.get_option('default_retry_policy')
-
-    @property
-    def _disable_components_on_completion(self) -> Any:
-        return self.get_option('disable_components_on_completion')
-
-    @property
-    def _discovery_frequency(self) -> Any:
-        return self.get_option('discovery_frequency')
-
-    @property
-    def _logging_level(self) -> Any:
-        return self.get_option('logging_level')
-
-    @property
-    def _max_boot_wait_time(self) -> Any:
-        return self.get_option('max_boot_wait_time')
-
-    @property
-    def _max_component_batch_size(self) -> Any:
-        return self.get_option('max_component_batch_size')
-
-    @property
-    def _max_power_off_wait_time(self) -> Any:
-        return self.get_option('max_power_off_wait_time')
-
-    @property
-    def _max_power_on_wait_time(self) -> Any:
-        return self.get_option('max_power_on_wait_time')
-
-    @property
-    def _polling_frequency(self) -> Any:
-        return self.get_option('polling_frequency')
-
-    @property
-    def _reject_nids(self) -> Any:
-        return self.get_option('reject_nids')
-
-    @property
-    def _session_limit_required(self) -> Any:
-        return self.get_option('session_limit_required')
+        try:
+            return super().get_option(key)
+        except KeyError as err:
+            raise KeyError(f'Option {key} not found and no default exists') from err
