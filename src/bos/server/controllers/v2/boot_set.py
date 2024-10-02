@@ -28,7 +28,7 @@ from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
-from bos.server.controllers.v2.options import get_v2_options_data
+from bos.server.controllers.v2.options import OptionsData
 from bos.server.utils import canonize_xname, ParsingException
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
@@ -71,7 +71,7 @@ class CannotValidateBootSetArch(BootSetError):
 def validate_boot_sets(session_template: dict,
                        operation: str,
                        template_name: str,
-                       reject_nids: bool|None=None) -> tuple[str, int]:
+                       options_data: OptionsData|None=None) -> tuple[str, int]:
     """
     Validates the boot sets listed in a session template.
     It ensures that there are boot sets.
@@ -96,15 +96,15 @@ def validate_boot_sets(session_template: dict,
         msg = f"Session template '{template_name}' requires at least 1 boot set."
         return BOOT_SET_ERROR, msg
 
-    if reject_nids is None:
-        reject_nids = get_v2_options_data().get('reject_nids', False)
+    if options_data is None:
+        options_data = OptionsData()
 
     warning_msgs = []
     for bs_name, bs in session_template['boot_sets'].items():
         bs_msg = partial(_bs_msg, template_name=template_name, bs_name=bs_name)
         try:
             bs_warning_msgs = _validate_boot_set(bs=bs, operation=operation,
-                                                 reject_nids=reject_nids)
+                                                 options_data=options_data)
         except BootSetError as err:
             msg = bs_msg(str(err))
             LOGGER.error(msg)
@@ -130,7 +130,7 @@ def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
     return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
 
 
-def _validate_boot_set(bs: dict, operation: str, reject_nids: bool) -> list[str]:
+def _validate_boot_set(bs: dict, operation: str, options_data: OptionsData) -> list[str]:
     """
     Helper function for validate_boot_sets that performs validation on a single boot set.
     Raises BootSetError if fatal errors found.
@@ -146,7 +146,7 @@ def _validate_boot_set(bs: dict, operation: str, reject_nids: bool) -> list[str]
     try:
         if any(node[:3] == "nid" for node in bs["node_list"]):
             msg = "Has NID in 'node_list'"
-            if reject_nids:
+            if options_data.reject_nids:
                 raise BootSetError(msg)
             # Otherwise, log this as a warning -- even if reject_nids is not set,
             # BOS still doesn't support NIDs, so this is still undesirable
@@ -230,7 +230,7 @@ def validate_boot_set_arch(bs: dict, image_metadata: BootImageMetaData|None=None
                                   actual_ims_arch=ims_image_arch)
 
 
-def validate_sanitize_boot_sets(template_data: dict) -> None:
+def validate_sanitize_boot_sets(template_data: dict, options_data: OptionsData|None=None) -> None:
     """
     Calls validate_sanitize_boot_set on every boot set in the template.
     Raises an exception if there are problems.
@@ -249,14 +249,15 @@ def validate_sanitize_boot_sets(template_data: dict) -> None:
     if not boot_sets:
         raise ParsingException("Session templates must contain at least one boot set")
 
-    reject_nids = get_v2_options_data().get('reject_nids', False)
+    if options_data is None:
+        options_data = OptionsData()
 
     # Finally, call validate_sanitize_boot_set on each boot set
     for bs_name, bs in boot_sets.items():
-        validate_sanitize_boot_set(bs_name, bs, reject_nids=reject_nids)
+        validate_sanitize_boot_set(bs_name, bs, options_data=options_data)
 
 
-def validate_sanitize_boot_set(bs_name: str, bs_data: dict, reject_nids: bool=False) -> None:
+def validate_sanitize_boot_set(bs_name: str, bs_data: dict, options_data: OptionsData) -> None:
     """
     Called when creating/updating a BOS session template.
     Validates the boot set, and sanitizes it (editing it in place).
@@ -310,7 +311,7 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict, reject_nids: bool=Fa
 
         # If reject_nids is set, raise an exception if any member of the node list
         # begins with 'nid'
-        if reject_nids and node[:3] == 'nid':
+        if options_data.reject_nids and node[:3] == 'nid':
             raise ParsingException(f"reject_nids: Boot set {bs_name} 'node_list' contains a NID")
 
         # Canonize the xname and append it to the node list

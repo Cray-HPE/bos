@@ -60,4 +60,4 @@ class Options(OptionsCache):
         return {}
 
 
-options = Options()
+options = Options(update_on_create=False)

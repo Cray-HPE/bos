@@ -130,9 +130,12 @@ class OptionsCache(DefaultOptions, ABC):
     This caches the options so that frequent use of these options do not all
     result in network/DB calls.
     """
-    def __init__(self):
+    def __init__(self, update_on_create:bool=True):
         super().__init__()
-        self.options = {}
+        if update_on_create:
+            self.update()
+        else:
+            self.options = {}
 
     def update(self) -> None:
         """Refreshes the cached options data"""
