@@ -27,6 +27,7 @@ import time
 
 import connexion
 
+from bos.common.options import DEFAULTS, OptionsWithDefaults
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v2_options import V2Options as Options
@@ -38,22 +39,23 @@ DB = dbutils.get_wrapper(db='options')
 # similar to other data stored in the database, and to make retrieval of all
 # options simpler
 OPTIONS_KEY = 'options'
-DEFAULTS = {
-    'cleanup_completed_session_ttl': "7d",
-    'clear_stage': False,
-    'component_actual_state_ttl': "4h",
-    'disable_components_on_completion': True,
-    'discovery_frequency': 5*60,
-    'logging_level': 'INFO',
-    'max_boot_wait_time': 1200,
-    'max_power_on_wait_time': 120,
-    'max_power_off_wait_time': 300,
-    'polling_frequency': 15,
-    'default_retry_policy': 3,
-    'max_component_batch_size': 2800,
-    'session_limit_required': False,
-    'reject_nids': False
-}
+
+
+class OptionsData(OptionsWithDefaults):
+    """
+    Handler for reading configuration options from the BOS DB
+
+    This caches the options so that frequent use of these options do not all
+    result in DB calls.
+    """
+    def _get_options(self) -> dict:
+        """Retrieves the current options from the BOS DB"""
+        LOGGER.debug("Retrieving options data from BOS DB")
+        try:
+            return _get_v2_options()
+        except Exception as err:
+            LOGGER.error("Error retrieving BOS options: %s", exc_type_msg(err))
+        return {}
 
 
 def _init():
@@ -79,9 +81,15 @@ def _init():
 def get_v2_options():
     """Used by the GET /options API operation"""
     LOGGER.debug("GET /v2/options invoked get_v2_options")
+    return _get_v2_options(), 200
+
+
+def _get_v2_options() -> dict:
+    """
+    Helper function for get_v2_options function and OptionsData class
+    """
     data = get_v2_options_data()
-    data = _clean_options_data(data)
-    return data, 200
+    return _clean_options_data(data)
 
 
 def _clean_options_data(data):

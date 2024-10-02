@@ -23,9 +23,11 @@
 #
 import logging
 import json
+
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
+from bos.common.options import OptionsWithDefaults
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
@@ -34,21 +36,14 @@ __name = __name__.lower().rsplit('.', maxsplit=1)[-1]
 ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
 
 
-class Options:
+class Options(OptionsWithDefaults):
     """
     Handler for reading configuration options from the BOS API
 
     This caches the options so that frequent use of these options do not all
     result in network calls.
     """
-    def __init__(self):
-        self.options = {}
-
-    def update(self):
-        """Refreshes the cached options data"""
-        self.options = self._get_options()
-
-    def _get_options(self):
+    def _get_options(self) -> dict:
         """Retrieves the current options from the BOS api"""
         session = requests_retry_session()
         LOGGER.debug("GET %s", ENDPOINT)
@@ -63,70 +58,6 @@ class Options:
         except json.JSONDecodeError as e:
             LOGGER.error("Non-JSON response from BOS: %s", exc_type_msg(e))
         return {}
-
-    def get_option(self, key, value_type, default):
-        if key in self.options:
-            return value_type(self.options[key])
-        if default:
-            return value_type(default)
-        raise KeyError(f'Option {key} not found and no default exists')
-
-    @property
-    def logging_level(self):
-        return self.get_option('logging_level', str, 'INFO')
-
-    @property
-    def polling_frequency(self):
-        return self.get_option('polling_frequency', int, 15)
-
-    @property
-    def discovery_frequency(self):
-        return self.get_option('discovery_frequency', int, 5*60)
-
-    @property
-    def max_boot_wait_time(self):
-        return self.get_option('max_boot_wait_time', int, 1200)
-
-    @property
-    def max_power_on_wait_time(self):
-        return self.get_option('max_power_on_wait_time', int, 120)
-
-    @property
-    def max_power_off_wait_time(self):
-        return self.get_option('max_power_off_wait_time', int, 300)
-
-    @property
-    def disable_components_on_completion(self):
-        return self.get_option('disable_components_on_completion', bool, True)
-
-    @property
-    def cleanup_completed_session_ttl(self):
-        # Defaults to 7 days (168 hours).
-        return self.get_option('cleanup_completed_session_ttl', str, '7d')
-
-    @property
-    def clear_stage(self):
-        return self.get_option('clear_stage', bool, False)
-
-    @property
-    def component_actual_state_ttl(self):
-        return self.get_option('component_actual_state_ttl', str, '4h')
-
-    @property
-    def default_retry_policy(self):
-        return self.get_option('default_retry_policy', int, 3)
-
-    @property
-    def max_component_batch_size(self):
-        return self.get_option('max_component_batch_size', int, 2800)
-
-    @property
-    def session_limit_required(self):
-        return self.get_option('session_limit_required', bool, False)
-
-    @property
-    def reject_nids(self):
-        return self.get_option('reject_nids', bool, False)
 
 
 options = Options()
