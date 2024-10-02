@@ -211,34 +211,6 @@ class OptionsWithDefaults(BaseOptions):
         raise KeyError(f'Option {key} not found and no default exists')
 
     @property
-    def _logging_level(self) -> Any:
-        return self.get_option('logging_level')
-
-    @property
-    def _polling_frequency(self) -> Any:
-        return self.get_option('polling_frequency')
-
-    @property
-    def _discovery_frequency(self) -> Any:
-        return self.get_option('discovery_frequency')
-
-    @property
-    def _max_boot_wait_time(self) -> Any:
-        return self.get_option('max_boot_wait_time')
-
-    @property
-    def _max_power_on_wait_time(self) -> Any:
-        return self.get_option('max_power_on_wait_time')
-
-    @property
-    def _max_power_off_wait_time(self) -> Any:
-        return self.get_option('max_power_off_wait_time')
-
-    @property
-    def _disable_components_on_completion(self) -> Any:
-        return self.get_option('disable_components_on_completion')
-
-    @property
     def _cleanup_completed_session_ttl(self) -> Any:
         return self.get_option('cleanup_completed_session_ttl')
 
@@ -255,13 +227,41 @@ class OptionsWithDefaults(BaseOptions):
         return self.get_option('default_retry_policy')
 
     @property
+    def _disable_components_on_completion(self) -> Any:
+        return self.get_option('disable_components_on_completion')
+
+    @property
+    def _discovery_frequency(self) -> Any:
+        return self.get_option('discovery_frequency')
+
+    @property
+    def _logging_level(self) -> Any:
+        return self.get_option('logging_level')
+
+    @property
+    def _max_boot_wait_time(self) -> Any:
+        return self.get_option('max_boot_wait_time')
+
+    @property
     def _max_component_batch_size(self) -> Any:
         return self.get_option('max_component_batch_size')
 
     @property
-    def _session_limit_required(self) -> Any:
-        return self.get_option('session_limit_required')
+    def _max_power_off_wait_time(self) -> Any:
+        return self.get_option('max_power_off_wait_time')
+
+    @property
+    def _max_power_on_wait_time(self) -> Any:
+        return self.get_option('max_power_on_wait_time')
+
+    @property
+    def _polling_frequency(self) -> Any:
+        return self.get_option('polling_frequency')
 
     @property
     def _reject_nids(self) -> Any:
         return self.get_option('reject_nids')
+
+    @property
+    def _session_limit_required(self) -> Any:
+        return self.get_option('session_limit_required')
