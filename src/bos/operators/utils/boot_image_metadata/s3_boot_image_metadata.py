@@ -212,10 +212,8 @@ class S3BootImageMetaData(BootImageMetaData):
     def arch(self):
         """
         Extract the IMS image ID from the S3 manifest path.
-        Query IMS to get the architecture of the image.
+        Query IMS to get the image data.
         Return the 'arch' field from the IMS image
-        If image is not in IMS, or 'arch' field not set, log warnings and return None.
-        (since technically BOS does not require the images to be in IMS)
         """
         s3_url = self.manifest_s3_url
         ims_id = get_ims_id_from_s3_url(s3_url)

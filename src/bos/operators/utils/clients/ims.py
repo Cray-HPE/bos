@@ -47,6 +47,7 @@ IMS_S3_KEY_RE_PROG = re.compile(IMS_S3_KEY_RE)
 # backward-compatibility
 DEFAULT_IMS_IMAGE_ARCH = 'x86_64'
 
+
 class TagFailure(Exception):
     pass
 
@@ -69,7 +70,11 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
         session = requests_retry_session()
     url=f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("GET %s", url)
-    response = session.get(url)
+    try:
+        response = session.get(url)
+    except Exception as err:
+        LOGGER.error("Exception during GET request to %s: %s", url, exc_type_msg(err))
+        raise
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
                  response.reason, compact_response_text(response.text))
     try:
@@ -86,8 +91,7 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
     try:
         return response.json()
     except Exception as err:
-        LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id,
-                     exc_type_msg(err))
+        LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id, exc_type_msg(err))
         raise
 
 
