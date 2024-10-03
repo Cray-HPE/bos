@@ -154,3 +154,25 @@ def get_ims_id_from_s3_url(s3_url: S3Url) -> str|None:
         return IMS_S3_KEY_RE_PROG.match(s3_url.key).group(1)
     except (AttributeError, IndexError):
         return None
+
+
+def get_arch_from_image_data(image_data: dict) -> str:
+    """
+    Returns the value of the 'arch' field in the image data
+    If it is not present, logs a warning and returns the default value
+    """
+    try:
+        arch = image_data['arch']
+    except KeyError:
+        LOGGER.warning("Defaulting to '%s' because 'arch' not set in IMS image data: %s",
+                       DEFAULT_IMS_IMAGE_ARCH, image_data)
+        return DEFAULT_IMS_IMAGE_ARCH
+    except Exception as err:
+        LOGGER.error("Unexpected error parsing IMS image data (%s): %s", exc_type_msg(err),
+                     image_data)
+        raise
+    if arch:
+        return arch
+    LOGGER.warning("Defaulting to '%s' because 'arch' set to null value in IMS image data: %s",
+                   DEFAULT_IMS_IMAGE_ARCH, image_data)
+    return DEFAULT_IMS_IMAGE_ARCH
