@@ -27,6 +27,7 @@ import logging
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
+from bos.operators.utils.clients.ims import ImageNotFound
 from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.utils import canonize_xname, ParsingException
@@ -214,7 +215,10 @@ def validate_boot_set_arch(bs: dict, image_metadata: BootImageMetaData) -> None:
     if arch == 'Other':
         raise CannotValidateBootSetArch("Boot set arch set to 'Other'")
 
-    ims_image_arch = image_metadata.arch
+    try:
+        ims_image_arch = image_metadata.arch
+    except ImageNotFound as err:
+        raise CannotValidateBootSetArch(str(err)) from err
 
     if ims_image_arch is None:
         raise CannotValidateBootSetArch("Can't determine architecture of boot artifacts")
@@ -277,7 +281,7 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict, options_data: Option
             validate_boot_set_arch(bs_data, image_metadata)
         except CannotValidateBootSetArch as err:
             LOGGER.warning('%s', bs_data)
-            LOGGER.warning("Bboot set '%s': %s", bs_name, err)
+            LOGGER.warning("Boot set '%s': %s", bs_name, err)
         except Exception as err:
             raise ParsingException(f"Error found validating arch of boot set '{bs_name}': " \
                                    f"{exc_type_msg(err)}") from err

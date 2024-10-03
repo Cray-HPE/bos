@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added `arch_check_requires_ims` BOS option. This determines whether or not a failure to
+  get IMS data is considered fatal when validating image architecture in a boot set. By default
+  this is false. Note that this has no effect for boot sets whose images are not in IMS, nor
+  for boot sets whose architecture is `Other`.
+
 ### Changed
 - Refactored some BOS Options code to use abstract base classes, to avoid code duplication.
 

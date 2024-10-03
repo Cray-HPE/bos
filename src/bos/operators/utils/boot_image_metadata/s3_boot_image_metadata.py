@@ -26,10 +26,10 @@ import logging
 from botocore.exceptions import ClientError
 
 from bos.common.options import BaseOptions
-from bos.common.utils import exc_type_msg
+from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
-from bos.operators.utils.clients.ims import get_image, get_ims_id_from_s3_url, ImageNotFound, \
-                                            DEFAULT_IMS_IMAGE_ARCH
+from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
+                                            get_ims_id_from_s3_url, ImageNotFound
 from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, S3Url, \
                                            ArtifactNotFound
 
@@ -223,25 +223,21 @@ class S3BootImageMetaData(BootImageMetaData):
                 s3_url)
             return None
         try:
-            ims_image_data = get_image(ims_id)
-        except ImageNotFound:
-            LOGGER.warning(
-                "Can't determine architecture of '%s' because image '%s' does not exist in IMS",
-                s3_url.url, ims_id)
-            return None
+            if self.options.arch_check_requires_ims:
+                image_data = get_image(ims_id)
+            else:
+                # If IMS being inaccessible is not a fatal error, then reduce the number
+                # of retries we make, to prevent a lengthy delay
+
+                # A pylint bug generates a false positive error for this call
+                # https://github.com/pylint-dev/pylint/issues/2271                
+                session=requests_retry_session(retries=4) # pylint: disable=redundant-keyword-arg
+                image_data = get_image(ims_id, session=session)
+            return get_arch_from_image_data(image_data)
         except Exception as err:
-            LOGGER.error("Error getting IMS image data for '%s' (S3 path '%s'): %s", ims_id,
-                         s3_url.url, exc_type_msg(err))
+            # If the image is not found, re-raise the exception
+            # If it's a different error, and arch_check_requires_ims is set, re-raise the exception
+            # Otherwise, return None
+            if isinstance(err, ImageNotFound) or self.options.arch_check_requires_ims:
+                raise err
             return None
-        try:
-            return ims_image_data["arch"]
-        except KeyError:
-            LOGGER.warning("Defaulting to '%s' because 'arch' field not set in IMS image '%s' "
-                           "(s3 path '%s'): %s", DEFAULT_IMS_IMAGE_ARCH, ims_id, s3_url.url,
-                           ims_image_data)
-            return DEFAULT_IMS_IMAGE_ARCH
-        except Exception as err:
-            LOGGER.error("IMS image '%s': %s", ims_id, ims_image_data)
-            LOGGER.error("Error getting 'arch' field for IMS image '%s' (s3 path '%s'): %s", ims_id,
-                         s3_url.url, exc_type_msg(err))
-        return None
