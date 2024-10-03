@@ -24,6 +24,10 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
+
+# This is the source of truth for default option values. All other BOS
+# code should either import this dict directly, or (preferably) access
+# its values indirectly using a DefaultOptions object
 DEFAULTS = {
     'cleanup_completed_session_ttl': "7d",
     'clear_stage': False,

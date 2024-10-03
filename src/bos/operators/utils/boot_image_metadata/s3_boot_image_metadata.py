@@ -25,6 +25,7 @@ import logging
 
 from botocore.exceptions import ClientError
 
+from bos.common.options import BaseOptions
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
 from bos.operators.utils.clients.ims import get_image, get_ims_id_from_s3_url, ImageNotFound, \
@@ -37,11 +38,11 @@ LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_imag
 
 class S3BootImageMetaData(BootImageMetaData):
 
-    def __init__(self, boot_set):
+    def __init__(self, boot_set: dict, options: BaseOptions):
         """
         Create an S3 BootImage by downloading the manifest
         """
-        super().__init__(boot_set)
+        super().__init__(boot_set, options)
         path = self._boot_set.get('path', None)
         etag = self._boot_set.get('etag', None)
         self.boot_artifacts = S3BootArtifacts(path, etag)
@@ -242,7 +243,7 @@ class S3BootImageMetaData(BootImageMetaData):
                            ims_image_data)
             return DEFAULT_IMS_IMAGE_ARCH
         except Exception as err:
-            LOGGER.error("IMS image '%s' (s3 path '%s'): %s", ims_id, s3_url.url, ims_image_data)
-            LOGGER.error("Error getting 'arch' field for IMS image '%s': %s", ims_id,
-                         exc_type_msg(err))
+            LOGGER.error("IMS image '%s': %s", ims_id, ims_image_data)
+            LOGGER.error("Error getting 'arch' field for IMS image '%s' (s3 path '%s'): %s", ims_id,
+                         s3_url.url, exc_type_msg(err))
         return None

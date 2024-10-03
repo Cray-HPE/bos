@@ -343,7 +343,7 @@ class Session:
         """
         state = {}
         boot_artifacts = {}
-        image_metadata = BootImageMetaDataFactory(boot_set)()
+        image_metadata = BootImageMetaDataFactory(boot_set, options)()
         artifact_info = image_metadata.artifact_summary
         boot_artifacts['kernel'] = artifact_info['kernel']
         boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")

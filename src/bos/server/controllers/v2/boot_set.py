@@ -158,7 +158,7 @@ def _validate_boot_set(bs: dict, operation: str, options_data: OptionsData) -> l
     if operation in ['boot', 'reboot']:
         # Verify that the boot artifacts exist
         try:
-            image_metadata = BootImageMetaDataFactory(bs)()
+            image_metadata = BootImageMetaDataFactory(bs, options_data)()
         except Exception as err:
             raise BootSetError(f"Can't find boot artifacts. Error: {exc_type_msg(err)}") from err
 
@@ -204,7 +204,7 @@ def _validate_boot_set(bs: dict, operation: str, options_data: OptionsData) -> l
     return warning_msgs
 
 
-def validate_boot_set_arch(bs: dict, image_metadata: BootImageMetaData|None=None) -> None:
+def validate_boot_set_arch(bs: dict, image_metadata: BootImageMetaData) -> None:
     """
     If the boot set architecture is not set to Other, check that the IMS image
     architecture matches the boot set architecture (treating a boot set architecture
@@ -213,13 +213,6 @@ def validate_boot_set_arch(bs: dict, image_metadata: BootImageMetaData|None=None
     arch = bs.get("arch", DEFAULT_ARCH)
     if arch == 'Other':
         raise CannotValidateBootSetArch("Boot set arch set to 'Other'")
-
-    if image_metadata is None:
-        try:
-            image_metadata = BootImageMetaDataFactory(bs)()
-        except Exception as err:
-            raise CannotValidateBootSetArch(
-                f"Can't find boot artifacts: {exc_type_msg(err)}") from err
 
     ims_image_arch = image_metadata.arch
 
@@ -273,15 +266,21 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict, options_data: Option
         raise ParsingException(f"boot_sets key ({bs_name}) does not match 'name' "
                                f"field of corresponding boot set ({bs_data['name']})")
 
-    # Validate the boot set architecture
+    # Get the boot image metadata
     try:
-        validate_boot_set_arch(bs_data)
-    except CannotValidateBootSetArch as err:
-        LOGGER.warning('%s', bs_data)
-        LOGGER.warning("Bboot set '%s': %s", bs_name, err)
+        image_metadata = BootImageMetaDataFactory(bs_data, options_data)()
     except Exception as err:
-        raise ParsingException(
-            f"Error found validating arch of boot set '{bs_name}': {exc_type_msg(err)}") from err
+        LOGGER.warning("Can't find boot artifacts: %s", exc_type_msg(err))
+    else: # No exception was raised in try block
+        # Validate the boot set architecture
+        try:
+            validate_boot_set_arch(bs_data, image_metadata)
+        except CannotValidateBootSetArch as err:
+            LOGGER.warning('%s', bs_data)
+            LOGGER.warning("Bboot set '%s': %s", bs_name, err)
+        except Exception as err:
+            raise ParsingException(f"Error found validating arch of boot set '{bs_name}': " \
+                                   f"{exc_type_msg(err)}") from err
 
     # Validate that the boot set has at least one of the HARDWARE_SPECIFIER_FIELDS
     if not any(field_name in bs_data for field_name in HARDWARE_SPECIFIER_FIELDS):
@@ -289,7 +288,8 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict, options_data: Option
                                f"fields: {HARDWARE_SPECIFIER_FIELDS}")
 
     # Validate that at least one of the HARDWARE_SPECIFIER_FIELDS is non-empty
-    if not any(field_name in bs_data and bs_data[field_name] for field_name in HARDWARE_SPECIFIER_FIELDS):
+    if not any(field_name in bs_data and bs_data[field_name]
+               for field_name in HARDWARE_SPECIFIER_FIELDS):
         raise ParsingException(f"Boot set {bs_name} has no non-empty hardware-specifier fields: "
                                f"{HARDWARE_SPECIFIER_FIELDS}")
 

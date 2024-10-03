@@ -22,56 +22,69 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-class BootImageMetaData:
-    def __init__(self, boot_set):
-        """
-        Base class for BootImage Metadata object
-        """
+from abc import abstractmethod, ABC
+
+from bos.common.options import BaseOptions
+
+class BootImageMetaData(ABC):
+    """
+    Base class for BootImage Metadata
+    """
+
+    def __init__(self, boot_set: dict, options: BaseOptions):
         self._boot_set = boot_set
+        self._options = options
         self.artifact_summary = {}
 
     @property
+    def options(self) -> BaseOptions:
+        """
+        Return the BOS options being used to process this image metadata
+        """
+        return self._options
+
+    @property
+    @abstractmethod
     def metadata(self):
         """
         Get the initial object metadata. This metadata may contain information
         about the other boot objects -- kernel, initrd, rootfs, kernel parameters.
         """
-        return None
 
     @property
+    @abstractmethod
     def kernel(self):
         """
         Get the kernel
         """
-        return None
 
     @property
+    @abstractmethod
     def initrd(self):
         """
         Get the initrd
         """
-        return None
 
     @property
+    @abstractmethod
     def boot_parameters(self):
         """
         Get the boot parameters
         """
-        return None
 
     @property
+    @abstractmethod
     def rootfs(self):
         """
         Get the kernel
         """
-        return None
 
     @property
+    @abstractmethod
     def arch(self):
         """
         Get the arch
         """
-        return None
 
 class BootImageMetaDataBadRead(Exception):
     """
