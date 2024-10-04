@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Refactored some BOS Options code to use abstract base classes, to avoid code duplication.
+- Alphabetized options in API spec
 
 ## [2.29.0] - 2024-10-01
 ### Added
