@@ -29,13 +29,13 @@ from typing import Any
 # code should either import this dict directly, or (preferably) access
 # its values indirectly using a DefaultOptions object
 DEFAULTS = {
-    'arch_check_requires_ims': False,
     'cleanup_completed_session_ttl': "7d",
     'clear_stage': False,
     'component_actual_state_ttl': "4h",
     'default_retry_policy': 3,
     'disable_components_on_completion': True,
     'discovery_frequency': 300,
+    'ims_errors_fatal': False,
     'logging_level': 'INFO',
     'max_boot_wait_time': 1200,
     'max_component_batch_size': 2800,
@@ -62,10 +62,6 @@ class BaseOptions(ABC):
     # and return it.
 
     @property
-    def arch_check_requires_ims(self) -> bool:
-        return bool(self.get_option('arch_check_requires_ims'))
-
-    @property
     def cleanup_completed_session_ttl(self) -> str:
         return str(self.get_option('cleanup_completed_session_ttl'))
 
@@ -88,6 +84,10 @@ class BaseOptions(ABC):
     @property
     def discovery_frequency(self) -> int:
         return int(self.get_option('discovery_frequency'))
+
+    @property
+    def ims_errors_fatal(self) -> bool:
+        return bool(self.get_option('ims_errors_fatal'))
 
     @property
     def logging_level(self) -> str:

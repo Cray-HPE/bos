@@ -223,7 +223,7 @@ class S3BootImageMetaData(BootImageMetaData):
                 s3_url)
             return None
         try:
-            if self.options.arch_check_requires_ims:
+            if self.options.ims_errors_fatal:
                 image_data = get_image(ims_id)
             else:
                 # If IMS being inaccessible is not a fatal error, then reduce the number
@@ -236,8 +236,8 @@ class S3BootImageMetaData(BootImageMetaData):
             return get_arch_from_image_data(image_data)
         except Exception as err:
             # If the image is not found, re-raise the exception
-            # If it's a different error, and arch_check_requires_ims is set, re-raise the exception
+            # If it's a different error, and ims_errors_fatal is set, re-raise the exception
             # Otherwise, return None
-            if isinstance(err, ImageNotFound) or self.options.arch_check_requires_ims:
+            if isinstance(err, ImageNotFound) or self.options.ims_errors_fatal:
                 raise err
             return None

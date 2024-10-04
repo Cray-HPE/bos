@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added `arch_check_requires_ims` BOS option. This determines whether or not a failure to
-  get IMS data is considered fatal when validating image architecture in a boot set. By default
-  this is false. Note that this has no effect for boot sets whose images are not in IMS, nor
-  for boot sets whose architecture is `Other`.
+- Added `ims_errors_fatal` BOS option. This determines whether or not an IMS failure
+  is considered fatal even when BOS could continue despite the failure. Specifically,
+  this comes up when validating image architecture in a boot set. By default
+  this is false. Note that this has no effect for boot sets that:
+  - Have non-IMS images
+  - Have IMS images but the image does not exist in IMS
+  - Have `Other` architecture
 
 ### Changed
 - Refactored some BOS Options code to use abstract base classes, to avoid code duplication.

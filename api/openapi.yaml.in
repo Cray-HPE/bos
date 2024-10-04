@@ -1063,7 +1063,7 @@ components:
         session_limit_required:
           type: boolean
           description: If true, Sessions cannot be created without specifying the limit parameter.
-        arch_check_requires_ims:
+        ims_errors_fatal:
           type: boolean
           description: |
             This option modifies how BOS behaves when validating the architecture of a boot image in a boot set.
