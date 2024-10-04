@@ -25,11 +25,8 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from bos.common.options import BaseOptions
-from bos.common.utils import exc_type_msg, requests_retry_session
+from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
-from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
-                                            get_ims_id_from_s3_url, ImageNotFound
 from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, S3Url, \
                                            ArtifactNotFound
 
@@ -38,11 +35,11 @@ LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_imag
 
 class S3BootImageMetaData(BootImageMetaData):
 
-    def __init__(self, boot_set: dict, options: BaseOptions):
+    def __init__(self, boot_set: dict):
         """
         Create an S3 BootImage by downloading the manifest
         """
-        super().__init__(boot_set, options)
+        super().__init__(boot_set)
         path = self._boot_set.get('path', None)
         etag = self._boot_set.get('etag', None)
         self.boot_artifacts = S3BootArtifacts(path, etag)
@@ -207,37 +204,3 @@ class S3BootImageMetaData(BootImageMetaData):
         Returns the S3 URL to the boot manifest
         """
         return self.boot_artifacts.s3url
-
-    @property
-    def arch(self):
-        """
-        Extract the IMS image ID from the S3 manifest path.
-        Query IMS to get the image data.
-        Return the 'arch' field from the IMS image
-        """
-        s3_url = self.manifest_s3_url
-        ims_id = get_ims_id_from_s3_url(s3_url)
-        if not ims_id:
-            LOGGER.warning(
-                "Boot artifact S3 URL '%s' does not follow the expected IMS image convention",
-                s3_url)
-            return None
-        try:
-            if self.options.ims_errors_fatal:
-                image_data = get_image(ims_id)
-            else:
-                # If IMS being inaccessible is not a fatal error, then reduce the number
-                # of retries we make, to prevent a lengthy delay
-
-                # A pylint bug generates a false positive error for this call
-                # https://github.com/pylint-dev/pylint/issues/2271
-                session=requests_retry_session(retries=4) # pylint: disable=redundant-keyword-arg
-                image_data = get_image(ims_id, session=session)
-            return get_arch_from_image_data(image_data)
-        except Exception as err:
-            # If the image is not found, re-raise the exception
-            # If it's a different error, and ims_errors_fatal is set, re-raise the exception
-            # Otherwise, return None
-            if isinstance(err, ImageNotFound) or self.options.ims_errors_fatal:
-                raise err
-            return None
