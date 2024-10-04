@@ -91,7 +91,8 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
     try:
         return response.json()
     except Exception as err:
-        LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id, exc_type_msg(err))
+        LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id,
+                     exc_type_msg(err))
         raise
 
 

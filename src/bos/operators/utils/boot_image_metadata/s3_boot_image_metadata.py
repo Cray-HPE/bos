@@ -230,7 +230,7 @@ class S3BootImageMetaData(BootImageMetaData):
                 # of retries we make, to prevent a lengthy delay
 
                 # A pylint bug generates a false positive error for this call
-                # https://github.com/pylint-dev/pylint/issues/2271                
+                # https://github.com/pylint-dev/pylint/issues/2271
                 session=requests_retry_session(retries=4) # pylint: disable=redundant-keyword-arg
                 image_data = get_image(ims_id, session=session)
             return get_arch_from_image_data(image_data)
