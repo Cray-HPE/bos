@@ -21,30 +21,9 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
 
-from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
-
-LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.factory')
-
-
-class BootImageMetaDataUnknown(Exception):
-    """
-    Raised when a user requests a Provider provisioning mechanism that is not known
-    """
-
-class BootImageMetaDataFactory:
-    """
-    Conditionally create new instances of the BootImageMetadata based on
-    the type of the BootImageMetaData specified
-    """
-    def __init__(self, boot_set: dict):
-        self.boot_set = boot_set
-
-    def __call__(self):
-        path_type = self.boot_set.get('type', None)
-        if not path_type:
-            raise BootImageMetaDataUnknown(f"No path type set in boot set: {self.boot_set}")
-        if path_type == 's3':
-            return S3BootImageMetaData(self.boot_set)
-        raise BootImageMetaDataUnknown(f"No BootImageMetaData class for type {path_type}")
+from .defs import DEFAULT_ARCH, HARDWARE_SPECIFIER_FIELDS, BootSetStatus
+from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
+                        CannotValidateBootSetArch, NonImsImage
+from .sanitize import validate_sanitize_boot_sets
+from .validate import validate_boot_sets

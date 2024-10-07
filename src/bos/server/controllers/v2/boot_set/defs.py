@@ -21,30 +21,21 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+from enum import Enum
 import logging
 
-from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
+LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
 
-LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.factory')
-
-
-class BootImageMetaDataUnknown(Exception):
+class BootSetStatus(Enum):
     """
-    Raised when a user requests a Provider provisioning mechanism that is not known
+    In ascending order of error severity
     """
+    SUCCESS = 0
+    WARNING = 1
+    ERROR = 2
 
-class BootImageMetaDataFactory:
-    """
-    Conditionally create new instances of the BootImageMetadata based on
-    the type of the BootImageMetaData specified
-    """
-    def __init__(self, boot_set: dict):
-        self.boot_set = boot_set
+# Valid boot sets are required to have at least one of these fields
+HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
 
-    def __call__(self):
-        path_type = self.boot_set.get('type', None)
-        if not path_type:
-            raise BootImageMetaDataUnknown(f"No path type set in boot set: {self.boot_set}")
-        if path_type == 's3':
-            return S3BootImageMetaData(self.boot_set)
-        raise BootImageMetaDataUnknown(f"No BootImageMetaData class for type {path_type}")
+DEFAULT_ARCH = "X86"

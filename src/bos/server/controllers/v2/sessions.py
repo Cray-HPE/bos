@@ -35,13 +35,14 @@ from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
 from bos.server.controllers.v2.components import get_v2_components_data
-from bos.server.controllers.v2.options import get_v2_options_data
+from bos.server.controllers.v2.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
 from bos.server.utils import get_request_json, ParsingException
-from .boot_set import validate_boot_sets, BOOT_SET_ERROR
+
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
@@ -70,18 +71,19 @@ def post_v2_session():  # noqa: E501
             status=400, title="Error parsing the data provided.",
             detail=str(err))
 
+    options_data = OptionsData()
+
     # If no limit is specified, check to see if we require one
-    if not session_create.limit and get_v2_options_data().get('session_limit_required', False):
+    if not session_create.limit and options_data.session_limit_required:
         msg = "session_limit_required option is set, but this session has no limit specified"
         LOGGER.error(msg)
         return msg, 400
 
-    reject_nids = get_v2_options_data().get('reject_nids', False)
-    # If reject_nids is specified, and a limit is specified, check the limit for nids
+    # If a limit is specified, check it for nids
     if session_create.limit and any(LIMIT_NID_RE.match(limit_item)
                                     for limit_item in session_create.limit.split(',')):
         msg = f"session limit appears to contain NIDs: {session_create.limit}"
-        if reject_nids:
+        if options_data.reject_nids:
             msg = f"reject_nids: {msg}"
             LOGGER.error(msg)
             return msg, 400
@@ -102,8 +104,8 @@ def post_v2_session():  # noqa: E501
 
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name,
-                                         reject_nids=reject_nids)
-    if error_code >= BOOT_SET_ERROR:
+                                         options_data=options_data)
+    if error_code >= BootSetStatus.ERROR:
         LOGGER.error("Session template fails check: %s", msg)
         return msg, 400
 
