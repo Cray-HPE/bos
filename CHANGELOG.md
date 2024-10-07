@@ -7,17 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added `ims_errors_fatal` BOS option. This determines whether or not an IMS failure
+#### BOS options
+- `ims_errors_fatal`: This determines whether or not an IMS failure
   is considered fatal even when BOS could continue despite the failure. Specifically,
   this comes up when validating image architecture in a boot set. By default
   this is false. Note that this has no effect for boot sets that:
   - Have non-IMS images
   - Have IMS images but the image does not exist in IMS
   - Have `Other` architecture
+- `ims_images_must_exist`: This determines whether or not BOS considers it a fatal error if
+  a boot set has an IMS boot image which does not exist in IMS. If false (the default), then
+  BOS will only log warnings about these. If true, then these will cause boot set validations
+  to fail. Note that if `ims_images_must_exist` is true but `ims_errors_fatal` is false, then
+  a failure to determine whether or not an image is in IMS will NOT result in a fatal error.
 
 ### Changed
 - Refactored some BOS Options code to use abstract base classes, to avoid code duplication.
 - Alphabetized options in API spec
+- Refactored `controllers/v2/boot_sets.py` into its own module, for clarity
 
 ## [2.29.0] - 2024-10-01
 ### Added
