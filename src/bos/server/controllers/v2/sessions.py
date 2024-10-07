@@ -35,13 +35,14 @@ from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
 from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
 from bos.server.utils import get_request_json, ParsingException
-from .boot_set import validate_boot_sets, BOOT_SET_ERROR
+
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
 DB = dbutils.get_wrapper(db='sessions')
@@ -104,7 +105,7 @@ def post_v2_session():  # noqa: E501
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name,
                                          options_data=options_data)
-    if error_code >= BOOT_SET_ERROR:
+    if error_code >= BootSetStatus.ERROR:
         LOGGER.error("Session template fails check: %s", msg)
         return msg, 400
 
