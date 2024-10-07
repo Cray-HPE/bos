@@ -1025,6 +1025,15 @@ components:
             In the above situation, if this option is true, then the validation will fail.
             Otherwise, if the option is false, then a warning will be logged, but the validation will not
             be failed because of this.
+        ims_images_must_exist:
+          type: boolean
+          description: |
+            This option modifies how BOS behaves when validating a boot set whose boot image appears to be from IMS.
+            Specifically, this option comes into play when the image does not actually exist in IMS.
+            In the above situation, if this option is true, then the validation will fail.
+            Otherwise, if the option is false, then a warning will be logged, but the validation will not
+            be failed because of this. Note that if ims_images_must_exist is true but ims_errors_fatal is false, then
+            a failure to determine whether or not an image is in IMS will NOT result in a fatal error.
         logging_level:
           type: string
           description: The logging level for all BOS services

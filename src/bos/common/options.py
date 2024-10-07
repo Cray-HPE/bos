@@ -36,6 +36,7 @@ DEFAULTS = {
     'disable_components_on_completion': True,
     'discovery_frequency': 300,
     'ims_errors_fatal': False,
+    'ims_images_must_exist': False,
     'logging_level': 'INFO',
     'max_boot_wait_time': 1200,
     'max_component_batch_size': 2800,
@@ -88,6 +89,10 @@ class BaseOptions(ABC):
     @property
     def ims_errors_fatal(self) -> bool:
         return bool(self.get_option('ims_errors_fatal'))
+
+    @property
+    def ims_images_must_exist(self) -> bool:
+        return bool(self.get_option('ims_images_must_exist'))
 
     @property
     def logging_level(self) -> str:
