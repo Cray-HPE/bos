@@ -53,6 +53,7 @@ so that it stays around for much longer after completing.
 """
 
 import logging
+import sys
 
 from .db import COMP_DB, SESS_DB, TEMP_DB
 from .sanitize import sanitize_component, sanitize_session, sanitize_session_template
@@ -85,3 +86,4 @@ if __name__ == "__main__":
     LOGGER.info("Beginning post-upgrade BOS data migration")
     main()
     LOGGER.info("Completed post-upgrade BOS data migration")
+    sys.exit(1)
