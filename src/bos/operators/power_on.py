@@ -88,7 +88,7 @@ class PowerOnOperator(BaseOperator):
             raise Exception(f"Error encountered setting CFS information: {e}") from e
         component_ids = [component['id'] for component in components]
         try:
-            pcs.power_on(component_ids)
+            pcs.power_on(component_ids,task_deadline_minutes=2)
         except Exception as e:
             raise Exception(f"Error encountered calling CAPMC to power on: {e}") from e
         return components
