@@ -26,6 +26,7 @@ from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
 
+from .defs import LOGGER
 from .exceptions import BootSetError, BootSetWarning
 
 
@@ -59,8 +60,11 @@ def validate_boot_artifacts(bs: dict):
             obj = S3Object(path, etag)
             _ = obj.object_header
         except ArtifactNotFound as err:
-            raise BootSetWarning(
-                f"{image_metadata.manifest_s3_url.url} doesn't contain a {boot_artifact}") from err
+            msg = f"{image_metadata.manifest_s3_url.url} doesn't contain a {boot_artifact}"
+            # Plenty of images lack boot_parameters, and this is not a big deal.
+            if boot_artifact != "boot_parameters":
+                raise BootSetWarning(msg) from err
+            LOGGER.info(msg)
         except Exception as err:
             raise BootSetWarning(
                 f"Unable to check {boot_artifact} in {image_metadata.manifest_s3_url.url}. "
