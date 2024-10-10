@@ -22,12 +22,13 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from enum import Enum
+from enum import IntEnum
 import logging
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
 
-class BootSetStatus(Enum):
+# Use IntEnum to allow for inequalities
+class BootSetStatus(IntEnum):
     """
     In ascending order of error severity
     """

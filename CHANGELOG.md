@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.30.3] - 2024-10-10
+### Changed
+- Changed `BootSetStatus` type from Enum to IntEnum, to allow inequality comparisons
+- Reverted change in `2.30.1` now that inequalities work as expected
+
 ### Fixed
 - Fixed type hint for `validate_boot_sets` function
 
