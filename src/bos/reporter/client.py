@@ -77,7 +77,7 @@ def get_auth_token(path='/opt/cray/auth-utils/bin/get-auth-token'):
         LOGGER.info("Spire Token not yet available; retrying in a few seconds.")
         time.sleep(2)
 
-def authorized_requests_retry_session(*pargs, **kwargs) -> requests.session:
+def authorized_requests_retry_session(*pargs, **kwargs) -> requests.Session:
     """
     Returns a session with the authorization token included in the headers of the session's
     requests.
