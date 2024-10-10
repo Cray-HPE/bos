@@ -105,7 +105,7 @@ def post_v2_session():  # noqa: E501
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name,
                                          options_data=options_data)
-    if error_code == BootSetStatus.ERROR:
+    if error_code >= BootSetStatus.ERROR:
         LOGGER.error("Session template fails check: %s", msg)
         return msg, 400
 
