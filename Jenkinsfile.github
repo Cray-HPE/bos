@@ -99,6 +99,8 @@ pipeline {
                         sh "make image_run_pylint_errors"
                         sh "make image_build_pylint_full"
                         sh "make image_run_pylint_full"
+                        sh "make image_build_mypy"
+                        sh "make image_run_mypy"
                     }
                 }
                 stage('Chart') {

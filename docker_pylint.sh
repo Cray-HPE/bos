@@ -23,5 +23,8 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-pylint "$@" $(cat ./srclist.txt)
-mypy $(cat ./srclist.txt)
+if [[ $# -eq 1 && $1 == "mypy" ]]; then
+  mypy --install-types $(cat ./srclist.txt)
+else
+  pylint "$@" $(cat ./srclist.txt)
+fi
