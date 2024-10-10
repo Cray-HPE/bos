@@ -36,6 +36,9 @@ from requests_retry_session import requests_retry_session as base_requests_retry
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
 
+class ParsingException(Exception):
+    pass
+
 # Common date and timestamps functions so that timezones and formats are handled consistently.
 def get_current_time() -> datetime.datetime:
     return datetime.datetime.now()
@@ -49,7 +52,7 @@ def load_timestamp(timestamp: str) -> datetime.datetime:
     return parse(timestamp).replace(tzinfo=None)
 
 
-def duration_to_timedelta(timestamp: str):
+def duration_to_timedelta(timestamp: str) -> datetime.timedelta:
     """
     Converts a <digit><duration string> to a timedelta object.
     """
@@ -59,7 +62,10 @@ def duration_to_timedelta(timestamp: str):
                      'h': 60*60,
                      'd': 60*60*24,
                      'w': 60*60*24*7}
-    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
+    match = TIME_DURATION_PATTERN.search(timestamp)
+    if match is None:
+        raise ParsingException(f"Invalid timestamp: '{timestamp}'")
+    timeval, durationval = match.groups()
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)

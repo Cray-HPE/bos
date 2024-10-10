@@ -32,7 +32,8 @@ from connexion.lifecycle import ConnexionResponse
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
-from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
+from bos.common.utils import ParsingException, exc_type_msg, get_current_time, \
+                             get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
@@ -41,7 +42,7 @@ from bos.server.controllers.v2.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
-from bos.server.utils import get_request_json, ParsingException
+from bos.server.utils import get_request_json
 
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
