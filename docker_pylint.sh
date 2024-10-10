@@ -24,3 +24,4 @@
 #
 
 pylint "$@" $(cat ./srclist.txt)
+mypy $(cat ./srclist.txt)

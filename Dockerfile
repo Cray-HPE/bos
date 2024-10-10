@@ -131,7 +131,7 @@ FROM base AS pylint-base
 COPY srclist.txt docker_pylint.sh /app/venv/
 WORKDIR /app
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    pip3 install --no-cache-dir pylint -c constraints.txt && \
+    pip3 install --no-cache-dir pylint mypy -c constraints.txt && \
     pip3 list --format freeze
 
 # Pylint errors-only
