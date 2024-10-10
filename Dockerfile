@@ -155,7 +155,7 @@ CMD [ "./docker_pylint.sh", "--fail-under", "9" ]
 FROM lint-base AS mypy
 WORKDIR /app/venv
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    pip3 install --no-cache-dir mypy -c /app/constraints.txt && \
+    pip3 install --no-cache-dir mypy types-PyYAML types-colorama types-jsonschema types-pyOpenSSL types-python-dateutil types-requests -c /app/constraints.txt && \
     pip3 list --format freeze
 CMD [ "./docker_pylint.sh", "mypy" ]
 
