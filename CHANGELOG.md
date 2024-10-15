@@ -5,7 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.30.4] - 2024-10-15
+### Added
+#### BOS option
+- cfs_read_timeout: Allow the amount of time BOS waits for a response from CFS before
+  timing out to be configurable
 
 ## [2.30.3] - 2024-10-10
 ### Changed
