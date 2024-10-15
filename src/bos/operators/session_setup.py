@@ -344,7 +344,7 @@ class Session:
         """
         if not self.template.get('enable_cfs', True):
             return ''
-        bs_config = boot_set.get('configuration', '')
+        bs_config = boot_set.get('cfs', {}).get('configuration', '')
         if bs_config:
             return bs_config
         # Otherwise, we take the configuration value from the session template itself
