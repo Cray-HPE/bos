@@ -64,7 +64,7 @@ def duration_to_timedelta(timestamp: str):
 requests_retry_session = partial(base_requests_retry_session,
                                  retries=10, backoff_factor=0.5,
                                  status_forcelist=(500, 502, 503, 504),
-                                 connect_timeout=3, read_timeout=10,
+                                 connect_timeout=3, read_timeout=30,
                                  session=None, protocol=PROTOCOL)
 
 
