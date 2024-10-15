@@ -73,6 +73,10 @@ class Options:
             raise KeyError('Option {} not found and no default exists'.format(key))
 
     @property
+    def cfs_read_timeout(self):
+        return self.get_option('cfs_read_timeout', int, 10)
+
+    @property
     def logging_level(self):
         return self.get_option('logging_level', str, 'INFO')
 

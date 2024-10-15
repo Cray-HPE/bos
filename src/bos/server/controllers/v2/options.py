@@ -37,6 +37,7 @@ DB = dbutils.get_wrapper(db='options')
 # options simpler
 OPTIONS_KEY = 'options'
 DEFAULTS = {
+    'cfs_read_timeout': 10,
     'cleanup_completed_session_ttl': "7d",
     'clear_stage': False,
     'component_actual_state_ttl': "4h",
