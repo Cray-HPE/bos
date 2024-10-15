@@ -32,6 +32,7 @@ from typing import Dict, List, Set, Tuple, Union
 from requests import HTTPError
 
 # BOS module imports
+from bos.common.types import Component
 from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
                              using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
@@ -67,7 +68,7 @@ class PowerOnOperator(BaseOperator):
             HSMState()
         ]
 
-    def _act(self, components: Union[List[dict],None]):
+    def _act(self, components: List[Component]) -> List[Component]:
         if not components:
             return components
         self._preset_last_action(components)
@@ -93,7 +94,7 @@ class PowerOnOperator(BaseOperator):
             raise Exception(f"Error encountered calling CAPMC to power on: {e}") from e
         return components
 
-    def _sort_components_by_boot_artifacts(self, components: List[dict]) -> tuple[Dict, Dict]:
+    def _sort_components_by_boot_artifacts(self, components: List[Component]) -> tuple[Dict, Dict]:
         """
         Create a two dictionaries.
         The first dictionary has keys with a unique combination of boot artifacts associated with
@@ -185,7 +186,7 @@ class PowerOnOperator(BaseOperator):
         self.bos_client.components.update_components(bss_tokens)
 
     def _tag_images(self, boot_artifacts: Dict[Tuple[str, str, str], Set[str]],
-                    components: List[dict]) -> None:
+                    components: List[Component]) -> None:
         """
         If the component is receiving its root file system via the SBPS provisioner,
         then tag that image in IMS, so that SBPS makes it available.

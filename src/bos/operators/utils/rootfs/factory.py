@@ -24,9 +24,14 @@
 import importlib
 import logging
 
-from . import ProviderNotImplemented
-
 LOGGER = logging.getLogger(__name__)
+
+
+class ProviderNotImplemented(Exception):
+    """
+    Raised when a user requests a Provider Provisioning mechanism that isn't yet supported
+    """
+
 
 class ProviderFactory:
     """

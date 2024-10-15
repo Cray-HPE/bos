@@ -33,8 +33,13 @@ from typing import List
 from dateutil.parser import parse
 from requests_retry_session import requests_retry_session as base_requests_retry_session
 
+from bos.common.types import Component
+
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
+
+class ParsingException(Exception):
+    pass
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.
 def get_current_time() -> datetime.datetime:
@@ -49,7 +54,7 @@ def load_timestamp(timestamp: str) -> datetime.datetime:
     return parse(timestamp).replace(tzinfo=None)
 
 
-def duration_to_timedelta(timestamp: str):
+def duration_to_timedelta(timestamp: str) -> datetime.timedelta:
     """
     Converts a <digit><duration string> to a timedelta object.
     """
@@ -59,16 +64,21 @@ def duration_to_timedelta(timestamp: str):
                      'h': 60*60,
                      'd': 60*60*24,
                      'w': 60*60*24*7}
-    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
+    match = TIME_DURATION_PATTERN.search(timestamp)
+    if match is None:
+        raise ParsingException(f"Invalid timestamp: '{timestamp}'")
+    timeval, durationval = match.groups()
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)
+
 
 requests_retry_session = partial(base_requests_retry_session,
                                  retries=10, backoff_factor=0.5,
                                  status_forcelist=(500, 502, 503, 504),
                                  connect_timeout=3, read_timeout=10,
                                  session=None, protocol=PROTOCOL)
+
 
 def compact_response_text(response_text: str) -> str:
     """
@@ -88,41 +98,20 @@ def exc_type_msg(exc: Exception) -> str:
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
 
-def get_image_id(component: str) -> str:
+
+def get_image_id_from_kernel(kernel_path: str) -> str:
     """
     Extract the IMS image ID from the path to the kernel
     We expect it to look something like this:
     s3://boot-images/fbcc5b02-b6a4-46a8-9402-2b7138adc327/kernel
     """
-    # Get kernel's path
-    boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
-    kernel = boot_artifacts.get('kernel')
-    image_id = get_image_id_from_kernel(kernel)
-    return image_id
-
-
-def get_image_id_from_kernel(kernel_path: str) -> str:
-    # Extract image ID from kernel path
     pattern = re.compile('.*//.*/(.*)/kernel')
     match = pattern.match(kernel_path)
+    if match is None:
+        raise ParsingException(f"Kernel path not in expected format for IMS image: '{kernel_path}'")
     image_id = match.group(1)
     return image_id
 
-def using_sbps(component: str) -> bool:
-    """
-    If the component is using the Scalable Boot Provisioning Service (SBPS) to
-    provide the root filesystem, then return True.
-    Otherwise, return False.
-
-    The kernel parameters will contain the string root=sbps-s3 if it is using
-    SBPS.
-
-    Return True if it is and False if it is not.
-    """
-    # Get the kernel boot parameters
-    boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
-    kernel_parameters = boot_artifacts.get('kernel_parameters')
-    return using_sbps_check_kernel_parameters(kernel_parameters)
 
 def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     """
@@ -137,7 +126,8 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     # Check for the 'root=sbps-s3' string.
     return "root=sbps-s3" in kernel_parameters
 
-def components_by_id(components: List[dict]) -> dict:
+
+def components_by_id(components: List[Component]) -> dict[str, Component]:
     """
     Input:
     * components: a list containing individual components
@@ -150,7 +140,8 @@ def components_by_id(components: List[dict]) -> dict:
     """
     return { component["id"]: component for component in components }
 
-def reverse_components_by_id(components_by_id_map: dict) -> List[dict]:
+
+def reverse_components_by_id(components_by_id_map: dict[str, Component]) -> List[Component]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the

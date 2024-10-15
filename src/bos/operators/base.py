@@ -32,9 +32,10 @@ import logging
 import threading
 import os
 import time
-from typing import Generator, List, NoReturn, Type
+from typing import Iterator, NoReturn, NotRequired, Optional, Type
 
 from bos.common.utils import exc_type_msg
+from bos.common.types import Component, ComponentEventStats, ComponentLastAction
 from bos.common.values import Status
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
@@ -43,6 +44,9 @@ from bos.operators.utils.liveness.timestamp import Timestamp
 
 LOGGER = logging.getLogger('bos.operators.base')
 MAIN_THREAD = threading.current_thread()
+
+# For type hints
+BosDataDict = dict[str, int|float|list|dict|str|bool|None]
 
 
 class BaseOperatorException(Exception):
@@ -73,7 +77,7 @@ class BaseOperator(ABC):
     retry_attempt_field = ""
     frequency_option = "polling_frequency"
 
-    def __init__(self) -> NoReturn:
+    def __init__(self):
         self.bos_client = BOSClient()
         self.__max_batch_size = 0
 
@@ -84,7 +88,7 @@ class BaseOperator(ABC):
 
     @property
     @abstractmethod
-    def filters(self) -> List[Type[BaseFilter]]:
+    def filters(self) -> list[BaseFilter]:
         return []
 
     def run(self) -> NoReturn:
@@ -118,7 +122,7 @@ class BaseOperator(ABC):
             self.__max_batch_size = max_batch_size
         return max_batch_size
 
-    def _chunk_components(self, components: List[dict]) -> Generator[List[dict], None, None]:
+    def _chunk_components(self, components: list[Component]) -> Iterator[list[Component]]:
         """
         Break up the components into groups of no more than max_batch_size nodes,
         and yield each group in turn.
@@ -136,7 +140,7 @@ class BaseOperator(ABC):
         for chunk in self._chunk_components(components):
             self._run_on_chunk(chunk)
 
-    def _run_on_chunk(self, components: List[dict]) -> None:
+    def _run_on_chunk(self, components: list[Component]) -> None:
         """
         Acts on a chunk of components
         """
@@ -159,14 +163,14 @@ class BaseOperator(ABC):
                 component["error"] = str(e)
         self._update_database(components)
 
-    def _get_components(self) -> List[dict]:
+    def _get_components(self) -> list[Component]:
         """ Gets the list of all components that require actions  """
-        components = []
+        components: list[Component] = []
         for f in self.filters:
             components = f.filter(components)
         return components
 
-    def _handle_failed_components(self, components: List[dict]) -> List[dict]:
+    def _handle_failed_components(self, components: list[Component]) -> list[Component]:
         """ Marks components failed if the retry limits are exceeded """
         if not components:
             # If we have been passed an empty list, there is nothing to do.
@@ -175,7 +179,8 @@ class BaseOperator(ABC):
         failed_components = []
         good_components = []  # Any component that isn't determined to be in a failed state
         for component in components:
-            num_attempts = component.get('event_stats', {}).get(self.retry_attempt_field, 0)
+            event_stats: ComponentEventStats = component.get('event_stats', {})
+            num_attempts = event_stats.get(self.retry_attempt_field, 0)
             retries = int(component.get('retry_policy', options.default_retry_policy))
             if retries != -1 and num_attempts >= retries:
                 # This component has hit its retry limit
@@ -186,11 +191,12 @@ class BaseOperator(ABC):
         return good_components
 
     @abstractmethod
-    def _act(self, components: List[dict]) -> List[dict]:
+    def _act(self, components: list[Component]) -> list[Component]:
         """ The action taken by the operator on target components """
         raise NotImplementedError()
 
-    def _update_database(self, components: List[dict], additional_fields: dict=None) -> None:
+    def _update_database(self, components: list[Component],
+                         additional_fields: Optional[Component]=None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
         Includes updating the last action, attempt count and error
@@ -201,24 +207,24 @@ class BaseOperator(ABC):
             return
         data = []
         for component in components:
-            patch = {
+            patch: Component = {
                 'id': component['id'],
                 'error': component['error']  # New error, or clearing out old error
             }
             if self.name:
-                last_action_data = {
+                last_action_data: ComponentLastAction = {
                     'action': self.name,
                     'failed': False
                 }
                 patch['last_action'] = last_action_data
+
             if self.retry_attempt_field:
-                event_stats_data = {
-                    self.retry_attempt_field: component.get(
-                                                'event_stats',
-                                                {}
-                                              ).get(self.retry_attempt_field, 0) + 1
-                }
-                patch['event_stats']  = event_stats_data
+                event_stats = component.get('event_stats', {})
+                updated_retry_attempt = event_stats.get(self.retry_attempt_field, 0) + 1
+                # Have to direct mypy to suppress errors due to known issue with using
+                # variable keys with TypedDicts: https://github.com/python/mypy/issues/7178
+                patch['event_stats']  = {
+                    self.retry_attempt_field: updated_retry_attempt } # type: ignore
 
             if additional_fields:
                 patch.update(additional_fields)
@@ -234,7 +240,7 @@ class BaseOperator(ABC):
         LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
-    def _preset_last_action(self, components: List[dict]) -> None:
+    def _preset_last_action(self, components: list[Component]) -> None:
         # This is done to eliminate the window between performing an action and marking the
         # nodes as acted
         # e.g. nodes could be powered-on without the correct power-on last action, causing
@@ -247,12 +253,12 @@ class BaseOperator(ABC):
             return
         data = []
         for component in components:
-            patch = {
+            patch: Component = {
                 'id': component['id'],
                 'error': component['error']
             }
             if self.name:
-                last_action_data = {
+                last_action_data: ComponentLastAction = {
                     'action': self.name,
                     'failed': False
                 }
@@ -262,7 +268,7 @@ class BaseOperator(ABC):
         LOGGER.debug('Updated components: %s', data)
         self.bos_client.components.update_components(data)
 
-    def _update_database_for_failure(self, components: List[dict]) -> None:
+    def _update_database_for_failure(self, components: list[Component]) -> None:
         """
         Updates the BOS database for all components the operator believes have failed
         """
@@ -272,7 +278,7 @@ class BaseOperator(ABC):
             return
         data = []
         for component in components:
-            patch = {
+            patch: Component = {
                 'id': component['id'],
                 'status': {'status_override': Status.failed}
             }
@@ -285,8 +291,8 @@ class BaseOperator(ABC):
         self.bos_client.components.update_components(data)
 
 
-def chunk_components(components: List[dict],
-                     max_batch_size: int) -> Generator[List[dict], None, None]:
+def chunk_components(components: list[Component],
+                     max_batch_size: int) -> Iterator[list[Component]]:
     """
     Break up the components into groups of no more than max_batch_size nodes,
     and yield each group in turn.
@@ -314,7 +320,7 @@ def _update_log_level() -> None:
         LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 
 
-def _liveliness_heartbeat() -> NoReturn:
+def _liveliness_heartbeat() -> None:
     """
     Periodically add a timestamp to disk; this allows for reporting of basic
     health at a minimum rate. This prevents the pod being marked as dead if
@@ -352,7 +358,3 @@ def main(operator: Type[BaseOperator]):
 
     op = operator()
     op.run()
-
-
-if __name__ == '__main__':
-    main(BaseOperator)

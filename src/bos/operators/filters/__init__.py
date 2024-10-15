@@ -26,4 +26,4 @@
 
 from .filters import BOSQuery, HSMState, TimeSinceLastAction,\
     LastActionIs, BootArtifactStatesMatch, DesiredConfigurationSetInCFS, DesiredBootStateIsNone,\
-    DesiredConfigurationIsNone, DesiredBootStateIsOff, OR, NOT, ActualStateAge, ActualBootStateIsSet
+    DesiredConfigurationIsNone, DesiredBootStateIsOff, OR, ActualStateAge, ActualBootStateIsSet

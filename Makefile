@@ -55,7 +55,7 @@ RPTR_SOURCE_PATH := ${RPTR_BUILD_DIR}/SOURCES/${RPTR_SOURCE_NAME}.tar.bz2
 all : runbuildprep lint image chart rptr_rpm
 local: cms_meta_tools runbuildprep image chart_setup chart_package
 chart: chart_setup chart_package chart_test
-image: image_setup image_build image_build_pylint_errors image_run_pylint_errors image_build_pylint_full image_run_pylint_full
+image: image_setup image_build image_build_pylint_errors image_run_pylint_errors image_build_pylint_full image_run_pylint_full image_build_mypy image_run_mypy
 rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
 
 clone_input_files:
@@ -98,6 +98,12 @@ image_setup:
 image_build:
 		docker build --pull ${DOCKER_ARGS} --tag '${NAME}:${DOCKER_VERSION}' .
 
+image_build_base:
+		docker build --pull ${DOCKER_ARGS} --target base .
+
+image_build_pylint_base:
+		docker build --pull ${DOCKER_ARGS} --target pylint-base .
+
 image_build_pylint_errors:
 		docker build --pull ${DOCKER_ARGS} --target pylint-errors-only --tag 'pylint-errors-only:${DOCKER_VERSION}' .
 
@@ -109,6 +115,12 @@ image_build_pylint_full:
 
 image_run_pylint_full:
 		docker run --rm 'pylint-full:${DOCKER_VERSION}'
+
+image_build_mypy:
+		docker build --pull ${DOCKER_ARGS} --target mypy --tag 'mypy:${DOCKER_VERSION}' .
+
+image_run_mypy:
+		docker run --rm 'mypy:${DOCKER_VERSION}'
 
 chart_package:
 		helm dep up ${CHART_PATH}/${NAME}

@@ -22,6 +22,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+from typing import Optional
+
+from bos.common.types import Session
 
 from .base import BaseBosTenantAwareEndpoint
 
@@ -31,13 +34,13 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions')
 class SessionEndpoint(BaseBosTenantAwareEndpoint):
     ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
 
-    def get_session(self, session_id, tenant):
+    def get_session(self, session_id: str, tenant: Optional[str]) -> Session:
         return self.get_item(session_id, tenant)
 
-    def get_sessions(self, **kwargs):
+    def get_sessions(self, **kwargs) -> list[Session]:
         return self.get_items(**kwargs)
 
-    def update_session(self, session_id, tenant, data):
+    def update_session(self, session_id: str, tenant: Optional[str], data: dict) -> Session:
         return self.update_item(session_id, tenant, data)
 
     def delete_sessions(self, **kwargs):

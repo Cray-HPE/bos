@@ -24,6 +24,8 @@
 
 import logging
 import re
+from typing import Optional
+
 from requests.exceptions import HTTPError
 from requests.sessions import Session as RequestsSession
 
@@ -60,7 +62,7 @@ class ImageNotFound(Exception):
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
+def get_image(image_id: str, session: Optional[RequestsSession]=None) -> dict:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
@@ -96,7 +98,7 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
         raise
 
 
-def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -> None:
+def patch_image(image_id: str, data: dict, session: Optional[RequestsSession]=None) -> None:
     if not data:
         LOGGER.warning("patch_image called without data; returning without action.")
         return
@@ -116,7 +118,7 @@ def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -
         raise
 
 
-def tag_image(image_id: str, operation: str, key: str, value: str=None,
+def tag_image(image_id: str, operation: str, key: str, value: Optional[str]=None,
               session: RequestsSession|None=None) -> None:
     if operation not in IMS_TAG_OPERATIONS:
         msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
@@ -151,10 +153,10 @@ def get_ims_id_from_s3_url(s3_url: S3Url) -> str|None:
     If the s3_url matches the expected format of an IMS image path, then return the IMS image ID.
     Otherwise return None.
     """
-    try:
-        return IMS_S3_KEY_RE_PROG.match(s3_url.key).group(1)
-    except (AttributeError, IndexError):
+    match = IMS_S3_KEY_RE_PROG.match(s3_url.key)
+    if match is None:
         return None
+    return match.group(1)
 
 
 def get_arch_from_image_data(image_data: dict) -> str:

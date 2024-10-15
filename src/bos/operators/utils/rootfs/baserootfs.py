@@ -26,12 +26,10 @@ Provisioning mechanism, base class
 The assumption is the artifact info contains information about the rootfs.
 '''
 
-from . import RootfsProvider
+from .rootfs import RootfsProvider
+
 
 class BaseRootfsProvider(RootfsProvider):
-
-    PROTOCOL = None
-
     @property
     def provider_field(self):
         return self.artifact_info['rootfs']
@@ -41,7 +39,7 @@ class BaseRootfsProvider(RootfsProvider):
         return self.artifact_info['rootfs_etag']
 
     @property
-    def nmd_field(self):
+    def nmd_field(self) -> str:
         """
         The value to add to the kernel boot parameters for Node Memory Dump (NMD)
         parameter.

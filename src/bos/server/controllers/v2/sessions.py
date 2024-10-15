@@ -21,10 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from datetime import timedelta
+from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 import re
 import logging
+from typing import Any, Optional
 import uuid
 
 import connexion
@@ -32,7 +33,9 @@ from connexion.lifecycle import ConnexionResponse
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
-from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
+from bos.common.utils import ParsingException, exc_type_msg, get_current_time, \
+                             get_current_timestamp, load_timestamp
+from bos.common.types import Session as SessionType
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
@@ -41,7 +44,7 @@ from bos.server.controllers.v2.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
-from bos.server.utils import get_request_json, ParsingException
+from bos.server.utils import get_request_json
 
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.session')
@@ -53,7 +56,7 @@ LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def post_v2_session():  # noqa: E501
+def post_v2_session() -> tuple[SessionType, int]:  # noqa: E501
     """POST /v2/session
     Creates a new session. # noqa: E501
     :param session: A JSON object for creating sessions
@@ -121,16 +124,16 @@ def post_v2_session():  # noqa: E501
             title="Conflicting session name"
         )
     session_data = session.to_dict()
-    response = DB.put(session_key, session_data)
+    response: SessionType = DB.put(session_key, session_data)
     return response, 201
 
 
-def _create_session(session_create, tenant):
+def _create_session(session_create: SessionCreate, tenant: Optional[str]) -> Session:
     initial_status = {
         'status': 'pending',
         'start_time': get_current_timestamp(),
     }
-    body = {
+    body: SessionType = {
         'name': session_create.name or str(uuid.uuid4()),
         'operation': session_create.operation,
         'template_name': session_create.template_name or '',
@@ -146,7 +149,7 @@ def _create_session(session_create, tenant):
 
 
 @dbutils.redis_error_handler
-def patch_v2_session(session_id):
+def patch_v2_session(session_id: str) -> tuple[SessionType, int]:
     """PATCH /v2/session
     Patch the session identified by session_id
     Args:
@@ -170,12 +173,12 @@ def patch_v2_session(session_id):
             status=404, title="Session could not found.",
             detail=f"Session {session_id} could not be found")
 
-    component = DB.patch(session_key, patch_data_json)
-    return component, 200
+    session: SessionType = DB.patch(session_key, patch_data_json)
+    return session, 200
 
 
 @dbutils.redis_error_handler
-def get_v2_session(session_id):  # noqa: E501
+def get_v2_session(session_id: str) -> tuple[SessionType, int]:  # noqa: E501
     """GET /v2/session
     Get the session by session ID
     Args:
@@ -190,12 +193,13 @@ def get_v2_session(session_id):  # noqa: E501
         return connexion.problem(
             status=404, title="Session could not found.",
             detail=f"Session {session_id} could not be found")
-    session = DB.get(session_key)
+    session: SessionType = DB.get(session_key)
     return session, 200
 
 
 @dbutils.redis_error_handler
-def get_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
+def get_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
+                    status: Optional[str]=None) -> tuple[list[SessionType], int]:  # noqa: E501
     """GET /v2/session
 
     List all sessions
@@ -210,7 +214,7 @@ def get_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def delete_v2_session(session_id):  # noqa: E501
+def delete_v2_session(session_id: str) -> tuple[None, int]:  # noqa: E501
     """DELETE /v2/session
 
     Delete the session by session id
@@ -228,7 +232,8 @@ def delete_v2_session(session_id):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
+def delete_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
+                       status: Optional[str]=None) -> tuple[None, int]:  # noqa: E501
     LOGGER.debug(
             "DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
             min_age, max_age, status)
@@ -254,7 +259,7 @@ def delete_v2_sessions(min_age=None, max_age=None, status=None):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def get_v2_session_status(session_id):  # noqa: E501
+def get_v2_session_status(session_id: str) -> tuple[dict[str, Any], int]:  # noqa: E501
     """GET /v2/session/status
     Get the session status by session ID
     Args:
@@ -278,7 +283,7 @@ def get_v2_session_status(session_id):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def save_v2_session_status(session_id):  # noqa: E501
+def save_v2_session_status(session_id: str) -> tuple[dict[str, Any], int]:  # noqa: E501
     """POST /v2/session/status
     Get the session status by session ID
     Args:
@@ -296,7 +301,8 @@ def save_v2_session_status(session_id):  # noqa: E501
     return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
-def _get_filtered_sessions(tenant, min_age, max_age, status):
+def _get_filtered_sessions(tenant: Optional[str], min_age: Optional[str], max_age: Optional[str],
+                           status: Optional[str]) -> list[SessionType]:
     response = DB.get_all()
     min_start = None
     max_start = None
@@ -318,7 +324,8 @@ def _get_filtered_sessions(tenant, min_age, max_age, status):
     return response
 
 
-def _matches_filter(data, tenant, min_start, max_start, status):
+def _matches_filter(data: SessionType, tenant: Optional[str], min_start: Optional[str],
+                    max_start: Optional[str], status: Optional[str]) -> bool:
     if tenant and tenant != data.get("tenant"):
         return False
     session_status = data.get('status', {})
@@ -335,7 +342,8 @@ def _matches_filter(data, tenant, min_start, max_start, status):
     return True
 
 
-def _get_v2_session_status(session_key, session=None):
+def _get_v2_session_status(session_key: str|bytes,
+                           session: Optional[SessionType]=None) -> dict[str, Any]:
     if not session:
         session = DB.get(session_key)
     session_id = session.get("name", {})
@@ -400,7 +408,7 @@ def _get_v2_session_status(session_key, session=None):
     return status
 
 
-def _age_to_timestamp(age):
+def _age_to_timestamp(age: str) -> datetime:
     delta = {}
     for interval in ['weeks', 'days', 'hours', 'minutes']:
         result = re.search(fr'(\d+)\w*{interval[0]}', age, re.IGNORECASE)

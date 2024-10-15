@@ -68,21 +68,31 @@ pipeline {
                 }
             }
         }
-        stage("Lint") {
-            steps {
-                sh "make lint"
+        stage("Build prepare") {
+            parallel {
+                stage("Lint") {
+                    steps {
+                        sh "make lint"
+                    }
+                }
+                stage('Add RPM Metadata to bos-reporter') {
+                    steps {
+                        echo "RPM build metadata is ${env.BUILD_METADATA}"
+                        runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
+                    }
+                }
+                stage("RPM Build Prepare") {
+                    steps {
+                        sh "make rpm_prepare"
+                        sh "make rptr_rpm_prepare"
+                    }
+                }
+                stage("Image Build Prepare") {
+                    steps {
+                        sh "make image_setup"
+                    }
+                }
             }
-        }
-        stage('Add RPM Metadata to bos-reporter') {
-            steps {
-                echo "RPM build metadata is ${env.BUILD_METADATA}"
-                runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
-            }
-        }
-        stage("RPM Build Prepare") {
-            steps {
-               sh "make rpm_prepare"
-        	}
         }
         stage("Build Image and Chart") {
             parallel {
@@ -93,12 +103,55 @@ pipeline {
                     }
                     steps {
                         echo "Docker args are ${env.DOCKER_ARGS}"
-                        sh "make image_setup"
+                        lock('base_image_lock') {
+                            sh "make image_build_base"
+                        }
                         sh "make image_build"
+                    }
+                }
+                stage('pylint: errors') {
+                    environment {
+                        DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                        DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.DOCKER_VERSION)
+                    }
+                    steps {
+                        lock('base_image_lock') {
+                            sh "make image_build_base"
+                        }
+                        lock('base_pylint_lock') {
+                            sh "make image_build_pylint_base"
+                        }
                         sh "make image_build_pylint_errors"
                         sh "make image_run_pylint_errors"
+                    }
+                }
+                stage('pylint: full') {
+                    environment {
+                        DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                        DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.DOCKER_VERSION)
+                    }
+                    steps {
+                        lock('base_image_lock') {
+                            sh "make image_build_base"
+                        }
+                        lock('base_pylint_lock') {
+                            sh "make image_build_pylint_base"
+                        }
                         sh "make image_build_pylint_full"
                         sh "make image_run_pylint_full"
+                    }
+                }
+                stage('mypy') {
+                    environment {
+                        DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+                        DOCKER_ARGS = getDockerBuildArgs(name: env.NAME, description: env.DESCRIPTION, version: env.DOCKER_VERSION)
+                    }
+                    steps {
+                        lock('base_image_lock') {
+                            sh "make image_build_base"
+                        }
+                        sh "make image_build_mypy"
+                        sh "make image_run_mypy"
                     }
                 }
                 stage('Chart') {
@@ -120,7 +173,6 @@ pipeline {
                         }
                     }
                     steps {
-                        sh "make rptr_rpm_prepare"
                         sh "make rptr_rpm"
                     }
                 }
