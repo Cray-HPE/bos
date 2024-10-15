@@ -29,6 +29,7 @@ from typing import Any
 # code should either import this dict directly, or (preferably) access
 # its values indirectly using a DefaultOptions object
 DEFAULTS = {
+    'cfs_read_timeout': 20,
     'cleanup_completed_session_ttl': "7d",
     'clear_stage': False,
     'component_actual_state_ttl': "4h",
@@ -61,6 +62,10 @@ class BaseOptions(ABC):
     # These properties call the method responsible for getting the option value.
     # All these do is convert the response to the appropriate type for the option,
     # and return it.
+
+    @property
+    def cfs_read_timeout(self) -> int:
+        return int(self.get_option('cfs_read_timeout'))
 
     @property
     def cleanup_completed_session_ttl(self) -> str:

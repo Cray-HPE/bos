@@ -23,6 +23,7 @@
 #
 from collections import defaultdict
 import logging
+from bos.operators.utils.clients.bos.options import options
 from requests.exceptions import HTTPError
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
@@ -45,7 +46,7 @@ def get_components(session=None, **params):
     Returns the list of CFS components
     """
     if not session:
-        session = requests_retry_session()
+        session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     component_list = []
     while params is not None:
         LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, params)
@@ -71,7 +72,7 @@ def patch_components(data, session=None):
         LOGGER.warning("patch_components called without data; returning without action.")
         return
     if not session:
-        session = requests_retry_session()
+        session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
     response = session.patch(COMPONENTS_ENDPOINT, json=data)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
@@ -88,7 +89,7 @@ def get_components_from_id_list(id_list):
         LOGGER.warning("get_components_from_id_list called without IDs; returning without action.")
         return []
     LOGGER.debug("get_components_from_id_list called with %d IDs", len(id_list))
-    session = requests_retry_session()
+    session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     component_list = []
     while id_list:
         next_batch = id_list[:GET_BATCH_SIZE]
@@ -106,7 +107,7 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
         return
     LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
                  " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
-    session = requests_retry_session()
+    session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     node_patch = {
         'enabled': enabled,
         'desired_config': desired_config,
