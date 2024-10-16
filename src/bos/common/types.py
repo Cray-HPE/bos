@@ -25,6 +25,10 @@
 from typing import Literal, Optional, Required, TypedDict
 
 # For type hints
+
+JsonData = bool|dict|int|float|list|None|str
+JsonDict = dict[str,JsonData]
+
 BootArtifacts = dict[str, str]
 ComponentStatus = dict[str, str]
 
@@ -117,3 +121,19 @@ class SessionTemplate(TypedDict, total=False):
     name: Required[str]
     # Optional means this can be a string or be None
     tenant: Optional[str]
+
+CfsConfigurationStatus = Literal['configured', 'failed', 'pending', 'unconfigured']
+
+# In the future, would be nice to somehow get this from CFS
+class CfsComponent(TypedDict, total=False):
+    id: Required[str]
+    state: list
+    state_append: dict
+    desired_state: list
+    desired_config: str
+    error_count: int
+    retry_policy: int
+    enabled: bool
+    configuration_status: CfsConfigurationStatus
+    tags: dict
+    logs: str

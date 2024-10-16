@@ -26,9 +26,9 @@ import copy
 from datetime import timedelta
 import logging
 import re
-from typing import Collection, Optional
+from typing import Iterable, Optional
 
-from bos.common.types import Component
+from bos.common.types import CfsComponent, Component
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
@@ -92,7 +92,7 @@ class HSMState(IDFilter):
                     if (component['State'] == 'Ready') is self.ready]
         return [component['ID'] for component in hsm_components_data['Components']]
 
-    def filter_by_arch(self, nodes: Collection[str], arch: Collection[str]) -> list[str]:
+    def filter_by_arch(self, nodes: Iterable[str], arch: Iterable[str]) -> list[str]:
         """
         Given a list of component names, query HSM for state information pertaining to arch.
         Components that match one of the arch values specified are returned as a list of
@@ -186,7 +186,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
 
     def __init__(self, negate: bool = False) -> None:
         super().__init__(negate=negate)
-        self.cfs_components_dict = {}
+        self.cfs_components_dict: dict[str, CfsComponent] = {}
 
     def _filter(self, components: list[Component]) -> list[Component]:
         component_ids = [component['id'] for component in components]
@@ -197,7 +197,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         self.cfs_components_dict = {}
         return matches
 
-    def _match(self, component: Component, cfs_component: Optional[dict]=None) -> bool:
+    def _match(self, component: Component, cfs_component: Optional[CfsComponent]=None) -> bool:
         # There are two ways to communicate the cfs_component to this method.
         # First: cfs_component input variable
         # Second: cfs_component_dict instance attribute

@@ -24,10 +24,10 @@
 
 import logging
 import re
-from typing import Optional
+from typing import JsonDict, Optional
 
-from requests.exceptions import HTTPError
-from requests.sessions import Session as RequestsSession
+from requests import HTTPError
+from requests import Session as RequestsSession
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 from bos.operators.utils.clients.s3 import S3Url
@@ -58,11 +58,11 @@ class ImageNotFound(Exception):
     """
     Raised if querying IMS for an image and it is not found
     """
-    def __init__(self, image_id: str):
+    def __init__(self, image_id: str) -> None:
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-def get_image(image_id: str, session: Optional[RequestsSession]=None) -> dict:
+def get_image(image_id: str, session: Optional[RequestsSession]=None) -> JsonDict:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
@@ -98,7 +98,7 @@ def get_image(image_id: str, session: Optional[RequestsSession]=None) -> dict:
         raise
 
 
-def patch_image(image_id: str, data: dict, session: Optional[RequestsSession]=None) -> None:
+def patch_image(image_id: str, data: JsonDict, session: Optional[RequestsSession]=None) -> None:
     if not data:
         LOGGER.warning("patch_image called without data; returning without action.")
         return
@@ -119,7 +119,7 @@ def patch_image(image_id: str, data: dict, session: Optional[RequestsSession]=No
 
 
 def tag_image(image_id: str, operation: str, key: str, value: Optional[str]=None,
-              session: RequestsSession|None=None) -> None:
+              session: Optional[RequestsSession]=None) -> None:
     if operation not in IMS_TAG_OPERATIONS:
         msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
         LOGGER.error(msg)
@@ -148,7 +148,7 @@ def tag_image(image_id: str, operation: str, key: str, value: Optional[str]=None
     patch_image(image_id=image_id, data=data, session=session)
 
 
-def get_ims_id_from_s3_url(s3_url: S3Url) -> str|None:
+def get_ims_id_from_s3_url(s3_url: S3Url) -> Optional[str]:
     """
     If the s3_url matches the expected format of an IMS image path, then return the IMS image ID.
     Otherwise return None.
@@ -159,7 +159,7 @@ def get_ims_id_from_s3_url(s3_url: S3Url) -> str|None:
     return match.group(1)
 
 
-def get_arch_from_image_data(image_data: dict) -> str:
+def get_arch_from_image_data(image_data: JsonDict) -> str:
     """
     Returns the value of the 'arch' field in the image data
     If it is not present, logs a warning and returns the default value

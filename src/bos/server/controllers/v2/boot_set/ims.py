@@ -24,6 +24,7 @@
 
 from typing import Optional
 
+from bos.common.types import BootSetArch, BootSet
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
                                             get_ims_id_from_s3_url, ImageNotFound
@@ -36,14 +37,14 @@ from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
 
 # Mapping from BOS boot set arch values to expected IMS image arch values
 # Omits BOS Other value, since there is no corresponding IMS image arch value
-EXPECTED_IMS_ARCH = {
+EXPECTED_IMS_ARCH: dict[BootSetArch, str] = {
     "ARM": "aarch64",
     "Unknown": "x86_64",
     "X86": "x86_64"
 }
 
 
-def validate_ims_boot_image(bs: dict, options_data: OptionsData) -> None:
+def validate_ims_boot_image(bs: BootSet, options_data: OptionsData) -> None:
     """
     If the boot set architecture is not set to Other, check that the IMS image
     architecture matches the boot set architecture (treating a boot set architecture

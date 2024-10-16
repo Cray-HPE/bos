@@ -22,6 +22,8 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+from bos.common.types import BootSet
+
 from abc import abstractmethod, ABC
 from typing import TypedDict
 
@@ -38,7 +40,7 @@ class BootImageMetaData(ABC):
     Base class for BootImage Metadata
     """
 
-    def __init__(self, boot_set: dict):
+    def __init__(self, boot_set: BootSet) -> None:
         self._boot_set = boot_set
         self.artifact_summary: BootImageArtifactSummary = {}
 

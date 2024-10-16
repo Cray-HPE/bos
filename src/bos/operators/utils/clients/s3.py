@@ -25,12 +25,15 @@ import json
 import logging
 import os
 import threading
+from typing import Optional
 from urllib.parse import urlparse
 
 import boto3
+from botocore.client import S3 as S3Client
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 
+from bos.common.types import JsonDict
 from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.s3')
@@ -75,25 +78,25 @@ class S3Url:
     https://stackoverflow.com/questions/42641315/s3-urls-get-bucket-name-and-path/42641363
     """
 
-    def __init__(self, url):
+    def __init__(self, url: str) -> None:
         self._parsed = urlparse(url, allow_fragments=False)
 
     @property
-    def bucket(self):
+    def bucket(self) -> str:
         return self._parsed.netloc
 
     @property
-    def key(self):
+    def key(self) -> str:
         if self._parsed.query:
             return self._parsed.path.lstrip('/') + '?' + self._parsed.query
         return self._parsed.path.lstrip('/')
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self._parsed.geturl()
 
 
-def s3_client(connection_timeout=60, read_timeout=60):
+def s3_client(connection_timeout: int=60, read_timeout: int=60) -> S3Client:
     """
     Return an s3 client
 
@@ -135,7 +138,7 @@ class S3Object:
     A generic S3 object. It provides a way to download the object.
     """
 
-    def __init__(self, path, etag=None):
+    def __init__(self, path: str, etag: Optional[str]=None) -> None:
         """
         Args:
           path (string): S3 path to the S3 object
@@ -177,7 +180,7 @@ class S3Object:
         return s3_obj
 
     @property
-    def object(self):
+    def object(self) -> dict:
         """
         The S3 object itself.  If the object was not found, log it and return an error.
 
@@ -206,17 +209,17 @@ class S3Object:
 
 class S3BootArtifacts(S3Object):
 
-    def __init__(self, path, etag=None):
+    def __init__(self, path: str, etag: Optional[str]=None) -> None:
         """
         Args:
           path (string): S3 path to the S3 object
           etag (string): S3 entity tag
           """
         S3Object.__init__(self, path, etag)
-        self._manifest_json = None
+        self._manifest_json: Optional[JsonDict] = None
 
     @property
-    def manifest_json(self):
+    def manifest_json(self) -> JsonDict:
         """
         Read a manifest.json file from S3. If the object was not found, log it and return an error.
 
@@ -248,7 +251,7 @@ class S3BootArtifacts(S3Object):
         self._manifest_json = json.loads(s3_manifest_data)
         return self._manifest_json
 
-    def _get_artifact(self, artifact_type):
+    def _get_artifact(self, artifact_type: str) -> JsonDict:
         """
         Get the artifact_type artifact object out of the manifest.
 
@@ -289,7 +292,7 @@ class S3BootArtifacts(S3Object):
         return artifacts[0]
 
     @property
-    def initrd(self):
+    def initrd(self) -> JsonDict:
         """
         Get the initrd artifact object out of the manifest.
 
@@ -299,7 +302,7 @@ class S3BootArtifacts(S3Object):
         return self._get_artifact('application/vnd.cray.image.initrd')
 
     @property
-    def kernel(self):
+    def kernel(self) -> JsonDict:
         """
         Get the kernel artifact object out of the manifest.
 
@@ -309,7 +312,7 @@ class S3BootArtifacts(S3Object):
         return self._get_artifact('application/vnd.cray.image.kernel')
 
     @property
-    def boot_parameters(self):
+    def boot_parameters(self) -> JsonDict:
         """
         Get the kernel artifact object out of the manifest, if one exists.
 
@@ -324,7 +327,7 @@ class S3BootArtifacts(S3Object):
         return bp
 
     @property
-    def rootfs(self):
+    def rootfs(self) -> JsonDict:
         """
         Get the rootfs artifact object out of the manifest.
 

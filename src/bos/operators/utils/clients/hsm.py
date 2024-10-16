@@ -24,10 +24,14 @@
 import json
 import logging
 import os
+from typing import Optional
+
 from collections import defaultdict
-from requests.exceptions import HTTPError, ConnectionError
+from requests import HTTPError, ConnectionError
+from requests import Session as RequestsSession
 from urllib3.exceptions import MaxRetryError
 
+from bos.common.types import JsonData, JsonDict
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
@@ -48,7 +52,7 @@ class HWStateManagerException(Exception):
     """
 
 
-def read_all_node_xnames():
+def read_all_node_xnames() -> set[str]:
     """
     Queries HSM for the full set of xname components that
     have been discovered; return these as a set.
@@ -80,13 +84,9 @@ def read_all_node_xnames():
         LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
         raise HWStateManagerException(ke) from ke
 
-
-def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
+class HsmComponentsResponse(TypedDict):
     """
-    Get information for all list components HSM
-
-    :return the HSM components
-    :rtype Dictionary containing a 'Components' key whose value is a list
+    Dictionary containing a 'Components' key whose value is a list
     containing each component, where each component is itself represented by a
     dictionary.
 
@@ -120,6 +120,15 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     ]
     }
     """
+    Components: list[JsonDict]
+
+def get_components(node_list: list[str], enabled: Optional[bool]=None) -> HsmComponentsResponse:
+    """
+    Get information for all listed components in HSM
+
+    :return the HSM components
+    :rtype HsmComponentsResponse
+    """
     if not node_list:
         LOGGER.warning("hsm.get_components called with empty node list")
         return {'Components': []}
@@ -145,6 +154,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
         raise e
     return components
 
+NodeSetMapping = dict[str, set[str]]
 
 class Inventory:
     """
@@ -155,16 +165,17 @@ class Inventory:
     is used.
     """
 
-    def __init__(self, partition=None):
-        self._partition = partition  # Can be specified to limit to roles/components query
-        self._inventory = None
-        self._groups = None
-        self._partitions = None
-        self._roles = None
-        self._session = None
+    def __init__(self, partition: Optional[str]=None) -> None:
+        # partition can be specified to limit to roles/components query
+        self._partition: Optional[str] = partition
+        self._inventory: Optional[NodeSetMapping] = None
+        self._groups: Optional[NodeSetMapping] = None
+        self._partitions: Optional[NodeSetMapping] = None
+        self._roles: Optional[NodeSetMapping] = None
+        self._session: Optional[RequestsSession] = None
 
     @property
-    def groups(self):
+    def groups(self) -> NodeSetMapping:
         if self._groups is None:
             data = self.get('groups')
             groups = {}
@@ -174,7 +185,7 @@ class Inventory:
         return self._groups
 
     @property
-    def partitions(self):
+    def partitions(self) -> NodeSetMapping:
         if self._partitions is None:
             data = self.get('partitions')
             partitions = {}
@@ -184,7 +195,7 @@ class Inventory:
         return self._partitions
 
     @property
-    def roles(self):
+    def roles(self) -> NodeSetMapping:
         if self._roles is None:
             params = {}
             if self._partition:
@@ -203,7 +214,7 @@ class Inventory:
         return self._roles
 
     @property
-    def inventory(self):
+    def inventory(self) -> NodeSetMapping:
         if self._inventory is None:
             inventory = {}
             inventory.update(self.groups)
@@ -213,13 +224,13 @@ class Inventory:
             LOGGER.info(self._inventory)
         return self._inventory
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         return key in self.inventory
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> set[str]:
         return self.inventory[key]
 
-    def get(self, path, params=None):
+    def get(self, path: str, params: Optional[JsonDict]=None) -> JsonData:
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
             self._session = requests_retry_session()

@@ -27,10 +27,14 @@
 
 import logging
 import json
+from typing import Iterable, Optional
+
 from collections import defaultdict
 
-import requests
+from requests import HTTPError
+from requests import Session as RequestsSession
 
+from bos.common.types import JsonDict
 from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-power-control'
@@ -74,8 +78,9 @@ class PowerControlComponentsEmptyException(Exception):
     "no-op" value to the caller.
     """
 
-def _power_status(xname=None, power_state_filter=None, management_state_filter=None,
-                  session=None):
+def _power_status(xname: Optional[str]=None, power_state_filter: Optional[str]=None,
+                  management_state_filter: Optional[str]=None,
+                  session: Optional[RequestsSession]=None) -> JsonDict:
     """
     This is the one to one implementation to the underlying power control get query.
     For reasons of compatibility with existing calls into older power control APIs,
@@ -111,14 +116,15 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
             raise PowerControlException(f"Non-2XX response ({response.status_code}) to "
                                         f"power_status query; {response.reason} "
                                         f"{compact_response_text(response.text)}")
-    except requests.exceptions.HTTPError as err:
+    except HTTPError as err:
         raise PowerControlException(err) from err
     try:
         return response.json()
     except json.JSONDecodeError as jde:
         raise PowerControlException(jde) from jde
 
-def status(nodes, session=None, **kwargs):
+def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+           **kwargs) -> dict[str, set[str]]:
     """
     For a given iterable of nodes, represented by xnames, query PCS for
     the power status. Return a dictionary of nodes that have
@@ -160,7 +166,8 @@ def status(nodes, session=None, **kwargs):
         status_bucket[power_status].add(xname)
     return status_bucket
 
-def node_to_powerstate(nodes, session=None, **kwargs):
+def node_to_powerstate(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+                       **kwargs) -> dict[str,str]
     """
     For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for
     the node in question.
@@ -176,8 +183,9 @@ def node_to_powerstate(nodes, session=None, **kwargs):
             power_states[node] = pstatus
     return power_states
 
-def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None,
-                       session=None):
+def _transition_create(xnames: Iterable[str], operation: str,
+                       task_deadline_minutes: Optional[int]=None, deputy_key: Optional[str]=None,
+                       session: Optional[RequestsSession]=None) -> JsonDict:
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
     operation indicates what the desired operation should be, which is a string value containing
@@ -237,7 +245,7 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
                                         f"{response.reason} "
                                         f"{compact_response_text(response.text)}")
 
-    except requests.exceptions.HTTPError as err:
+    except HTTPError as err:
         raise PowerControlException(err) from err
     try:
         return response.json()
@@ -245,7 +253,8 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
         raise PowerControlException(jde) from jde
 
 
-def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
+def power_on(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+             task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
     """
     Sends a request to PCS for transitioning nodes in question to a powered on state.
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -256,7 +265,9 @@ def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
     return _transition_create(xnames=nodes, operation='On',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
-def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
+
+def power_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+              task_deadline_minutes=: Optional[int]=1, **kwargs) -> JsonDict:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -267,7 +278,9 @@ def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     return _transition_create(xnames=nodes, operation='Off',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
-def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
+
+def soft_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+             task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -278,7 +291,9 @@ def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     return _transition_create(xnames=nodes, operation='Soft-Off',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
-def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
+
+def force_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+              task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (forceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
