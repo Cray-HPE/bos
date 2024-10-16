@@ -267,7 +267,7 @@ def power_on(nodes: Iterable[str], session: Optional[RequestsSession]=None,
                               session=session, **kwargs)
 
 def power_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-              task_deadline_minutes=: Optional[int]=1, **kwargs) -> JsonDict:
+              task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
