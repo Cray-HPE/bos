@@ -24,11 +24,12 @@
 
 import logging
 import re
-from typing import JsonDict, Optional
+from typing import Optional
 
 from requests import HTTPError
 from requests import Session as RequestsSession
 
+from bos.common.types import JsonDict
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 from bos.operators.utils.clients.s3 import S3Url
 

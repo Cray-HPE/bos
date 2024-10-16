@@ -29,7 +29,6 @@ from typing import Optional
 from urllib.parse import urlparse
 
 import boto3
-from botocore.client import S3 as S3Client
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 
@@ -96,7 +95,7 @@ class S3Url:
         return self._parsed.geturl()
 
 
-def s3_client(connection_timeout: int=60, read_timeout: int=60) -> S3Client:
+def s3_client(connection_timeout: int=60, read_timeout: int=60):
     """
     Return an s3 client
 

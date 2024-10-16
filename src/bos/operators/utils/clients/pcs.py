@@ -167,7 +167,7 @@ def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
     return status_bucket
 
 def node_to_powerstate(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-                       **kwargs) -> dict[str,str]
+                       **kwargs) -> dict[str,str]:
     """
     For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for
     the node in question.

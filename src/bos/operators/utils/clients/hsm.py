@@ -24,7 +24,7 @@
 import json
 import logging
 import os
-from typing import Optional
+from typing import Optional, TypedDict
 
 from collections import defaultdict
 from requests import HTTPError, ConnectionError
