@@ -69,6 +69,12 @@ class PcsTransitionCreateResponse(TypedDict):
     operation: PcsOperation
 
 
+class PowerStatusParams(TypedDict, total=False):
+    xname: list[str]
+    powerStateFilter: PcsPowerState
+    managementStateFilter: PcsManagementState
+
+
 class PowerControlException(Exception):
     """
     Interaction with PCS resulted in a known failure.
@@ -119,7 +125,7 @@ def _power_status(xname: Optional[list[str]]=None,
     statuses.
     """
     session = session or requests_retry_session()
-    params = {}
+    params = PowerStatusParams()
     if xname:
         params['xname'] = xname
     if power_state_filter:
