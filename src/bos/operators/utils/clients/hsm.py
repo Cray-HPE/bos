@@ -268,6 +268,7 @@ class Inventory:
 
     @overload
     def get(self, path: Literal['groups'], params: Optional[JsonDict]=None) -> list[HsmGroup]:
+        ...
 
     def get(self, path: str, params: Optional[JsonDict]=None) -> JsonData:
         url = os.path.join(BASE_ENDPOINT, path)
