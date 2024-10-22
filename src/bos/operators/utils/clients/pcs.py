@@ -123,11 +123,13 @@ def _power_status(xname: Optional[list[str]]=None,
     if xname:
         params['xname'] = xname
     if power_state_filter:
-        assert power_state_filter.lower() in set(['on','off','undefined'])
-        params['powerStateFilter'] = power_state_filter.lower()
+        psf = power_state_filter.lower()
+        assert psf in {'on','off','undefined'}
+        params['powerStateFilter'] = psf
     if management_state_filter:
-        assert management_state_filter in set(['available', 'unavailable'])
-        params['managementStateFilter'] = management_state_filter.lower()
+        msf = management_state_filter.lower()
+        assert msf in {'available', 'unavailable'}
+        params['managementStateFilter'] = msf
     # PCS added the POST option for this endpoint in app version 2.3.0
     # (chart versions 2.0.8 and 2.1.5)
     LOGGER.debug("POST %s with body=%s", POWER_STATUS_ENDPOINT, params)
