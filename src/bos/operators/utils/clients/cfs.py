@@ -23,7 +23,7 @@
 #
 from collections import defaultdict
 import logging
-from typing import Any, Optional, Required, TypedDict
+from typing import Any, Literal, Optional, Required, TypedDict
 
 from requests import HTTPError
 from requests import Session as RequestsSession

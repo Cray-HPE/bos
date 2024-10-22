@@ -31,6 +31,7 @@ from requests import HTTPError, ConnectionError
 from requests import Session as RequestsSession
 from urllib3.exceptions import MaxRetryError
 
+from bos.common.types import NodeSetMapping
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
@@ -197,8 +198,6 @@ def get_components(node_list: list[str], enabled: Optional[bool]=None) -> HsmCom
         LOGGER.error("Non-JSON response from HSM: %s", exc_type_msg(e))
         raise e
     return components
-
-NodeSetMapping = dict[str, set[str]]
 
 class PartitionParam(TypedDict, total=False):
     partition: str

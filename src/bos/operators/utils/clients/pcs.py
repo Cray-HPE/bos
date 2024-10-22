@@ -27,14 +27,14 @@
 
 import logging
 import json
-from typing import Iterable, Optional
+from typing import Iterable, Literal, Optional, TypedDict
 
 from collections import defaultdict
 
 from requests import HTTPError
 from requests import Session as RequestsSession
 
-from bos.common.types import JsonDict
+from bos.common.types import JsonDict, NodeSetMapping
 from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-power-control'
@@ -44,6 +44,24 @@ POWER_STATUS_ENDPOINT = f'{ENDPOINT}/power-status'
 TRANSITION_ENDPOINT = f"{ENDPOINT}/transitions"
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
+
+
+PcsManagementState = Literal['available', 'unavailable']
+PcsPowerState = Literal['off', 'on', 'undefined']
+
+
+class PcsPowerStatus(TypedDict, total=False):
+    """
+    Since this is only used for type hinting, we only list the
+    fields we care about
+    """
+    xname: str
+    powerState: PcsPowerState
+    error: Optional[str]
+
+
+class PcsPowerStatusResponse(TypedDict):
+    status: list[PcsPowerStatus]
 
 
 class PowerControlException(Exception):
@@ -78,9 +96,10 @@ class PowerControlComponentsEmptyException(Exception):
     "no-op" value to the caller.
     """
 
-def _power_status(xname: Optional[str]=None, power_state_filter: Optional[str]=None,
-                  management_state_filter: Optional[str]=None,
-                  session: Optional[RequestsSession]=None) -> JsonDict:
+def _power_status(xname: Optional[list[str]]=None,
+                  power_state_filter: Optional[PcsPowerState]=None,
+                  management_state_filter: Optional[PcsManagementState]=None,
+                  session: Optional[RequestsSession]=None) -> PcsPowerStatusResponse:
     """
     This is the one to one implementation to the underlying power control get query.
     For reasons of compatibility with existing calls into older power control APIs,
@@ -124,7 +143,7 @@ def _power_status(xname: Optional[str]=None, power_state_filter: Optional[str]=N
         raise PowerControlException(jde) from jde
 
 def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-           **kwargs) -> dict[str, set[str]]:
+           **kwargs) -> NodeSetMapping:
     """
     For a given iterable of nodes, represented by xnames, query PCS for
     the power status. Return a dictionary of nodes that have
@@ -146,7 +165,7 @@ def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
       PowerControlException: Any non-nominal response from PCS.
       JSONDecodeError: Error decoding the PCS response
     """
-    status_bucket = defaultdict(set)
+    status_bucket: NodeSetMapping = defaultdict(set)
     if not nodes:
         LOGGER.warning("status called without nodes; returning without action.")
         return status_bucket
@@ -157,7 +176,7 @@ def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
         # what the powerState field suggests. This is a major departure from how CAPMC
         # handled errors.
         xname = power_status_entry.get('xname', '')
-        if power_status_entry['error']:
+        if power_status_entry.get('error', None):
             status_bucket[power_status_entry['error']].add(xname)
             continue
         power_status = power_status_entry.get('powerState', '').lower()

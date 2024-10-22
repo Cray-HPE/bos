@@ -29,6 +29,9 @@ from typing import Literal, Optional, Required, TypedDict
 JsonData = bool|dict|int|float|list|None|str
 JsonDict = dict[str,JsonData]
 
+# Mapping from string labels to sets of node names
+NodeSetMapping = dict[str, set[str]]
+
 BootArtifacts = dict[str, str]
 ComponentStatus = dict[str, str]
 
