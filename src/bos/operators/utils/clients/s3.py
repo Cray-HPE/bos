@@ -330,7 +330,7 @@ class S3BootArtifacts(S3Object):
         return self._get_artifact('application/vnd.cray.image.kernel')
 
     @property
-    def boot_parameters(self) -> S3ImsManifestArtifact:
+    def boot_parameters(self) -> Optional[S3ImsManifestArtifact]:
         """
         Get the kernel artifact object out of the manifest, if one exists.
 

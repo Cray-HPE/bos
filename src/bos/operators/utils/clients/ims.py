@@ -47,23 +47,35 @@ ImsTagOperation = Literal['set', 'remove']
 IMS_S3_KEY_RE = r'^([^/]+)/.+'
 IMS_S3_KEY_RE_PROG = re.compile(IMS_S3_KEY_RE)
 
+ImsImageArch = Literal['aarch64', 'x86_64']
+
 # If an IMS image does not have the arch field, default to x86_64 for purposes of
 # backward-compatibility
-DEFAULT_IMS_IMAGE_ARCH = 'x86_64'
+DEFAULT_IMS_IMAGE_ARCH = cast(ImsImageData, 'x86_64')
 
-
-ImsImageArch = Literal['aarch64', 'x86_64']
 
 class ImsImagePatchMetadata(TypedDict, total=False):
     operation: Required[ImsTagOperation]
     key: Required[str]
     value: str
 
+
 class ImsImagePatchData(TypedDict):
     """
     We only include the field that concerns us
     """
     metadata: ImsImagePatchMetadata
+
+
+class ImsImageData(TypedDict, total=False):
+    """
+    We do not include all of the fields here, because we just
+    use this for type hinting.
+    """
+    id: Required[str]
+    name: Required[str]
+    arch: ImsImageArch
+
 
 class TagFailure(Exception):
     pass
@@ -77,7 +89,7 @@ class ImageNotFound(Exception):
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-def get_image(image_id: str, session: Optional[RequestsSession]=None) -> JsonDict:
+def get_image(image_id: str, session: Optional[RequestsSession]=None) -> ImsImageData:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
@@ -170,7 +182,7 @@ def get_ims_id_from_s3_url(s3_url: S3Url) -> Optional[str]:
     return match.group(1)
 
 
-def get_arch_from_image_data(image_data: JsonDict) -> str:
+def get_arch_from_image_data(image_data: ImsImageData) -> ImsImageArch:
     """
     Returns the value of the 'arch' field in the image data
     If it is not present, logs a warning and returns the default value

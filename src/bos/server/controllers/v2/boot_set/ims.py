@@ -27,7 +27,8 @@ from typing import Optional
 from bos.common.types import BootSetArch, BootSet
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
-                                            get_ims_id_from_s3_url, ImageNotFound
+                                            get_ims_id_from_s3_url, ImageNotFound, ImsImageArch, \
+                                            ImsImageData
 from bos.operators.utils.clients.s3 import S3Url
 from bos.server.controllers.v2.options import OptionsData
 
@@ -37,7 +38,7 @@ from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
 
 # Mapping from BOS boot set arch values to expected IMS image arch values
 # Omits BOS Other value, since there is no corresponding IMS image arch value
-EXPECTED_IMS_ARCH: dict[BootSetArch, str] = {
+EXPECTED_IMS_ARCH: dict[BootSetArch, ImsImageArch] = {
     "ARM": "aarch64",
     "Unknown": "x86_64",
     "X86": "x86_64"
@@ -113,7 +114,7 @@ def get_ims_image_id(path: str) -> str:
                       "for IMS images")
 
 
-def get_ims_image_data(ims_id: str, num_retries: Optional[int]=None) -> dict:
+def get_ims_image_data(ims_id: str, num_retries: Optional[int]=None) -> ImsImageData:
     """
     Query IMS to get the image data and return it,
     or raise an exception.
