@@ -24,7 +24,8 @@
 import json
 import logging
 import os
-from typing import overload, Literal, Optional, Required, SupportsItems, TypedDict
+from typing import overload, Literal, Optional, Required, TypedDict
+from typing_ext import SupportsItems
 
 from collections import defaultdict
 from requests import HTTPError, ConnectionError
