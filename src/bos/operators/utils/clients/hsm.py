@@ -24,7 +24,7 @@
 import json
 import logging
 import os
-from typing import Literal, Optional, Required, TypedDict
+from typing import cast, Literal, Optional, Required, TypedDict
 
 from collections import defaultdict
 from requests import HTTPError, ConnectionError
@@ -57,6 +57,23 @@ class HsmComponent(TypedDict, total=False):
     State: str
     Type: str
     Arch: HsmComponentArch
+
+
+class HsmGroupMembers(TypedDict, total=False):
+    """
+    We only list the fields that we care about here, since this is purely
+    going to be used for type checking
+    """
+    ids: list[str]
+
+
+class HsmGroup(TypedDict, total=False):
+    """
+    We only list the fields that we care about here, since this is purely
+    going to be used for type checking
+    """
+    label: Required[str]
+    members: HsmGroupMembers
 
 
 class HsmComponentsResponse(TypedDict):
@@ -263,7 +280,10 @@ class Inventory:
             LOGGER.error("Failed to get '%s': %s", url, exc_type_msg(err))
             raise
         try:
-            return response.json()
+            json_data = response.json()
         except ValueError:
             LOGGER.error("Couldn't parse a JSON response: %s", response.text)
             raise
+        if path == 'groups':
+            return cast(list[HsmGroup], json_data)
+        return json_data
