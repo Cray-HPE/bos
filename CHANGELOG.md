@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fix per-bootset CFS setting
 
+### Dependencies
+- Bump `grpcio` to resolve CVE.
+
 ## [2.0.46] - 2024-09-26
 ### Fixed
 - When validating boot sets, check all boot sets for severe errors before returning only warnings
