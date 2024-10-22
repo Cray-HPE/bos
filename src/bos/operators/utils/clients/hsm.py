@@ -24,7 +24,7 @@
 import json
 import logging
 import os
-from typing import cast, Literal, Optional, Required, TypedDict
+from typing import overload, Literal, Optional, Required, TypedDict
 
 from collections import defaultdict
 from requests import HTTPError, ConnectionError
@@ -266,6 +266,9 @@ class Inventory:
     def __getitem__(self, key: str) -> set[str]:
         return self.inventory[key]
 
+    @overload
+    def get(self, path: Literal['groups'], params: Optional[JsonDict]=None) -> list[HsmGroup]:
+
     def get(self, path: str, params: Optional[JsonDict]=None) -> JsonData:
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
@@ -280,10 +283,7 @@ class Inventory:
             LOGGER.error("Failed to get '%s': %s", url, exc_type_msg(err))
             raise
         try:
-            json_data = response.json()
+            return response.json()
         except ValueError:
             LOGGER.error("Couldn't parse a JSON response: %s", response.text)
             raise
-        if path == 'groups':
-            return cast(list[HsmGroup], json_data)
-        return json_data
