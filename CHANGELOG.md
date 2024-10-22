@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Dependencies
 - Bumped `certifi` version to resolve CVE.
+- Bumped `grpcio` version to resolve CVE.
 
 ## [2.10.28] - 2024-10-16
 ### Added
