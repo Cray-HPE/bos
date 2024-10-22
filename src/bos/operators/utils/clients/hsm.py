@@ -24,7 +24,7 @@
 import json
 import logging
 import os
-from typing import Optional, TypedDict
+from typing import Optional, Required, TypedDict
 
 from collections import defaultdict
 from requests import HTTPError, ConnectionError
@@ -40,6 +40,62 @@ ENDPOINT = os.path.join(BASE_ENDPOINT, 'State/Components/Query')
 VERIFY = True
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.hsm')
+
+
+HsmComponentArch = Literal['ARM', 'Other', 'X86']
+
+
+class HsmComponent(TypedDict, total=False):
+    """
+    We only list the fields that we care about here, since this is purely
+    going to be used for type checking
+    """
+    Enabled: bool
+    ID: Required[str]
+    Role: str
+    SubRole: str
+    State: str
+    Type: str
+    Arch: HsmComponentArch
+
+
+class HsmComponentsResponse(TypedDict):
+    """
+    Dictionary containing a 'Components' key whose value is a list
+    containing each component, where each component is itself represented by a
+    dictionary.
+
+    Here is an example of the returned values.
+    {
+    "Components": [
+        {
+        "ID": "x3000c0s19b1n0",
+        "Type": "Node",
+        "State": "Ready",
+        "Flag": "OK",
+        "Enabled": true,
+        "Role": "Compute",
+        "NID": 1,
+        "NetType": "Sling",
+        "Arch": "X86",
+        "Class": "River"
+        },
+        {
+        "ID": "x3000c0s19b2n0",
+        "Type": "Node",
+        "State": "Ready",
+        "Flag": "OK",
+        "Enabled": true,
+        "Role": "Compute",
+        "NID": 1,
+        "NetType": "Sling",
+        "Arch": "X86",
+        "Class": "River"
+        }
+    ]
+    }
+    """
+    Components: list[HsmComponent]
 
 
 class HWStateManagerException(Exception):
@@ -84,43 +140,6 @@ def read_all_node_xnames() -> set[str]:
         LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
         raise HWStateManagerException(ke) from ke
 
-class HsmComponentsResponse(TypedDict):
-    """
-    Dictionary containing a 'Components' key whose value is a list
-    containing each component, where each component is itself represented by a
-    dictionary.
-
-    Here is an example of the returned values.
-    {
-    "Components": [
-        {
-        "ID": "x3000c0s19b1n0",
-        "Type": "Node",
-        "State": "Ready",
-        "Flag": "OK",
-        "Enabled": true,
-        "Role": "Compute",
-        "NID": 1,
-        "NetType": "Sling",
-        "Arch": "X86",
-        "Class": "River"
-        },
-        {
-        "ID": "x3000c0s19b2n0",
-        "Type": "Node",
-        "State": "Ready",
-        "Flag": "OK",
-        "Enabled": true,
-        "Role": "Compute",
-        "NID": 1,
-        "NetType": "Sling",
-        "Arch": "X86",
-        "Class": "River"
-        }
-    ]
-    }
-    """
-    Components: list[JsonDict]
 
 def get_components(node_list: list[str], enabled: Optional[bool]=None) -> HsmComponentsResponse:
     """
