@@ -216,12 +216,12 @@ def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
 
 
 def node_to_powerstate(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-                       **kwargs) -> dict[str,str]:
+                       **kwargs) -> dict[str, str]:
     """
     For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for
     the node in question.
     """
-    power_states = {}
+    power_states: dict[str, str] = {}
     if not nodes:
         LOGGER.warning("node_to_powerstate called without nodes; returning without action.")
         return power_states
