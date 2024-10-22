@@ -200,6 +200,10 @@ def get_components(node_list: list[str], enabled: Optional[bool]=None) -> HsmCom
     return components
 
 
+class PartitionParam(TypedDict, total=False):
+    partition: str
+
+
 class Inventory:
     """
     Inventory handles the generation of a hardware inventory in a similar manner to how the
@@ -241,7 +245,7 @@ class Inventory:
     @property
     def roles(self) -> NodeSetMapping:
         if self._roles is None:
-            params: dict[str, str] = {}
+            params: PartitionParam()
             if self._partition:
                 params['partition'] = self._partition
             data = self.get('State/Components', params=params)
@@ -284,10 +288,10 @@ class Inventory:
 
     @overload
     def get(self, path: Literal['State/Components'],
-            params: dict[str, str]) -> HsmComponentsResponse:
+            params: PartitionParam) -> HsmComponentsResponse:
         ...
 
-    def get(self, path: str, params: Optional[dict[str, str]]=None) \
+    def get(self, path: str, params: Optional[PartitionParam]=None) \
            -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
