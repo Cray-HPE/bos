@@ -25,7 +25,7 @@ import json
 import logging
 import os
 import threading
-from typing import Optional
+from typing import cast, Literal, Optional, TypedDict
 from urllib.parse import urlparse
 
 import boto3
@@ -40,6 +40,25 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.s3')
 # CASMCMS-9015: Instantiating the client is not thread-safe.
 # This lock is used to serialize it.
 boto3_client_lock = threading.Lock()
+
+
+class S3ImsManifestArtifactLink(TypedDict):
+    etag: str
+    path: str
+    type: Literal['s3']
+
+
+class S3ImsManifestArtifact(TypedDict):
+    link: S3ImsManifestArtifactLink
+    md5: str
+    type: str
+
+
+class S3ImsManifest(TypedDict):
+    artifacts: list[S3ImsManifestArtifact]
+    created: str
+    version: str
+
 
 class ArtifactNotFound(Exception):
     """
@@ -215,10 +234,10 @@ class S3BootArtifacts(S3Object):
           etag (string): S3 entity tag
           """
         S3Object.__init__(self, path, etag)
-        self._manifest_json: Optional[JsonDict] = None
+        self._manifest_json: Optional[S3ImsManifest] = None
 
     @property
-    def manifest_json(self) -> JsonDict:
+    def manifest_json(self) -> S3ImsManifest:
         """
         Read a manifest.json file from S3. If the object was not found, log it and return an error.
 
@@ -247,10 +266,10 @@ class S3BootArtifacts(S3Object):
             raise ManifestNotFound(msg) from error
 
         # Cache the manifest.json file
-        self._manifest_json = json.loads(s3_manifest_data)
+        self._manifest_json = cast(S3ImsManifest, json.loads(s3_manifest_data))
         return self._manifest_json
 
-    def _get_artifact(self, artifact_type: str) -> JsonDict:
+    def _get_artifact(self, artifact_type: str) -> S3ImsManifestArtifact:
         """
         Get the artifact_type artifact object out of the manifest.
 
@@ -291,7 +310,7 @@ class S3BootArtifacts(S3Object):
         return artifacts[0]
 
     @property
-    def initrd(self) -> JsonDict:
+    def initrd(self) -> S3ImsManifestArtifact:
         """
         Get the initrd artifact object out of the manifest.
 
@@ -301,7 +320,7 @@ class S3BootArtifacts(S3Object):
         return self._get_artifact('application/vnd.cray.image.initrd')
 
     @property
-    def kernel(self) -> JsonDict:
+    def kernel(self) -> S3ImsManifestArtifact:
         """
         Get the kernel artifact object out of the manifest.
 
@@ -311,7 +330,7 @@ class S3BootArtifacts(S3Object):
         return self._get_artifact('application/vnd.cray.image.kernel')
 
     @property
-    def boot_parameters(self) -> JsonDict:
+    def boot_parameters(self) -> S3ImsManifestArtifact:
         """
         Get the kernel artifact object out of the manifest, if one exists.
 
@@ -326,7 +345,7 @@ class S3BootArtifacts(S3Object):
         return bp
 
     @property
-    def rootfs(self) -> JsonDict:
+    def rootfs(self) -> S3ImsManifestArtifact:
         """
         Get the rootfs artifact object out of the manifest.
 
