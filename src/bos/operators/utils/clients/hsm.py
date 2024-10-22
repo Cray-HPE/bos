@@ -59,7 +59,7 @@ class HsmComponent(TypedDict, total=False):
     Arch: HsmComponentArch
 
 
-class HsmGroupMembers(TypedDict, total=False):
+class HsmMembers(TypedDict, total=False):
     """
     We only list the fields that we care about here, since this is purely
     going to be used for type checking
@@ -73,7 +73,16 @@ class HsmGroup(TypedDict, total=False):
     going to be used for type checking
     """
     label: Required[str]
-    members: HsmGroupMembers
+    members: HsmMembers
+
+
+class HsmPartition(TypedDict, total=False):
+    """
+    We only list the fields that we care about here, since this is purely
+    going to be used for type checking
+    """
+    name: Required[str]
+    members: HsmMembers
 
 
 class HsmComponentsResponse(TypedDict):
@@ -267,14 +276,18 @@ class Inventory:
         return self.inventory[key]
 
     @overload
-    def get(self, path: Literal['groups'], params: Optional[JsonDict]=None) -> list[HsmGroup]:
+    def get(self, path: Literal['groups']) -> list[HsmGroup]:
         ...
 
     @overload
-    def get(self, path: str, params: Optional[JsonDict]=None) -> JsonData:
+    def get(self, path: Literal['partitions']) -> list[HsmPartition]:
         ...
 
-    def get(self, path: str, params: Optional[JsonDict]=None) -> JsonData:
+    @overload
+    def get(self, path: Literal['State/Components'], params: Optional[JsonDict]=None) -> HsmComponentsResponse:
+        ...
+
+    def get(self, path: str, params: Optional[JsonDict]=None) -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
             self._session = requests_retry_session()
