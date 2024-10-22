@@ -276,18 +276,18 @@ class Inventory:
         return self.inventory[key]
 
     @overload
-    def get(self, path: Literal['groups']) -> list[HsmGroup]:
+    def get(self, path: Literal['groups'], params: None=None) -> list[HsmGroup]:
         ...
 
     @overload
-    def get(self, path: Literal['partitions']) -> list[HsmPartition]:
+    def get(self, path: Literal['partitions'], params: None=None) -> list[HsmPartition]:
         ...
 
     @overload
-    def get(self, path: Literal['State/Components'], params: Optional[JsonDict]=None) -> HsmComponentsResponse:
+    def get(self, path: Literal['State/Components'], params: dict[str, str]]) -> HsmComponentsResponse:
         ...
 
-    def get(self, path: str, params: Optional[JsonDict]=None) -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
+    def get(self, path: str, params: Optional[dict[str,str]]=None) -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
             self._session = requests_retry_session()
