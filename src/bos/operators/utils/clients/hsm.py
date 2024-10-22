@@ -24,7 +24,7 @@
 import json
 import logging
 import os
-from typing import overload, Literal, Optional, Required, TypedDict
+from typing import overload, Literal, Optional, Required, SupportsItems, TypedDict
 
 from collections import defaultdict
 from requests import HTTPError, ConnectionError
@@ -199,7 +199,7 @@ def get_components(node_list: list[str], enabled: Optional[bool]=None) -> HsmCom
         raise e
     return components
 
-class PartitionParam(TypedDict, total=False):
+class PartitionParam(SupportsItems[str, str], TypedDict, total=False):
     partition: str
 
 class Inventory:

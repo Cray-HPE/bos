@@ -48,7 +48,7 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
 
 PcsManagementState = Literal['available', 'unavailable']
 PcsPowerState = Literal['off', 'on', 'undefined']
-
+PcsOperation = Literal['Hard-Restart', 'Init', 'Force-Off', 'Off', 'On', 'Soft-Off', 'Soft-Restart']
 
 class PcsPowerStatus(TypedDict, total=False):
     """
@@ -62,6 +62,11 @@ class PcsPowerStatus(TypedDict, total=False):
 
 class PcsPowerStatusResponse(TypedDict):
     status: list[PcsPowerStatus]
+
+
+class PcsTransitionCreateResponse(TypedDict):
+    transitionId: str
+    operation: PcsOperation
 
 
 class PowerControlException(Exception):
@@ -202,9 +207,9 @@ def node_to_powerstate(nodes: Iterable[str], session: Optional[RequestsSession]=
             power_states[node] = pstatus
     return power_states
 
-def _transition_create(xnames: Iterable[str], operation: str,
+def _transition_create(xnames: Iterable[str], operation: PcsOperation,
                        task_deadline_minutes: Optional[int]=None, deputy_key: Optional[str]=None,
-                       session: Optional[RequestsSession]=None) -> JsonDict:
+                       session: Optional[RequestsSession]=None) -> PcsTransitionCreateResponse:
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
     operation indicates what the desired operation should be, which is a string value containing
@@ -273,7 +278,7 @@ def _transition_create(xnames: Iterable[str], operation: str,
 
 
 def power_on(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-             task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
+             task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered on state.
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -286,7 +291,7 @@ def power_on(nodes: Iterable[str], session: Optional[RequestsSession]=None,
                               session=session, **kwargs)
 
 def power_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-              task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
+              task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -299,7 +304,7 @@ def power_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
                               session=session, **kwargs)
 
 def soft_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-             task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
+             task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -312,7 +317,7 @@ def soft_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
                               session=session, **kwargs)
 
 def force_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
-              task_deadline_minutes: Optional[int]=1, **kwargs) -> JsonDict:
+              task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (forceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
