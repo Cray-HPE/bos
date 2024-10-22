@@ -23,7 +23,8 @@
 #
 from collections import defaultdict
 import logging
-from requests.exceptions import HTTPError, ConnectionError
+from bos.operators.utils.clients.bos.options import options
+from requests.exceptions import HTTPError
 
 from bos.common.utils import compact_response_text, exc_type_msg
 from bos.operators.utils import requests_retry_session, PROTOCOL
@@ -40,7 +41,7 @@ PATCH_BATCH_SIZE = 1000
 
 def get_components(session=None, **kwargs):
     if not session:
-        session = requests_retry_session()
+        session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, kwargs)
     response = session.get(COMPONENTS_ENDPOINT, params=kwargs)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
@@ -60,7 +61,7 @@ def patch_components(data, session=None):
         LOGGER.warning("patch_components called without data; returning without action.")
         return
     if not session:
-        session = requests_retry_session()
+        session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
     response = session.patch(COMPONENTS_ENDPOINT, json=data)
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
@@ -77,7 +78,7 @@ def get_components_from_id_list(id_list):
         LOGGER.warning("get_components_from_id_list called without IDs; returning without action.")
         return []
     LOGGER.debug("get_components_from_id_list called with %d IDs", len(id_list))
-    session = requests_retry_session()
+    session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     component_list = []
     while id_list:
         next_batch = id_list[:GET_BATCH_SIZE]
@@ -95,7 +96,7 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
         return
     LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
                  " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
-    session = requests_retry_session()
+    session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     node_patch = {
         'enabled': enabled,
         'desiredConfig': desired_config,
