@@ -24,7 +24,7 @@
 
 import logging
 import re
-from typing import Optional
+from typing import Literal, Optional, Required, TypedDict
 
 from requests import HTTPError
 from requests import Session as RequestsSession
@@ -39,7 +39,8 @@ BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/{IMS_VERSION}"
 IMAGES_ENDPOINT = f"{BASE_ENDPOINT}/images"
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.ims')
-IMS_TAG_OPERATIONS = ['set', 'remove']
+IMS_TAG_OPERATIONS = {'set', 'remove'}
+ImsTagOperation = Literal['set', 'remove']
 
 # Making minimal assumptions about the IMS ID itself, this pattern just makes sure that the
 # S3 key is some string, then a /, then at least one more character.
@@ -50,6 +51,19 @@ IMS_S3_KEY_RE_PROG = re.compile(IMS_S3_KEY_RE)
 # backward-compatibility
 DEFAULT_IMS_IMAGE_ARCH = 'x86_64'
 
+
+ImsImageArch = Literal['aarch64', 'x86_64']
+
+class ImsImagePatchMetadata(TypedDict, total=False):
+    operation: Required[ImsTagOperation]
+    key: Required[str]
+    value: str
+
+class ImsImagePatchData(TypedDict):
+    """
+    We only include the field that concerns us
+    """
+    metadata: ImsImagePatchMetadata
 
 class TagFailure(Exception):
     pass
@@ -99,7 +113,7 @@ def get_image(image_id: str, session: Optional[RequestsSession]=None) -> JsonDic
         raise
 
 
-def patch_image(image_id: str, data: JsonDict, session: Optional[RequestsSession]=None) -> None:
+def patch_image(image_id: str, data: ImsImagePatchData, session: Optional[RequestsSession]=None) -> None:
     if not data:
         LOGGER.warning("patch_image called without data; returning without action.")
         return
@@ -119,7 +133,7 @@ def patch_image(image_id: str, data: JsonDict, session: Optional[RequestsSession
         raise
 
 
-def tag_image(image_id: str, operation: str, key: str, value: Optional[str]=None,
+def tag_image(image_id: str, operation: ImsTagOperation, key: str, value: Optional[str]=None,
               session: Optional[RequestsSession]=None) -> None:
     if operation not in IMS_TAG_OPERATIONS:
         msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
@@ -139,13 +153,9 @@ def tag_image(image_id: str, operation: str, key: str, value: Optional[str]=None
     if not session:
         session = requests_retry_session()
 
-    data = {
-        "metadata": {
-            "operation": operation,
-            "key": key,
-            "value": value
-            }
-    }
+    data = ImsImagePatchData(metadata=ImsImagePatchMetadata(operation=operation, key=key))
+    if value is not None:
+        data["metadata"]["value"] = value
     patch_image(image_id=image_id, data=data, session=session)
 
 
