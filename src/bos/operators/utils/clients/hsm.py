@@ -284,7 +284,7 @@ class Inventory:
         ...
 
     @overload
-    def get(self, path: Literal['State/Components'], params: dict[str, str]]) -> HsmComponentsResponse:
+    def get(self, path: Literal['State/Components'], params: dict[str, str]) -> HsmComponentsResponse:
         ...
 
     def get(self, path: str, params: Optional[dict[str,str]]=None) -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
