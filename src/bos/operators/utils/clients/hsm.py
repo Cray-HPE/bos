@@ -199,7 +199,6 @@ def get_components(node_list: list[str], enabled: Optional[bool]=None) -> HsmCom
         raise e
     return components
 
-PartitionParam = dict[str, str]
 
 class Inventory:
     """
@@ -242,7 +241,7 @@ class Inventory:
     @property
     def roles(self) -> NodeSetMapping:
         if self._roles is None:
-            params: PartitionParam = {}
+            params: dict[str, str] = {}
             if self._partition:
                 params['partition'] = self._partition
             data = self.get('State/Components', params=params)
@@ -285,10 +284,10 @@ class Inventory:
 
     @overload
     def get(self, path: Literal['State/Components'],
-            params: PartitionParam) -> HsmComponentsResponse:
+            params: dict[str, str]) -> HsmComponentsResponse:
         ...
 
-    def get(self, path: str, params: Optional[PartitionParam]=None) \
+    def get(self, path: str, params: Optional[dict[str, str]]=None) \
            -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
