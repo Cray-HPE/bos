@@ -279,17 +279,14 @@ class Inventory:
         return self.inventory[key]
 
     @overload
-    def get(self, path: Literal['groups'], params: None=None) -> list[HsmGroup]:
-        ...
+    def get(self, path: Literal['groups'], params: None=None) -> list[HsmGroup]: ...
 
     @overload
-    def get(self, path: Literal['partitions'], params: None=None) -> list[HsmPartition]:
-        ...
+    def get(self, path: Literal['partitions'], params: None=None) -> list[HsmPartition]: ...
 
     @overload
     def get(self, path: Literal['State/Components'],
-            params: PartitionParam) -> HsmComponentsResponse:
-        ...
+            params: PartitionParam) -> HsmComponentsResponse: ...
 
     def get(self, path: str, params: Optional[PartitionParam]=None) \
            -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
@@ -298,7 +295,11 @@ class Inventory:
             self._session = requests_retry_session()
         try:
             LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
-            response = self._session.get(url, params=params, verify=VERIFY)
+            # Because mypy isn't convinced that params is either None or dict[str, str],
+            # we must reassure it
+            response = self._session.get(url, verify=VERIFY,
+                                         params=None if params is None else cast(dict[str,str],
+                                                                                 params))
             LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
                          response.reason, compact_response_text(response.text))
             response.raise_for_status()
