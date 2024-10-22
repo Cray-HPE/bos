@@ -27,7 +27,7 @@
 
 import logging
 import json
-from typing import Iterable, Literal, Optional, TypedDict
+from typing import Iterable, Literal, Optional, Required, TypedDict
 
 from collections import defaultdict
 
@@ -60,19 +60,30 @@ class PcsPowerStatus(TypedDict, total=False):
     error: Optional[str]
 
 
+class PowerStatusParams(TypedDict, total=False):
+    xname: list[str]
+    powerStateFilter: PcsPowerState
+    managementStateFilter: PcsManagementState
+
+
 class PcsPowerStatusResponse(TypedDict):
     status: list[PcsPowerStatus]
+
+
+class PcsReservedLocation(TypedDict, total=False):
+    xname: Required[str]
+    deputy_key: str
+
+
+class PcsTransitionCreateParams(TypedDict, total=False):
+    operation: Required[PcsOperation]
+    taskDeadlineMinutes: int
+    location: list[PcsReservedLocation]
 
 
 class PcsTransitionCreateResponse(TypedDict):
     transitionId: str
     operation: PcsOperation
-
-
-class PowerStatusParams(TypedDict, total=False):
-    xname: list[str]
-    powerStateFilter: PcsPowerState
-    managementStateFilter: PcsManagementState
 
 
 class PowerControlException(Exception):
@@ -257,11 +268,11 @@ def _transition_create(xnames: Iterable[str], operation: PcsOperation,
     except AssertionError as err:
         raise PowerControlSyntaxException(
                 f"Operation '{operation}' is not supported or implemented.") from err
-    params = {'location': [], 'operation': operation}
+    params = PcsTransitionCreateParams(location=[], operation=operation)
     if task_deadline_minutes:
         params['taskDeadlineMinutes'] = int(task_deadline_minutes)
     for xname in xnames:
-        reserved_location = {'xname': xname}
+        reserved_location = PcsReservedLocation(xname=xname)
         if deputy_key:
             reserved_location['deputyKey'] = deputy_key
         params['location'].append(reserved_location)
