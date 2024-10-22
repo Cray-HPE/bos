@@ -245,7 +245,7 @@ class Inventory:
     @property
     def roles(self) -> NodeSetMapping:
         if self._roles is None:
-            params: PartitionParam()
+            params = PartitionParam()
             if self._partition:
                 params['partition'] = self._partition
             data = self.get('State/Components', params=params)

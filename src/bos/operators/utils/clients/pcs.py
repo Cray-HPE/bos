@@ -47,8 +47,9 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
 
 
 PcsManagementState = Literal['available', 'unavailable']
-PcsPowerState = Literal['off', 'on', 'undefined']
 PcsOperation = Literal['Hard-Restart', 'Init', 'Force-Off', 'Off', 'On', 'Soft-Off', 'Soft-Restart']
+PcsPowerState = Literal['off', 'on', 'undefined']
+
 
 class PcsPowerStatus(TypedDict, total=False):
     """
@@ -118,6 +119,7 @@ class PowerControlComponentsEmptyException(Exception):
     "no-op" value to the caller.
     """
 
+
 def _power_status(xname: Optional[list[str]]=None,
                   power_state_filter: Optional[PcsPowerState]=None,
                   management_state_filter: Optional[PcsManagementState]=None,
@@ -166,6 +168,7 @@ def _power_status(xname: Optional[list[str]]=None,
     except json.JSONDecodeError as jde:
         raise PowerControlException(jde) from jde
 
+
 def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
            **kwargs) -> NodeSetMapping:
     """
@@ -209,6 +212,7 @@ def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
         status_bucket[power_status].add(xname)
     return status_bucket
 
+
 def node_to_powerstate(nodes: Iterable[str], session: Optional[RequestsSession]=None,
                        **kwargs) -> dict[str,str]:
     """
@@ -225,6 +229,7 @@ def node_to_powerstate(nodes: Iterable[str], session: Optional[RequestsSession]=
         for node in nodeset:
             power_states[node] = pstatus
     return power_states
+
 
 def _transition_create(xnames: Iterable[str], operation: PcsOperation,
                        task_deadline_minutes: Optional[int]=None, deputy_key: Optional[str]=None,
@@ -309,6 +314,7 @@ def power_on(nodes: Iterable[str], session: Optional[RequestsSession]=None,
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 
+
 def power_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
               task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
@@ -322,6 +328,7 @@ def power_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 
+
 def soft_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
              task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
@@ -334,6 +341,7 @@ def soft_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
     return _transition_create(xnames=nodes, operation='Soft-Off',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
+
 
 def force_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
               task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
