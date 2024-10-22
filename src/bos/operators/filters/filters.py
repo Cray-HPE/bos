@@ -28,12 +28,13 @@ import logging
 import re
 from typing import Iterable, Optional
 
-from bos.common.types import CfsComponent, Component
+from bos.common.types import Component
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.clients.cfs import get_components_from_id_list as \
                                             get_cfs_components_from_id_list
+from bos.operators.utils.clients.cfs import CfsComponent
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
 LOGGER = logging.getLogger('bos.operators.filters.filters')

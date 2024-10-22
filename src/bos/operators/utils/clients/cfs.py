@@ -23,12 +23,11 @@
 #
 from collections import defaultdict
 import logging
-from typing import Any, Optional
+from typing import Any, Optional, Required, TypedDict
 
 from requests import HTTPError
 from requests import Session as RequestsSession
 
-from bos.common.types import CfsComponent
 from bos.common.types import Component as BosComponent
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 from bos.operators.utils.clients.bos.options import options
@@ -42,6 +41,23 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.cfs')
 
 GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
+
+
+CfsConfigurationStatus = Literal['configured', 'failed', 'pending', 'unconfigured']
+
+# In the future, would be nice to somehow get this from CFS
+class CfsComponent(TypedDict, total=False):
+    id: Required[str]
+    state: list
+    state_append: dict
+    desired_state: list
+    desired_config: str
+    error_count: int
+    retry_policy: int
+    enabled: bool
+    configuration_status: CfsConfigurationStatus
+    tags: dict
+    logs: str
 
 
 def get_components(session: Optional[RequestsSession]=None, **params) -> list[CfsComponent]:

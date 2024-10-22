@@ -31,7 +31,6 @@ from requests import HTTPError, ConnectionError
 from requests import Session as RequestsSession
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.types import JsonData, JsonDict
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
@@ -201,6 +200,9 @@ def get_components(node_list: list[str], enabled: Optional[bool]=None) -> HsmCom
 
 NodeSetMapping = dict[str, set[str]]
 
+class PartitionParam(TypedDict, total=False):
+    partition: str
+
 class Inventory:
     """
     Inventory handles the generation of a hardware inventory in a similar manner to how the
@@ -242,7 +244,7 @@ class Inventory:
     @property
     def roles(self) -> NodeSetMapping:
         if self._roles is None:
-            params = {}
+            params: PartitionParam = {}
             if self._partition:
                 params['partition'] = self._partition
             data = self.get('State/Components', params=params)
@@ -284,10 +286,12 @@ class Inventory:
         ...
 
     @overload
-    def get(self, path: Literal['State/Components'], params: dict[str, str]) -> HsmComponentsResponse:
+    def get(self, path: Literal['State/Components'],
+            params: PartitionParam) -> HsmComponentsResponse:
         ...
 
-    def get(self, path: str, params: Optional[dict[str,str]]=None) -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
+    def get(self, path: str, params: Optional[PartitionParam]=None) \
+           -> HsmComponentsResponse|list[HsmGroup]|list[HsmPartition]:
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
             self._session = requests_retry_session()
