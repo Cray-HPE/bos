@@ -35,15 +35,15 @@ from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key
                                     reject_invalid_tenant
 from bos.common.utils import ParsingException, exc_type_msg, get_current_time, \
                              get_current_timestamp, load_timestamp
-from bos.common.types import Session as SessionType
+from bos.common.types import Session, SessionStatus
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
 from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
-from bos.server.models.v2_session import V2Session as Session  # noqa: E501
-from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
+from bos.server.models.v2_session import V2Session as SessionModel  # noqa: E501
+from bos.server.models.v2_session_create import V2SessionCreate as SessionCreateModel  # noqa: E501
 from bos.server.utils import get_request_json
 
 
@@ -56,7 +56,7 @@ LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  # noqa: E501
+def post_v2_session() -> tuple[Session, Literal[201]] | ConnexionResponse:  # noqa: E501
     """POST /v2/session
     Creates a new session. # noqa: E501
     :param session: A JSON object for creating sessions
@@ -67,7 +67,7 @@ def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  
     LOGGER.debug("POST /v2/sessions invoked post_v2_session")
     # -- Validation --
     try:
-        session_create = SessionCreate.from_dict(get_request_json())  # noqa: E501
+        session_create = SessionCreateModel.from_dict(get_request_json())  # noqa: E501
     except Exception as err:
         LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
         return connexion.problem(
@@ -122,13 +122,13 @@ def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  
         return connexion.problem(detail=msg, status=409, title="Conflicting session name")
 
     session_data = session.to_dict()
-    response: SessionType = DB.put(session_key, session_data)
+    response: Session = DB.put(session_key, session_data)
     return response, 201
 
 
-def _create_session(session_create: SessionCreate, tenant: Optional[str]) -> Session:
+def _create_session(session_create: SessionCreateModel, tenant: Optional[str]) -> SessionModel:
     initial_status = SessionStatus(status='pending', start_time=get_current_timestamp())
-    body = SessionType(
+    body = Session(
         name = session_create.name or str(uuid.uuid4()),
         operation = session_create.operation,
         template_name = session_create.template_name,
@@ -139,11 +139,11 @@ def _create_session(session_create: SessionCreate, tenant: Optional[str]) -> Ses
         include_disabled = session_create.include_disabled)
     if tenant:
         body["tenant"] = tenant
-    return Session.from_dict(body)
+    return SessionModel.from_dict(body)
 
 
 @dbutils.redis_error_handler
-def patch_v2_session(session_id: str) -> tuple[SessionType, Literal[200]]  | ConnexionResponse:
+def patch_v2_session(session_id: str) -> tuple[Session, Literal[200]]  | ConnexionResponse:
     """PATCH /v2/session
     Patch the session identified by session_id
     Args:
@@ -167,12 +167,12 @@ def patch_v2_session(session_id: str) -> tuple[SessionType, Literal[200]]  | Con
             status=404, title="Session could not found.",
             detail=f"Session {session_id} could not be found")
 
-    session: SessionType = DB.patch(session_key, patch_data_json)
+    session: Session = DB.patch(session_key, patch_data_json)
     return session, 200
 
 
 @dbutils.redis_error_handler
-def get_v2_session(session_id: str) -> tuple[SessionType, Literal[200]] | ConnexionResponse:  # noqa: E501
+def get_v2_session(session_id: str) -> tuple[Session, Literal[200]] | ConnexionResponse:  # noqa: E501
     """GET /v2/session
     Get the session by session ID
     Args:
@@ -187,13 +187,13 @@ def get_v2_session(session_id: str) -> tuple[SessionType, Literal[200]] | Connex
         return connexion.problem(
             status=404, title="Session could not found.",
             detail=f"Session {session_id} could not be found")
-    session: SessionType = DB.get(session_key)
+    session: Session = DB.get(session_key)
     return session, 200
 
 
 @dbutils.redis_error_handler
 def get_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
-                    status: Optional[str]=None) -> tuple[list[SessionType], Literal[200]]:  # noqa: E501
+                    status: Optional[str]=None) -> tuple[list[Session], Literal[200]]:  # noqa: E501
     """GET /v2/session
 
     List all sessions
@@ -296,7 +296,7 @@ def save_v2_session_status(session_id: str) -> tuple[dict[str, Any], Literal[200
 
 
 def _get_filtered_sessions(tenant: Optional[str], min_age: Optional[str], max_age: Optional[str],
-                           status: Optional[str]) -> list[SessionType]:
+                           status: Optional[str]) -> list[Session]:
     response = DB.get_all()
     min_start = None
     max_start = None
@@ -318,7 +318,7 @@ def _get_filtered_sessions(tenant: Optional[str], min_age: Optional[str], max_ag
     return response
 
 
-def _matches_filter(data: SessionType, tenant: Optional[str], min_start: Optional[str],
+def _matches_filter(data: Session, tenant: Optional[str], min_start: Optional[str],
                     max_start: Optional[str], status: Optional[str]) -> bool:
     if tenant and tenant != data.get("tenant"):
         return False
@@ -337,7 +337,7 @@ def _matches_filter(data: SessionType, tenant: Optional[str], min_start: Optiona
 
 
 def _get_v2_session_status(session_key: str|bytes,
-                           session: Optional[SessionType]=None) -> dict[str, Any]:
+                           session: Optional[Session]=None) -> dict[str, Any]:
     if not session:
         session = DB.get(session_key)
     session_id = session.get("name", {})
@@ -373,6 +373,7 @@ def _get_v2_session_status(session_key: str|bytes,
         component_errors[error] = {'count': len(components), 'list': component_list}
     session_status = session.get('status', {})
     start_time = session_status.get('start_time')
+    assert start_time is not None
     end_time = session_status.get('end_time')
     if end_time:
         duration = str(load_timestamp(end_time) - load_timestamp(start_time))
@@ -403,10 +404,10 @@ def _get_v2_session_status(session_key: str|bytes,
 
 
 def _age_to_timestamp(age: str) -> datetime:
-    delta = {}
+    delta_params = {}
     for interval in ['weeks', 'days', 'hours', 'minutes']:
         result = re.search(fr'(\d+)\w*{interval[0]}', age, re.IGNORECASE)
         if result:
-            delta[interval] = int(result.groups()[0])
-    delta = timedelta(**delta)
+            delta_params[interval] = int(result.groups()[0])
+    delta = timedelta(**delta_params)
     return get_current_time() - delta
