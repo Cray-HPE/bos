@@ -275,7 +275,7 @@ class S3BootArtifacts(S3Object):
         manifest_data: Optional[S3ImsManifest] = json.loads(s3_manifest_data)
         if manifest_data is None:
             msg = f"{self.s3url.url} manifest has a null value"
-            logger.error(msg)
+            LOGGER.error(msg)
             raise ManifestEmpty(msg)
         self._manifest_json = manifest_data
         return self._manifest_json

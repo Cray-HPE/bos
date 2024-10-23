@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from collections import defaultdict, Counter
 import re
 import logging
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 import uuid
 
 import connexion
@@ -56,7 +56,7 @@ LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def post_v2_session() -> tuple[SessionType, int]:  # noqa: E501
+def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  # noqa: E501
     """POST /v2/session
     Creates a new session. # noqa: E501
     :param session: A JSON object for creating sessions
@@ -79,8 +79,7 @@ def post_v2_session() -> tuple[SessionType, int]:  # noqa: E501
     # If no limit is specified, check to see if we require one
     if not session_create.limit and options_data.session_limit_required:
         msg = "session_limit_required option is set, but this session has no limit specified"
-        LOGGER.error(msg)
-        return msg, 400
+        return connexion.problem(status=400, title="Session limit required", details=msg)
 
     # If a limit is specified, check it for nids
     if session_create.limit and any(LIMIT_NID_RE.match(limit_item)
@@ -89,7 +88,7 @@ def post_v2_session() -> tuple[SessionType, int]:  # noqa: E501
         if options_data.reject_nids:
             msg = f"reject_nids: {msg}"
             LOGGER.error(msg)
-            return msg, 400
+            return connexion.problem(status=400, title="Session limit contains NIDs", details=msg)
         # Since BOS does not support NIDs, still log this as a warning.
         # There is a chance that a node group has a name with a name resembling
         # a NID
@@ -102,27 +101,26 @@ def post_v2_session() -> tuple[SessionType, int]:  # noqa: E501
     if isinstance(session_template_response, ConnexionResponse):
         msg = f"Session Template Name invalid: {template_name}"
         LOGGER.error(msg)
-        return msg, 400
+        return connexion.problem(status=400, title="Invalid template name", details=msg)
     session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
     error_code, msg = validate_boot_sets(session_template, session_create.operation, template_name,
                                          options_data=options_data)
     if error_code >= BootSetStatus.ERROR:
-        LOGGER.error("Session template fails check: %s", msg)
-        return msg, 400
+        msg = f"Session template fails check: {msg}"
+        LOGGER.error(msg)
+        return connexion.problem(status=400, title="Template failed check", details=msg)
 
     # -- Setup Record --
     tenant = get_tenant_from_header()
     session = _create_session(session_create, tenant)
     session_key =  get_tenant_aware_key(session.name, tenant)
     if session_key in DB:
-        LOGGER.warning("v2 session named %s already exists", session.name)
-        return connexion.problem(
-            detail=f"A session with the name {session.name} already exists",
-            status=409,
-            title="Conflicting session name"
-        )
+        msg = f"A session with the name {session.name} already exists"
+        LOGGER.warning(msg)
+        return connexion.problem(detail=msg, status=409, title="Conflicting session name")
+
     session_data = session.to_dict()
     response: SessionType = DB.put(session_key, session_data)
     return response, 201
@@ -149,7 +147,7 @@ def _create_session(session_create: SessionCreate, tenant: Optional[str]) -> Ses
 
 
 @dbutils.redis_error_handler
-def patch_v2_session(session_id: str) -> tuple[SessionType, int]:
+def patch_v2_session(session_id: str) -> tuple[SessionType, Literal[200]]  | ConnexionResponse:
     """PATCH /v2/session
     Patch the session identified by session_id
     Args:
@@ -178,7 +176,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionType, int]:
 
 
 @dbutils.redis_error_handler
-def get_v2_session(session_id: str) -> tuple[SessionType, int]:  # noqa: E501
+def get_v2_session(session_id: str) -> tuple[SessionType, Literal[200]] | ConnexionResponse:  # noqa: E501
     """GET /v2/session
     Get the session by session ID
     Args:
@@ -199,7 +197,7 @@ def get_v2_session(session_id: str) -> tuple[SessionType, int]:  # noqa: E501
 
 @dbutils.redis_error_handler
 def get_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
-                    status: Optional[str]=None) -> tuple[list[SessionType], int]:  # noqa: E501
+                    status: Optional[str]=None) -> tuple[list[SessionType], Literal[200]]:  # noqa: E501
     """GET /v2/session
 
     List all sessions
@@ -214,7 +212,7 @@ def get_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
 
 
 @dbutils.redis_error_handler
-def delete_v2_session(session_id: str) -> tuple[None, int]:  # noqa: E501
+def delete_v2_session(session_id: str) -> tuple[None, Literal[204]] | ConnexionResponse:  # noqa: E501
     """DELETE /v2/session
 
     Delete the session by session id
@@ -233,7 +231,7 @@ def delete_v2_session(session_id: str) -> tuple[None, int]:  # noqa: E501
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
-                       status: Optional[str]=None) -> tuple[None, int]:  # noqa: E501
+                       status: Optional[str]=None) -> tuple[None, Literal[204]] | ConnexionResponse:  # noqa: E501
     LOGGER.debug(
             "DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
             min_age, max_age, status)
@@ -259,7 +257,7 @@ def delete_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
 
 
 @dbutils.redis_error_handler
-def get_v2_session_status(session_id: str) -> tuple[dict[str, Any], int]:  # noqa: E501
+def get_v2_session_status(session_id: str) -> tuple[dict[str, Any], Literal[200]] | ConnexionResponse:  # noqa: E501
     """GET /v2/session/status
     Get the session status by session ID
     Args:
@@ -283,7 +281,7 @@ def get_v2_session_status(session_id: str) -> tuple[dict[str, Any], int]:  # noq
 
 
 @dbutils.redis_error_handler
-def save_v2_session_status(session_id: str) -> tuple[dict[str, Any], int]:  # noqa: E501
+def save_v2_session_status(session_id: str) -> tuple[dict[str, Any], Literal[200]] | ConnexionResponse:  # noqa: E501
     """POST /v2/session/status
     Get the session status by session ID
     Args:

@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from typing import Literal, Optional, Required, TypedDict
+from typing import get_args, Literal, Optional, Required, TypedDict
 
 # For type hints
 
@@ -110,7 +110,7 @@ BootSetHardwareSpecifierFields = Literal['node_list', 'node_roles_groups', 'node
 # This fancy footwork lets us construct a tuple of the string values from the previous definition,
 # allowing us to avoid duplicating it.
 BOOT_SET_HARDWARE_SPECIFIER_FIELDS: tuple[BootSetHardwareSpecifierFields] = \
-    typing.get_args(BootSetHardwareSpecifierFields)
+    get_args(BootSetHardwareSpecifierFields)
 
 class BootSet(TypedDict, total=False):
     arch: BootSetArch
