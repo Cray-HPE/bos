@@ -24,7 +24,7 @@
 
 import logging
 import re
-from typing import Literal, Optional, Required, TypedDict
+from typing import cast, Literal, Optional, Required, TypedDict
 
 from requests import HTTPError
 from requests import Session as RequestsSession
@@ -51,7 +51,7 @@ ImsImageArch = Literal['aarch64', 'x86_64']
 
 # If an IMS image does not have the arch field, default to x86_64 for purposes of
 # backward-compatibility
-DEFAULT_IMS_IMAGE_ARCH = cast(ImsImageData, 'x86_64')
+DEFAULT_IMS_IMAGE_ARCH = cast(ImsImageArch, 'x86_64')
 
 
 class ImsImagePatchMetadata(TypedDict, total=False):
