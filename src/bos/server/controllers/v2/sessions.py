@@ -340,7 +340,7 @@ def _get_v2_session_status(session_key: str|bytes,
                            session: Optional[Session]=None) -> dict[str, Any]:
     if not session:
         session = DB.get(session_key)
-    session_id = session.get("name", {})
+    session_id = session["name"]
     tenant_id = session.get("tenant")
     components = get_v2_components_data(session=session_id, tenant=tenant_id)
     staged_components = get_v2_components_data(staged_session=session_id, tenant=tenant_id)
@@ -371,8 +371,8 @@ def _get_v2_session_status(session_key: str|bytes,
         if len(components) > MAX_COMPONENTS_IN_ERROR_DETAILS:
             component_list += '...'
         component_errors[error] = {'count': len(components), 'list': component_list}
-    session_status = session.get('status', {})
-    start_time = session_status.get('start_time')
+    session_status = session['status']
+    start_time = session_status['start_time']
     assert start_time is not None
     end_time = session_status.get('end_time')
     if end_time:

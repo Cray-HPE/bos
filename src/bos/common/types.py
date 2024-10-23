@@ -88,7 +88,7 @@ class Session(TypedDict, total=False):
     name: Required[str]
     operation: Required[SessionOperation]
     stage: bool
-    status: SessionStatus
+    status: Required[SessionStatus]
     template_name: Required[str]
     # Optional means this can be a string or be None
     tenant: Optional[str]
