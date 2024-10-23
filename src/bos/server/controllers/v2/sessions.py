@@ -79,7 +79,7 @@ def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  
     # If no limit is specified, check to see if we require one
     if not session_create.limit and options_data.session_limit_required:
         msg = "session_limit_required option is set, but this session has no limit specified"
-        return connexion.problem(status=400, title="Session limit required", details=msg)
+        return connexion.problem(status=400, title="Session limit required", detail=msg)
 
     # If a limit is specified, check it for nids
     if session_create.limit and any(LIMIT_NID_RE.match(limit_item)
@@ -88,7 +88,7 @@ def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  
         if options_data.reject_nids:
             msg = f"reject_nids: {msg}"
             LOGGER.error(msg)
-            return connexion.problem(status=400, title="Session limit contains NIDs", details=msg)
+            return connexion.problem(status=400, title="Session limit contains NIDs", detail=msg)
         # Since BOS does not support NIDs, still log this as a warning.
         # There is a chance that a node group has a name with a name resembling
         # a NID
@@ -101,7 +101,7 @@ def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  
     if isinstance(session_template_response, ConnexionResponse):
         msg = f"Session Template Name invalid: {template_name}"
         LOGGER.error(msg)
-        return connexion.problem(status=400, title="Invalid template name", details=msg)
+        return connexion.problem(status=400, title="Invalid template name", detail=msg)
     session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
@@ -110,7 +110,7 @@ def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  
     if error_code >= BootSetStatus.ERROR:
         msg = f"Session template fails check: {msg}"
         LOGGER.error(msg)
-        return connexion.problem(status=400, title="Template failed check", details=msg)
+        return connexion.problem(status=400, title="Template failed check", detail=msg)
 
     # -- Setup Record --
     tenant = get_tenant_from_header()
@@ -127,20 +127,16 @@ def post_v2_session() -> tuple[SessionType, Literal[201]] | ConnexionResponse:  
 
 
 def _create_session(session_create: SessionCreate, tenant: Optional[str]) -> Session:
-    initial_status = {
-        'status': 'pending',
-        'start_time': get_current_timestamp(),
-    }
-    body: SessionType = {
-        'name': session_create.name or str(uuid.uuid4()),
-        'operation': session_create.operation,
-        'template_name': session_create.template_name or '',
-        'limit': session_create.limit or '',
-        'stage': session_create.stage,
-        'components': '',
-        'status': initial_status,
-        'include_disabled': session_create.include_disabled
-    }
+    initial_status = SessionStatus(status='pending', start_time=get_current_timestamp())
+    body = SessionType(
+        name = session_create.name or str(uuid.uuid4()),
+        operation = session_create.operation,
+        template_name = session_create.template_name,
+        limit = session_create.limit or '',
+        stage = session_create.stage,
+        components = '',
+        status = initial_status,
+        include_disabled = session_create.include_disabled)
     if tenant:
         body["tenant"] = tenant
     return Session.from_dict(body)
