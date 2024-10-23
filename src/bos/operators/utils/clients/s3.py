@@ -66,6 +66,12 @@ class ArtifactNotFound(Exception):
     """
 
 
+class ManifestEmpty(Exception):
+    """
+    The manifest is empty or null
+    """
+
+
 class ManifestNotFound(Exception):
     """
     The manifest could not be found.
@@ -266,7 +272,12 @@ class S3BootArtifacts(S3Object):
             raise ManifestNotFound(msg) from error
 
         # Cache the manifest.json file
-        self._manifest_json: S3ImsManifest = json.loads(s3_manifest_data)
+        manifest_data: Optional[S3ImsManifest] = json.loads(s3_manifest_data)
+        if manifest_data is None:
+            msg = f"{self.s3url.url} manifest has a null value"
+            logger.error(msg)
+            raise ManifestEmpty(msg)
+        self._manifest_json = manifest_data
         return self._manifest_json
 
     def _get_artifact(self, artifact_type: str) -> S3ImsManifestArtifact:

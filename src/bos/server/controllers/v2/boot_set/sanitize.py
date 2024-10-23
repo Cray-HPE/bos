@@ -25,12 +25,13 @@
 from typing import Optional
 
 from bos.common.types import BootSet, SessionTemplate
+from bos.common.types import BOOT_SET_DEFAULT_ARCH as DEFAULT_ARCH
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.utils import canonize_xname
 
 from .artifacts import validate_boot_artifacts
-from .defs import DEFAULT_ARCH, LOGGER
+from .defs import LOGGER
 from .exceptions import BootSetError, BootSetWarning
 from .ims import validate_ims_boot_image
 from .validate import check_node_list_for_nids, verify_nonempty_hw_specifier_field

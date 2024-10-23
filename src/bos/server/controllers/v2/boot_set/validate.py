@@ -26,11 +26,12 @@ from functools import partial
 from typing import Optional
 
 from bos.common.types import BootSet, SessionOperation, SessionTemplate
+from bos.common.types import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.v2.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
-from .defs import HARDWARE_SPECIFIER_FIELDS, LOGGER, BootSetStatus
+from .defs import LOGGER, BootSetStatus
 from .exceptions import BootSetError, BootSetWarning
 from .ims import validate_ims_boot_image
 

@@ -102,6 +102,16 @@ class SessionTemplateCfsParameters(TypedDict, total=False):
 
 BootSetArch = Literal['X86', 'ARM', 'Other', 'Unknown']
 
+BOOT_SET_DEFAULT_ARCH: BootSetArch = 'X86'
+
+# Valid boot sets are required to have at least one of these fields
+BootSetHardwareSpecifierFields = Literal['node_list', 'node_roles_groups', 'node_groups']
+
+# This fancy footwork lets us construct a tuple of the string values from the previous definition,
+# allowing us to avoid duplicating it.
+BOOT_SET_HARDWARE_SPECIFIER_FIELDS: tuple[BootSetHardwareSpecifierFields] = \
+    typing.get_args(BootSetHardwareSpecifierFields)
+
 class BootSet(TypedDict, total=False):
     arch: BootSetArch
     cfs: SessionTemplateCfsParameters

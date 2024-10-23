@@ -25,6 +25,7 @@
 from typing import Optional
 
 from bos.common.types import BootSetArch, BootSet
+from bos.common.types import BOOT_SET_DEFAULT_ARCH as DEFAULT_ARCH
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
                                             get_ims_id_from_s3_url, ImageNotFound, ImsImageArch, \
@@ -32,7 +33,6 @@ from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image,
 from bos.operators.utils.clients.s3 import S3Url
 from bos.server.controllers.v2.options import OptionsData
 
-from .defs import DEFAULT_ARCH
 from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
                         CannotValidateBootSetArch, NonImsImage
 
