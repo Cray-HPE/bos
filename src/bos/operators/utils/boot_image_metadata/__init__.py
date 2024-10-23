@@ -81,7 +81,13 @@ class BootImageMetaData(ABC):
         """
 
 
-class BootImageMetaDataBadRead(Exception):
+class BootImageError(Exception):
+    """
+    General error getting boot image
+    """
+
+
+class BootImageMetaDataBadRead(BootImageError):
     """
     The metadata for the boot image could not be read/retrieved.
     """

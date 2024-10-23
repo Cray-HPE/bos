@@ -58,7 +58,7 @@ def validate_ims_boot_image(bs: BootSet, options_data: OptionsData) -> None:
     except KeyError as err:
         raise BootSetError("Missing required 'path' field") from err
 
-    bs_arch = bs.get("arch", DEFAULT_ARCH)
+    bs_arch: BootSetArch = bs.get("arch", DEFAULT_ARCH)
 
     ims_id = get_ims_image_id(bs_path)
 
