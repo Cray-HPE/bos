@@ -107,6 +107,7 @@ class BootSet(TypedDict, total=False):
     cfs: SessionTemplateCfsParameters
     etag: str
     kernel_parameters: str
+    name: str
     node_list: list[str]
     node_groups: list[str]
     node_roles_groups: list[str]    

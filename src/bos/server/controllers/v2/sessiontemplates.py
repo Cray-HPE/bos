@@ -26,6 +26,7 @@ import connexion
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
+from bos.common.types import SessionOperation
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.schema import validator
@@ -200,7 +201,7 @@ def validate_v2_sessiontemplate(session_template_id: str):
 
     # We assume boot because it and reboot are the most demanding from a validation
     # standpoint.
-    operation = "boot"
+    operation: SessionOperation = "boot"
 
     _error_code, msg = validate_boot_sets(data, operation, session_template_id)
     # We return 200 because the request itself was successful even if the session template

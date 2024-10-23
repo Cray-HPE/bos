@@ -24,6 +24,9 @@
 
 from enum import IntEnum
 import logging
+from typing import cast
+
+from bos.common.types import BootSetArch
 
 LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
 
@@ -39,4 +42,4 @@ class BootSetStatus(IntEnum):
 # Valid boot sets are required to have at least one of these fields
 HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
 
-DEFAULT_ARCH = "X86"
+DEFAULT_ARCH = cast(BootSetArch, "X86")
