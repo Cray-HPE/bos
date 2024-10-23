@@ -25,7 +25,7 @@ import json
 import logging
 import os
 import threading
-from typing import cast, Literal, Optional, TypedDict
+from typing import Literal, Optional, TypedDict
 from urllib.parse import urlparse
 
 import boto3
@@ -266,7 +266,7 @@ class S3BootArtifacts(S3Object):
             raise ManifestNotFound(msg) from error
 
         # Cache the manifest.json file
-        self._manifest_json = cast(S3ImsManifest, json.loads(s3_manifest_data))
+        self._manifest_json: S3ImsManifest = json.loads(s3_manifest_data)
         return self._manifest_json
 
     def _get_artifact(self, artifact_type: str) -> S3ImsManifestArtifact:

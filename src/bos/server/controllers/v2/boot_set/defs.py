@@ -24,7 +24,6 @@
 
 from enum import IntEnum
 import logging
-from typing import cast
 
 from bos.common.types import BootSetArch
 
@@ -42,4 +41,4 @@ class BootSetStatus(IntEnum):
 # Valid boot sets are required to have at least one of these fields
 HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
 
-DEFAULT_ARCH = cast(BootSetArch, "X86")
+DEFAULT_ARCH: BootSetArch = "X86"
