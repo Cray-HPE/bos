@@ -28,7 +28,9 @@ from collections import defaultdict
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos_utils import exc_type_msg
+
+from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-smd'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2/"

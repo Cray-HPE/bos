@@ -4,6 +4,7 @@
 --extra-index-url http://artifactory.algol60.net/artifactory/csm-python-modules/simple
 -c constraints.txt
 -r lib/bos/server/requirements.txt
+bos-utils
 boto3
 botocore
 connexion

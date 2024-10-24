@@ -28,7 +28,7 @@ import logging
 import connexion
 import redis
 
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
 DATABASES = ["options", "components", "session_templates", "sessions", "bss_tokens_boot_artifacts",

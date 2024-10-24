@@ -26,9 +26,11 @@ import functools
 import logging
 import hashlib
 
+from bos_utils import exc_type_msg
+
 import connexion
 from requests.exceptions import HTTPError
-from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
+from bos.common.utils import requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger('bos.common.tenant_utils')
 

@@ -34,7 +34,7 @@ import os
 import time
 from typing import Generator, List, NoReturn, Type
 
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.common.values import Status
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options

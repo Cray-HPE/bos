@@ -24,7 +24,8 @@
 #
 import logging
 
-from bos.common.utils import duration_to_timedelta
+from bos_utils import duration_to_timedelta
+
 from bos.common.values import EMPTY_ACTUAL_STATE
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main

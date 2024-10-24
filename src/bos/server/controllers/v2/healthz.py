@@ -23,7 +23,7 @@
 #
 import logging
 
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.server.models.healthz import Healthz
 from bos.server import redis_db_utils
 

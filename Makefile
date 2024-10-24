@@ -27,8 +27,6 @@
 NAME ?= cray-bos
 CHART_PATH ?= kubernetes
 DOCKER_VERSION ?= $(shell head -1 .docker_version)
-RPM_VERSION ?= $(shell head -1 .version)
-RPM_RELEASE ?= $(shell head -1 .rpm_release)
 API_VERSION ?= $(shell head -1 .api_version)
 CHART_VERSION ?= $(shell head -1 .chart_version)
 
@@ -38,30 +36,14 @@ ifneq ($(wildcard ${HOME}/.netrc),)
 	DOCKER_ARGS ?= --secret id=netrc,src=${HOME}/.netrc
 endif
 
-# Common RPM variables
-BUILD_METADATA ?= "1~development~$(shell git rev-parse --short HEAD)"
-
-# We copy the built RPMs to these directories to simplify publishing them
-RPM_IMAGE_DIR ?= dist/rpmbuild/RPMS/noarch
-SRC_RPM_IMAGE_DIR ?= dist/rpmbuild/SRPMS
-
-# bos-reporter RPM variables
-RPTR_BUILD_DIR ?= $(PWD)/dist/bos-rptr-rpmbuild
-RPTR_SPEC_NAME ?= bos-reporter
-RPTR_SPEC_FILE ?= ${RPTR_SPEC_NAME}.spec
-RPTR_SOURCE_NAME ?= ${RPTR_SPEC_NAME}-${RPM_VERSION}-${RPM_RELEASE}
-RPTR_SOURCE_PATH := ${RPTR_BUILD_DIR}/SOURCES/${RPTR_SOURCE_NAME}.tar.bz2
-
-all : runbuildprep lint image chart rptr_rpm
+all : runbuildprep lint image chart
 local: cms_meta_tools runbuildprep image chart_setup chart_package
 chart: chart_setup chart_package chart_test
 image: image_setup image_build image_build_pylint_errors image_run_pylint_errors image_build_pylint_full image_run_pylint_full
-rptr_rpm: rptr_rpm_package_source rptr_rpm_build_source rptr_rpm_build
 
 clone_input_files:
 		cp ${CHART_PATH}/${NAME}/Chart.yaml.in ${CHART_PATH}/${NAME}/Chart.yaml
 		cp ${CHART_PATH}/${NAME}/values.yaml.in ${CHART_PATH}/${NAME}/values.yaml
-		cp bos-reporter.spec.in bos-reporter.spec
 		cp constraints.txt.in constraints.txt
 		cp src/setup.py.in src/setup.py
 		cp api/openapi.yaml.in api/openapi.yaml
@@ -80,16 +62,6 @@ chart_setup:
 
 lint:
 		./cms_meta_tools/scripts/runLint.sh
-
-rpm_prepare:
-		mkdir -p $(RPM_IMAGE_DIR) \
-				 $(SRC_RPM_IMAGE_DIR)
-rptr_rpm_prepare:
-		rm -rf $(RPTR_BUILD_DIR)
-		mkdir -p $(RPTR_BUILD_DIR)/SPECS \
-				 $(RPTR_BUILD_DIR)/SOURCES
-		cp $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/
-		cat $(RPTR_SPEC_FILE) $(RPTR_BUILD_DIR)/SPECS/bos-reporter.spec
 
 image_setup:
 		# Create list of BOS Python source files, to be checked later by pylint
@@ -117,23 +89,3 @@ chart_package:
 chart_test:
 		helm lint "${CHART_PATH}/${NAME}"
 		docker run --rm -v ${PWD}/${CHART_PATH}:/apps ${HELM_UNITTEST_IMAGE} -3 ${NAME}
-
-rptr_rpm_package_source:
-		tar --transform 'flags=r;s,^,/$(RPTR_SOURCE_NAME)/,' -cvjf $(RPTR_SOURCE_PATH) \
-			./${RPTR_SPEC_FILE} \
-			./src \
-			./LICENSE
-
-rptr_rpm_build_source:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ts $(RPTR_SOURCE_PATH) --define "_topdir $(RPTR_BUILD_DIR)"
-		cp $(RPTR_BUILD_DIR)/SRPMS/*.rpm $(SRC_RPM_IMAGE_DIR)
-
-rptr_rpm_build:
-		BUILD_METADATA=$(BUILD_METADATA) rpmbuild -ba $(RPTR_SPEC_FILE) --define "_topdir $(RPTR_BUILD_DIR)"
-		cp $(RPTR_BUILD_DIR)/RPMS/noarch/*.rpm $(RPM_IMAGE_DIR)
-
-rpm_build_clean:
-		rm -rf $(RPM_IMAGE_DIR)/*
-
-rpm_build_source_clean:
-		rm -rf $(SRC_RPM_IMAGE_DIR)/*

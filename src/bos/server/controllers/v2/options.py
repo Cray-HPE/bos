@@ -28,7 +28,7 @@ import time
 import connexion
 
 from bos.common.options import DEFAULTS, OptionsCache
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.models.v2_options import V2Options as Options
 from bos.server.utils import get_request_json

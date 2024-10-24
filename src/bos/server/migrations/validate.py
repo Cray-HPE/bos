@@ -26,7 +26,7 @@ import logging
 from typing import Any
 
 from bos.common.tenant_utils import get_tenant_aware_key
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.server.schema import validator
 
 from .db import TEMP_DB

@@ -35,7 +35,7 @@ from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFac
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 

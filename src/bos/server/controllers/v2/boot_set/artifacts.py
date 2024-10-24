@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
 

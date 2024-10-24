@@ -23,10 +23,14 @@
 #
 from collections import defaultdict
 import logging
-from bos.operators.utils.clients.bos.options import options
+
 from requests.exceptions import HTTPError
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos_utils import exc_type_msg
+
+from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
+
 
 SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"

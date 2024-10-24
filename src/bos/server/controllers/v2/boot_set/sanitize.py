@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.utils import canonize_xname
 

@@ -30,9 +30,11 @@ import uuid
 import connexion
 from connexion.lifecycle import ConnexionResponse
 
+from bos_utils import exc_type_msg
+
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
-from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
+from bos.common.utils import get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets

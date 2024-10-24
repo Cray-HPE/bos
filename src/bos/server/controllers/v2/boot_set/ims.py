@@ -22,7 +22,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from bos.common.utils import exc_type_msg, requests_retry_session
+from bos_utils import exc_type_msg
+
+from bos.common.utils import requests_retry_session
 from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
                                             get_ims_id_from_s3_url, ImageNotFound
 from bos.operators.utils.clients.s3 import S3Url

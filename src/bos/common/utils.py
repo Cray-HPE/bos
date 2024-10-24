@@ -26,15 +26,12 @@
 import datetime
 from functools import partial
 import re
-import traceback
-from typing import List
 
 # Third party imports
+from bos_utils import requests_retry_session as base_requests_retry_session
 from dateutil.parser import parse
-from requests_retry_session import requests_retry_session as base_requests_retry_session
 
 PROTOCOL = 'http'
-TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.
 def get_current_time() -> datetime.datetime:
@@ -49,26 +46,8 @@ def load_timestamp(timestamp: str) -> datetime.datetime:
     return parse(timestamp).replace(tzinfo=None)
 
 
-def duration_to_timedelta(timestamp: str):
-    """
-    Converts a <digit><duration string> to a timedelta object.
-    """
-    # Calculate the corresponding multiplier for each time value
-    seconds_table = {'s': 1,
-                     'm': 60,
-                     'h': 60*60,
-                     'd': 60*60*24,
-                     'w': 60*60*24*7}
-    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
-    timeval = float(timeval)
-    seconds = timeval * seconds_table[durationval]
-    return datetime.timedelta(seconds=seconds)
+requests_retry_session = partial(base_requests_retry_session, protocol=PROTOCOL)
 
-requests_retry_session = partial(base_requests_retry_session,
-                                 retries=10, backoff_factor=0.5,
-                                 status_forcelist=(500, 502, 503, 504),
-                                 connect_timeout=3, read_timeout=10,
-                                 session=None, protocol=PROTOCOL)
 
 def compact_response_text(response_text: str) -> str:
     """
@@ -80,13 +59,6 @@ def compact_response_text(response_text: str) -> str:
         return ' '.join([ line.strip() for line in response_text.split('\n') ])
     return str(response_text)
 
-
-def exc_type_msg(exc: Exception) -> str:
-    """
-    Given an exception, returns a string of its type and its text
-    (e.g. TypeError: 'int' object is not subscriptable)
-    """
-    return ''.join(traceback.format_exception_only(type(exc), exc))
 
 def get_image_id(component: str) -> str:
     """
@@ -108,6 +80,7 @@ def get_image_id_from_kernel(kernel_path: str) -> str:
     image_id = match.group(1)
     return image_id
 
+
 def using_sbps(component: str) -> bool:
     """
     If the component is using the Scalable Boot Provisioning Service (SBPS) to
@@ -124,6 +97,7 @@ def using_sbps(component: str) -> bool:
     kernel_parameters = boot_artifacts.get('kernel_parameters')
     return using_sbps_check_kernel_parameters(kernel_parameters)
 
+
 def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     """
     Check the kernel boot parameters to see if the image is using the
@@ -137,7 +111,8 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     # Check for the 'root=sbps-s3' string.
     return "root=sbps-s3" in kernel_parameters
 
-def components_by_id(components: List[dict]) -> dict:
+
+def components_by_id(components: list[dict]) -> dict:
     """
     Input:
     * components: a list containing individual components
@@ -150,7 +125,8 @@ def components_by_id(components: List[dict]) -> dict:
     """
     return { component["id"]: component for component in components }
 
-def reverse_components_by_id(components_by_id_map: dict) -> List[dict]:
+
+def reverse_components_by_id(components_by_id_map: dict) -> list[dict]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the

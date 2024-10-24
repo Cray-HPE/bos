@@ -24,7 +24,7 @@
 import logging
 import yaml
 
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.server.controllers.utils import url_for
 from bos.server.models import Version, Link
 

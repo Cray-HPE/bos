@@ -26,8 +26,10 @@ import logging
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
+from bos_utils import exc_type_msg
+
 from bos.common.tenant_utils import get_new_tenant_header
-from bos.common.utils import PROTOCOL, exc_type_msg, requests_retry_session
+from bos.common.utils import PROTOCOL, requests_retry_session
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
 

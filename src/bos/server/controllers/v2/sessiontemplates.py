@@ -26,7 +26,7 @@ import connexion
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.schema import validator
 from bos.server.utils import get_request_json

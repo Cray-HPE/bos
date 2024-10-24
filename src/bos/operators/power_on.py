@@ -31,9 +31,11 @@ from typing import Dict, List, Set, Tuple, Union
 # Third party imports
 from requests import HTTPError
 
+from bos_utils import exc_type_msg
+
 # BOS module imports
-from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
-                             using_sbps_check_kernel_parameters, components_by_id
+from bos.common.utils import get_image_id_from_kernel, using_sbps_check_kernel_parameters, \
+                             components_by_id
 from bos.common.values import Action, Status
 from bos.operators.utils.clients import bss
 from bos.operators.utils.clients import pcs

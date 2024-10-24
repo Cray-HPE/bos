@@ -27,7 +27,9 @@ import re
 from requests.exceptions import HTTPError
 from requests.sessions import Session as RequestsSession
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos_utils import exc_type_msg
+
+from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 from bos.operators.utils.clients.s3 import S3Url
 
 SERVICE_NAME = 'cray-ims'

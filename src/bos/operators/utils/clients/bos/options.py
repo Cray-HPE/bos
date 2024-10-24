@@ -27,8 +27,10 @@ import json
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
+from bos_utils import exc_type_msg
+
 from bos.common.options import OptionsCache
-from bos.common.utils import exc_type_msg, requests_retry_session
+from bos.common.utils import requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')

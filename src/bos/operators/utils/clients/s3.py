@@ -31,7 +31,7 @@ import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 
-from bos.common.utils import exc_type_msg
+from bos_utils import exc_type_msg
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.s3')
 

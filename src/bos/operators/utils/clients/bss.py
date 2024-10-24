@@ -26,7 +26,9 @@ import json
 
 from requests.exceptions import HTTPError
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos_utils import exc_type_msg
+
+from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
