@@ -39,6 +39,7 @@ from bos.operators.utils.clients import bss
 from bos.operators.utils.clients import pcs
 from bos.operators.utils.clients.ims import tag_image
 from bos.operators.utils.clients.cfs import set_cfs
+from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
@@ -88,7 +89,7 @@ class PowerOnOperator(BaseOperator):
             raise Exception(f"Error encountered setting CFS information: {e}") from e
         component_ids = [component['id'] for component in components]
         try:
-            pcs.power_on(component_ids)
+            pcs.power_on(component_ids, task_deadline_minutes=options.pcs_transition_deadline)
         except Exception as e:
             raise Exception(f"Error encountered calling CAPMC to power on: {e}") from e
         return components

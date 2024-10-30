@@ -26,6 +26,7 @@ import logging
 
 from bos.common.values import Action, Status
 from bos.operators.utils.clients import pcs
+from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
 
@@ -55,7 +56,7 @@ class GracefulPowerOffOperator(BaseOperator):
     def _act(self, components):
         if components:
             component_ids = [component['id'] for component in components]
-            pcs.soft_off(component_ids)
+            pcs.soft_off(component_ids, task_deadline_minutes=options.pcs_transition_deadline)
         return components
 
 

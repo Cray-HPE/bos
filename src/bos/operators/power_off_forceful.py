@@ -59,7 +59,7 @@ class ForcefulPowerOffOperator(BaseOperator):
     def _act(self, components):
         if components:
             component_ids = [component['id'] for component in components]
-            pcs.force_off(nodes=component_ids)
+            pcs.force_off(nodes=component_ids, task_deadline_minutes=options.pcs_transition_deadline)
         return components
 
 

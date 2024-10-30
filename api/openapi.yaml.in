@@ -976,6 +976,13 @@ components:
         Options for the Boot Orchestration Service.
       type: object
       properties:
+        pcs_transition_deadline:
+          type: integer
+          description: |
+            The amount of time (in minutes) to set the deadline for a PCS pcs_transition_deadline
+          example: 1
+          minimum: 1
+          maximum: 1440
         cfs_read_timeout:
           type: integer
           description: |
