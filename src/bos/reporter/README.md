@@ -1,1 +1,0 @@
-The BOS client reports the state of the boot artifacts on the node. Specifically, it reports a Boot Artifact ID that it parses out of the kernel boot parameters found at /proc/cmdline.
