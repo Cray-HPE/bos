@@ -40,12 +40,9 @@ pipeline {
 
     environment {
         NAME = "cray-bos"
-        REPORTER_NAME = "bos-reporter"
         DESCRIPTION = "Cray Management System Boot Orchestration Service (BOS)"
-        RPTR_SPEC_FILE = "bos-reporter.spec"
         IS_STABLE = getBuildIsStable()
         DOCKER_BUILDKIT = "1"
-        BUILD_METADATA = getRpmRevision(isStable: env.IS_STABLE)
     }
 
     stages {
@@ -73,17 +70,6 @@ pipeline {
                 sh "make lint"
             }
         }
-        stage('Add RPM Metadata to bos-reporter') {
-            steps {
-                echo "RPM build metadata is ${env.BUILD_METADATA}"
-                runLibraryScript("addRpmMetaData.sh", env.RPTR_SPEC_FILE)
-            }
-        }
-        stage("RPM Build Prepare") {
-            steps {
-               sh "make rpm_prepare"
-        	}
-        }
         stage("Build Image and Chart") {
             parallel {
                 stage('Image') {
@@ -110,43 +96,15 @@ pipeline {
                         sh "make chart"
                     }
                 }
-                stage("RPM Build") {
-                    agent {
-                        docker {
-                            image "arti.hpc.amslabs.hpecorp.net/dstbuildenv-docker-master-local/cray-sle15sp5_build_environment:latest"
-                            reuseNode true
-                            // Support docker in docker for clamav scan
-                            args "-v /var/run/docker.sock:/var/run/docker.sock -v /usr/bin/docker:/usr/bin/docker --group-add 999"
-                        }
-                    }
-                    steps {
-                        sh "make rptr_rpm_prepare"
-                        sh "make rptr_rpm"
-                    }
-                }
             }
         }
-        stage('Publish ') {
-            parallel {
-                stage('Image and Chart') {
-                    environment {
-                        DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
-                    }
-                    steps {
-                        publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
-                        publishCsmHelmCharts(component: env.NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
-                    }
-                }
-                stage("RPM Publish") {
-                    steps {
-                        script {
-                            publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/RPMS/noarch/*.rpm", os: "noos", arch: "noarch", isStable: env.IS_STABLE)
-                            publishCsmRpms(component: env.REPORTER_NAME, pattern: "dist/rpmbuild/SRPMS/*.rpm", os: "noos", arch: "src", isStable: env.IS_STABLE)
-                        }
-                        sh "make rpm_build_clean"
-                        sh "make rpm_build_source_clean"
-                    }
-                }
+        stage('Publish Image and Chart') {
+            environment {
+                DOCKER_VERSION = sh(returnStdout: true, script: "head -1 .docker_version").trim()
+            }
+            steps {
+                publishCsmDockerImage(image: env.NAME, tag: env.DOCKER_VERSION, isStable: env.IS_STABLE)
+                publishCsmHelmCharts(component: env.NAME, chartsPath: "${WORKSPACE}/kubernetes/.packaged", isStable: env.IS_STABLE)
             }
         }
     }
