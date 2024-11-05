@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -35,7 +35,7 @@ def url_for(endpoint, **values):
     """Calculate the URL for an endpoint
 
     This wraps flask.url_for. flask.url_for doesn't generate the path that we
-    need when PRS is running on a path behind a proxy. For example, if the app
+    need when BOS is running on a path behind a proxy. For example, if the app
     is proxied on `/apis/bos` and the client made a request like
     `/apis/bos/v1`, flask.url_for('repositories') would return
     `/v1/repositories` which wouldn't be valid because it's missing the path
