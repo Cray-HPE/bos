@@ -24,9 +24,12 @@
 
 import logging
 import re
-from requests.exceptions import HTTPError
-from requests.sessions import Session as RequestsSession
+from typing import Literal, Optional, Required, TypedDict
 
+from requests import HTTPError
+from requests import Session as RequestsSession
+
+from bos.common.types import JsonDict
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 from bos.operators.utils.clients.s3 import S3Url
 
@@ -36,16 +39,42 @@ BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/{IMS_VERSION}"
 IMAGES_ENDPOINT = f"{BASE_ENDPOINT}/images"
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.ims')
-IMS_TAG_OPERATIONS = ['set', 'remove']
+IMS_TAG_OPERATIONS = {'set', 'remove'}
+ImsTagOperation = Literal['set', 'remove']
 
 # Making minimal assumptions about the IMS ID itself, this pattern just makes sure that the
 # S3 key is some string, then a /, then at least one more character.
 IMS_S3_KEY_RE = r'^([^/]+)/.+'
 IMS_S3_KEY_RE_PROG = re.compile(IMS_S3_KEY_RE)
 
+ImsImageArch = Literal['aarch64', 'x86_64']
+
 # If an IMS image does not have the arch field, default to x86_64 for purposes of
 # backward-compatibility
-DEFAULT_IMS_IMAGE_ARCH = 'x86_64'
+DEFAULT_IMS_IMAGE_ARCH: ImsImageArch = 'x86_64'
+
+
+class ImsImagePatchMetadata(TypedDict, total=False):
+    operation: Required[ImsTagOperation]
+    key: Required[str]
+    value: str
+
+
+class ImsImagePatchData(TypedDict):
+    """
+    We only include the field that concerns us
+    """
+    metadata: ImsImagePatchMetadata
+
+
+class ImsImageData(TypedDict, total=False):
+    """
+    We do not include all of the fields here, because we just
+    use this for type hinting.
+    """
+    id: Required[str]
+    name: Required[str]
+    arch: ImsImageArch
 
 
 class TagFailure(Exception):
@@ -56,11 +85,11 @@ class ImageNotFound(Exception):
     """
     Raised if querying IMS for an image and it is not found
     """
-    def __init__(self, image_id: str):
+    def __init__(self, image_id: str) -> None:
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
+def get_image(image_id: str, session: Optional[RequestsSession]=None) -> ImsImageData:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
@@ -96,7 +125,7 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
         raise
 
 
-def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -> None:
+def patch_image(image_id: str, data: ImsImagePatchData, session: Optional[RequestsSession]=None) -> None:
     if not data:
         LOGGER.warning("patch_image called without data; returning without action.")
         return
@@ -116,8 +145,8 @@ def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -
         raise
 
 
-def tag_image(image_id: str, operation: str, key: str, value: str=None,
-              session: RequestsSession|None=None) -> None:
+def tag_image(image_id: str, operation: ImsTagOperation, key: str, value: Optional[str]=None,
+              session: Optional[RequestsSession]=None) -> None:
     if operation not in IMS_TAG_OPERATIONS:
         msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
         LOGGER.error(msg)
@@ -136,28 +165,24 @@ def tag_image(image_id: str, operation: str, key: str, value: str=None,
     if not session:
         session = requests_retry_session()
 
-    data = {
-        "metadata": {
-            "operation": operation,
-            "key": key,
-            "value": value
-            }
-    }
+    data = ImsImagePatchData(metadata=ImsImagePatchMetadata(operation=operation, key=key))
+    if value is not None:
+        data["metadata"]["value"] = value
     patch_image(image_id=image_id, data=data, session=session)
 
 
-def get_ims_id_from_s3_url(s3_url: S3Url) -> str|None:
+def get_ims_id_from_s3_url(s3_url: S3Url) -> Optional[str]:
     """
     If the s3_url matches the expected format of an IMS image path, then return the IMS image ID.
     Otherwise return None.
     """
-    try:
-        return IMS_S3_KEY_RE_PROG.match(s3_url.key).group(1)
-    except (AttributeError, IndexError):
+    match = IMS_S3_KEY_RE_PROG.match(s3_url.key)
+    if match is None:
         return None
+    return match.group(1)
 
 
-def get_arch_from_image_data(image_data: dict) -> str:
+def get_arch_from_image_data(image_data: ImsImageData) -> ImsImageArch:
     """
     Returns the value of the 'arch' field in the image data
     If it is not present, logs a warning and returns the default value

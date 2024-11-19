@@ -21,6 +21,10 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+from bos.common.types import BootArtifacts, ComponentActualState, ComponentDesiredState, \
+                             ComponentStagedState
+
 # Phases
 class Phase:
     powering_on = "powering_on"
@@ -50,24 +54,24 @@ class Status:
     on_hold = "on_hold"
 
 
-EMPTY_BOOT_ARTIFACTS = {
+EMPTY_BOOT_ARTIFACTS: BootArtifacts = {
     "kernel": "",
     "kernel_parameters": "",
     "initrd": ""
 }
 
-EMPTY_ACTUAL_STATE = {
+EMPTY_ACTUAL_STATE: ComponentActualState = {
     "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
     "bss_token": ""
 }
 
-EMPTY_DESIRED_STATE = {
+EMPTY_DESIRED_STATE: ComponentDesiredState = {
     "configuration": "",
     "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
     "bss_token": ""
 }
 
-EMPTY_STAGED_STATE = {
+EMPTY_STAGED_STATE: ComponentStagedState = {
     "configuration": "",
     "boot_artifacts": EMPTY_BOOT_ARTIFACTS
 }

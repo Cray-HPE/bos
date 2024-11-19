@@ -23,6 +23,8 @@
 #
 import logging
 
+from bos.common.types import BootSet
+from bos.operators.utils.boot_image_metadata import BootImageMetaData
 from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
 
 LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.factory')
@@ -38,10 +40,10 @@ class BootImageMetaDataFactory:
     Conditionally create new instances of the BootImageMetadata based on
     the type of the BootImageMetaData specified
     """
-    def __init__(self, boot_set: dict):
+    def __init__(self, boot_set: BootSet) -> None:
         self.boot_set = boot_set
 
-    def __call__(self):
+    def __call__(self) -> BootImageMetaData:
         path_type = self.boot_set.get('type', None)
         if not path_type:
             raise BootImageMetaDataUnknown(f"No path type set in boot set: {self.boot_set}")

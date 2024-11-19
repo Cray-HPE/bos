@@ -84,7 +84,7 @@ def validate_bootset_path(bsname: str, bsdata: dict) -> None:
         raise ValidationError(f"Boot set '{bsname}' has invalid 'path' field: {exc}") from exc
 
 
-def check_keys(actual: str|bytes, expected: str|bytes) -> str|None:
+def check_keys(actual: str|bytes, expected: str|bytes) -> None:
     """
     Converts both keys to strings.
     Raises ValidationError if the strings do not match

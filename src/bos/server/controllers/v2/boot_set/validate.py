@@ -23,19 +23,23 @@
 #
 
 from functools import partial
+from typing import Optional
+
+from bos.common.types import BootSet, SessionOperation, SessionTemplate
+from bos.common.types import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.v2.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
-from .defs import HARDWARE_SPECIFIER_FIELDS, LOGGER, BootSetStatus
+from .defs import LOGGER, BootSetStatus
 from .exceptions import BootSetError, BootSetWarning
 from .ims import validate_ims_boot_image
 
 
-def validate_boot_sets(session_template: dict,
-                       operation: str,
+def validate_boot_sets(session_template: SessionTemplate,
+                       operation: SessionOperation,
                        template_name: str,
-                       options_data: OptionsData|None=None) -> tuple[BootSetStatus, str]:
+                       options_data: Optional[OptionsData]=None) -> tuple[BootSetStatus, str]:
     """
     Validates the boot sets listed in a session template.
     This is called when creating a session or when using the sessiontemplatesvalid endpoint
@@ -94,7 +98,8 @@ def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
     return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
 
 
-def validate_boot_set(bs: dict, operation: str, options_data: OptionsData) -> list[str]:
+def validate_boot_set(bs: BootSet, operation: SessionOperation,
+                      options_data: OptionsData) -> list[str]:
     """
     Helper function for validate_boot_sets that performs validation on a single boot set.
     Raises BootSetError if fatal errors found.
@@ -123,7 +128,7 @@ def validate_boot_set(bs: dict, operation: str, options_data: OptionsData) -> li
     return warning_msgs
 
 
-def verify_nonempty_hw_specifier_field(bs: dict) -> None:
+def verify_nonempty_hw_specifier_field(bs: BootSet) -> None:
     """
     Raises an exception if there are no non-empty hardware specifier fields.
     """
@@ -137,7 +142,7 @@ def verify_nonempty_hw_specifier_field(bs: dict) -> None:
         raise BootSetError(f"No non-empty hardware specifier fields ({HARDWARE_SPECIFIER_FIELDS})")
 
 
-def check_node_list_for_nids(bs: dict, options_data: OptionsData) -> None:
+def check_node_list_for_nids(bs: BootSet, options_data: OptionsData) -> None:
     """
     If the node list contains no NIDs, return.
     Otherwise, raise BootSetError or BootSetWarning, depending on the value of the

@@ -26,13 +26,14 @@ import logging
 from typing import Set
 from copy import copy
 
+from bos.common.types import Component
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
 from bos.operators.utils.clients.hsm import read_all_node_xnames
 from bos.operators.base import BaseOperator, main
 
 LOGGER = logging.getLogger(__name__)
 
-NEW_COMPONENT = {'id': None,
+NEW_COMPONENT: Component = {'id': "",
                  'actual_state': EMPTY_ACTUAL_STATE,
                  'desired_state': EMPTY_DESIRED_STATE,
                  'staged_state': {},
@@ -61,7 +62,7 @@ class DiscoveryOperator(BaseOperator):
     def filters(self):
         return []
 
-    def _act(self, components):
+    def _act(self, components: list[Component]) -> list[Component]:
         return components
 
     def _run(self) -> None:

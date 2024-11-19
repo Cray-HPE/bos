@@ -23,8 +23,11 @@
 #
 import logging
 import json
+from typing import Iterable, Optional
 
-from requests.exceptions import HTTPError
+from requests import HTTPError
+from requests import Response as RequestsResponse
+from requests import Session as RequestsSession
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
 
@@ -33,7 +36,8 @@ SERVICE_NAME = 'cray-bss'
 ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/boot/v1"
 
 
-def set_bss(node_set, kernel_params, kernel, initrd, session=None):
+def set_bss(node_set: Iterable[str], kernel_params: str, kernel: str, initrd: str,
+            session: Optional[RequestsSession]=None) -> RequestsResponse:
     '''
     Tell the Boot Script Service (BSS) which boot artifacts are associated
     with each node.

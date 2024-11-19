@@ -27,10 +27,14 @@
 
 import logging
 import json
+from typing import Iterable, Literal, Optional, Required, TypedDict
+
 from collections import defaultdict
 
-import requests
+from requests import HTTPError
+from requests import Session as RequestsSession
 
+from bos.common.types import JsonDict, NodeSetMapping
 from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-power-control'
@@ -40,6 +44,47 @@ POWER_STATUS_ENDPOINT = f'{ENDPOINT}/power-status'
 TRANSITION_ENDPOINT = f"{ENDPOINT}/transitions"
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
+
+
+PcsManagementState = Literal['available', 'unavailable']
+PcsOperation = Literal['Hard-Restart', 'Init', 'Force-Off', 'Off', 'On', 'Soft-Off', 'Soft-Restart']
+PcsPowerState = Literal['off', 'on', 'undefined']
+
+
+class PcsPowerStatus(TypedDict, total=False):
+    """
+    Since this is only used for type hinting, we only list the
+    fields we care about
+    """
+    xname: str
+    powerState: PcsPowerState
+    error: Optional[str]
+
+
+class PowerStatusParams(TypedDict, total=False):
+    xname: list[str]
+    powerStateFilter: PcsPowerState
+    managementStateFilter: PcsManagementState
+
+
+class PcsPowerStatusResponse(TypedDict):
+    status: list[PcsPowerStatus]
+
+
+class PcsReservedLocation(TypedDict, total=False):
+    xname: Required[str]
+    deputyKey: str
+
+
+class PcsTransitionCreateParams(TypedDict, total=False):
+    operation: Required[PcsOperation]
+    taskDeadlineMinutes: int
+    location: list[PcsReservedLocation]
+
+
+class PcsTransitionCreateResponse(TypedDict):
+    transitionId: str
+    operation: PcsOperation
 
 
 class PowerControlException(Exception):
@@ -74,8 +119,11 @@ class PowerControlComponentsEmptyException(Exception):
     "no-op" value to the caller.
     """
 
-def _power_status(xname=None, power_state_filter=None, management_state_filter=None,
-                  session=None):
+
+def _power_status(xname: Optional[list[str]]=None,
+                  power_state_filter: Optional[PcsPowerState]=None,
+                  management_state_filter: Optional[PcsManagementState]=None,
+                  session: Optional[RequestsSession]=None) -> PcsPowerStatusResponse:
     """
     This is the one to one implementation to the underlying power control get query.
     For reasons of compatibility with existing calls into older power control APIs,
@@ -90,15 +138,15 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     statuses.
     """
     session = session or requests_retry_session()
-    params = {}
+    params = PowerStatusParams()
     if xname:
         params['xname'] = xname
     if power_state_filter:
-        assert power_state_filter.lower() in set(['on','off','undefined'])
-        params['powerStateFilter'] = power_state_filter.lower()
+        assert power_state_filter in {'on','off','undefined'}
+        params['powerStateFilter'] = power_state_filter
     if management_state_filter:
-        assert management_state_filter in set(['available', 'unavailable'])
-        params['managementStateFilter'] = management_state_filter.lower()
+        assert management_state_filter in {'available', 'unavailable'}
+        params['managementStateFilter'] = management_state_filter
     # PCS added the POST option for this endpoint in app version 2.3.0
     # (chart versions 2.0.8 and 2.1.5)
     LOGGER.debug("POST %s with body=%s", POWER_STATUS_ENDPOINT, params)
@@ -111,14 +159,16 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
             raise PowerControlException(f"Non-2XX response ({response.status_code}) to "
                                         f"power_status query; {response.reason} "
                                         f"{compact_response_text(response.text)}")
-    except requests.exceptions.HTTPError as err:
+    except HTTPError as err:
         raise PowerControlException(err) from err
     try:
         return response.json()
     except json.JSONDecodeError as jde:
         raise PowerControlException(jde) from jde
 
-def status(nodes, session=None, **kwargs):
+
+def status(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+           **kwargs) -> NodeSetMapping:
     """
     For a given iterable of nodes, represented by xnames, query PCS for
     the power status. Return a dictionary of nodes that have
@@ -140,7 +190,7 @@ def status(nodes, session=None, **kwargs):
       PowerControlException: Any non-nominal response from PCS.
       JSONDecodeError: Error decoding the PCS response
     """
-    status_bucket = defaultdict(set)
+    status_bucket: NodeSetMapping = defaultdict(set)
     if not nodes:
         LOGGER.warning("status called without nodes; returning without action.")
         return status_bucket
@@ -151,21 +201,27 @@ def status(nodes, session=None, **kwargs):
         # what the powerState field suggests. This is a major departure from how CAPMC
         # handled errors.
         xname = power_status_entry.get('xname', '')
-        if power_status_entry['error']:
-            status_bucket[power_status_entry['error']].add(xname)
+        error = power_status_entry.get('error', None)
+        if error:            
+            assert isinstance(error, str) # Placate mypy
+            status_bucket[error].add(xname)
+            continue
+        if not xname:
             continue
         power_status = power_status_entry.get('powerState', '').lower()
-        if not all([power_status, xname]):
+        if not power_status:
             continue
         status_bucket[power_status].add(xname)
     return status_bucket
 
-def node_to_powerstate(nodes, session=None, **kwargs):
+
+def node_to_powerstate(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+                       **kwargs) -> dict[str, str]:
     """
     For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for
     the node in question.
     """
-    power_states = {}
+    power_states: dict[str, str] = {}
     if not nodes:
         LOGGER.warning("node_to_powerstate called without nodes; returning without action.")
         return power_states
@@ -176,8 +232,10 @@ def node_to_powerstate(nodes, session=None, **kwargs):
             power_states[node] = pstatus
     return power_states
 
-def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None,
-                       session=None):
+
+def _transition_create(xnames: Iterable[str], operation: PcsOperation,
+                       task_deadline_minutes: Optional[int]=None, deputy_key: Optional[str]=None,
+                       session: Optional[RequestsSession]=None) -> PcsTransitionCreateResponse:
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
     operation indicates what the desired operation should be, which is a string value containing
@@ -217,11 +275,11 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     except AssertionError as err:
         raise PowerControlSyntaxException(
                 f"Operation '{operation}' is not supported or implemented.") from err
-    params = {'location': [], 'operation': operation}
+    params = PcsTransitionCreateParams(location=[], operation=operation)
     if task_deadline_minutes:
         params['taskDeadlineMinutes'] = int(task_deadline_minutes)
     for xname in xnames:
-        reserved_location = {'xname': xname}
+        reserved_location = PcsReservedLocation(xname=xname)
         if deputy_key:
             reserved_location['deputyKey'] = deputy_key
         params['location'].append(reserved_location)
@@ -237,7 +295,7 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
                                         f"{response.reason} "
                                         f"{compact_response_text(response.text)}")
 
-    except requests.exceptions.HTTPError as err:
+    except HTTPError as err:
         raise PowerControlException(err) from err
     try:
         return response.json()
@@ -245,7 +303,8 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
         raise PowerControlException(jde) from jde
 
 
-def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
+def power_on(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+             task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered on state.
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -256,7 +315,10 @@ def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
     return _transition_create(xnames=nodes, operation='On',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
-def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
+
+
+def power_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+              task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -267,7 +329,10 @@ def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     return _transition_create(xnames=nodes, operation='Off',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
-def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
+
+
+def soft_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+             task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
@@ -278,7 +343,10 @@ def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     return _transition_create(xnames=nodes, operation='Soft-Off',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
-def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
+
+
+def force_off(nodes: Iterable[str], session: Optional[RequestsSession]=None,
+              task_deadline_minutes: Optional[int]=1, **kwargs) -> PcsTransitionCreateResponse:
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (forceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.

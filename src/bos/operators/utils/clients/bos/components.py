@@ -23,6 +23,8 @@
 #
 import logging
 
+from bos.common.types import Component
+
 from .base import BaseBosEndpoint
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
@@ -31,13 +33,13 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
 class ComponentEndpoint(BaseBosEndpoint):
     ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
 
-    def get_component(self, component_id):
+    def get_component(self, component_id: str) -> Component:
         return self.get_item(component_id)
 
-    def get_components(self, **kwargs):
+    def get_components(self, **kwargs) -> list[Component]:
         return self.get_items(**kwargs)
 
-    def update_component(self, component_id, data):
+    def update_component(self, component_id: str, data: dict) -> Component:
         return self.update_item(component_id, data)
 
     def update_components(self, data):

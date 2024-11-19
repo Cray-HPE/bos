@@ -28,7 +28,8 @@ import logging
 import string
 
 from bos.common.tenant_utils import get_tenant_aware_key
-from bos.server.controllers.v2.boot_set import DEFAULT_ARCH, HARDWARE_SPECIFIER_FIELDS
+from bos.common.types import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
+from bos.common.types import BOOT_SET_DEFAULT_ARCH as DEFAULT_ARCH
 from bos.server.schema import validator
 
 from .db import TEMP_DB, delete_component, delete_session, delete_template
@@ -179,11 +180,10 @@ def sanitize_description_field(data: dict) -> None:
         data["description"] = description[:1023]
 
 
-def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
+def sanitize_bootset(bsname: str, bsdata: dict) -> None:
     """
     Corrects in-place bsdata.
-    Returns an error message if this proves impossible.
-    Otherwise returns None.
+    Raises an error if this proves impossible.
     """
     # Every boot_set must have a valid path set
     validate_bootset_path(bsname, bsdata)

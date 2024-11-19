@@ -26,11 +26,9 @@ import re
 
 import connexion
 
+from bos.common.utils import ParsingException
+
 LOGGER = logging.getLogger('bos.server.utils')
-
-
-class ParsingException(Exception):
-    pass
 
 
 def canonize_xname(xname):

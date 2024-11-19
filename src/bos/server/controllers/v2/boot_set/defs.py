@@ -35,8 +35,3 @@ class BootSetStatus(IntEnum):
     SUCCESS = 0
     WARNING = 1
     ERROR = 2
-
-# Valid boot sets are required to have at least one of these fields
-HARDWARE_SPECIFIER_FIELDS = ( "node_list", "node_roles_groups", "node_groups" )
-
-DEFAULT_ARCH = "X86"

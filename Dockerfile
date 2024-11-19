@@ -126,23 +126,42 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     pip3 list --format freeze
 
 
-# Pylint reporting
-FROM base AS pylint-base
+# lint base
+FROM base AS lint-base
 COPY srclist.txt docker_pylint.sh /app/venv/
+
+
+# Pylint reporting
+FROM lint-base AS pylint-base
 WORKDIR /app
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     pip3 install --no-cache-dir pylint -c constraints.txt && \
     pip3 list --format freeze
+
 
 # Pylint errors-only
 FROM pylint-base AS pylint-errors-only
 WORKDIR /app/venv
 CMD [ "./docker_pylint.sh", "--errors-only" ]
 
+
 # Pylint full
 FROM pylint-base AS pylint-full
 WORKDIR /app/venv
 CMD [ "./docker_pylint.sh", "--fail-under", "9" ]
+
+
+# mypy
+FROM lint-base AS mypy
+WORKDIR /app/venv
+COPY mypy-requirements.txt /app/
+COPY mypy.ini /app/venv/
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    cd /app && \
+    pip3 install --no-cache-dir -r mypy-requirements.txt && \
+    pip3 list --format freeze
+CMD [ "./docker_pylint.sh", "mypy" ]
+
 
 # Codestyle reporting
 FROM testing AS codestyle

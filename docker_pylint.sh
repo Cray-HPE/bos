@@ -23,4 +23,8 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-pylint "$@" $(cat ./srclist.txt)
+if [[ $# -eq 1 && $1 == "mypy" ]]; then
+  mypy $(cat ./srclist.txt)
+else
+  pylint "$@" $(cat ./srclist.txt)
+fi
