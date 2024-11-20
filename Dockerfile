@@ -42,6 +42,14 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -o lib \
     -c config/autogen-server.json \
     --generate-alias-as-model
+RUN /usr/local/bin/docker-entrypoint.sh generate -g python-flask --help || true
+RUN /usr/local/bin/docker-entrypoint.sh generate -g python --help || true
+RUN /usr/local/bin/docker-entrypoint.sh generate \
+    -i api/openapi.yaml \
+    -g python \
+    -o lib2 \
+    -c config/autogen-server.json \
+    --generate-alias-as-model
 
 
 # Start by taking a base Alpine image, copying in our generated code,
@@ -50,6 +58,7 @@ FROM $ALPINE_BASE_IMAGE AS alpine-base
 WORKDIR /app
 # Copy in generated code
 COPY --from=codegen /app/lib/ /app/lib
+COPY --from=codegen /app/lib2/ /app/lib2
 # Copy in Python constraints file
 COPY constraints.txt /app/
 # Update packages to avoid security problems
