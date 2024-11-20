@@ -46,6 +46,8 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -c config/autogen-server.json \
     --generate-alias-as-model \
     --enable-post-process-file
+RUN /usr/local/bin/docker-entrypoint.sh validate -h || true
+RUN /usr/local/bin/docker-entrypoint.sh generate -h || true
 RUN /usr/local/bin/docker-entrypoint.sh help python-flask || true
 RUN /usr/local/bin/docker-entrypoint.sh help python || true
 RUN /usr/local/bin/docker-entrypoint.sh help || true
