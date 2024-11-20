@@ -36,14 +36,15 @@ COPY config/autogen-server.json config/autogen-server.json
 RUN /usr/local/bin/docker-entrypoint.sh validate \
     -i api/openapi.yaml \
     --recommend
+ENV PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i"
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python-flask \
     -o lib \
     -c config/autogen-server.json \
     --generate-alias-as-model
-RUN /usr/local/bin/docker-entrypoint.sh generate -g python-flask --help || true
-RUN /usr/local/bin/docker-entrypoint.sh generate -g python --help || true
+RUN /usr/local/bin/docker-entrypoint.sh generate help -g python-flask || true
+RUN /usr/local/bin/docker-entrypoint.sh generate help -g python || true
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python \
