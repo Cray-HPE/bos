@@ -72,6 +72,7 @@ COPY --from=codegen /app/lib2/ /app/lib2
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     apk add --no-cache python3 py3-yapf py3-tomli && \
     apk -U upgrade --no-cache && \
+    cat /app/lib2/bos/server/models/node_group_list.py && \
     find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 python3 -m yapf -p -i -vv
 
 # Start by taking a base Alpine image, copying in our generated code,
@@ -83,15 +84,14 @@ COPY --from=code-post-process /app/lib/ /app/lib
 COPY --from=code-post-process /app/lib2/ /app/lib2
 # Copy in Python constraints file
 COPY constraints.txt /app/
-RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    apk add --no-cache python3-dev py3-pip && \
-    apk -U upgrade --no-cache
 ENV VIRTUAL_ENV=/app/venv
-RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    pip3 install --no-cache-dir -U pip -c constraints.txt && \
-    pip3 list --format freeze
+    apk add --no-cache python3-dev py3-pip && \
+    apk -U upgrade --no-cache && \
+    python3 -m venv $VIRTUAL_ENV && \
+    $VIRTUAL_ENV/bin/pip3 install --no-cache-dir -U pip -c constraints.txt && \
+    $VIRTUAL_ENV/bin/pip3 list --format freeze
 
 
 # Generate JSON version of openapi spec and then convert its
