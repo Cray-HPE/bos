@@ -241,16 +241,24 @@ components:
       example: ["x3000c0s19b1n0", "x3000c0s19b2n0"]
       items:
         $ref: '#/components/schemas/HardwareComponentName'
+    NodeGroup:
+      type: string
+      description: Name of a user-defined logical group in the Hardware State Manager (HSM).
+      minLength: 1
+      maxLength: 127
     NodeGroupList:
       type: array
       description: Node group list. Allows actions against associated nodes by logical groupings.
       minItems: 1
       maxItems: 4095
       items:
-        type: string
-        description: Name of a user-defined logical group in the Hardware State Manager (HSM).
-        minLength: 1
-        maxLength: 127
+        $ref: '#/components/schemas/NodeGroup'
+    NodeRole:
+      type: string
+      description: Name of a role that is defined in the Hardware State Manager (HSM).
+      example: "Compute"
+      minLength: 1
+      maxLength: 127
     NodeRoleList:
       type: array
       description: Node role list. Allows actions against nodes with associated roles.
@@ -258,11 +266,7 @@ components:
       maxItems: 1023
       example: ["Compute", "Application"]
       items:
-        type: string
-        description: Name of a role that is defined in the Hardware State Manager (HSM).
-        example: "Compute"
-        minLength: 1
-        maxLength: 127
+        $ref: '#/components/schemas/NodeRole'
     ProblemDetails:
       description: An error response for RFC 7807 problem details.
       type: object
@@ -372,6 +376,18 @@ components:
         configuration:
           $ref: '#/components/schemas/CfsConfiguration'
       additionalProperties: false
+    V2SessionTemplateBootSetMapping:
+      type: object
+      description: |
+        Mapping from Boot Set names to Boot Sets.
+
+        * Boot Set names must be 1-127 characters in length.
+        * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
+        * Boot Set names must begin and end with a letter or digit.
+      minProperties: 1
+      maxProperties: 127
+      additionalProperties:
+        $ref: '#/components/schemas/V2BootSet'
     V2SessionTemplate:
       type: object
       description: |
@@ -405,17 +421,7 @@ components:
         cfs:
           $ref: '#/components/schemas/V2CfsParameters'
         boot_sets:
-          type: object
-          description: |
-            Mapping from Boot Set names to Boot Sets.
-
-            * Boot Set names must be 1-127 characters in length.
-            * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
-            * Boot Set names must begin and end with a letter or digit.
-          minProperties: 1
-          maxProperties: 127
-          additionalProperties:
-            $ref: '#/components/schemas/V2BootSet'
+          $ref: '#/components/schemas/V2SessionTemplateBootSetMapping'
         links:
           $ref: '#/components/schemas/LinkListReadOnly'
       additionalProperties: false
@@ -939,6 +945,10 @@ components:
           $ref: '#/components/schemas/V2SessionName'
       required: [session]
       additionalProperties: false
+    V2ComponentsUpdateFilters:
+      oneOf:
+        - $ref: '#/components/schemas/V2ComponentsFilterByIds'
+        - $ref: '#/components/schemas/V2ComponentsFilterBySession'
     V2ComponentsUpdate:
       description: Information for patching multiple Components.
       type: object
@@ -946,9 +956,7 @@ components:
         patch:
           $ref: '#/components/schemas/V2Component'
         filters:
-          oneOf:
-            - $ref: '#/components/schemas/V2ComponentsFilterByIds'
-            - $ref: '#/components/schemas/V2ComponentsFilterBySession'
+          $ref: '#/components/schemas/V2ComponentsUpdateFilters'
       required: [patch, filters]
       additionalProperties: false
     V2ApplyStagedComponents:
