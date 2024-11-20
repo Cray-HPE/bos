@@ -36,7 +36,7 @@ COPY config/autogen-server.json config/autogen-server.json
 RUN /usr/local/bin/docker-entrypoint.sh validate \
     -i api/openapi.yaml \
     --recommend
-RUN apt-get install python3-yapf
+RUN /usr/bin/python3 -m pip install yapf
 ENV PYTHON_POST_PROCESS_FILE="/usr/bin/python3 -m yapf -i"
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
