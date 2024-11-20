@@ -24,7 +24,7 @@
 # Dockerfile for Cray Boot Orchestration Service (BOS)
 
 # Upstream Build Args
-ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.8.0
+ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.10.0
 ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 # Generate Code
@@ -43,15 +43,15 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -o lib \
     -c config/autogen-server.json \
     --generate-alias-as-model
-RUN /usr/local/bin/docker-entrypoint.sh generate help -g python-flask || true
-RUN /usr/local/bin/docker-entrypoint.sh generate help -g python || true
+RUN /usr/local/bin/docker-entrypoint.sh help -g python-flask || true
+RUN /usr/local/bin/docker-entrypoint.sh help -g python || true
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python \
     -o lib2 \
     -c config/autogen-server.json \
     --generate-alias-as-model
-
+docker.io/openapitools/openapi-generator-cli/v7.10,0/Dockerfile
 
 # Start by taking a base Alpine image, copying in our generated code,
 # applying some updates, and creating our virtual Python environment
