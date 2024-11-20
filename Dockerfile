@@ -51,7 +51,6 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -o lib2 \
     -c config/autogen-server.json \
     --generate-alias-as-model
-docker.io/openapitools/openapi-generator-cli/v7.10,0/Dockerfile
 
 # Start by taking a base Alpine image, copying in our generated code,
 # applying some updates, and creating our virtual Python environment
