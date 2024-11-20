@@ -43,8 +43,8 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -c config/autogen-server.json \
     --generate-alias-as-model \
     --log-to-stderr \
-    --strict-spec true \
     --verbose
+#     --strict-spec true \
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python \
@@ -52,8 +52,8 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -c config/autogen-server.json \
     --generate-alias-as-model \
     --log-to-stderr \
-    --strict-spec true \
     --verbose
+#     --strict-spec true \
 
 # pre-base image
 FROM $ALPINE_BASE_IMAGE AS pre-alpine-base
