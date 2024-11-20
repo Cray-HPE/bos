@@ -55,34 +55,35 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     --strict-spec true \
     --verbose
 
+# pre-base image
+FROM $ALPINE_BASE_IMAGE AS pre-alpine-base
+WORKDIR /app
+# Update packages to avoid security problems
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    apk add --upgrade --no-cache apk-tools busybox && \
+    apk update
+
 # Post-process generated Python code
-FROM $ALPINE_BASE_IMAGE AS code-post-process
+FROM pre-alpine-base AS code-post-process
 WORKDIR /app
 # Copy in generated code
 COPY --from=codegen /app/lib/ /app/lib
 COPY --from=codegen /app/lib2/ /app/lib2
-COPY constraints.txt /app/
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    apk add --upgrade --no-cache apk-tools busybox && \
-    apk update && \
-    apk add --no-cache python3 py3-pip py3-yapf py3-tomli && \
+    apk add --no-cache python3 py3-yapf py3-tomli && \
     apk -U upgrade --no-cache && \
-    pip3 install --no-cache-dir -U pip tomli -c constraints.txt && \
     find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 python3 -m yapf -p -i -vv
 
 # Start by taking a base Alpine image, copying in our generated code,
 # applying some updates, and creating our virtual Python environment
-FROM $ALPINE_BASE_IMAGE AS alpine-base
+FROM pre-alpine-base AS alpine-base
 WORKDIR /app
 # Copy in generated code
 COPY --from=code-post-process /app/lib/ /app/lib
 COPY --from=code-post-process /app/lib2/ /app/lib2
 # Copy in Python constraints file
 COPY constraints.txt /app/
-# Update packages to avoid security problems
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    apk add --upgrade --no-cache apk-tools busybox && \
-    apk update && \
     apk add --no-cache python3-dev py3-pip && \
     apk -U upgrade --no-cache
 ENV VIRTUAL_ENV=/app/venv
