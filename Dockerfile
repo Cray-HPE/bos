@@ -36,9 +36,8 @@ COPY config/autogen-server.json config/autogen-server.json
 RUN /usr/local/bin/docker-entrypoint.sh validate \
     -i api/openapi.yaml \
     --recommend
-RUN ls /usr/local/bin/yapf && dpkg -S /usr/local/bin/yapf || true
-RUN apt-file search yapf || true
-ENV PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i"
+RUN apt-get install python3-yapf
+ENV PYTHON_POST_PROCESS_FILE="/usr/bin/python3 -m yapf -i"
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python-flask \
@@ -46,11 +45,9 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -c config/autogen-server.json \
     --generate-alias-as-model \
     --enable-post-process-file
-RUN /usr/local/bin/docker-entrypoint.sh validate -h || true
-RUN /usr/local/bin/docker-entrypoint.sh generate -h || true
-RUN /usr/local/bin/docker-entrypoint.sh help python-flask || true
-RUN /usr/local/bin/docker-entrypoint.sh help python || true
 RUN /usr/local/bin/docker-entrypoint.sh help || true
+RUN /usr/local/bin/docker-entrypoint.sh help validate || true
+RUN /usr/local/bin/docker-entrypoint.sh help generate || true
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python \
