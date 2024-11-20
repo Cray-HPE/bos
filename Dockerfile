@@ -36,13 +36,16 @@ COPY config/autogen-server.json config/autogen-server.json
 RUN /usr/local/bin/docker-entrypoint.sh validate \
     -i api/openapi.yaml \
     --recommend
+RUN ls /usr/local/bin/yapf && dpkg -S /usr/local/bin/yapf || true
+RUN apt-file search yapf || true
 ENV PYTHON_POST_PROCESS_FILE="/usr/local/bin/yapf -i"
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python-flask \
     -o lib \
     -c config/autogen-server.json \
-    --generate-alias-as-model
+    --generate-alias-as-model \
+    --enable-post-process-file
 RUN /usr/local/bin/docker-entrypoint.sh help -g python-flask || true
 RUN /usr/local/bin/docker-entrypoint.sh help -g python || true
 RUN /usr/local/bin/docker-entrypoint.sh generate \
@@ -50,7 +53,8 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -g python \
     -o lib2 \
     -c config/autogen-server.json \
-    --generate-alias-as-model
+    --generate-alias-as-model \
+    --enable-post-process-file
 
 # Start by taking a base Alpine image, copying in our generated code,
 # applying some updates, and creating our virtual Python environment
