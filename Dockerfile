@@ -77,6 +77,8 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     cat /app/lib2/bos/server/models/node_group_list.py && \
     echo && echo && \
     diff /app/lib/bos/server/models/node_group_list.py /app/lib2/bos/server/models/node_group_list.py && \
+    echo && echo && \
+    cat /app/lib2/bos/server/models/node_role_list.py && \
     find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 python3 -m yapf -p -i -vv
 
 # Start by taking a base Alpine image, copying in our generated code,
