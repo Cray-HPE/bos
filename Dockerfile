@@ -34,26 +34,28 @@ COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
 # Validate the spec file
 RUN /usr/local/bin/docker-entrypoint.sh validate \
-    -i api/openapi.yaml \
-    --recommend
-RUN /usr/local/bin/docker-entrypoint.sh generate \
-    -i api/openapi.yaml \
-    -g python-flask \
-    -o lib \
-    -c config/autogen-server.json \
-    --generate-alias-as-model \
-    --log-to-stderr \
-    --verbose
-#     --strict-spec true \
-RUN /usr/local/bin/docker-entrypoint.sh generate \
-    -i api/openapi.yaml \
-    -g python \
-    -o lib2 \
-    -c config/autogen-server.json \
-    --generate-alias-as-model \
-    --log-to-stderr \
-    --verbose
-#     --strict-spec true \
+        -i api/openapi.yaml \
+        --recommend && \
+    /usr/local/bin/docker-entrypoint.sh generate \
+        -i api/openapi.yaml \
+        -g python-flask \
+        -o lib \
+        -c config/autogen-server.json \
+        --generate-alias-as-model \
+        --log-to-stderr \
+        --strict-spec true \
+        --verbose && \
+    /usr/local/bin/docker-entrypoint.sh generate \
+        -i api/openapi.yaml \
+        -g python \
+        -o lib2 \
+        -c config/autogen-server.json \
+        --generate-alias-as-model \
+        --log-to-stderr \
+        --strict-spec true \
+        --verbose && \
+    find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E 'null[<]'
+
 
 # pre-base image
 FROM $ALPINE_BASE_IMAGE AS pre-alpine-base
