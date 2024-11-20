@@ -53,8 +53,9 @@ RUN /usr/local/bin/docker-entrypoint.sh validate \
         --generate-alias-as-model \
         --log-to-stderr \
         --strict-spec true \
-        --verbose && \
-    find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E 'null[<]'
+        --verbose
+RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E 'null<'
+RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<"
 
 
 # pre-base image
