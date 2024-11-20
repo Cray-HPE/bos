@@ -42,14 +42,18 @@ RUN /usr/local/bin/docker-entrypoint.sh generate \
     -o lib \
     -c config/autogen-server.json \
     --generate-alias-as-model \
-    --log-to-stderr
+    --log-to-stderr \
+    --strict-spec true \
+    --verbose
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python \
     -o lib2 \
     -c config/autogen-server.json \
     --generate-alias-as-model \
-    --log-to-stderr
+    --log-to-stderr \
+    --strict-spec true \
+    --verbose
 
 # Post-process generated Python code
 FROM $ALPINE_BASE_IMAGE AS code-post-process
