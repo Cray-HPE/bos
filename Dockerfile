@@ -36,33 +36,42 @@ COPY config/autogen-server.json config/autogen-server.json
 RUN /usr/local/bin/docker-entrypoint.sh validate \
     -i api/openapi.yaml \
     --recommend
-RUN /usr/bin/python3 -m pip install yapf
-ENV PYTHON_POST_PROCESS_FILE="/usr/bin/python3 -m yapf -i"
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python-flask \
     -o lib \
     -c config/autogen-server.json \
     --generate-alias-as-model \
-    --enable-post-process-file
-RUN /usr/local/bin/docker-entrypoint.sh help || true
-RUN /usr/local/bin/docker-entrypoint.sh help validate || true
-RUN /usr/local/bin/docker-entrypoint.sh help generate || true
+    --log-to-stderr
 RUN /usr/local/bin/docker-entrypoint.sh generate \
     -i api/openapi.yaml \
     -g python \
     -o lib2 \
     -c config/autogen-server.json \
     --generate-alias-as-model \
-    --enable-post-process-file
+    --log-to-stderr
+
+# Post-process generated Python code
+FROM $ALPINE_BASE_IMAGE AS code-post-process
+WORKDIR /app
+# Copy in generated code
+COPY --from=codegen /app/lib/ /app/lib
+COPY --from=codegen /app/lib2/ /app/lib2
+COPY constraints.txt /app/
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    apk add --upgrade --no-cache apk-tools busybox && \
+    apk update && \
+    apk add --no-cache python3 py3-yapf && \
+    apk -U upgrade --no-cache && \
+    find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 python3 -m yapf -p -i -vv
 
 # Start by taking a base Alpine image, copying in our generated code,
 # applying some updates, and creating our virtual Python environment
 FROM $ALPINE_BASE_IMAGE AS alpine-base
 WORKDIR /app
 # Copy in generated code
-COPY --from=codegen /app/lib/ /app/lib
-COPY --from=codegen /app/lib2/ /app/lib2
+COPY --from=code-post-process /app/lib/ /app/lib
+COPY --from=code-post-process /app/lib2/ /app/lib2
 # Copy in Python constraints file
 COPY constraints.txt /app/
 # Update packages to avoid security problems
