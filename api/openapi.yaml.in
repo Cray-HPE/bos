@@ -959,6 +959,10 @@ components:
           $ref: '#/components/schemas/V2ComponentsUpdateFilters'
       required: [patch, filters]
       additionalProperties: false
+    V2ComponentsUpdateRequestContent:
+      oneOf:
+        - $ref: '#/components/schemas/V2ComponentsUpdate'
+        - $ref: '#/components/schemas/V2ComponentArrayWithIds'
     V2ApplyStagedComponents:
       description: |
         A list of Components that should have their staged Session applied.
@@ -1108,6 +1112,20 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/V2SessionCreate'
+    V2sessionTemplateCreateRequest:
+      description: A JSON object for creating a Session Template
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2SessionTemplate'
+    V2sessionTemplateUpdateRequest:
+      description: A JSON object for updating a Session Template
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/V2SessionTemplate'
     V2componentUpdateRequest:
       description: The state for a single Component
       required: true
@@ -1128,9 +1146,7 @@ components:
       content:
         application/json:
           schema:
-            oneOf:
-              - $ref: '#/components/schemas/V2ComponentsUpdate'
-              - $ref: '#/components/schemas/V2ComponentArrayWithIds'
+            $ref: '#/components/schemas/V2ComponentsUpdateRequestContent'
     V2optionsUpdateRequest:
       description: Service-wide options
       required: true
@@ -1173,6 +1189,14 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Version'
+    VersionList:
+      description: A collection of Versions
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Version'
     # V2
     V2SessionTemplateDetails:
       description: Session Template details
@@ -1353,13 +1377,7 @@ paths:
       operationId: root_get
       responses:
         200:
-          description: A collection of Versions
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Version'
+          $ref: '#/components/responses/VersionList'
         500:
           $ref: '#/components/responses/InternalError'
 
@@ -1456,12 +1474,7 @@ paths:
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: put_v2_sessiontemplate
       requestBody:
-         description: A JSON object for creating a Session Template
-         required: true
-         content:
-           application/json:
-             schema:
-               $ref: '#/components/schemas/V2SessionTemplate'
+        $ref: '#/components/requestBodies/V2sessionTemplateCreateRequest'
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
@@ -1476,12 +1489,7 @@ paths:
       x-openapi-router-controller: bos.server.controllers.v2.sessiontemplates
       operationId: patch_v2_sessiontemplate
       requestBody:
-        description: A JSON object for updating a Session Template
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/V2SessionTemplate'
+        $ref: '#/components/requestBodies/V2sessionTemplateUpdateRequest'
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
