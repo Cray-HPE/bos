@@ -65,8 +65,9 @@ COPY constraints.txt /app/
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     apk add --upgrade --no-cache apk-tools busybox && \
     apk update && \
-    apk add --no-cache python3 py3-yapf && \
+    apk add --no-cache python3 py3-pip py3-yapf py3-tomli && \
     apk -U upgrade --no-cache && \
+    pip3 install --no-cache-dir -U pip tomli -c constraints.txt && \
     find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 python3 -m yapf -p -i -vv
 
 # Start by taking a base Alpine image, copying in our generated code,
