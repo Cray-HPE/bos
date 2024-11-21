@@ -22,9 +22,22 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from typing import get_args, Literal, Optional, Required, TypedDict
+from typing import get_args, Literal, Optional, Required
+
+# Needed in order to use the __extra_items__ option
+from typing_extensions import TypedDict
 
 # For type hints
+
+class TestClass(TypedDict):
+    __extra_items__: int
+    
+    a: bool
+
+
+d: TestClass = { "a": True }
+e: TestClass = { "a": True, "b": 10 }
+f: TestClass = { "a": True, "b": False }
 
 JsonData = bool|dict|int|float|list|None|str
 JsonDict = dict[str,JsonData]

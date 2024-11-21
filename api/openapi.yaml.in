@@ -668,6 +668,25 @@ components:
           description: |
             The current duration of the ongoing Session or final duration of the completed Session.
       additionalProperties: false
+    V2SessionExtendedStatusErrorSummaryInfo:
+      type: object
+      description: A summary of the impact of this error
+      properties:
+        count:
+          description: The number of components reporting this error.
+          type: integer
+          minimum: 1
+        list:
+          description: A (possibly truncated) comma-separated list of the specific components reporting this error.
+          type: string
+          minLength: 1
+      additionalProperties: false
+    V2SessionExtendedStatusErrorSummary:
+      type: object
+      description: |
+        A summary of the errors currently listed by all Components
+      additionalProperties:
+        $ref: '#/components/schemas/V2SessionExtendedStatusErrorSummaryInfo'
     V2SessionExtendedStatus:
       type: object
       description: |
@@ -694,9 +713,7 @@ components:
           description: |
             The percent of Components currently still staged for this Session
         error_summary:
-          type: object
-          description: |
-            A summary of the errors currently listed by all Components
+          $ref: '#/components/schemas/V2SessionExtendedStatusErrorSummary'
         timing:
           $ref: '#/components/schemas/V2SessionExtendedStatusTiming'
       additionalProperties: false
