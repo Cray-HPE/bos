@@ -36,19 +36,19 @@ from typing_extensions import TypedDict
 class TestClass(UserDict):
 
     @overload
-    def __setitem__(self, key: Literal['a'], value: bool):
+    def __setitem__(self, key: Literal['a'], value: bool): ...
 
     @overload
-    def __setitem__(self, key: str, value: int):
+    def __setitem__(self, key: str, value: int): ...
 
     def __setitem__(self, key: str, value: int|bool):
         return super().__setitem__(key, value)
 
     @overload
-    def __getitem__(self, key: Literal['a']) -> bool:
+    def __getitem__(self, key: Literal['a']) -> bool: ...
 
     @overload
-    def __getitem__(self, key: str) -> int:
+    def __getitem__(self, key: str) -> int: ...
 
     def __getitem__(self, key: str) -> int|bool:
         return super().__getitem__(key)
