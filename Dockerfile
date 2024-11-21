@@ -50,10 +50,10 @@ RUN /usr/local/bin/docker-entrypoint.sh validate \
         -g python \
         -o lib2 \
         -c config/autogen-server.json \
-        --generate-alias-as-model \
         --log-to-stderr \
         --strict-spec true \
         --verbose
+#        --generate-alias-as-model \
 RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E 'null<'
 RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<"
 
