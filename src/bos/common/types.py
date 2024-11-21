@@ -22,18 +22,36 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from typing import get_args, Literal, Optional, Required
+from collections import UserDict
+from typing import get_args, Literal, Optional, Required, overload
 
 # Needed in order to use the __extra_items__ option
 from typing_extensions import TypedDict
 
 # For type hints
 
-class TestClass(TypedDict):
-    __extra_items__: int
-    
-    a: bool
+#class BaseTestClass(TypedDict):  
+#    a: bool
 
+class TestClass(UserDict):
+
+    @overload
+    def __setitem__(self, key: Literal['a'], value: bool):
+
+    @overload
+    def __setitem__(self, key: str, value: int):
+
+    def __setitem__(self, key: str, value: int|bool):
+        return super().__setitem__(key, value)
+
+    @overload
+    def __getitem__(self, key: Literal['a']) -> bool:
+
+    @overload
+    def __getitem__(self, key: str) -> int:
+
+    def __getitem__(self, key: str) -> int|bool:
+        return super().__getitem__(key)
 
 d: TestClass = { "a": True }
 e: TestClass = { "a": True, "b": 10 }
