@@ -22,40 +22,54 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from collections import UserDict
-from typing import get_args, Literal, Optional, Required, overload
+from typing import get_args, Literal, Optional, Required, TypedDict
 
-# Needed in order to use the __extra_items__ option
-from typing_extensions import TypedDict
+
+########### test code
+
+from collections.abc import Mapping
+from typing import Protocol, overload
+
+# harf["a"] -> int
+# harf["b"] -> str
+# harf[str] -> bool otherwise
+
+class harf(Protocol, Mapping[str, int|bool|str]):
+    @overload
+    def __getitem__(self, key: Literal["a"]) -> int: ...
+
+    @overload
+    def __getitem__(self, key: Literal["b"]) -> str: ...
+
+    @overload
+    def __getitem__(self, key: str) -> bool: ...
+
+    def __getitem__(self, key: str) -> bool|int|str: ...
+
+    @overload
+    def __setitem__(self, key: Literal["a"], value: int) -> None: ...
+
+    @overload
+    def __setitem__(self, key: Literal["b"], value: str) -> None: ...
+
+    @overload
+    def __setitem__(self, key: str, value: bool) -> None: ...
+    
+    def __setitem__(self, key: str, value: bool|int|str) -> None: ...
+
+
+def dogfood(a: harf) -> int:
+    if a["a"] > 5:
+        return a["a"]
+    elif a["a"] < 5:
+        return a["b"]
+    else:
+        return a["dogfood"]
+
+
+########### /test code
 
 # For type hints
-
-#class BaseTestClass(TypedDict):  
-#    a: bool
-
-class TestClass(UserDict):
-
-    @overload
-    def __setitem__(self, key: Literal['a'], value: bool): ...
-
-    @overload
-    def __setitem__(self, key: str, value: int): ...
-
-    def __setitem__(self, key: str, value: int|bool):
-        return super().__setitem__(key, value)
-
-    @overload
-    def __getitem__(self, key: Literal['a']) -> bool: ...
-
-    @overload
-    def __getitem__(self, key: str) -> int: ...
-
-    def __getitem__(self, key: str) -> int|bool:
-        return super().__getitem__(key)
-
-d: TestClass = { "a": True }
-e: TestClass = { "a": True, "b": 10 }
-f: TestClass = { "a": True, "b": False }
 
 JsonData = bool|dict|int|float|list|None|str
 JsonDict = dict[str,JsonData]
