@@ -55,7 +55,7 @@ RUN /usr/local/bin/docker-entrypoint.sh validate \
         --generate-alias-as-model \
         --verbose
 RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<" || true
-RUN find /app/lib /app/lib2 -type f -name \*.py -exec grep -Eq "null<" {} \; -print0 | 
+RUN find /app/lib /app/lib2 -type f -name \*.py -exec grep -Eq "null<" {} \; -print0 | \
     xargs -0 sed -i -e "s/^\(from pydantic import \)/\1RootModel, /" -e s"/models[.]null[<]\([^>]\+\)[>] import null[<]\([^>]\+\)[>]/models.\1 import \2/" -e "s/^\(class .*[(]\)null[<]\([^>]\+\)[>]/\1RootModel[List[\2]]/"
 RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<" || true
 
