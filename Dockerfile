@@ -126,6 +126,8 @@ WORKDIR /app
 RUN mv -v lib/requirements.txt lib/bos/server/requirements.txt && \
     cat lib/bos/server/requirements.txt && \
     sed -i 's/Flask == 2\(.*\)$/Flask >= 2\1\nFlask < 3/' lib/bos/server/requirements.txt && \
+    cat lib/bos/server/requirements.txt && \
+    cat lib2/requirements.txt >> lib/bos/server/requirements.txt && \
     cat lib/bos/server/requirements.txt
 # Then copy all src into the base image
 COPY src/bos/ /app/lib/bos/
