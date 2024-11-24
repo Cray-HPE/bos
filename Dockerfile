@@ -52,11 +52,12 @@ RUN /usr/local/bin/docker-entrypoint.sh validate \
         -c config/autogen-server.json \
         --log-to-stderr \
         --strict-spec true \
+        --generate-alias-as-model \
         --verbose
-#        --generate-alias-as-model \
-RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E 'null<' || true
 RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<" || true
-
+RUN find /app/lib /app/lib2 -type f -name \*.py -exec grep -Eq "null<" {} \; -print0 | 
+    xargs -0 sed -i -e "s/^\(from pydantic import \)/\1RootModel, /" -e s"/models[.]null[<]\([^>]\+\)[>] import null[<]\([^>]\+\)[>]/models.\1 import \2/" -e "s/^\(class .*[(]\)null[<]\([^>]\+\)[>]/\1RootModel[List[\2]]/"
+RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<" || true
 
 # pre-base image
 FROM $ALPINE_BASE_IMAGE AS pre-alpine-base
