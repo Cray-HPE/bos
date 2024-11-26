@@ -96,7 +96,6 @@ class BaseOperator(ABC):
         This includes updating the options and logging level, as well as exception handling and
         sleeping between passes.
         """
-        last_snapshot = None
         while True:
             start_time = time.time()
             try:
@@ -113,20 +112,6 @@ class BaseOperator(ABC):
             except Exception as e:
                 LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
-
-            snapshot = tracemalloc.take_snapshot() 
-            top_stats = snapshot.statistics('lineno') 
-  
-            howmany =options.cfs_read_timeout
-            for ind, stat in enumerate(top_stats[:howmany]):
-                LOGGER.info("tracemalloc top %d: %s", ind, stat)
-
-            if last_snapshot is not None:
-                top_diff = snapshot.compare_to(last_snapshot, 'lineno')
-                for ind, stat in enumerate(top_diff[:howmany]):
-                    LOGGER.info("tracemalloc top diff %d: %s", ind, stat)
-
-            last_snapshot = snapshot
 
     @property
     def max_batch_size(self) -> int:
@@ -332,6 +317,21 @@ def _update_log_level() -> None:
         LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 
 
+def take_show_snapshot(last_snapshot=None):
+    snapshot = tracemalloc.take_snapshot() 
+    top_stats = snapshot.statistics('lineno') 
+  
+    howmany=50
+    for ind, stat in enumerate(top_stats[:howmany]):
+        LOGGER.info("tracemalloc top %d: %s", ind, stat)
+
+    if last_snapshot is not None:
+        top_diff = snapshot.compare_to(last_snapshot, 'lineno')
+        for ind, stat in enumerate(top_diff[:howmany]):
+            LOGGER.info("tracemalloc top diff %d: %s", ind, stat)
+    return snapshot
+
+
 def _liveliness_heartbeat() -> NoReturn:
     """
     Periodically add a timestamp to disk; this allows for reporting of basic
@@ -339,12 +339,14 @@ def _liveliness_heartbeat() -> NoReturn:
     a period of no events have been monitored from k8s for an extended
     period of time.
     """
+    last_snapshot = take_show_snapshot()
     while True:
         if not MAIN_THREAD.is_alive():
             # All hope abandon ye who enter here
             return
         Timestamp()
         time.sleep(10)
+        last_snapshot = take_show_snapshot(last_snapshot)
 
 
 def _init_logging() -> None:
