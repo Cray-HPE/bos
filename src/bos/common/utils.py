@@ -100,23 +100,22 @@ class RetrySessionManager(AbstractContextManager):
     retry session only when needed, and to clean it up in their __exit__ function
     """
     def __init__(self, **requests_retry_session_kwargs):
-        self.__session = None
-        self.__lock = threading.Lock()
-        self.__requests_retry_session_kwargs = requests_retry_session_kwargs
+        self._requests_session = None
+        self._retry_manager_lock = threading.Lock()
+        self._requests_retry_session_kwargs = requests_retry_session_kwargs
 
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        if self.__session is not None:
-            self.__session.close()
-
+        if self._requests_session is not None:
+            self._requests_session.close()
 
     @property
     def session(self) -> requests.Session:
-        if self.__session is None:
-            with self.__lock:
-                if self.__session is None:
-                    self.__session = requests_retry_session(**self.__requests_retry_session_kwargs)
-        return self.__session
+        if self._requests_session is None:
+            with self._retry_manager_lock:
+                if self._requests_session is None:
+                    self._requests_session = requests_retry_session(**self._requests_retry_session_kwargs)
+        return self._requests_session
 
 
 def compact_response_text(response_text: str) -> str:
