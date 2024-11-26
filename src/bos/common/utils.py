@@ -23,6 +23,7 @@
 #
 
 # Standard imports
+from contextlib import nullcontext, AbstractContextManager
 import datetime
 from functools import partial, wraps
 import re
@@ -84,14 +85,16 @@ class retry_session:
     def __call__(self, func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*func_args, session: Optional[requests.Session]=None, **func_kwargs):
-            if session is not None:
-                return func(*func_args, session=session, **func_kwargs)
-            with requests_retry_session(**self.requests_retry_session_kwargs) as new_session:
-                return func(*func_args, session=new_session, **func_kwargs)
+            if session is None:
+                cm = requests_retry_session(**self.requests_retry_session_kwargs)
+            else:
+                cm = nullcontext(session)
+            with cm as _session:
+                return func(*func_args, session=_session, **func_kwargs)
         return wrapper
 
 
-class RetrySessionManager:
+class RetrySessionManager(AbstractContextManager):
     """
     Not intended to be useful on its own, this is for classes that want to create a
     retry session only when needed, and to clean it up in their __exit__ function
@@ -102,12 +105,10 @@ class RetrySessionManager:
         self.__requests_retry_session_kwargs = requests_retry_session_kwargs
 
 
-    def __enter__(self):
-        return self
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.__session is not None:
             self.__session.close()
+
 
     @property
     def session(self) -> requests.Session:

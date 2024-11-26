@@ -21,28 +21,51 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+import threading
+
+from bos.common.utils import RetrySessionManager
+
 from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
 from .sessions_status import SessionStatusEndpoint
 
 
-class BOSClient:
+class BOSClient(RetrySessionManager):
 
-    def __init__(self):
-        self.components = ComponentEndpoint()
-        self.sessions = SessionEndpoint()
-        self.session_status = SessionStatusEndpoint()
-        self.session_templates = SessionTemplateEndpoint()
+    def __init__(self, session: requests.Session):
+        self._components = None
+        self._sessions = None
+        self._session_status = None
+        self._session_templates = None
 
-    def __enter__(self):
-        self.components = self.components.__enter__()
-        self.sessions = self.sessions.__enter__()
-        self.session_status = self.session_status.__enter__()
-        self.session_templates = self.session_templates.__enter__()
+    @property
+    def components(self) -> ComponentEndpoint:
+        if self._components is None:
+            self._components = ComponentEndpoint(self.session)
+        return self._components
+
+    @property
+    def sessions(self) -> SessionEndpoint:
+        if self._sessions is None:
+            self._sessions = SessionEndpoint(self.session)
+        return self._sessions
+
+    @property
+    def session_status(self) -> SessionStatusEndpoint:
+        if self._session_status is None:
+            self._session_status = SessionStatusEndpoint(self.session)
+        return self._session_status
+
+    @property
+    def session_templates(self) -> SessionTemplateEndpoint:
+        if self._session_templates is None:
+            self._session_templates = SessionTemplateEndpoint(self.session)
+        return self._session_templates
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.components.__exit__()
-        self.sessions.__exit__()
-        self.session_status.__exit__()
-        self.session_templates.__exit__()
+        super().__exit__(exc_type, exc_val, exc_tb)
+        self._components = None
+        self._sessions = None
+        self._session_status = None
+        self._session_templates = None
