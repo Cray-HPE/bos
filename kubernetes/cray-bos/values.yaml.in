@@ -139,7 +139,7 @@ operatorDefaults:
         repository: artifactory.algol60.net/csm-docker/S-T-A-B-L-E/cray-bos
       env:
       - name: PYTHONTRACEMALLOC
-        value: 100
+        value: "100"
       resources:
         requests:
           memory: "150Mi"
