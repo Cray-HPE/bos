@@ -32,6 +32,7 @@ import logging
 import threading
 import os
 import time
+import tracemalloc
 from typing import Generator, List, NoReturn, Type
 
 from bos.common.utils import exc_type_msg
@@ -44,6 +45,8 @@ from bos.operators.utils.liveness.timestamp import Timestamp
 LOGGER = logging.getLogger('bos.operators.base')
 MAIN_THREAD = threading.current_thread()
 
+
+tracemalloc.start()
 
 class BaseOperatorException(Exception):
     pass
@@ -109,6 +112,14 @@ class BaseOperator(ABC):
             except Exception as e:
                 LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
+
+            snapshot = tracemalloc.take_snapshot() 
+            top_stats = snapshot.statistics('lineno') 
+  
+            howmany =options.cfs_read_timeout
+            for ind, stat in enumerate(top_stats[:howmany]):
+                LOGGER.info("tracemalloc top %d: %s", ind, stat)
+
 
     @property
     def max_batch_size(self) -> int:
