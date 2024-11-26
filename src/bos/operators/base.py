@@ -46,7 +46,7 @@ LOGGER = logging.getLogger('bos.operators.base')
 MAIN_THREAD = threading.current_thread()
 
 
-tracemalloc.start()
+#tracemalloc.start()
 
 class BaseOperatorException(Exception):
     pass
@@ -96,6 +96,7 @@ class BaseOperator(ABC):
         This includes updating the options and logging level, as well as exception handling and
         sleeping between passes.
         """
+        last_snapshot = None
         while True:
             start_time = time.time()
             try:
@@ -120,6 +121,12 @@ class BaseOperator(ABC):
             for ind, stat in enumerate(top_stats[:howmany]):
                 LOGGER.info("tracemalloc top %d: %s", ind, stat)
 
+            if last_snapshot is not None:
+                top_diff = snapshot.compare_to(last_snapshot, 'lineno')
+                for ind, stat in enumerate(top_diff[:howmany]):
+                    LOGGER.info("tracemalloc top diff %d: %s", ind, stat)
+
+            last_snapshot = snapshot
 
     @property
     def max_batch_size(self) -> int:
