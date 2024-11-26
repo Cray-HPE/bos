@@ -23,10 +23,13 @@
 #
 from collections import defaultdict
 import logging
-from bos.operators.utils.clients.bos.options import options
+from typing import Optional
+
+import requests
 from requests.exceptions import HTTPError
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
+from bos.common.utils import compact_response_text, exc_type_msg, retry_session, PROTOCOL
 
 SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"
@@ -38,27 +41,28 @@ GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
 
 
-def get_components(session=None, **params):
+@retry_session(read_timeout=options.cfs_read_timeout)
+def get_components(session: Optional[requests.Session]=None, **params):
     """
     Makes GET request for CFS components.
     Performs additional requests to get additional pages of components, if
     needed.
     Returns the list of CFS components
     """
-    if not session:
-        session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     component_list = []
     while params is not None:
         LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, params)
-        response = session.get(COMPONENTS_ENDPOINT, params=params)
-        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                     response.reason, compact_response_text(response.text))
-        try:
-            response.raise_for_status()
-        except HTTPError as err:
-            LOGGER.error("Failed getting nodes from CFS: %s", exc_type_msg(err))
-            raise
-        response_json = response.json()
+        with session.get(COMPONENTS_ENDPOINT, params=params) as response:
+            LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                         response.reason, compact_response_text(response.text))
+            try:
+                response.raise_for_status()
+            except HTTPError as err:
+                LOGGER.error("Failed getting nodes from CFS: %s", exc_type_msg(err))
+                raise
+            response_json = response.json()
         new_components = response_json["components"]
         LOGGER.debug("Query returned %d components", len(new_components))
         component_list.extend(new_components)
@@ -67,29 +71,32 @@ def get_components(session=None, **params):
     return component_list
 
 
-def patch_components(data, session=None):
+@retry_session(read_timeout=options.cfs_read_timeout)
+def patch_components(data, session: Optional[requests.Session]=None):
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if not data:
         LOGGER.warning("patch_components called without data; returning without action.")
         return
-    if not session:
-        session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
-    response = session.patch(COMPONENTS_ENDPOINT, json=data)
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, compact_response_text(response.text))
-    try:
-        response.raise_for_status()
-    except HTTPError as err:
-        LOGGER.error("Failed asking CFS to configure nodes: %s", exc_type_msg(err))
-        raise
+    with session.patch(COMPONENTS_ENDPOINT, json=data) as response:
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                     response.reason, compact_response_text(response.text))
+        try:
+            response.raise_for_status()
+        except HTTPError as err:
+            LOGGER.error("Failed asking CFS to configure nodes: %s", exc_type_msg(err))
+            raise
 
 
-def get_components_from_id_list(id_list):
+@retry_session(read_timeout=options.cfs_read_timeout)
+def get_components_from_id_list(id_list, session: Optional[requests.Session]=None):
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if not id_list:
         LOGGER.warning("get_components_from_id_list called without IDs; returning without action.")
         return []
     LOGGER.debug("get_components_from_id_list called with %d IDs", len(id_list))
-    session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     component_list = []
     while id_list:
         next_batch = id_list[:GET_BATCH_SIZE]
@@ -101,13 +108,15 @@ def get_components_from_id_list(id_list):
     return component_list
 
 
-def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False):
+@retry_session(read_timeout=options.cfs_read_timeout)
+def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False, session: Optional[requests.Session]=None):
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if not node_ids:
         LOGGER.warning("patch_desired_config called without IDs; returning without action.")
         return
     LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
                  " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
-    session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     node_patch = {
         'enabled': enabled,
         'desired_config': desired_config,
@@ -122,7 +131,10 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
         node_ids = node_ids[PATCH_BATCH_SIZE:]
 
 
-def set_cfs(components, enabled, clear_state=False):
+@retry_session(read_timeout=options.cfs_read_timeout)
+def set_cfs(components, enabled, clear_state=False, session: Optional[requests.Session]=None):
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if not components:
         LOGGER.warning("set_cfs called without components; returning without action.")
         return
@@ -136,5 +148,5 @@ def set_cfs(components, enabled, clear_state=False):
         configurations[key].append(component['id'])
     for key, ids in configurations.items():
         config_name, bos_session = key
-        patch_desired_config(ids, config_name, enabled=enabled,
+        patch_desired_config(ids, config_name, session=session, enabled=enabled,
                              tags={'bos_session': bos_session}, clear_state=clear_state)

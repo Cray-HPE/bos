@@ -34,3 +34,15 @@ class BOSClient:
         self.sessions = SessionEndpoint()
         self.session_status = SessionStatusEndpoint()
         self.session_templates = SessionTemplateEndpoint()
+
+    def __enter__(self):
+        self.components = self.components.__enter__()
+        self.sessions = self.sessions.__enter__()
+        self.session_status = self.session_status.__enter__()
+        self.session_templates = self.session_templates.__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.components.__exit__()
+        self.sessions.__exit__()
+        self.session_status.__exit__()
+        self.session_templates.__exit__()

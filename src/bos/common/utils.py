@@ -24,13 +24,15 @@
 
 # Standard imports
 import datetime
-from functools import partial
+from functools import partial, wraps
 import re
+import threading
 import traceback
-from typing import List
+from typing import Callable, List, Optional
 
 # Third party imports
 from dateutil.parser import parse
+import requests
 from requests_retry_session import requests_retry_session as base_requests_retry_session
 
 PROTOCOL = 'http'
@@ -69,6 +71,52 @@ requests_retry_session = partial(base_requests_retry_session,
                                  status_forcelist=(500, 502, 503, 504),
                                  connect_timeout=3, read_timeout=10,
                                  session=None, protocol=PROTOCOL)
+
+class retry_session:
+    """
+    Decorator to supply a session argument enclosed in a context manager, if
+    no session is provided
+    """
+
+    def __init__(self, **requests_retry_session_kwargs):
+        self.requests_retry_session_kwargs = requests_retry_session_kwargs
+
+    def __call__(self, func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*func_args, session: Optional[requests.Session]=None, **func_kwargs):
+            if session is not None:
+                return func(*func_args, session=session, **func_kwargs)
+            with requests_retry_session(**self.requests_retry_session_kwargs) as new_session:
+                return func(*func_args, session=new_session, **func_kwargs)
+        return wrapper
+
+
+class RetrySessionManager:
+    """
+    Not intended to be useful on its own, this is for classes that want to create a
+    retry session only when needed, and to clean it up in their __exit__ function
+    """
+    def __init__(self, **requests_retry_session_kwargs):
+        self.__session = None
+        self.__lock = threading.Lock()
+        self.__requests_retry_session_kwargs = requests_retry_session_kwargs
+
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.__session is not None:
+            self.__session.close()
+
+    @property
+    def session(self) -> requests.Session:
+        if self.__session is None:
+            with self.__lock:
+                if self.__session is None:
+                    self.__session = requests_retry_session(**self.__requests_retry_session_kwargs)
+        return self.__session
+
 
 def compact_response_text(response_text: str) -> str:
     """

@@ -25,10 +25,12 @@
 import functools
 import logging
 import hashlib
+from typing import Optional
 
 import connexion
+import requests
 from requests.exceptions import HTTPError
-from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
+from bos.common.utils import exc_type_msg, retry_session, PROTOCOL
 
 LOGGER = logging.getLogger('bos.common.tenant_utils')
 
@@ -73,19 +75,20 @@ def get_tenant_aware_key(key, tenant):
     return f"{tenant_hash}-{key_hash}"
 
 
-def get_tenant_data(tenant, session=None):
-    if not session:
-        session = requests_retry_session()
+@retry_session()
+def get_tenant_data(tenant, session: Optional[requests.Session]=None):
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     url = f"{TENANT_ENDPOINT}/{tenant}"
-    response = session.get(url)
-    try:
-        response.raise_for_status()
-    except HTTPError as e:
-        LOGGER.error("Failed getting tenant data from tapms: %s", exc_type_msg(e))
-        if response.status_code == 404:
-            raise InvalidTenantException(f"Data not found for tenant {tenant}") from e
-        raise
-    return response.json()
+    with session.get(url) as response:
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            LOGGER.error("Failed getting tenant data from tapms: %s", exc_type_msg(e))
+            if response.status_code == 404:
+                raise InvalidTenantException(f"Data not found for tenant {tenant}") from e
+            raise
+        return response.json()
 
 
 def get_tenant_component_set(tenant: str) -> set:

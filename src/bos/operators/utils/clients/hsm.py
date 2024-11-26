@@ -25,10 +25,13 @@ import json
 import logging
 import os
 from collections import defaultdict
+from typing import Optional
+
+import requests
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.common.utils import compact_response_text, exc_type_msg, retry_session, PROTOCOL, RetrySessionManager
 
 SERVICE_NAME = 'cray-smd'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2/"
@@ -47,20 +50,31 @@ class HWStateManagerException(Exception):
     in the future should they arise.
     """
 
-
-def read_all_node_xnames():
+@retry_session()
+def read_all_node_xnames(session: Optional[requests.Session]=None):
     """
     Queries HSM for the full set of xname components that
     have been discovered; return these as a set.
     """
-    session = requests_retry_session()
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     endpoint = f'{BASE_ENDPOINT}/State/Components/'
     LOGGER.debug("GET %s", endpoint)
     try:
-        response = session.get(endpoint)
+        with session.get(endpoint) as response:
+            json_body = _read_all_node_xnames(response)
     except ConnectionError as ce:
         LOGGER.error("Unable to contact HSM service: %s", exc_type_msg(ce))
         raise HWStateManagerException(ce) from ce
+    try:
+        return {component['ID'] for component in json_body['Components']
+                    if component.get('Type', None) == 'Node'}
+    except KeyError as ke:
+        LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
+        raise HWStateManagerException(ke) from ke
+
+
+def _read_all_node_xnames(response: requests.Response):
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
                  response.reason, compact_response_text(response.text))
     try:
@@ -73,15 +87,10 @@ def read_all_node_xnames():
     except json.JSONDecodeError as jde:
         LOGGER.error("Non-JSON response from HSM: %s", response.text)
         raise HWStateManagerException(jde) from jde
-    try:
-        return {component['ID'] for component in json_body['Components']
-                    if component.get('Type', None) == 'Node'}
-    except KeyError as ke:
-        LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
-        raise HWStateManagerException(ke) from ke
+    return json_body
 
-
-def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
+@retry_session()
+def get_components(node_list, enabled=None, session: Optional[requests.Session]=None) -> dict[str,list[dict]]:
     """
     Get information for all list components HSM
 
@@ -120,33 +129,34 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     ]
     }
     """
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if not node_list:
         LOGGER.warning("hsm.get_components called with empty node list")
         return {'Components': []}
-    session = requests_retry_session()
+    payload = {'ComponentIDs': node_list}
+    if enabled is not None:
+        payload['enabled'] = [str(enabled)]
+    LOGGER.debug("POST %s with body=%s", ENDPOINT, payload)
     try:
-        payload = {'ComponentIDs': node_list}
-        if enabled is not None:
-            payload['enabled'] = [str(enabled)]
-        LOGGER.debug("POST %s with body=%s", ENDPOINT, payload)
-        response = session.post(ENDPOINT, json=payload)
-        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                     response.reason, compact_response_text(response.text))
-        response.raise_for_status()
-        components = json.loads(response.text)
+        with session.post(ENDPOINT, json=payload) as response:
+            LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                         response.reason, compact_response_text(response.text))
+            response.raise_for_status()
+            components = json.loads(response.text)
     except (ConnectionError, MaxRetryError) as e:
         LOGGER.error("Unable to connect to HSM: %s", exc_type_msg(e))
-        raise e
+        raise
     except HTTPError as e:
         LOGGER.error("Unexpected response from HSM: %s", exc_type_msg(e))
-        raise e
+        raise
     except json.JSONDecodeError as e:
         LOGGER.error("Non-JSON response from HSM: %s", exc_type_msg(e))
-        raise e
+        raise
     return components
 
 
-class Inventory:
+class Inventory(RetrySessionManager):
     """
     Inventory handles the generation of a hardware inventory in a similar manner to how the
     dynamic inventory is generated for CFS.  To reduce the number of calls to HSM, everything is
@@ -156,12 +166,12 @@ class Inventory:
     """
 
     def __init__(self, partition=None):
+        super().__init__()
         self._partition = partition  # Can be specified to limit to roles/components query
         self._inventory = None
         self._groups = None
         self._partitions = None
         self._roles = None
-        self._session = None
 
     @property
     def groups(self):
@@ -219,21 +229,22 @@ class Inventory:
     def __getitem__(self, key):
         return self.inventory[key]
 
-    def get(self, path, params=None):
-        url = os.path.join(BASE_ENDPOINT, path)
-        if self._session is None:
-            self._session = requests_retry_session()
-        try:
-            LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
-            response = self._session.get(url, params=params, verify=VERIFY)
-            LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                         response.reason, compact_response_text(response.text))
-            response.raise_for_status()
-        except HTTPError as err:
-            LOGGER.error("Failed to get '%s': %s", url, exc_type_msg(err))
-            raise
+    def _get(self, response: requests.Response):
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                     response.reason, compact_response_text(response.text))
+        response.raise_for_status()
         try:
             return response.json()
         except ValueError:
             LOGGER.error("Couldn't parse a JSON response: %s", response.text)
+            raise
+
+    def get(self, path, params=None):
+        url = os.path.join(BASE_ENDPOINT, path)
+        LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
+        try:
+            with self.session.get(url, params=params, verify=VERIFY) as response:
+                return self._get(response)
+        except HTTPError as err:
+            LOGGER.error("Failed to get '%s': %s", url, exc_type_msg(err))
             raise

@@ -28,7 +28,7 @@ from bos.common.values import Action, Status
 from bos.operators.utils.clients import pcs
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
+from bos.operators.filters import HSMState, TimeSinceLastAction
 
 LOGGER = logging.getLogger('bos.operators.power_off_forceful')
 
@@ -50,8 +50,9 @@ class ForcefulPowerOffOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True, status=','.join([Status.power_off_forcefully_called,
-                                                    Status.power_off_gracefully_called])),
+            self.BOSQuery(enabled=True,
+                          status=','.join([Status.power_off_forcefully_called,
+                                          Status.power_off_gracefully_called])),
             TimeSinceLastAction(seconds=options.max_power_off_wait_time),
             HSMState(),
         ]

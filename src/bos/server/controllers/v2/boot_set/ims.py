@@ -116,8 +116,10 @@ def get_ims_image_data(ims_id: str, num_retries: int|None=None) -> dict:
     or raise an exception.
     """
     kwargs = { "image_id": ims_id }
-    if num_retries is not None:
-        # A pylint bug generates a false positive error for this call
-        # https://github.com/pylint-dev/pylint/issues/2271
-        kwargs['session'] = requests_retry_session(retries=4) # pylint: disable=redundant-keyword-arg
-    return get_image(**kwargs)
+    if num_retries is None:
+        return get_image(**kwargs)
+
+    # A pylint bug generates a false positive error for this call
+    # https://github.com/pylint-dev/pylint/issues/2271
+    with requests_retry_session(retries=4) as session: # pylint: disable=redundant-keyword-arg
+        return get_image(session=session, **kwargs)

@@ -27,7 +27,7 @@ import logging
 from bos.common.values import Action, Status
 from bos.operators.utils.clients import pcs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState
+from bos.operators.filters import HSMState
 
 LOGGER = logging.getLogger('bos.operators.power_off_graceful')
 
@@ -48,7 +48,7 @@ class GracefulPowerOffOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True, status=Status.power_off_pending),
+            self.BOSQuery(enabled=True, status=Status.power_off_pending),
             HSMState(),
         ]
 

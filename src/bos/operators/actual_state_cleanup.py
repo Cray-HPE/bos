@@ -28,7 +28,7 @@ from bos.common.utils import duration_to_timedelta
 from bos.common.values import EMPTY_ACTUAL_STATE
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, ActualStateAge, ActualBootStateIsSet
+from bos.operators.filters import ActualStateAge, ActualBootStateIsSet
 
 LOGGER = logging.getLogger('bos.operators.actual_state_cleanup')
 
@@ -53,7 +53,7 @@ class ActualStateCleanupOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(),
+            self.BOSQuery(),
             ActualBootStateIsSet(),
             ActualStateAge(
                 seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds()
