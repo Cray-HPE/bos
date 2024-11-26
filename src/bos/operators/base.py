@@ -345,7 +345,7 @@ def _liveliness_heartbeat() -> NoReturn:
             # All hope abandon ye who enter here
             return
         Timestamp()
-        time.sleep(10)
+        time.sleep(0.1)
         last_snapshot = take_show_snapshot(last_snapshot)
 
 
