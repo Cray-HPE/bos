@@ -63,7 +63,7 @@ class BOSQuery(DetailsFilter):
     """Gets all components from BOS that match the kwargs """
     INITIAL: bool = True
 
-    def __init__(self, bos_client: BosClient, **kwargs) -> None:
+    def __init__(self, bos_client: BOSClient, **kwargs) -> None:
         """
         Init for the BOSQuery filter
         kwargs corresponds to arguments for the BOS get_components method

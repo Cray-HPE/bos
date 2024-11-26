@@ -33,7 +33,7 @@ from .sessions_status import SessionStatusEndpoint
 
 class BOSClient(RetrySessionManager):
 
-    def __init__(self, session: requests.Session):
+    def __init__(self):
         self._components = None
         self._sessions = None
         self._session_status = None
