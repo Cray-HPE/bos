@@ -319,14 +319,14 @@ def _update_log_level() -> None:
 
 def take_show_snapshot(last_snapshot=None):
     snapshot = tracemalloc.take_snapshot() 
-    top_stats = snapshot.statistics('lineno') 
+    top_stats = snapshot.statistics('traceback') 
   
     howmany=50
     for ind, stat in enumerate(top_stats[:howmany]):
         LOGGER.info("tracemalloc top %d: %s", ind, stat)
 
     if last_snapshot is not None:
-        top_diff = snapshot.compare_to(last_snapshot, 'lineno')
+        top_diff = snapshot.compare_to(last_snapshot, 'traceback')
         for ind, stat in enumerate(top_diff[:howmany]):
             LOGGER.info("tracemalloc top diff %d: %s", ind, stat)
     return snapshot
