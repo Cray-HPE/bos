@@ -317,7 +317,7 @@ def _update_log_level() -> None:
         LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 
 
-def take_show_snapshot(last_snapshot=None):
+def take_show_snapshot(last_snapshot=None, first_snapshot=None):
     snapshot = tracemalloc.take_snapshot() 
     top_stats = snapshot.statistics('traceback') 
   
@@ -328,7 +328,13 @@ def take_show_snapshot(last_snapshot=None):
     if last_snapshot is not None:
         top_diff = snapshot.compare_to(last_snapshot, 'traceback')
         for ind, stat in enumerate(top_diff[:howmany]):
-            LOGGER.info("tracemalloc top diff %d: %s", ind, stat)
+            LOGGER.info("tracemalloc top diff (since last) %d: %s", ind, stat)
+
+    if first_snapshot is not None and first_snapshot != last_snapshot:
+        top_diff = snapshot.compare_to(first_snapshot, 'traceback')
+        for ind, stat in enumerate(top_diff[:howmany]):
+            LOGGER.info("tracemalloc top diff (since start) %d: %s", ind, stat)
+
     return snapshot
 
 
@@ -339,14 +345,15 @@ def _liveliness_heartbeat() -> NoReturn:
     a period of no events have been monitored from k8s for an extended
     period of time.
     """
-    last_snapshot = take_show_snapshot()
+    first_snapshot = take_show_snapshot()
+    last_snapshot = first_snapshot
     while True:
         if not MAIN_THREAD.is_alive():
             # All hope abandon ye who enter here
             return
         Timestamp()
         time.sleep(0.1)
-        last_snapshot = take_show_snapshot(last_snapshot)
+        last_snapshot = take_show_snapshot(last_snapshot=last_snapshot, first_snapshot=first_snapshot)
 
 
 def _init_logging() -> None:
