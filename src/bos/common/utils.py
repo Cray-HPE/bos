@@ -31,7 +31,7 @@ from typing import List
 
 # Third party imports
 from dateutil.parser import parse
-from requests_retry_session import requests_retry_session as base_requests_retry_session
+from bos.common.rrs import requests_retry_session as base_requests_retry_session
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
