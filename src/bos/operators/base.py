@@ -31,8 +31,9 @@ import itertools
 import logging
 import threading
 import os
+import resource
 import time
-import tracemalloc
+#import tracemalloc
 from typing import Generator, List, NoReturn, Type
 
 from bos.common.utils import exc_type_msg
@@ -316,7 +317,7 @@ def _update_log_level() -> None:
     except Exception as e:
         LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 
-
+"""
 def take_show_snapshot(last_snapshot=None, first_snapshot=None):
     snapshot = tracemalloc.take_snapshot() 
     top_stats = snapshot.statistics('traceback') 
@@ -339,7 +340,7 @@ def take_show_snapshot(last_snapshot=None, first_snapshot=None):
             LOGGER.info("tracemalloc top diff (since start) %d: %s", ind, stat)
 
     return snapshot
-
+"""
 
 def _liveliness_heartbeat() -> NoReturn:
     """
@@ -349,15 +350,16 @@ def _liveliness_heartbeat() -> NoReturn:
     period of time.
     """
     Timestamp()
-    first_snapshot = take_show_snapshot()
-    last_snapshot = first_snapshot
+    #first_snapshot = take_show_snapshot()
+    #last_snapshot = first_snapshot
     while True:
+        LOGGER.info(resource.getrusage(resource.RUSAGE_SELF))
         if not MAIN_THREAD.is_alive():
             # All hope abandon ye who enter here
             return
         Timestamp()
-        time.sleep(0.1)
-        last_snapshot = take_show_snapshot(last_snapshot=last_snapshot, first_snapshot=first_snapshot)
+        time.sleep(0.05)
+        #last_snapshot = take_show_snapshot(last_snapshot=last_snapshot, first_snapshot=first_snapshot)
 
 
 def _init_logging() -> None:

@@ -23,7 +23,6 @@
 #
 
 import logging
-import tracemalloc
 import weakref
 from requests.packages.urllib3.util.retry import Retry # pylint: disable=import-error
 
@@ -47,7 +46,6 @@ class RetryWithLogs(Retry):
     def __init__(self, *args, **kwargs):
         # Save a copy of upstack callback to the side; this is the context we provide
         # for recursively instantiated instances of the Retry model
-        self._snapshot = tracemalloc.take_snapshot() if tracemalloc.is_tracing() else None
         _callback = kwargs.pop('callback', None)
         if _callback is None:
             self._callback = None

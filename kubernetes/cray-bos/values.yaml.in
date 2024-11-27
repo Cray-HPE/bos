@@ -137,9 +137,9 @@ operatorDefaults:
       name: operator
       image:
         repository: artifactory.algol60.net/csm-docker/S-T-A-B-L-E/cray-bos
-      env:
-      - name: PYTHONTRACEMALLOC
-        value: "10"
+#      env:
+#      - name: PYTHONTRACEMALLOC
+#        value: "10"
       resources:
         requests:
           memory: "150Mi"
