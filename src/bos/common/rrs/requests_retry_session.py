@@ -58,7 +58,7 @@ def requests_retry_session(retries: int = 10,
         backoff_factor=backoff_factor,
         status_forcelist=status_forcelist,
     )
-    adapter = TimeoutHTTPAdapter(max_retries=retry, timeout=(connect_timeout, read_timeout))
+    adapter = TimeoutHTTPAdapter(max_retries=retry, timeout=(connect_timeout, read_timeout), pool_connections=2, pool_maxsize=2, pool_block=True)
     # Must mount to http://
     # Mounting to only http will not work!
     session.mount(f"{protocol}://", adapter)
