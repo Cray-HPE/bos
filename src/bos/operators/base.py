@@ -322,15 +322,18 @@ def take_show_snapshot(last_snapshot=None, first_snapshot=None):
     top_stats = snapshot.statistics('traceback') 
   
     howmany=50
+    LOGGER.info("tracemalloc top %d", howmany)
     for ind, stat in enumerate(top_stats[:howmany]):
         LOGGER.info("tracemalloc top %d: %s", ind, stat)
 
     if last_snapshot is not None:
+        LOGGER.info("tracemalloc top %d diff (since last)", howmany)
         top_diff = snapshot.compare_to(last_snapshot, 'traceback')
         for ind, stat in enumerate(top_diff[:howmany]):
             LOGGER.info("tracemalloc top diff (since last) %d: %s", ind, stat)
 
     if first_snapshot is not None and first_snapshot != last_snapshot:
+        LOGGER.info("tracemalloc top %d diff (since start)", howmany)
         top_diff = snapshot.compare_to(first_snapshot, 'traceback')
         for ind, stat in enumerate(top_diff[:howmany]):
             LOGGER.info("tracemalloc top diff (since start) %d: %s", ind, stat)
@@ -345,6 +348,7 @@ def _liveliness_heartbeat() -> NoReturn:
     a period of no events have been monitored from k8s for an extended
     period of time.
     """
+    Timestamp()
     first_snapshot = take_show_snapshot()
     last_snapshot = first_snapshot
     while True:
