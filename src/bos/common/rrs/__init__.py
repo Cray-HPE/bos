@@ -23,5 +23,6 @@
 #
 
 from .requests_retry_session import requests_retry_session as local_requests_retry_session
+from .requests_retry_session import get_adapter
 
 requests_retry_session = local_requests_retry_session
