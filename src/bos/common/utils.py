@@ -23,7 +23,7 @@
 #
 
 # Standard imports
-from contextlib import nullcontext, AbstractContextManager
+from contextlib import closing, nullcontext, AbstractContextManager
 import datetime
 from functools import partial, wraps
 import re
@@ -34,7 +34,8 @@ from typing import Callable, List, Optional
 # Third party imports
 from dateutil.parser import parse
 import requests
-from requests_retry_session import requests_retry_session as base_requests_retry_session
+from rrs import requests_retry_session as base_requests_retry_session
+from rrs import get_adapter as base_get_adapter
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
@@ -73,6 +74,13 @@ requests_retry_session = partial(base_requests_retry_session,
                                  connect_timeout=3, read_timeout=10,
                                  session=None, protocol=PROTOCOL)
 
+get_adapter = partial(base_get_adapter,
+                                 retries=10, backoff_factor=0.5,
+                                 status_forcelist=(500, 502, 503, 504),
+                                 connect_timeout=3, read_timeout=10,
+                                 session=None, protocol=PROTOCOL)
+
+
 class retry_session:
     """
     Decorator to supply a session argument enclosed in a context manager, if
@@ -85,12 +93,11 @@ class retry_session:
     def __call__(self, func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*func_args, session: Optional[requests.Session]=None, **func_kwargs):
-            if session is None:
-                cm = requests_retry_session(**self.requests_retry_session_kwargs)
-            else:
-                cm = nullcontext(session)
-            with cm as _session:
-                return func(*func_args, session=_session, **func_kwargs)
+            if session is not None:
+                return func(*func_args, session=session, **func_kwargs)
+            with closing(get_adapter(**self.requests_retry_session_kwargs)) as adapter:
+                with requests_retry_session(adapter=adapter, **self.requests_retry_session_kwargs) as _session:
+                    return func(*func_args, session=_session, **func_kwargs)
         return wrapper
 
 
@@ -100,6 +107,7 @@ class RetrySessionManager(AbstractContextManager):
     retry session only when needed, and to clean it up in their __exit__ function
     """
     def __init__(self, **requests_retry_session_kwargs):
+        self._requests_adapter = None
         self._requests_session = None
         self._retry_manager_lock = threading.Lock()
         self._requests_retry_session_kwargs = requests_retry_session_kwargs
@@ -108,13 +116,17 @@ class RetrySessionManager(AbstractContextManager):
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self._requests_session is not None:
             self._requests_session.close()
+            self._requests_adapter.close()
+            self._requests_session = None
+            self._requests_adapter = None
 
     @property
     def session(self) -> requests.Session:
         if self._requests_session is None:
             with self._retry_manager_lock:
                 if self._requests_session is None:
-                    self._requests_session = requests_retry_session(**self._requests_retry_session_kwargs)
+                    self._requests_adapter = get_adapter(**self._requests_retry_session_kwargs)
+                    self._requests_session = requests_retry_session(adapter=self._requests_adapter, **self._requests_retry_session_kwargs)
         return self._requests_session
 
 
