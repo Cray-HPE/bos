@@ -34,8 +34,8 @@ from typing import Callable, List, Optional
 # Third party imports
 from dateutil.parser import parse
 import requests
-from rrs import requests_retry_session as base_requests_retry_session
-from rrs import get_adapter as base_get_adapter
+from bos.common.rrs import requests_retry_session as base_requests_retry_session
+from bos.common.rrs import get_adapter as base_get_adapter
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
