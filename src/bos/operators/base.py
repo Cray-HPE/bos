@@ -34,6 +34,7 @@ import itertools
 import logging
 import threading
 import os
+import psutil
 import resource
 import time
 from typing import Generator, List, NoReturn, Type
@@ -328,7 +329,7 @@ def _liveliness_heartbeat() -> NoReturn:
     sleep_time=0.05
     elapsed=10.0
     while True:
-        LOGGER.info("maxrss=%d", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
+        LOGGER.info("maxrss=%d rss=%d", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss, psutil.Process().memory_info().rss)
         if not MAIN_THREAD.is_alive():
             # All hope abandon ye who enter here
             return
