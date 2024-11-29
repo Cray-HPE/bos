@@ -28,6 +28,7 @@ BOS Operator - A Python operator for the Boot Orchestration Service.
 
 import http.client
 http.client.HTTPConnection.debuglevel = 5
+http.client.HTTPConnection.set_debuglevel(5)
 
 from abc import ABC, abstractmethod
 import itertools
