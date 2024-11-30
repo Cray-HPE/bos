@@ -28,7 +28,6 @@ BOS Operator - A Python operator for the Boot Orchestration Service.
 
 import http.client
 http.client.HTTPConnection.debuglevel = 5
-http.client.HTTPConnection.set_debuglevel(5)
 
 from abc import ABC, abstractmethod
 import itertools
@@ -82,6 +81,7 @@ class BaseOperator(ABC):
     def __init__(self) -> NoReturn:
         self.bos_client = BOSClient()
         self.__max_batch_size = 0
+        self.__loop = 0
 
     @property
     @abstractmethod
@@ -100,6 +100,8 @@ class BaseOperator(ABC):
         sleeping between passes.
         """
         while True:
+            self.__loop += 1
+            LOGGER.info("Starting loop %d", self.__loop)
             start_time = time.time()
             try:
                 options.update()
@@ -115,6 +117,7 @@ class BaseOperator(ABC):
             except Exception as e:
                 LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
+            LOGGER.info("Ended loop %d", self.__loop)
 
     @property
     def max_batch_size(self) -> int:
@@ -330,7 +333,7 @@ def _liveliness_heartbeat() -> NoReturn:
     sleep_time=0.05
     elapsed=10.0
     while True:
-        LOGGER.info("maxrss=%d rss=%d", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss, psutil.Process().memory_info().rss)
+        LOGGER.info("maxrss=%d %s", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss, psutil.Process().memory_info())
         if not MAIN_THREAD.is_alive():
             # All hope abandon ye who enter here
             return
