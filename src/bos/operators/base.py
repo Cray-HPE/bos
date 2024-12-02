@@ -31,6 +31,7 @@ import itertools
 import logging
 import threading
 import os
+import resource
 import time
 from typing import Generator, List, NoReturn, Type
 
@@ -334,12 +335,18 @@ def _liveliness_heartbeat() -> NoReturn:
     a period of no events have been monitored from k8s for an extended
     period of time.
     """
+    sleep_time=0.05
+    elapsed=10.0
     while True:
+        LOGGER.info("maxrss=%d", resource.getrusage(resource.RUSAGE_SELF).ru_maxrss)
         if not MAIN_THREAD.is_alive():
             # All hope abandon ye who enter here
             return
-        Timestamp()
-        time.sleep(10)
+        if elapsed >= 10.0:
+            Timestamp()
+            elapsed=0
+        time.sleep(sleep_time)
+        elapsed+=sleep_time+0.01
 
 
 def _init_logging() -> None:
