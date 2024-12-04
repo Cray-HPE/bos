@@ -21,6 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from itertools import batched
 import functools
 import json
 import logging
@@ -115,21 +116,25 @@ class DBWrapper():
         If page_size is specified, the list will be returned if it contains that many
         elements, even if there may be more remaining.
         """
-        if page_size is not None and page_size < 1:
-            page_size = None
         data = []
-        all_keys = sorted({k.decode() for k in self.client.scan_iter()})
-        for key in all_keys:
-            if start_after_key is not None and key <= start_after_key:
-                continue
-            datastr = self.client.get(key)
-            single_data = json.loads(datastr)
-            filtered_data = filter_func(single_data)
+        if page_size is not None and page_size < 1:
+            page_size = len(all_keys)
+        for data in iter_values(start_after_key):
+            filtered_data = filter_func(data)
             if filtered_data is not None:
                 data.append(filtered_data)
-                if page_size is not None and len(data) == page_size:
+                if len(data) == page_size:
                     break
         return data
+
+    def iter_values(self, start_after_key: Optional[str]=None):
+        all_keys = sorted({k.decode() for k in self.client.scan_iter()})
+        if start_after_key is not None:
+            all_keys = [ k for k in all_keys if k > all_keys ]
+        for next_keys in batched(all_keys, 1000):
+            for datastr in self.client.mget(next_keys):
+                yield json.loads(datastr) if datastr else None
+
 
     def get_all_as_dict(self):
         """Return a mapping from all keys to their corresponding data
