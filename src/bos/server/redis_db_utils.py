@@ -118,11 +118,10 @@ class DBWrapper():
         if page_size is not None and page_size < 1:
             page_size = None
         data = []
-        if start_after_key is None:
-            all_keys = sorted(set(self.client.scan_iter()))
-        else:
-            all_keys = sorted({key for key in self.client.scan_iter() if key >= start_after_key})
+        all_keys = sorted({k.decode() for k in self.client.scan_iter()})
         for key in all_keys:
+            if start_after_key is not None and key <= start_after_key:
+                continue
             datastr = self.client.get(key)
             single_data = json.loads(datastr)
             filtered_data = filter_func(single_data)
