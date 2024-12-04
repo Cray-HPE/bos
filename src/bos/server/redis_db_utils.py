@@ -117,10 +117,10 @@ class DBWrapper():
         elements, even if there may be more remaining.
         """
         data = []
-        for data in self.iter_values(start_after_key):
-            filtered_data = filter_func(data)
-            if filtered_data is not None:
-                data.append(filtered_data)
+        for value in self.iter_values(start_after_key):
+            filtered_value = filter_func(value)
+            if filtered_value is not None:
+                data.append(filtered_value)
                 if page_size and len(data) == page_size:
                     break
         return data
