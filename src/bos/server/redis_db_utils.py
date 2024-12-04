@@ -108,7 +108,7 @@ class DBWrapper():
 
     def get_all_filtered(self, filter_func: Callable[dict, dict|None],
                          start_after_key: Optional[str]=None,
-                         page_size: Optional[int]=None) -> list[dict]:
+                         page_size: int=0) -> list[dict]:
         """
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)
@@ -117,13 +117,11 @@ class DBWrapper():
         elements, even if there may be more remaining.
         """
         data = []
-        if page_size is not None and page_size < 1:
-            page_size = len(all_keys)
-        for data in iter_values(start_after_key):
+        for data in self.iter_values(start_after_key):
             filtered_data = filter_func(data)
             if filtered_data is not None:
                 data.append(filtered_data)
-                if len(data) == page_size:
+                if page_size and len(data) == page_size:
                     break
         return data
 
