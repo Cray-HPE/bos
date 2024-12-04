@@ -71,7 +71,7 @@ DEFAULT_RETRY_ADAPTER_ARGS = rrs.RequestsRetryAdapterArgs(
                                     retries=10,
                                     backoff_factor=0.5,
                                     status_forcelist=(500, 502, 503, 504),
-                                    connect_timeout=10,
+                                    connect_timeout=3,
                                     read_timeout=10)
 
 

@@ -34,7 +34,7 @@ from .sessions_status import SessionStatusEndpoint
 class BOSClient(RetrySessionManager):
 
     def __init__(self):
-        super().__init__()
+        super().__init__(connect_timeout=10, read_timeout=60)
         self._components = None
         self._sessions = None
         self._session_status = None
