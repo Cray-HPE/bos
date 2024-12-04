@@ -128,8 +128,8 @@ class DBWrapper():
     def iter_values(self, start_after_key: Optional[str]=None):
         all_keys = sorted({k.decode() for k in self.client.scan_iter()})
         if start_after_key is not None:
-            all_keys = [ k for k in all_keys if k > all_keys ]
-        for next_keys in batched(all_keys, 1000):
+            all_keys = [ k for k in all_keys if k > start_after_key ]
+        for next_keys in batched(all_keys, 500):
             for datastr in self.client.mget(next_keys):
                 yield json.loads(datastr) if datastr else None
 
