@@ -65,7 +65,7 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
     response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session,
                                       staged_session=staged_session,
                                       phase=phase, status=status, tenant=tenant,
-                                      start_after_id=start_after_id, page_size=page_size,
+                                      start_after_id=start_after_id, page_size=page_size or 0,
                                       delete_timestamp=True)
     LOGGER.debug("GET /v2/components returning data for tenant=%s on %d components", tenant,
                  len(response))
@@ -74,7 +74,7 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
 
 def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
                            phase=None, status=None, tenant=None, start_after_id=None,
-                           page_size=None, delete_timestamp: bool=False):
+                           page_size=0, delete_timestamp: bool=False):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
