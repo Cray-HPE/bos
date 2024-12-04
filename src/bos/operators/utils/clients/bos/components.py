@@ -24,6 +24,7 @@
 import logging
 
 from .base import BaseBosEndpoint
+from .options import options
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
 
@@ -35,7 +36,14 @@ class ComponentEndpoint(BaseBosEndpoint):
         return self.get_item(component_id)
 
     def get_components(self, **kwargs):
-        return self.get_items(**kwargs)
+        page_size=options.max_component_batch_size
+        next_page=self.get_items(page_size=page_size, **kwargs)
+        results=next_page
+        while next_page:
+            last_id=next_page[-1]["id"]
+            next_page=self.get_items(page_size=page_size, start_after_id=last_id, **kwargs)
+            results.extend(next_page)
+        return results
 
     def update_component(self, component_id, data):
         return self.update_item(component_id, data)

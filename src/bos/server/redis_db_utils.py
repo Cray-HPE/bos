@@ -24,6 +24,7 @@
 import functools
 import json
 import logging
+from typing import Callable, Optional
 
 import connexion
 import redis
@@ -102,6 +103,33 @@ class DBWrapper():
             datastr = self.client.get(key)
             single_data = json.loads(datastr)
             data.append(single_data)
+        return data
+
+    def get_all_filtered(self, filter_func: Callable[dict, dict|None],
+                         start_after_key: Optional[str]=None,
+                         page_size: Optional[int]=None) -> list[dict]:
+        """
+        Get an array of data for all keys after passing them through the specified filter
+        (discarding any for which the filter returns None)
+        If start_after_id is specified, all ids lexically <= that id will be skipped.
+        If page_size is specified, the list will be returned if it contains that many
+        elements, even if there may be more remaining.
+        """
+        if page_size is not None and page_size < 1:
+            page_size = None
+        data = []
+        if start_after_key is None:
+            all_keys = sorted(set(self.client.scan_iter()))
+        else:
+            all_keys = sorted({key for key in self.client.scan_iter() if key >= start_after_key})
+        for key in all_keys:
+            datastr = self.client.get(key)
+            single_data = json.loads(datastr)
+            filtered_data = filter_func(single_data)
+            if filtered_data is not None:
+                data.append(filtered_data)
+                if page_size is not None and len(data) == page_size:
+                    break
         return data
 
     def get_all_as_dict(self):
