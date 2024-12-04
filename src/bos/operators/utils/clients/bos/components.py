@@ -39,7 +39,7 @@ class ComponentEndpoint(BaseBosEndpoint):
         page_size=options.max_component_batch_size
         next_page=self.get_items(page_size=page_size, **kwargs)
         results=next_page
-        while next_page:
+        while len(next_page) == page_size:
             last_id=next_page[-1]["id"]
             next_page=self.get_items(page_size=page_size, start_after_id=last_id, **kwargs)
             results.extend(next_page)
