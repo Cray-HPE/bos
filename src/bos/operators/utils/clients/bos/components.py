@@ -35,8 +35,10 @@ class ComponentEndpoint(BaseBosEndpoint):
     def get_component(self, component_id):
         return self.get_item(component_id)
 
-    def get_components(self, **kwargs):
+    def get_components(self, **kwargs):        
         page_size=options.max_component_batch_size
+        if page_size == 0:
+            return self.get_items(**kwargs)
         next_page=self.get_items(page_size=page_size, **kwargs)
         results=next_page
         while len(next_page) == page_size:
