@@ -36,6 +36,7 @@ from typing import Generator, List, NoReturn, Type
 
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
+from bos.operators.filters import BOSQuery
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.bos import BOSClient
@@ -74,7 +75,7 @@ class BaseOperator(ABC):
     frequency_option = "polling_frequency"
 
     def __init__(self) -> NoReturn:
-        self.bos_client = BOSClient()
+        self.bos_client = None
         self.__max_batch_size = 0
 
     @property
@@ -87,6 +88,14 @@ class BaseOperator(ABC):
     def filters(self) -> List[Type[BaseFilter]]:
         return []
 
+    def BOSQuery(self, **kwargs) -> BOSQuery:
+        """
+        Shortcut to get a BOSQuery filter with the bos_client for this operator
+        """
+        if 'bos_client' not in kwargs:
+            kwargs['bos_client'] = self.bos_client
+        return BOSQuery(**kwargs)
+
     def run(self) -> NoReturn:
         """
         The core method of the operator that periodically detects and acts on components.
@@ -98,9 +107,13 @@ class BaseOperator(ABC):
             try:
                 options.update()
                 _update_log_level()
-                self._run()
+                with BOSClient() as bos_client:
+                    self.bos_client = bos_client
+                    self._run()
             except Exception as e:
                 LOGGER.exception('Unhandled exception detected: %s', e)
+            finally:
+                self.bos_client = None
 
             try:
                 sleep_time = getattr(options, self.frequency_option) - (time.time() - start_time)

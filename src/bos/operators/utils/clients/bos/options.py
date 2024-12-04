@@ -23,12 +23,14 @@
 #
 import logging
 import json
+from typing import Optional
 
+import requests
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.options import OptionsCache
-from bos.common.utils import exc_type_msg, requests_retry_session
+from bos.common.utils import exc_type_msg, retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
@@ -43,14 +45,17 @@ class Options(OptionsCache):
     This caches the options so that frequent use of these options do not all
     result in network calls.
     """
-    def _get_options(self) -> dict:
+    
+    @retry_session()
+    def _get_options(self, session: Optional[requests.Session]=None) -> dict:
         """Retrieves the current options from the BOS api"""
-        session = requests_retry_session()
+        # @retry_session decorator guarantees session is not None
+        assert session is not None
         LOGGER.debug("GET %s", ENDPOINT)
         try:
-            response = session.get(ENDPOINT)
-            response.raise_for_status()
-            return json.loads(response.text)
+            with session.get(ENDPOINT) as response:
+                response.raise_for_status()
+                return json.loads(response.text)
         except (ConnectionError, MaxRetryError) as e:
             LOGGER.error("Unable to connect to BOS: %s", exc_type_msg(e))
         except HTTPError as e:

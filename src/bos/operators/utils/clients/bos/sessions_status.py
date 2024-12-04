@@ -23,9 +23,12 @@
 #
 import json
 import logging
+from typing import Optional
+
+import requests
 
 from bos.common.tenant_utils import get_new_tenant_header
-from bos.common.utils import requests_retry_session
+from bos.common.utils import retry_session
 from .base import BASE_ENDPOINT, log_call_errors
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions_status')
@@ -34,18 +37,18 @@ LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions_status')
 class SessionStatusEndpoint:
     ENDPOINT = 'sessions'
 
-    def __init__(self):
+    def __init__(self, session: requests.Session):
         self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
+        self.session = session
 
     @log_call_errors
     def get_session_status(self, session_id, tenant):
         """Get information for a single BOS item"""
         url = self.base_url + '/' + session_id + '/status'
-        session = requests_retry_session()
         LOGGER.debug("GET %s for tenant=%s", url, tenant)
-        response = session.get(url, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
-        item = json.loads(response.text)
+        with self.session.get(url, headers=get_new_tenant_header(tenant)) as response:
+            response.raise_for_status()
+            item = json.loads(response.text)
         return item
 
     @log_call_errors
@@ -54,10 +57,9 @@ class SessionStatusEndpoint:
         Post information for a single BOS Session status.
         This basically saves the BOS Session status to the database.
         """
-        session = requests_retry_session()
         url = self.base_url + '/' + session_id + '/status'
         LOGGER.debug("POST %s for tenant=%s", url, tenant)
-        response = session.post(url, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
-        items = json.loads(response.text)
+        with self.session.post(url, headers=get_new_tenant_header(tenant)) as response:
+            response.raise_for_status()
+            items = json.loads(response.text)
         return items

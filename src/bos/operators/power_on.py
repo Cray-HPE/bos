@@ -40,7 +40,7 @@ from bos.operators.utils.clients import pcs
 from bos.operators.utils.clients.ims import tag_image
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState
+from bos.operators.filters import HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger('bos.operators.power_on')
@@ -63,7 +63,7 @@ class PowerOnOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True, status=Status.power_on_pending),
+            self.BOSQuery(enabled=True, status=Status.power_on_pending),
             HSMState()
         ]
 
@@ -147,14 +147,12 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
-                resp = bss.set_bss(node_set=nodes, kernel_params=kernel_parameters,
-                                   kernel=kernel, initrd=initrd)
-                resp.raise_for_status()
+                token = bss.set_bss(node_set=nodes, kernel_params=kernel_parameters,
+                                    kernel=kernel, initrd=initrd)
             except HTTPError as err:
                 LOGGER.error("Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
                              key, nodes, exc_type_msg(err))
             else:
-                token = resp.headers['bss-referral-token']
                 attempts = 0
                 while attempts <= retries:
                     try:

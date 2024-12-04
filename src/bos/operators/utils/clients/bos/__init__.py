@@ -21,16 +21,52 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+import threading
+
+from bos.common.utils import RetrySessionManager
+
 from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
 from .sessions_status import SessionStatusEndpoint
 
 
-class BOSClient:
+class BOSClient(RetrySessionManager):
 
     def __init__(self):
-        self.components = ComponentEndpoint()
-        self.sessions = SessionEndpoint()
-        self.session_status = SessionStatusEndpoint()
-        self.session_templates = SessionTemplateEndpoint()
+        super().__init__()
+        self._components = None
+        self._sessions = None
+        self._session_status = None
+        self._session_templates = None
+
+    @property
+    def components(self) -> ComponentEndpoint:
+        if self._components is None:
+            self._components = ComponentEndpoint(self.requests_session)
+        return self._components
+
+    @property
+    def sessions(self) -> SessionEndpoint:
+        if self._sessions is None:
+            self._sessions = SessionEndpoint(self.requests_session)
+        return self._sessions
+
+    @property
+    def session_status(self) -> SessionStatusEndpoint:
+        if self._session_status is None:
+            self._session_status = SessionStatusEndpoint(self.requests_session)
+        return self._session_status
+
+    @property
+    def session_templates(self) -> SessionTemplateEndpoint:
+        if self._session_templates is None:
+            self._session_templates = SessionTemplateEndpoint(self.requests_session)
+        return self._session_templates
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        super().__exit__(exc_type, exc_val, exc_tb)
+        self._components = None
+        self._sessions = None
+        self._session_status = None
+        self._session_templates = None

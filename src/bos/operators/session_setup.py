@@ -71,10 +71,10 @@ class SessionSetupOperator(BaseOperator):
         if not sessions:
             return
         LOGGER.info('Found %d sessions that require action', len(sessions))
-        inventory_cache = Inventory()
-        for data in sessions:
-            session = Session(data, inventory_cache, self.bos_client)
-            session.setup(self.max_batch_size)
+        with Inventory() as inventory_cache:
+            for data in sessions:
+                session = Session(data, inventory_cache, self.bos_client)
+                session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self):
         return self.bos_client.sessions.get_sessions(status='pending')

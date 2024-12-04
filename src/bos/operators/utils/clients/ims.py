@@ -24,10 +24,12 @@
 
 import logging
 import re
-from requests.exceptions import HTTPError
-from requests.sessions import Session as RequestsSession
+from typing import Optional
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+import requests
+from requests.exceptions import HTTPError
+
+from bos.common.utils import compact_response_text, exc_type_msg, retry_session, PROTOCOL
 from bos.operators.utils.clients.s3 import S3Url
 
 SERVICE_NAME = 'cray-ims'
@@ -60,64 +62,65 @@ class ImageNotFound(Exception):
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
+@retry_session()
+def get_image(image_id: str, session: Optional[requests.Session]=None) -> dict:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
     Other errors (like a failure to query IMS) will result in appropriate exceptions being raised.
     """
-    if not session:
-        session = requests_retry_session()
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     url=f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("GET %s", url)
-    try:
-        response = session.get(url)
-    except Exception as err:
-        LOGGER.error("Exception during GET request to %s: %s", url, exc_type_msg(err))
-        raise
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, compact_response_text(response.text))
-    try:
-        response.raise_for_status()
-    except HTTPError as err:
-        msg = f"Failed asking IMS to get image {image_id}: {exc_type_msg(err)}"
-        if response.status_code == 404:
-            # If it's not found, we just log it as a warning, because we may be
-            # okay with that -- that will be for the caller to decide
-            LOGGER.warning(msg)
-            raise ImageNotFound(image_id) from err
-        LOGGER.error(msg)
-        raise
-    try:
-        return response.json()
-    except Exception as err:
-        LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id,
-                     exc_type_msg(err))
-        raise
+    with session.get(url) as response:
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                     response.reason, compact_response_text(response.text))
+        try:
+            response.raise_for_status()
+        except HTTPError as err:
+            msg = f"Failed asking IMS to get image {image_id}: {exc_type_msg(err)}"
+            if response.status_code == 404:
+                # If it's not found, we just log it as a warning, because we may be
+                # okay with that -- that will be for the caller to decide
+                LOGGER.warning(msg)
+                raise ImageNotFound(image_id) from err
+            LOGGER.error(msg)
+            raise
+        try:
+            return response.json()
+        except Exception as err:
+            LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id,
+                         exc_type_msg(err))
+            raise
 
 
-def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -> None:
+@retry_session()
+def patch_image(image_id: str, data: dict, session: Optional[requests.Session]=None) -> None:
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if not data:
         LOGGER.warning("patch_image called without data; returning without action.")
         return
-    if not session:
-        session = requests_retry_session()
     url=f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("PATCH %s with body=%s", url, data)
-    response = session.patch(url, json=data)
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, compact_response_text(response.text))
-    try:
-        response.raise_for_status()
-    except HTTPError as err:
-        LOGGER.error("Failed asking IMS to patch image %s: %s", image_id, exc_type_msg(err))
-        if response.status_code == 404:
-            raise ImageNotFound(image_id) from err
-        raise
+    with session.patch(url, json=data) as response:
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                     response.reason, compact_response_text(response.text))
+        try:
+            response.raise_for_status()
+        except HTTPError as err:
+            LOGGER.error("Failed asking IMS to patch image %s: %s", image_id, exc_type_msg(err))
+            if response.status_code == 404:
+                raise ImageNotFound(image_id) from err
+            raise
 
 
+@retry_session()
 def tag_image(image_id: str, operation: str, key: str, value: str=None,
-              session: RequestsSession|None=None) -> None:
+              session: Optional[requests.Session]=None) -> None:
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if operation not in IMS_TAG_OPERATIONS:
         msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
         LOGGER.error(msg)
@@ -132,9 +135,6 @@ def tag_image(image_id: str, operation: str, key: str, value: str=None,
         LOGGER.debug("Patching image %s %sing key: %s value: %s", image_id, operation, key, value)
     else:
         LOGGER.debug("Patching image %s %sing key: %s", image_id, operation, key)
-
-    if not session:
-        session = requests_retry_session()
 
     data = {
         "metadata": {

@@ -23,12 +23,12 @@
 #
 import logging
 
-from .base import BaseBosEndpoint
+from .base import BaseBosNonTenantAwareEndpoint
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
 
 
-class ComponentEndpoint(BaseBosEndpoint):
+class ComponentEndpoint(BaseBosNonTenantAwareEndpoint):
     ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
 
     def get_component(self, component_id):

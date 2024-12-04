@@ -22,18 +22,19 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
-import json
+from typing import Optional
 
-from requests.exceptions import HTTPError
+import requests
 
-from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.common.utils import compact_response_text, exc_type_msg, retry_session, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
 ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/boot/v1"
 
 
-def set_bss(node_set, kernel_params, kernel, initrd, session=None):
+@retry_session()
+def set_bss(node_set, kernel_params, kernel, initrd, session: Optional[requests.Session]=None) -> str:
     '''
     Tell the Boot Script Service (BSS) which boot artifacts are associated
     with each node.
@@ -49,23 +50,23 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
         session (requests Session instance): An existing session to use
 
     Returns:
-        The response from BSS.
+        The 'bss-referral-token' value from the header of the response from BSS.
 
     Raises:
-        KeyError -- If the boot_artifacts does not find either the initrd
-                    or kernel keys, this error is raised.
-        ValueError -- if the kernel_parameters contains an 'initrd'
+        KeyError -- 'bss-referral-token' not found in header
         requests.exceptions.HTTPError -- An HTTP error encountered while
                                          communicating with the
                                          Hardware State Manager
+        Exception -- called with empty node_set
     '''
+    # @retry_session decorator guarantees session is not None
+    assert session is not None
     if not node_set:
         # Cannot simply return if no nodes are specified, as this function
         # is intended to return the response object from BSS.
         # Accordingly, an Exception is raised.
         raise Exception("set_bss called with empty node_set")
 
-    session = session or requests_retry_session()
     LOGGER.info("Params: %s", kernel_params)
     url = f"{ENDPOINT}/bootparameters"
 
@@ -76,12 +77,8 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
                "initrd": initrd}
 
     LOGGER.debug("PUT %s for hosts %s", url, node_set)
-    try:
-        resp = session.put(url, data=json.dumps(payload), verify=False)
+    with session.put(url, json=payload, verify=False) as resp:
         LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
                      resp.reason, compact_response_text(resp.text))
         resp.raise_for_status()
-        return resp
-    except HTTPError as err:
-        LOGGER.error(exc_type_msg(err))
-        raise
+        return resp.headers['bss-referral-token']

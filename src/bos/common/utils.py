@@ -23,15 +23,17 @@
 #
 
 # Standard imports
+from contextlib import nullcontext
 import datetime
-from functools import partial
+from functools import partial, wraps
 import re
 import traceback
-from typing import List
+from typing import Callable, Optional, Unpack
 
 # Third party imports
 from dateutil.parser import parse
-from requests_retry_session import requests_retry_session as base_requests_retry_session
+import requests
+import requests_retry_session as rrs
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
@@ -64,11 +66,55 @@ def duration_to_timedelta(timestamp: str):
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)
 
-requests_retry_session = partial(base_requests_retry_session,
-                                 retries=10, backoff_factor=0.5,
-                                 status_forcelist=(500, 502, 503, 504),
-                                 connect_timeout=3, read_timeout=10,
-                                 session=None, protocol=PROTOCOL)
+
+DEFAULT_RETRY_ADAPTER_ARGS = rrs.RequestsRetryAdapterArgs(
+                                    retries=10,
+                                    backoff_factor=0.5,
+                                    status_forcelist=(500, 502, 503, 504),
+                                    connect_timeout=10,
+                                    read_timeout=10)
+
+
+retry_session_manager = partial(rrs.retry_session_manager, protocol=PROTOCOL,
+                                **DEFAULT_RETRY_ADAPTER_ARGS)
+
+
+class RetrySessionManager(rrs.RetrySessionManager):
+    """
+    Just sets the default values we use for our requests sessions
+    """
+    def __init__(self, protocol: str = PROTOCOL,
+                 **adapter_kwargs: Unpack[rrs.RequestsRetryAdapterArgs]):
+        for key, value in DEFAULT_RETRY_ADAPTER_ARGS.items():
+            if key not in adapter_kwargs:
+                adapter_kwargs[key] = value
+        super().__init__(protocol=protocol, **adapter_kwargs)
+
+
+class retry_session:
+    """
+    Decorator to supply a session argument enclosed in a context manager, if
+    no session is provided
+    """
+
+    def __init__(self, protocol: str = PROTOCOL,
+                 **adapter_kwargs: Unpack[rrs.RequestsRetryAdapterArgs]):
+        self.protocol = protocol
+        self.adapter_kwargs = adapter_kwargs
+
+    def __call__(self, func: Callable) -> Callable:
+        @wraps(func)
+        def wrapper(*func_args, session: Optional[requests.Session]=None, **func_kwargs):
+            if session is None:
+                # A pylint bug generates a false positive error for this call
+                # https://github.com/pylint-dev/pylint/issues/2271
+                cm = retry_session_manager(protocol=self.protocol, **self.adapter_kwargs) # pylint: disable=redundant-keyword-arg
+            else:
+                cm = nullcontext(session)
+            with cm as session:
+                return func(*func_args, session=session, **func_kwargs)
+        return wrapper
+
 
 def compact_response_text(response_text: str) -> str:
     """
@@ -137,7 +183,7 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     # Check for the 'root=sbps-s3' string.
     return "root=sbps-s3" in kernel_parameters
 
-def components_by_id(components: List[dict]) -> dict:
+def components_by_id(components: list[dict]) -> dict:
     """
     Input:
     * components: a list containing individual components
@@ -150,7 +196,7 @@ def components_by_id(components: List[dict]) -> dict:
     """
     return { component["id"]: component for component in components }
 
-def reverse_components_by_id(components_by_id_map: dict) -> List[dict]:
+def reverse_components_by_id(components_by_id_map: dict) -> list[dict]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the
