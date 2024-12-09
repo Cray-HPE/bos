@@ -92,7 +92,7 @@ class RetrySessionManager(rrs.RetrySessionManager):
 
 
 def retry_session(
-        session=Optional[requests.Session]=None,
+        session: Optional[requests.Session]=None,
         protocol: Optional[str]=None,
         adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs]=None) -> Iterator[requests.Session]:
     if session is not None:
