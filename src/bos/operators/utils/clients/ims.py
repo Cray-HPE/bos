@@ -62,15 +62,22 @@ class ImageNotFound(Exception):
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-@retry_session()
 def get_image(image_id: str, session: Optional[requests.Session]=None) -> dict:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
     Other errors (like a failure to query IMS) will result in appropriate exceptions being raised.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        return _get_image(image_id, _session)
+
+
+def _get_image(image_id: str, session: requests.Session) -> dict:
+    """
+    Queries IMS to retrieve the specified image and return it.
+    If the image does not exist, raise ImageNotFound.
+    Other errors (like a failure to query IMS) will result in appropriate exceptions being raised.
+    """
     url=f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("GET %s", url)
     with session.get(url) as response:
@@ -95,10 +102,12 @@ def get_image(image_id: str, session: Optional[requests.Session]=None) -> dict:
             raise
 
 
-@retry_session()
 def patch_image(image_id: str, data: dict, session: Optional[requests.Session]=None) -> None:
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        _patch_image(image_id, data, _session)
+
+
+def _patch_image(image_id: str, data: dict, session: requests.Session) -> None:
     if not data:
         LOGGER.warning("patch_image called without data; returning without action.")
         return
@@ -116,9 +125,14 @@ def patch_image(image_id: str, data: dict, session: Optional[requests.Session]=N
             raise
 
 
-@retry_session()
 def tag_image(image_id: str, operation: str, key: str, value: str=None,
               session: Optional[requests.Session]=None) -> None:
+    with retry_session(session) as _session:
+        _tag_image(image_id, operation, key, value, _session)
+
+
+def _tag_image(image_id: str, operation: str, key: str, value: str,
+               session: requests.Session) -> None:
     # @retry_session decorator guarantees session is not None
     assert session is not None
     if operation not in IMS_TAG_OPERATIONS:

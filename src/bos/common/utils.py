@@ -28,7 +28,7 @@ import datetime
 from functools import partial, wraps
 import re
 import traceback
-from typing import Callable, Optional, Unpack
+from typing import Callable, Iterator, Optional, Unpack
 
 # Third party imports
 from dateutil.parser import parse
@@ -91,29 +91,26 @@ class RetrySessionManager(rrs.RetrySessionManager):
         super().__init__(protocol=protocol, **adapter_kwargs)
 
 
-class retry_session:
-    """
-    Decorator to supply a session argument enclosed in a context manager, if
-    no session is provided
-    """
+def retry_session(
+        session=Optional[requests.Session]=None,
+        protocol: Optional[str]=None,
+        adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs]=None) -> Iterator[requests.Session]:
+    if session is not None:
+        return nullcontext(session)
+    kwargs = adapter_kwargs or {}
+    if protocol is not None:
+        return retry_session_manager(protocol=protocol, **kwargs) # pylint: disable=redundant-keyword-arg
+    return retry_session_manager(**kwargs)
 
-    def __init__(self, protocol: str = PROTOCOL,
-                 **adapter_kwargs: Unpack[rrs.RequestsRetryAdapterArgs]):
-        self.protocol = protocol
-        self.adapter_kwargs = adapter_kwargs
 
-    def __call__(self, func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*func_args, session: Optional[requests.Session]=None, **func_kwargs):
-            if session is None:
-                # A pylint bug generates a false positive error for this call
-                # https://github.com/pylint-dev/pylint/issues/2271
-                cm = retry_session_manager(protocol=self.protocol, **self.adapter_kwargs) # pylint: disable=redundant-keyword-arg
-            else:
-                cm = nullcontext(session)
-            with cm as session:
-                return func(*func_args, session=session, **func_kwargs)
-        return wrapper
+def retry_session_get(
+        *get_args,
+        session=Optional[requests.Session]=None,
+        protocol: Optional[str]=None,
+        adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs]=None,
+        **get_kwargs) -> Iterator[requests.Response]:
+    with retry_session(session=session, protocol=protocol, adapter_kwargs=adapter_kwargs) as _session:
+        yield _session.get(*get_args, **get_kwargs)
 
 
 def compact_response_text(response_text: str) -> str:

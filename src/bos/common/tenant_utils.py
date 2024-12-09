@@ -30,7 +30,7 @@ from typing import Optional
 import connexion
 import requests
 from requests.exceptions import HTTPError
-from bos.common.utils import exc_type_msg, retry_session, PROTOCOL
+from bos.common.utils import exc_type_msg, retry_session_get, PROTOCOL
 
 LOGGER = logging.getLogger('bos.common.tenant_utils')
 
@@ -75,12 +75,9 @@ def get_tenant_aware_key(key, tenant):
     return f"{tenant_hash}-{key_hash}"
 
 
-@retry_session()
 def get_tenant_data(tenant, session: Optional[requests.Session]=None):
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
     url = f"{TENANT_ENDPOINT}/{tenant}"
-    with session.get(url) as response:
+    with retry_session_get(url, session=session) as response:
         try:
             response.raise_for_status()
         except HTTPError as e:

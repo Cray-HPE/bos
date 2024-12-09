@@ -33,7 +33,6 @@ SERVICE_NAME = 'cray-bss'
 ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/boot/v1"
 
 
-@retry_session()
 def set_bss(node_set, kernel_params, kernel, initrd, session: Optional[requests.Session]=None) -> str:
     '''
     Tell the Boot Script Service (BSS) which boot artifacts are associated
@@ -59,8 +58,6 @@ def set_bss(node_set, kernel_params, kernel, initrd, session: Optional[requests.
                                          Hardware State Manager
         Exception -- called with empty node_set
     '''
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
     if not node_set:
         # Cannot simply return if no nodes are specified, as this function
         # is intended to return the response object from BSS.
@@ -77,8 +74,9 @@ def set_bss(node_set, kernel_params, kernel, initrd, session: Optional[requests.
                "initrd": initrd}
 
     LOGGER.debug("PUT %s for hosts %s", url, node_set)
-    with session.put(url, json=payload, verify=False) as resp:
-        LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
-                     resp.reason, compact_response_text(resp.text))
-        resp.raise_for_status()
-        return resp.headers['bss-referral-token']
+    with retry_session(session) as _session:
+        with _session.put(url, json=payload, verify=False) as resp:
+            LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
+                         resp.reason, compact_response_text(resp.text))
+            resp.raise_for_status()
+            return resp.headers['bss-referral-token']

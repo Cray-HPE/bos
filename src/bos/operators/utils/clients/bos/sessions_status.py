@@ -28,7 +28,6 @@ from typing import Optional
 import requests
 
 from bos.common.tenant_utils import get_new_tenant_header
-from bos.common.utils import retry_session
 from .base import BASE_ENDPOINT, log_call_errors
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions_status')

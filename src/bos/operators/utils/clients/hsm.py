@@ -50,19 +50,26 @@ class HWStateManagerException(Exception):
     in the future should they arise.
     """
 
-@retry_session()
+
 def read_all_node_xnames(session: Optional[requests.Session]=None):
     """
     Queries HSM for the full set of xname components that
     have been discovered; return these as a set.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_manager(session) as _session:
+        return _read_all_node_xnames(_session)
+
+
+def _read_all_node_xnames(session: requests.Session):
+    """
+    Queries HSM for the full set of xname components that
+    have been discovered; return these as a set.
+    """
     endpoint = f'{BASE_ENDPOINT}/State/Components/'
     LOGGER.debug("GET %s", endpoint)
     try:
         with session.get(endpoint) as response:
-            json_body = _read_all_node_xnames(response)
+            json_body = _get_json_read_all_node_xnames(response)
     except ConnectionError as ce:
         LOGGER.error("Unable to contact HSM service: %s", exc_type_msg(ce))
         raise HWStateManagerException(ce) from ce
@@ -74,7 +81,7 @@ def read_all_node_xnames(session: Optional[requests.Session]=None):
         raise HWStateManagerException(ke) from ke
 
 
-def _read_all_node_xnames(response: requests.Response):
+def _get_json_read_all_node_xnames(response: requests.Response):
     LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
                  response.reason, compact_response_text(response.text))
     try:
@@ -89,7 +96,7 @@ def _read_all_node_xnames(response: requests.Response):
         raise HWStateManagerException(jde) from jde
     return json_body
 
-@retry_session()
+
 def get_components(node_list, enabled=None, session: Optional[requests.Session]=None) -> dict[str,list[dict]]:
     """
     Get information for all list components HSM
@@ -129,8 +136,14 @@ def get_components(node_list, enabled=None, session: Optional[requests.Session]=
     ]
     }
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_manager(session) as _session:
+        return _get_components(node_list, enabled, _session)
+
+
+def _get_components(node_list, enabled, session: requests.Session) -> dict[str,list[dict]]:
+    """
+    Get information for all list components HSM
+    """
     if not node_list:
         LOGGER.warning("hsm.get_components called with empty node list")
         return {'Components': []}

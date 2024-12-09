@@ -75,7 +75,7 @@ class PowerControlComponentsEmptyException(Exception):
     "no-op" value to the caller.
     """
 
-@retry_session()
+
 def _power_status(xname=None, power_state_filter=None, management_state_filter=None,
                   session: Optional[requests.Session]=None):
     """
@@ -91,8 +91,25 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     Per the spec, a power_status_all is returned. power_status_all is an array of power
     statuses.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        _power_status_helper(xname, power_state_filter, management_state_filter, _session)
+
+
+def _power_status_helper(xname, power_state_filter, management_state_filter,
+                         session: requests.Session):
+    """
+    This is the one to one implementation to the underlying power control get query.
+    For reasons of compatibility with existing calls into older power control APIs,
+    existing functions call into this function to preserve the existing functionality
+    already implemented.
+
+    Users may specify one of three filters, and a power_status_all (PCS defined schema)
+    is returned. Users may elect to use a previously generated session in order to query
+    the results. If not, the default requests retry session will be generated.
+
+    Per the spec, a power_status_all is returned. power_status_all is an array of power
+    statuses.
+    """
     params = {}
     if xname:
         params['xname'] = xname
@@ -122,7 +139,6 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
             raise PowerControlException(jde) from jde
 
 
-@retry_session()
 def status(nodes, session: Optional[requests.Session]=None, **kwargs):
     """
     For a given iterable of nodes, represented by xnames, query PCS for
@@ -145,8 +161,32 @@ def status(nodes, session: Optional[requests.Session]=None, **kwargs):
       PowerControlException: Any non-nominal response from PCS.
       JSONDecodeError: Error decoding the PCS response
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        return _status(nodes, _session, **kwargs)
+
+
+def _status(nodes, session: requests.Session, **kwargs):
+    """
+    For a given iterable of nodes, represented by xnames, query PCS for
+    the power status. Return a dictionary of nodes that have
+    been bucketed by status.
+
+    Args:
+      nodes (list): Nodes to get status for
+      session (session object): An already instantiated session
+      kwargs: Any additional args used for filtering when calling _power_status.
+        This can be useful if you want to limit your search to only available or unavailable nodes,
+        and allows a more future-proof way of handling arguments to PCS as a catch-all parameter.
+
+    Returns:
+      status_dict (dict): Keys are different states; values are a literal set of nodes.
+        Nodes with errors associated with them are saved with the error value as a
+        status key.
+
+    Raises:
+      PowerControlException: Any non-nominal response from PCS.
+      JSONDecodeError: Error decoding the PCS response
+    """
     status_bucket = defaultdict(set)
     if not nodes:
         LOGGER.warning("status called without nodes; returning without action.")
@@ -166,14 +206,21 @@ def status(nodes, session: Optional[requests.Session]=None, **kwargs):
         status_bucket[power_status].add(xname)
     return status_bucket
 
-@retry_session()
+
 def node_to_powerstate(nodes, session: Optional[requests.Session]=None, **kwargs):
     """
     For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for
     the node in question.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        return _node_to_powerstate(nodes, _session, **kwargs)
+
+
+def _node_to_powerstate(nodes, session: requests.Session, **kwargs):
+    """
+    For an iterable of nodes <nodes>; return a dictionary that maps to the current power state for
+    the node in question.
+    """
     power_states = {}
     if not nodes:
         LOGGER.warning("node_to_powerstate called without nodes; returning without action.")
@@ -184,9 +231,16 @@ def node_to_powerstate(nodes, session: Optional[requests.Session]=None, **kwargs
             power_states[node] = pstatus
     return power_states
 
-@retry_session()
+
 def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key=None,
                        session: Optional[requests.Session]=None):
+    with retry_session(session) as _session:
+        return _transition_create_helper(xnames, operation, task_deadline_minutes, deputy_key,
+                                         _session)
+
+
+def _transition_create_helper(xnames, operation, task_deadline_minutes, deputy_key,
+                              session: requests.Session):
     """
     Interact with PCS to create a request to transition one or more xnames. The transition
     operation indicates what the desired operation should be, which is a string value containing
@@ -216,8 +270,6 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
           unexpected payload response, or a failure to create a transition record.
         PowerControlComponentsEmptyException: No xnames specified
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
     if not xnames:
         raise PowerControlComponentsEmptyException(
                 f"_transition_create called with no xnames! (operation={operation})")
@@ -254,56 +306,84 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
         except json.decoder.JSONDecodeError as jde:
             raise PowerControlException(jde) from jde
 
-@retry_session()
+
 def power_on(nodes, session: Optional[requests.Session]=None, task_deadline_minutes=1, **kwargs):
     """
     Sends a request to PCS for transitioning nodes in question to a powered on state.
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        return _power_on(nodes, _session, task_deadline_minutes, **kwargs)
+
+
+def _power_on(nodes, session: requests.Session, task_deadline_minutes, **kwargs):
+    """
+    Sends a request to PCS for transitioning nodes in question to a powered on state.
+    Returns: A JSON parsed object response from PCS, which includes the created request ID.
+    """
     if not nodes:
         raise PowerControlComponentsEmptyException("power_on called with no nodes!")
     return _transition_create(xnames=nodes, operation='On',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 
-@retry_session()
+
 def power_off(nodes, session: Optional[requests.Session]=None, task_deadline_minutes=1, **kwargs):
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        return _power_off(nodes, _session, task_deadline_minutes, **kwargs)
+
+
+def _power_off(nodes, session: requests.Session, task_deadline_minutes, **kwargs):
+    """
+    Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
+    Returns: A JSON parsed object response from PCS, which includes the created request ID.
+    """
     if not nodes:
         raise PowerControlComponentsEmptyException("power_off called with no nodes!")
     return _transition_create(xnames=nodes, operation='Off',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 
-@retry_session()
+
 def soft_off(nodes, session: Optional[requests.Session]=None, task_deadline_minutes=1, **kwargs):
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        return _soft_off(nodes, _session, task_deadline_minutes, **kwargs)
+
+
+def _soft_off(nodes, session: requests.Session, task_deadline_minutes, **kwargs):
+    """
+    Sends a request to PCS for transitioning nodes in question to a powered off state (graceful).
+    Returns: A JSON parsed object response from PCS, which includes the created request ID.
+    """
     if not nodes:
         raise PowerControlComponentsEmptyException("soft_off called with no nodes!")
     return _transition_create(xnames=nodes, operation='Soft-Off',
                               task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 
-@retry_session()
+
 def force_off(nodes, session: Optional[requests.Session]=None, task_deadline_minutes=1, **kwargs):
     """
     Sends a request to PCS for transitioning nodes in question to a powered off state (forceful).
     Returns: A JSON parsed object response from PCS, which includes the created request ID.
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session) as _session:
+        return _force_off(nodes, _session, task_deadline_minutes, **kwargs)
+
+
+def _force_off(nodes, session: requests.Session, task_deadline_minutes, **kwargs):
+    """
+    Sends a request to PCS for transitioning nodes in question to a powered off state (forceful).
+    Returns: A JSON parsed object response from PCS, which includes the created request ID.
+    """
     if not nodes:
         raise PowerControlComponentsEmptyException("force_off called with no nodes!")
     return _transition_create(xnames=nodes, operation='Force-Off',

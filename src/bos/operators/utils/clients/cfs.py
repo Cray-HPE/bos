@@ -41,7 +41,6 @@ GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
 
 
-@retry_session(read_timeout=options.cfs_read_timeout)
 def get_components(session: Optional[requests.Session]=None, **params):
     """
     Makes GET request for CFS components.
@@ -49,8 +48,17 @@ def get_components(session: Optional[requests.Session]=None, **params):
     needed.
     Returns the list of CFS components
     """
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session, adapter_kwargs={ "read_timeout": options.cfs_read_timeout }) as _session:
+        return _get_components(_session, **params)
+
+
+def _get_components(session: requests.Session, **params):
+    """
+    Makes GET request for CFS components.
+    Performs additional requests to get additional pages of components, if
+    needed.
+    Returns the list of CFS components
+    """
     component_list = []
     while params is not None:
         LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, params)
@@ -71,10 +79,12 @@ def get_components(session: Optional[requests.Session]=None, **params):
     return component_list
 
 
-@retry_session(read_timeout=options.cfs_read_timeout)
 def patch_components(data, session: Optional[requests.Session]=None):
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session, adapter_kwargs={ "read_timeout": options.cfs_read_timeout }) as _session:
+        _patch_components(data, _session)
+
+
+def _patch_components(data, session: requests.Session):
     if not data:
         LOGGER.warning("patch_components called without data; returning without action.")
         return
@@ -89,10 +99,12 @@ def patch_components(data, session: Optional[requests.Session]=None):
             raise
 
 
-@retry_session(read_timeout=options.cfs_read_timeout)
 def get_components_from_id_list(id_list, session: Optional[requests.Session]=None):
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session, adapter_kwargs={ "read_timeout": options.cfs_read_timeout }) as _session:
+        return _get_components_from_id_list(id_list, _session)
+
+
+def _get_components_from_id_list(id_list, session: requests.Session):
     if not id_list:
         LOGGER.warning("get_components_from_id_list called without IDs; returning without action.")
         return []
@@ -108,10 +120,12 @@ def get_components_from_id_list(id_list, session: Optional[requests.Session]=Non
     return component_list
 
 
-@retry_session(read_timeout=options.cfs_read_timeout)
 def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False, session: Optional[requests.Session]=None):
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session, adapter_kwargs={ "read_timeout": options.cfs_read_timeout }) as _session:
+        return _patch_desired_config(node_ids, desired_config, enabled, tags, clear_state, _session)
+
+
+def _patch_desired_config(node_ids, desired_config, enabled, tags, clear_state, session: requests.Session):
     if not node_ids:
         LOGGER.warning("patch_desired_config called without IDs; returning without action.")
         return
@@ -131,10 +145,12 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
         node_ids = node_ids[PATCH_BATCH_SIZE:]
 
 
-@retry_session(read_timeout=options.cfs_read_timeout)
 def set_cfs(components, enabled, clear_state=False, session: Optional[requests.Session]=None):
-    # @retry_session decorator guarantees session is not None
-    assert session is not None
+    with retry_session(session, adapter_kwargs={ "read_timeout": options.cfs_read_timeout }) as _session:
+        _set_cfs(components, enabled, clear_state, _session)
+
+
+def _set_cfs(components, enabled, clear_state, session: requests.Session):
     if not components:
         LOGGER.warning("set_cfs called without components; returning without action.")
         return
