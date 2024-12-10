@@ -31,11 +31,11 @@ from urllib3.exceptions import MaxRetryError
 
 from bos.common.options import OptionsCache
 from bos.common.utils import exc_type_msg, retry_session_get
-from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
+from bos.operators.utils.clients.bos.base import BASE_BOS_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
 __name = __name__.lower().rsplit('.', maxsplit=1)[-1]
-ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
+ENDPOINT = f"{BASE_BOS_ENDPOINT}/{__name}"
 
 
 class Options(OptionsCache):

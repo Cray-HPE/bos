@@ -27,10 +27,9 @@ import logging
 from bos.common.values import Phase, Status, Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
-    DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
+    DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.pcs import node_to_powerstate
-from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 
 LOGGER = logging.getLogger('bos.operators.status')
 
@@ -47,7 +46,7 @@ class StatusOperator(BaseOperator):
         self.desired_boot_state_is_off = DesiredBootStateIsOff()._match
         self.boot_artifact_states_match = BootArtifactStatesMatch()._match
         self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
-        self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
+        self.desired_configuration_set_in_cfs = self.DesiredConfigurationSetInCFS()._match
         self.last_action_is_power_on = LastActionIs(Action.power_on)._match
         self.boot_wait_time_elapsed = TimeSinceLastAction(
                                         seconds=options.max_boot_wait_time)._match
@@ -104,15 +103,14 @@ class StatusOperator(BaseOperator):
         LOGGER.debug('Updated components: %s', updated_components)
         self.bos_client.components.update_components(updated_components)
 
-    @staticmethod
-    def _get_cfs_components():
+    def _get_cfs_components(self):
         """
         Gets all the components from CFS.
         We used to get only the components of interest, but that caused an HTTP request
         that was longer than uwsgi could handle when the number of nodes was very large.
         Requesting all components means none need to be specified in the request.
         """
-        cfs_data = get_cfs_components()
+        cfs_data = self.cfs_client.components.get_components()
         cfs_states = {}
         for component in cfs_data:
             cfs_states[component['id']] = component

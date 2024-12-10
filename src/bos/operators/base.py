@@ -27,6 +27,7 @@ BOS Operator - A Python operator for the Boot Orchestration Service.
 """
 
 from abc import ABC, abstractmethod
+from contextlib import ExitStack
 import itertools
 import logging
 import threading
@@ -36,10 +37,11 @@ from typing import Generator, List, NoReturn, Type
 
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
-from bos.operators.filters import BOSQuery
+from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.bos import BOSClient
+from bos.operators.utils.clients.cfs import CFSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 LOGGER = logging.getLogger('bos.operators.base')
@@ -76,6 +78,7 @@ class BaseOperator(ABC):
 
     def __init__(self) -> NoReturn:
         self.bos_client = None
+        self.cfs_client = None
         self.__max_batch_size = 0
 
     @property
@@ -96,6 +99,14 @@ class BaseOperator(ABC):
             kwargs['bos_client'] = self.bos_client
         return BOSQuery(**kwargs)
 
+    def DesiredConfigurationSetInCFS(self, **kwargs) -> DesiredConfigurationSetInCFS:
+        """
+        Shortcut to get a DesiredConfigurationSetInCFS filter with the cfs_client for this operator
+        """
+        if 'cfs_client' not in kwargs:
+            kwargs['cfs_client'] = self.cfs_client
+        return DesiredConfigurationSetInCFS(**kwargs)
+
     def run(self) -> NoReturn:
         """
         The core method of the operator that periodically detects and acts on components.
@@ -107,13 +118,15 @@ class BaseOperator(ABC):
             try:
                 options.update()
                 _update_log_level()
-                with BOSClient() as bos_client:
-                    self.bos_client = bos_client
+                with ExitStack() as stack:
+                    self.bos_client = stack.enter_context(BOSClient())
+                    self.cfs_client = stack.enter_context(CFSClient())
                     self._run()
             except Exception as e:
                 LOGGER.exception('Unhandled exception detected: %s', e)
             finally:
                 self.bos_client = None
+                self.cfs_client = None
 
             try:
                 sleep_time = getattr(options, self.frequency_option) - (time.time() - start_time)

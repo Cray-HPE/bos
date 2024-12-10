@@ -25,9 +25,8 @@
 import logging
 
 from bos.common.values import Status
-from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import DesiredConfigurationSetInCFS, NOT
+from bos.operators.filters import NOT
 
 LOGGER = logging.getLogger('bos.operators.configuration')
 
@@ -51,12 +50,12 @@ class ConfigurationOperator(BaseOperator):
     def filters(self):
         return [
             self.BOSQuery(enabled=True, status=Status.configuring),
-            NOT(DesiredConfigurationSetInCFS())
+            NOT(self.DesiredConfigurationSetInCFS())
         ]
 
     def _act(self, components):
         if components:
-            set_cfs(components, enabled=True)
+            self.cfs_client.components.set_cfs(components, enabled=True)
         return components
 
 

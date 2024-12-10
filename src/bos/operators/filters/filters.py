@@ -31,8 +31,7 @@ from typing import List, Type
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
-from bos.operators.utils.clients.cfs import get_components_from_id_list as \
-                                            get_cfs_components_from_id_list
+from bos.operators.utils.clients.cfs import CFSClient
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
 LOGGER = logging.getLogger('bos.operators.filters.filters')
@@ -199,13 +198,14 @@ class BootArtifactStatesMatch(LocalFilter):
 class DesiredConfigurationSetInCFS(LocalFilter):
     """ Returns when desired configuration is set in CFS """
 
-    def __init__(self):
-        self.cfs_components_dict = {}
+    def __init__(self, cfs_client: CFSClient):
         super().__init__()
+        self.cfs_components_dict = {}
+        self.cfs_client = cfs_client
 
     def _filter(self, components: List[dict]) -> List[dict]:
         component_ids = [component['id'] for component in components]
-        cfs_components = get_cfs_components_from_id_list(id_list=component_ids)
+        cfs_components = self.cfs_client.components.get_components_from_id_list(id_list=component_ids)
         self.cfs_components_dict = {component['id']: component for component in cfs_components}
         matches = LocalFilter._filter(self, components)
         # Clear this, so there are no lingering side-effects of running this method.

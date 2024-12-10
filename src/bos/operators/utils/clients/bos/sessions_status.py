@@ -28,7 +28,7 @@ from typing import Optional
 import requests
 
 from bos.common.tenant_utils import get_new_tenant_header
-from .base import BASE_ENDPOINT, log_call_errors
+from .base import BASE_BOS_ENDPOINT, log_call_errors
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions_status')
 
@@ -37,7 +37,7 @@ class SessionStatusEndpoint:
     ENDPOINT = 'sessions'
 
     def __init__(self, session: requests.Session):
-        self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
+        self.base_url = f"{BASE_BOS_ENDPOINT}/{self.ENDPOINT}"
         self.session = session
 
     @log_call_errors
