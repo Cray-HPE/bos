@@ -105,7 +105,7 @@ def retry_session(
 
 def retry_session_get(
         *get_args,
-        session=Optional[requests.Session]=None,
+        session: Optional[requests.Session]=None,
         protocol: Optional[str]=None,
         adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs]=None,
         **get_kwargs) -> Iterator[requests.Response]:
