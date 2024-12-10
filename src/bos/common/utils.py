@@ -110,7 +110,7 @@ def retry_session_get(
         adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs]=None,
         **get_kwargs) -> Iterator[requests.Response]:
     with retry_session(session=session, protocol=protocol, adapter_kwargs=adapter_kwargs) as _session:
-        yield _session.get(*get_args, **get_kwargs)
+        return _session.get(*get_args, **get_kwargs)
 
 
 def compact_response_text(response_text: str) -> str:
