@@ -66,7 +66,7 @@ class BaseEndpoint(ABC):
 
     def __init__(self, session: requests.Session):
         super().__init__()
-        self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
+        self.base_url = f"{self.BASE_ENDPOINT}/{self.ENDPOINT}"
         self.session = session
 
 

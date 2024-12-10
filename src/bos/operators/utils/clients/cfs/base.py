@@ -68,5 +68,5 @@ class BasePagedCfsEndpoint(BaseCfsEndpoint, ABC):
             LOGGER.debug("Query returned %d %ss", len(new_items), self.ITEM_FIELD_NAME)
             item_list.extend(new_items)
             kwargs = response_json["next"]
-        LOGGER.debug("Returning %d %ss from CFS", len(component_list), self.ITEM_FIELD_NAME)
+        LOGGER.debug("Returning %d %ss from CFS", len(item_list), self.ITEM_FIELD_NAME)
         return item_list

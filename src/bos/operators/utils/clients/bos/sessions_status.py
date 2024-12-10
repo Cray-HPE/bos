@@ -27,8 +27,9 @@ from typing import Optional
 
 import requests
 
+from bos.common.clients.endpoints import log_call_errors
 from bos.common.tenant_utils import get_new_tenant_header
-from .base import BASE_BOS_ENDPOINT, log_call_errors
+from .base import BASE_BOS_ENDPOINT
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions_status')
 
