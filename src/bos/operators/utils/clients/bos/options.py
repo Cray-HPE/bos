@@ -46,7 +46,6 @@ class Options(OptionsCache):
     result in network calls.
     """
     
-    @retry_session()
     def _get_options(self, session: Optional[requests.Session]=None) -> dict:
         """Retrieves the current options from the BOS api"""
         LOGGER.debug("GET %s", ENDPOINT)

@@ -92,7 +92,7 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     statuses.
     """
     with retry_session(session) as _session:
-        _power_status_helper(xname, power_state_filter, management_state_filter, _session)
+        return _power_status_helper(xname, power_state_filter, management_state_filter, _session)
 
 
 def _power_status_helper(xname, power_state_filter, management_state_filter,

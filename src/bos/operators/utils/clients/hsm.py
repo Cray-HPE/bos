@@ -56,7 +56,7 @@ def read_all_node_xnames(session: Optional[requests.Session]=None):
     Queries HSM for the full set of xname components that
     have been discovered; return these as a set.
     """
-    with retry_manager(session) as _session:
+    with retry_session(session) as _session:
         return _read_all_node_xnames(_session)
 
 
@@ -136,7 +136,7 @@ def get_components(node_list, enabled=None, session: Optional[requests.Session]=
     ]
     }
     """
-    with retry_manager(session) as _session:
+    with retry_session(session) as _session:
         return _get_components(node_list, enabled, _session)
 
 
