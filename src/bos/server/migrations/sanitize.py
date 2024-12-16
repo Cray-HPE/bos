@@ -36,14 +36,13 @@ from .validate import ValidationError, check_component, check_session, check_key
                       get_required_field, get_validate_tenant, is_valid_available_template_name, \
                       validate_bootset_path, validate_against_schema
 
-
-LOGGER = logging.getLogger('bos.server.migration')
+LOGGER = logging.getLogger(__name__)
 
 ALPHANUMERIC = string.ascii_letters + string.digits
 TEMPLATE_NAME_CHARACTERS = ALPHANUMERIC + '-._'
 
 
-def sanitize_component(key: str|bytes, data: dict) -> None:
+def sanitize_component(key: str | bytes, data: dict) -> None:
     """
     If the id field is missing or invalid, delete the component
     """
@@ -53,7 +52,7 @@ def sanitize_component(key: str|bytes, data: dict) -> None:
         delete_component(key, str(exc))
 
 
-def sanitize_session(key: str|bytes, data: dict) -> None:
+def sanitize_session(key: str | bytes, data: dict) -> None:
     """
     If the name field is missing, or if the name or tenant fields are invalid, delete the session.
     """
@@ -63,7 +62,7 @@ def sanitize_session(key: str|bytes, data: dict) -> None:
         delete_session(key, str(exc))
 
 
-def sanitize_session_template(key: str|bytes, data: dict) -> None:
+def sanitize_session_template(key: str | bytes, data: dict) -> None:
     """
     Session templates are the things most likely to run afoul of the API spec.
     This attempts to automatically fix them if at all possible, only deleting them
@@ -75,7 +74,7 @@ def sanitize_session_template(key: str|bytes, data: dict) -> None:
         delete_template(key, str(exc))
 
 
-def _sanitize_session_template(key: str|bytes, data: dict) -> None:
+def _sanitize_session_template(key: str | bytes, data: dict) -> None:
     """
     Validates and tries to sanitize the session template.
     If there are correctable errors, the function will update the database
@@ -97,8 +96,10 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
 
     # Make a copy of the session template. If we identify problems, we will see if we can correct
     # them in the copy. While copying, remove any fields that are no longer in the spec
-    new_data = { k: copy.deepcopy(v) for k,v in data.items()
-                 if k in validator.session_template_fields }
+    new_data = {
+        k: copy.deepcopy(v)
+        for k, v in data.items() if k in validator.session_template_fields
+    }
 
     # Check and sanitize each boot set
     for bsname, bsdata in new_data["boot_sets"].items():
@@ -120,7 +121,8 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
             return
 
         # This means the data changed, so we need to update the entry under the existing key
-        LOGGER.warning("Updating session template to comply with the BOS API schema")
+        LOGGER.warning(
+            "Updating session template to comply with the BOS API schema")
         LOGGER.warning("Old template data: %s", data)
         LOGGER.warning("New template data: %s", new_data)
         TEMP_DB.put(key, new_data)
@@ -131,7 +133,8 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
     if data == new_data:
         LOGGER.warning(base_msg)
     else:
-        LOGGER.warning("%s and updating it to comply with the BOS API schema", base_msg)
+        LOGGER.warning("%s and updating it to comply with the BOS API schema",
+                       base_msg)
 
     delete_template(key, data)
 
@@ -146,7 +149,9 @@ def _sanitize_session_template(key: str|bytes, data: dict) -> None:
     try:
         validate_against_schema(new_data, "V2SessionTemplate")
     except ValidationError:
-        LOGGER.error("New session template does not follow schema -- it will not be saved")
+        LOGGER.error(
+            "New session template does not follow schema -- it will not be saved"
+        )
         return
 
     TEMP_DB.put(new_key, new_data)
@@ -170,7 +175,8 @@ def sanitize_description_field(data: dict) -> None:
 
     # Log a warning and delete it if it is not a string
     if not isinstance(description, str):
-        LOGGER.warning("Removing non-string 'description' field from session template")
+        LOGGER.warning(
+            "Removing non-string 'description' field from session template")
         del data["description"]
         return
 
@@ -179,7 +185,7 @@ def sanitize_description_field(data: dict) -> None:
         data["description"] = description[:1023]
 
 
-def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
+def sanitize_bootset(bsname: str, bsdata: dict) -> str | None:
     """
     Corrects in-place bsdata.
     Returns an error message if this proves impossible.
@@ -201,7 +207,9 @@ def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
         bsdata["arch"] = DEFAULT_ARCH
 
     # Remove any fields that are no longer in the spec
-    bad_fields = [ field for field in bsdata if field not in validator.boot_set_fields ]
+    bad_fields = [
+        field for field in bsdata if field not in validator.boot_set_fields
+    ]
     for field in bad_fields:
         del bsdata[field]
 
@@ -216,7 +224,7 @@ def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
     # Use list() since we will be modifying the dict while iterating over its contents
     for field, value in list(bsdata.items()):
         # We have already dealt with 'cfs', 'path', and 'type', so we can skip those
-        if field in { 'cfs', 'path', 'type' }:
+        if field in {'cfs', 'path', 'type'}:
             continue
 
         # Delete None-valued fields that are not nullable (No boot set fields are nullable)
@@ -243,7 +251,8 @@ def sanitize_bootset(bsname: str, bsdata: dict) -> str|None:
         return
 
     raise ValidationError(
-        f"Boot set '{bsname}' has no non-empty node fields ({HARDWARE_SPECIFIER_FIELDS})")
+        f"Boot set '{bsname}' has no non-empty node fields ({HARDWARE_SPECIFIER_FIELDS})"
+    )
 
 
 def sanitize_cfs_field(data: dict) -> None:
@@ -272,7 +281,7 @@ def sanitize_cfs_field(data: dict) -> None:
         raise ValidationError("'cfs' field value has invalid type")
 
     # Remove any fields that are no longer in the spec
-    bad_fields = [ field for field in cfs if field not in validator.cfs_fields ]
+    bad_fields = [field for field in cfs if field not in validator.cfs_fields]
     for field in bad_fields:
         del cfs[field]
 
@@ -287,7 +296,7 @@ def sanitize_cfs_field(data: dict) -> None:
         del data["cfs"]
 
 
-def get_unused_legal_template_name(name: str, tenant: str|None) -> str:
+def get_unused_legal_template_name(name: str, tenant: str | None) -> str:
     """
     If the current name is legal, return it unchanged.
     Otherwise, try to find a name which is not in use and which is legal per the spec.
@@ -302,12 +311,13 @@ def get_unused_legal_template_name(name: str, tenant: str|None) -> str:
         if not name or not any(c in TEMPLATE_NAME_CHARACTERS for c in name):
             raise
 
-    LOGGER.warning("Session template name '%s' (tenant: %s) does not follow schema. "
-                   "Will attempt to rename to a legal name", name, tenant)
+    LOGGER.warning(
+        "Session template name '%s' (tenant: %s) does not follow schema. "
+        "Will attempt to rename to a legal name", name, tenant)
 
     # Strip out illegal characters, but replace spaces with underscores and prepend 'auto_renamed_'
-    new_name_base = 'auto_renamed_' + ''.join([ c for c in name.replace(' ','_')
-                                                if c in TEMPLATE_NAME_CHARACTERS ])
+    new_name_base = 'auto_renamed_' + ''.join(
+        [c for c in name.replace(' ', '_') if c in TEMPLATE_NAME_CHARACTERS])
 
     # Trim to 127 characters, if it exceeds that
     new_name = new_name_base[:127]
@@ -321,13 +331,15 @@ def get_unused_legal_template_name(name: str, tenant: str|None) -> str:
     # Trying all 2 character alphanumeric suffixes gives 1953 options, which is enough of an effort
     # for us to make here.
     for suffix_length in range(1, 3):
-        for suffix in itertools.combinations_with_replacement(ALPHANUMERIC, suffix_length):
+        for suffix in itertools.combinations_with_replacement(
+                ALPHANUMERIC, suffix_length):
             new_name = f'{new_name_base[:126-suffix_length]}_{suffix}'
             if is_valid_available_template_name(new_name, tenant):
                 return new_name
 
-    LOGGER.error("Unable to find unused valid new name for session template '%s' (tenant: %s)",
-                 name, tenant)
+    LOGGER.error(
+        "Unable to find unused valid new name for session template '%s' (tenant: %s)",
+        name, tenant)
     raise ValidationError("Name does not follow schema")
 
 
@@ -337,10 +349,9 @@ def log_rename_in_template_description(old_name: str, data: dict) -> None:
     template. Failing that, if possible, at least record that it was renamed.
     """
     rename_messages = [
-        f"Former name: {old_name}",
-        "Renamed during BOS upgrade",
-        "Auto-renamed",
-        "Renamed" ]
+        f"Former name: {old_name}", "Renamed during BOS upgrade",
+        "Auto-renamed", "Renamed"
+    ]
 
     current_description = data.get("description", "")
     for msg in rename_messages:

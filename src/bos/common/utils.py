@@ -23,18 +23,21 @@
 #
 
 # Standard imports
+from contextlib import nullcontext
 import datetime
 from functools import partial
 import re
 import traceback
-from typing import List
+from typing import Iterator, Optional, Unpack
 
 # Third party imports
 from dateutil.parser import parse
-from requests_retry_session import requests_retry_session as base_requests_retry_session
+import requests
+import requests_retry_session as rrs
 
 PROTOCOL = 'http'
-TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M|re.S)
+TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
+
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.
 def get_current_time() -> datetime.datetime:
@@ -54,21 +57,69 @@ def duration_to_timedelta(timestamp: str):
     Converts a <digit><duration string> to a timedelta object.
     """
     # Calculate the corresponding multiplier for each time value
-    seconds_table = {'s': 1,
-                     'm': 60,
-                     'h': 60*60,
-                     'd': 60*60*24,
-                     'w': 60*60*24*7}
+    seconds_table = {
+        's': 1,
+        'm': 60,
+        'h': 60 * 60,
+        'd': 60 * 60 * 24,
+        'w': 60 * 60 * 24 * 7
+    }
     timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)
 
-requests_retry_session = partial(base_requests_retry_session,
-                                 retries=10, backoff_factor=0.5,
-                                 status_forcelist=(500, 502, 503, 504),
-                                 connect_timeout=3, read_timeout=10,
-                                 session=None, protocol=PROTOCOL)
+
+DEFAULT_RETRY_ADAPTER_ARGS = rrs.RequestsRetryAdapterArgs(
+    retries=10,
+    backoff_factor=0.5,
+    status_forcelist=(500, 502, 503, 504),
+    connect_timeout=3,
+    read_timeout=10)
+
+retry_session_manager = partial(rrs.retry_session_manager,
+                                protocol=PROTOCOL,
+                                **DEFAULT_RETRY_ADAPTER_ARGS)
+
+
+class RetrySessionManager(rrs.RetrySessionManager):
+    """
+    Just sets the default values we use for our requests sessions
+    """
+
+    def __init__(self,
+                 protocol: str = PROTOCOL,
+                 **adapter_kwargs: Unpack[rrs.RequestsRetryAdapterArgs]):
+        for key, value in DEFAULT_RETRY_ADAPTER_ARGS.items():
+            if key not in adapter_kwargs:
+                adapter_kwargs[key] = value
+        super().__init__(protocol=protocol, **adapter_kwargs)
+
+
+def retry_session(
+    session: Optional[requests.Session] = None,
+    protocol: Optional[str] = None,
+    adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs] = None
+) -> Iterator[requests.Session]:
+    if session is not None:
+        return nullcontext(session)
+    kwargs = adapter_kwargs or {}
+    if protocol is not None:
+        return retry_session_manager(protocol=protocol, **kwargs)  # pylint: disable=redundant-keyword-arg
+    return retry_session_manager(**kwargs)
+
+
+def retry_session_get(*get_args,
+                      session: Optional[requests.Session] = None,
+                      protocol: Optional[str] = None,
+                      adapter_kwargs: Optional[
+                          rrs.RequestsRetryAdapterArgs] = None,
+                      **get_kwargs) -> Iterator[requests.Response]:
+    with retry_session(session=session,
+                       protocol=protocol,
+                       adapter_kwargs=adapter_kwargs) as _session:
+        return _session.get(*get_args, **get_kwargs)
+
 
 def compact_response_text(response_text: str) -> str:
     """
@@ -77,7 +128,7 @@ def compact_response_text(response_text: str) -> str:
     trailing whitespace from each line, and then returns it.
     """
     if response_text:
-        return ' '.join([ line.strip() for line in response_text.split('\n') ])
+        return ' '.join([line.strip() for line in response_text.split('\n')])
     return str(response_text)
 
 
@@ -88,6 +139,7 @@ def exc_type_msg(exc: Exception) -> str:
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
 
+
 def get_image_id(component: str) -> str:
     """
     Extract the IMS image ID from the path to the kernel
@@ -95,7 +147,8 @@ def get_image_id(component: str) -> str:
     s3://boot-images/fbcc5b02-b6a4-46a8-9402-2b7138adc327/kernel
     """
     # Get kernel's path
-    boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
+    boot_artifacts = component.get('desired_state',
+                                   {}).get('boot_artifacts', {})
     kernel = boot_artifacts.get('kernel')
     image_id = get_image_id_from_kernel(kernel)
     return image_id
@@ -107,6 +160,7 @@ def get_image_id_from_kernel(kernel_path: str) -> str:
     match = pattern.match(kernel_path)
     image_id = match.group(1)
     return image_id
+
 
 def using_sbps(component: str) -> bool:
     """
@@ -120,9 +174,11 @@ def using_sbps(component: str) -> bool:
     Return True if it is and False if it is not.
     """
     # Get the kernel boot parameters
-    boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
+    boot_artifacts = component.get('desired_state',
+                                   {}).get('boot_artifacts', {})
     kernel_parameters = boot_artifacts.get('kernel_parameters')
     return using_sbps_check_kernel_parameters(kernel_parameters)
+
 
 def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     """
@@ -137,7 +193,8 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     # Check for the 'root=sbps-s3' string.
     return "root=sbps-s3" in kernel_parameters
 
-def components_by_id(components: List[dict]) -> dict:
+
+def components_by_id(components: list[dict]) -> dict:
     """
     Input:
     * components: a list containing individual components
@@ -148,9 +205,10 @@ def components_by_id(components: List[dict]) -> dict:
     Purpose: It makes searching more efficient because you can
     index by component name.
     """
-    return { component["id"]: component for component in components }
+    return {component["id"]: component for component in components}
 
-def reverse_components_by_id(components_by_id_map: dict) -> List[dict]:
+
+def reverse_components_by_id(components_by_id_map: dict) -> list[dict]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the

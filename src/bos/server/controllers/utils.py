@@ -28,7 +28,7 @@ from urllib.parse import urlparse, urlunparse
 import connexion
 import flask
 
-LOGGER = logging.getLogger('bos.server.controllers.utils')
+LOGGER = logging.getLogger(__name__)
 
 
 def url_for(endpoint, **values):
@@ -64,10 +64,10 @@ def url_for(endpoint, **values):
 
     # Request was proxied, so update the path with the proxy path.
     parts = urlparse(url)
-    parts = (
-        parts.scheme, parts.netloc,
-        '/'.join([proxy_path.rstrip('/'), parts.path.lstrip('/')]),
-        parts.params, parts.query, parts.fragment)
+    parts = (parts.scheme, parts.netloc,
+             '/'.join([proxy_path.rstrip('/'),
+                       parts.path.lstrip('/')
+                       ]), parts.params, parts.query, parts.fragment)
     return urlunparse(parts)
 
     # TODO(CASMCMS-1869): there might be a better way to do this by overriding

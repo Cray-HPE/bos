@@ -26,7 +26,7 @@ import re
 
 import connexion
 
-LOGGER = logging.getLogger('bos.server.utils')
+LOGGER = logging.getLogger(__name__)
 
 
 class ParsingException(Exception):
@@ -44,10 +44,11 @@ def canonize_xname(xname):
     :return: canonized xname
     :rtype: string
     """
-    return re.sub(r'x0*(\d+)c0*(\d+)s0*(\d+)b0*(\d+)n0*(\d+)', r'x\1c\2s\3b\4n\5', xname.lower())
+    return re.sub(r'x0*(\d+)c0*(\d+)s0*(\d+)b0*(\d+)n0*(\d+)',
+                  r'x\1c\2s\3b\4n\5', xname.lower())
 
 
-def get_request_json(log_data = True):
+def get_request_json(log_data=True):
     """
     Used by endpoints which are expecting a JSON payload in the request body.
     Returns the JSON payload.

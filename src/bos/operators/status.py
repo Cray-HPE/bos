@@ -27,12 +27,10 @@ import logging
 from bos.common.values import Phase, Status, Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
-    DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
-from bos.operators.utils.clients.bos.options import options
-from bos.operators.utils.clients.pcs import node_to_powerstate
-from bos.operators.utils.clients.cfs import get_components as get_cfs_components
+    DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
+from bos.common.clients.bos.options import options
 
-LOGGER = logging.getLogger('bos.operators.status')
+LOGGER = logging.getLogger(__name__)
 
 
 class StatusOperator(BaseOperator):
@@ -46,13 +44,16 @@ class StatusOperator(BaseOperator):
         # Reuse filter code
         self.desired_boot_state_is_off = DesiredBootStateIsOff()._match
         self.boot_artifact_states_match = BootArtifactStatesMatch()._match
-        self.desired_configuration_is_none = DesiredConfigurationIsNone()._match
-        self.desired_configuration_set_in_cfs = DesiredConfigurationSetInCFS()._match
+        self.desired_configuration_is_none = DesiredConfigurationIsNone(
+        )._match
         self.last_action_is_power_on = LastActionIs(Action.power_on)._match
         self.boot_wait_time_elapsed = TimeSinceLastAction(
-                                        seconds=options.max_boot_wait_time)._match
+            seconds=options.max_boot_wait_time)._match
         self.power_on_wait_time_elapsed = TimeSinceLastAction(
-                                            seconds=options.max_power_on_wait_time)._match
+            seconds=options.max_power_on_wait_time)._match
+
+    def desired_configuration_set_in_cfs(self, *args, **kwargs):
+        return self.DesiredConfigurationSetInCFS()._match(*args, **kwargs)
 
     @property
     def name(self):
@@ -70,11 +71,12 @@ class StatusOperator(BaseOperator):
 
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
-        components = self.bos_client.components.get_components(enabled=True)
+        components = self.client.bos.components.get_components(enabled=True)
         if not components:
             LOGGER.debug('No enabled components found')
             return
-        LOGGER.debug('Found %d components that require action', len(components))
+        LOGGER.debug('Found %d components that require action',
+                     len(components))
         for chunk in self._chunk_components(components):
             self._run_on_chunk(chunk)
 
@@ -84,35 +86,37 @@ class StatusOperator(BaseOperator):
         """
         LOGGER.debug("Processing %d components", len(components))
         component_ids = [component['id'] for component in components]
-        power_states = node_to_powerstate(component_ids)
+        power_states = self.client.pcs.power_status.node_to_powerstate(
+            component_ids)
         cfs_states = self._get_cfs_components()
         updated_components = []
         # Recreate these filters to pull in the latest options values
         self.boot_wait_time_elapsed = TimeSinceLastAction(
-                                        seconds=options.max_boot_wait_time)._match
+            seconds=options.max_boot_wait_time)._match
         self.power_on_wait_time_elapsed = TimeSinceLastAction(
-                                            seconds=options.max_power_on_wait_time)._match
+            seconds=options.max_power_on_wait_time)._match
         for component in components:
             updated_component = self._check_status(
-                component, power_states.get(component['id']), cfs_states.get(component['id']))
+                component, power_states.get(component['id']),
+                cfs_states.get(component['id']))
             if updated_component:
                 updated_components.append(updated_component)
         if not updated_components:
             LOGGER.debug('No components require status updates')
             return
-        LOGGER.info('Found %d components that require status updates', len(updated_components))
+        LOGGER.info('Found %d components that require status updates',
+                    len(updated_components))
         LOGGER.debug('Updated components: %s', updated_components)
-        self.bos_client.components.update_components(updated_components)
+        self.client.bos.components.update_components(updated_components)
 
-    @staticmethod
-    def _get_cfs_components():
+    def _get_cfs_components(self):
         """
         Gets all the components from CFS.
         We used to get only the components of interest, but that caused an HTTP request
         that was longer than uwsgi could handle when the number of nodes was very large.
         Requesting all components means none need to be specified in the request.
         """
-        cfs_data = get_cfs_components()
+        cfs_data = self.client.cfs.components.get_components()
         cfs_states = {}
         for component in cfs_data:
             cfs_states[component['id']] = component
@@ -125,9 +129,8 @@ class StatusOperator(BaseOperator):
         """
         error = None
         if power_state and cfs_component:
-            phase, override, disable, error, action_failed = self._calculate_status(component,
-                                                                                    power_state,
-                                                                                    cfs_component)
+            phase, override, disable, error, action_failed = self._calculate_status(
+                component, power_state, cfs_component)
         else:
             # If the component cannot be found in pcs or cfs
             phase = Phase.none
@@ -170,8 +173,8 @@ class StatusOperator(BaseOperator):
         if error and error != component.get('error', ''):
             updated_component['error'] = error
             update = True
-        if action_failed and action_failed != component.get('last_action', {}).get('failed',
-                                                                                   False):
+        if action_failed and action_failed != component.get(
+                'last_action', {}).get('failed', False):
             updated_component['last_action'] = {}
             updated_component['last_action']['failed'] = True
             update = True
@@ -204,15 +207,17 @@ class StatusOperator(BaseOperator):
                 phase = Phase.none
                 disable = True  # Successful state - desired and actual state are off
             else:
-                if self.last_action_is_power_on(component) and self.power_on_wait_time_elapsed(
-                                                                component):
+                if self.last_action_is_power_on(
+                        component) and self.power_on_wait_time_elapsed(
+                            component):
                     action_failed = True
                 phase = Phase.powering_on
         else:
             if self.desired_boot_state_is_off(component):
                 phase = Phase.powering_off
             elif self.boot_artifact_states_match(component):
-                if not self.desired_configuration_set_in_cfs(component, cfs_component):
+                if not self.desired_configuration_set_in_cfs(
+                        component, cfs_component):
                     phase = Phase.configuring
                 elif self.desired_configuration_is_none(component):
                     # Successful state - booted with the correct artifacts,
@@ -220,7 +225,8 @@ class StatusOperator(BaseOperator):
                     phase = Phase.none
                     disable = True
                 else:
-                    cfs_status = cfs_component.get('configuration_status', '').lower()
+                    cfs_status = cfs_component.get('configuration_status',
+                                                   '').lower()
                     if cfs_status == 'configured':
                         # Successful state - booted with the correct artifacts and configured
                         phase = Phase.none
@@ -238,11 +244,13 @@ class StatusOperator(BaseOperator):
                         phase = Phase.configuring
                         disable = True
                         override = Status.failed
-                        error = ('cfs is not reporting a valid configuration status for '
-                                 f'this component: {cfs_status}')
+                        error = (
+                            'cfs is not reporting a valid configuration status for '
+                            f'this component: {cfs_status}')
             else:
-                if self.last_action_is_power_on(component) and not self.boot_wait_time_elapsed(
-                                                                            component):
+                if self.last_action_is_power_on(
+                        component
+                ) and not self.boot_wait_time_elapsed(component):
                     phase = Phase.powering_on
                 else:
                     # Includes both power-off for restarts and ready-recovery scenario

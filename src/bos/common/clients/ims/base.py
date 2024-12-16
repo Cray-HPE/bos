@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,27 +21,24 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+from abc import ABC
 
-from .base import BaseBosEndpoint
+from bos.common.clients.endpoints import BaseEndpoint
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
+from .defs import BASE_ENDPOINT as BASE_IMS_ENDPOINT
 
 
-class ComponentEndpoint(BaseBosEndpoint):
-    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
+class BaseImsEndpoint(BaseEndpoint, ABC):
+    """
+    This base class provides generic access to the IMS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    BASE_ENDPOINT = BASE_IMS_ENDPOINT
 
-    def get_component(self, component_id):
-        return self.get_item(component_id)
+    def get_item(self, item_id: str):
+        """Get information for a single IMS item"""
+        return self.get(uri=item_id)
 
-    def get_components(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def update_component(self, component_id, data):
-        return self.update_item(component_id, data)
-
-    def update_components(self, data):
-        return self.update_items(data)
-
-    def put_components(self, data):
-        return self.put_items(data)
+    def update_item(self, item_id: str, data):
+        """Update information for a single IMS item"""
+        return self.patch(uri=item_id, json=data)

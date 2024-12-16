@@ -25,19 +25,21 @@
 import functools
 import logging
 import hashlib
+from typing import Optional
 
 import connexion
+import requests
 from requests.exceptions import HTTPError
-from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
+from bos.common.utils import exc_type_msg, retry_session_get, PROTOCOL
 
-LOGGER = logging.getLogger('bos.common.tenant_utils')
+LOGGER = logging.getLogger(__name__)
 
 TENANT_HEADER = "Cray-Tenant-Name"
-SERVICE_NAME = 'cray-tapms/v1alpha3' # CASMCMS-9125: Currently when TAPMS bumps this version, it
-                                     # breaks backwards compatiblity, so BOS needs to update this
-                                     # whenever TAPMS does.
+SERVICE_NAME = 'cray-tapms/v1alpha3'  # CASMCMS-9125: Currently when TAPMS bumps this version, it
+# breaks backwards compatiblity, so BOS needs to update this
+# whenever TAPMS does.
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
-TENANT_ENDPOINT = f"{BASE_ENDPOINT}/tenants" # CASMPET-6433 changed this from tenant to tenants
+TENANT_ENDPOINT = f"{BASE_ENDPOINT}/tenants"  # CASMPET-6433 changed this from tenant to tenants
 
 
 class InvalidTenantException(Exception):
@@ -73,19 +75,19 @@ def get_tenant_aware_key(key, tenant):
     return f"{tenant_hash}-{key_hash}"
 
 
-def get_tenant_data(tenant, session=None):
-    if not session:
-        session = requests_retry_session()
+def get_tenant_data(tenant, session: Optional[requests.Session] = None):
     url = f"{TENANT_ENDPOINT}/{tenant}"
-    response = session.get(url)
-    try:
-        response.raise_for_status()
-    except HTTPError as e:
-        LOGGER.error("Failed getting tenant data from tapms: %s", exc_type_msg(e))
-        if response.status_code == 404:
-            raise InvalidTenantException(f"Data not found for tenant {tenant}") from e
-        raise
-    return response.json()
+    with retry_session_get(url, session=session) as response:
+        try:
+            response.raise_for_status()
+        except HTTPError as e:
+            LOGGER.error("Failed getting tenant data from tapms: %s",
+                         exc_type_msg(e))
+            if response.status_code == 404:
+                raise InvalidTenantException(
+                    f"Data not found for tenant {tenant}") from e
+            raise
+        return response.json()
 
 
 def get_tenant_component_set(tenant: str) -> set:
@@ -93,7 +95,7 @@ def get_tenant_component_set(tenant: str) -> set:
     data = get_tenant_data(tenant)
     status = data.get("status", {})
     for resource in status.get("tenantresources", []):
-        components.append(resource.get("xnames",[]))
+        components.append(resource.get("xnames", []))
     return set().union(*components)
 
 
@@ -107,27 +109,32 @@ def validate_tenant_exists(tenant: str) -> bool:
 
 def tenant_error_handler(func):
     """Decorator for returning errors if there is an exception when calling tapms"""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except InvalidTenantException as e:
             LOGGER.debug("Invalid tenant: %s", exc_type_msg(e))
-            return connexion.problem(
-                status=400, title='Invalid tenant',
-                detail=str(e))
+            return connexion.problem(status=400,
+                                     title='Invalid tenant',
+                                     detail=str(e))
+
     return wrapper
 
 
 def reject_invalid_tenant(func):
     """Decorator for preemptively validating the tenant exists"""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         tenant = get_tenant_from_header()
         if tenant and not validate_tenant_exists(tenant):
             LOGGER.debug("The provided tenant does not exist")
             return connexion.problem(
-                status=400, title="Invalid tenant",
+                status=400,
+                title="Invalid tenant",
                 detail=str("The provided tenant does not exist"))
         return func(*args, **kwargs)
+
     return wrapper

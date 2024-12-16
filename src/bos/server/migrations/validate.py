@@ -31,8 +31,7 @@ from bos.server.schema import validator
 
 from .db import TEMP_DB
 
-
-LOGGER = logging.getLogger('bos.server.migration')
+LOGGER = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):
@@ -41,7 +40,7 @@ class ValidationError(Exception):
     """
 
 
-def check_session(key: str|bytes, data: dict) -> None:
+def check_session(key: str | bytes, data: dict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
@@ -52,7 +51,7 @@ def check_session(key: str|bytes, data: dict) -> None:
     check_keys(key, expected_db_key)
 
 
-def check_component(key: str|bytes, data: dict) -> None:
+def check_component(key: str | bytes, data: dict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
@@ -61,7 +60,7 @@ def check_component(key: str|bytes, data: dict) -> None:
     check_keys(key, compid)
 
 
-def get_validate_tenant(data: dict) -> str|None:
+def get_validate_tenant(data: dict) -> str | None:
     """
     If no tenant field present, return None.
     If the tenant field value is valid, return it.
@@ -81,10 +80,11 @@ def validate_bootset_path(bsname: str, bsdata: dict) -> None:
     try:
         validate_against_schema(path, "BootManifestPath")
     except ValidationError as exc:
-        raise ValidationError(f"Boot set '{bsname}' has invalid 'path' field: {exc}") from exc
+        raise ValidationError(
+            f"Boot set '{bsname}' has invalid 'path' field: {exc}") from exc
 
 
-def check_keys(actual: str|bytes, expected: str|bytes) -> str|None:
+def check_keys(actual: str | bytes, expected: str | bytes) -> str | None:
     """
     Converts both keys to strings.
     Raises ValidationError if the strings do not match
@@ -95,10 +95,11 @@ def check_keys(actual: str|bytes, expected: str|bytes) -> str|None:
         expected = expected.decode()
     if actual != expected:
         raise ValidationError(
-            f"Actual DB key ('{actual}') does not match expected key ('{expected}')")
+            f"Actual DB key ('{actual}') does not match expected key ('{expected}')"
+        )
 
 
-def is_valid_available_template_name(name: str, tenant: str|None) -> bool:
+def is_valid_available_template_name(name: str, tenant: str | None) -> bool:
     if get_tenant_aware_key(name, tenant) in TEMP_DB:
         return False
     try:
@@ -116,7 +117,8 @@ def validate_against_schema(obj: Any, schema_name: str) -> None:
         validator.validate(obj, schema_name)
     except Exception as exc:
         LOGGER.error(exc_type_msg(exc))
-        raise ValidationError(f"Does not follow {schema_name} schema: {obj}") from exc
+        raise ValidationError(
+            f"Does not follow {schema_name} schema: {obj}") from exc
 
 
 def get_required_field(field: str, data: dict) -> Any:

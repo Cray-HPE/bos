@@ -21,9 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from itertools import batched
 import functools
 import json
 import logging
+from typing import Callable, Optional
 
 import connexion
 import redis
@@ -31,8 +33,10 @@ import redis
 from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
-DATABASES = ["options", "components", "session_templates", "sessions", "bss_tokens_boot_artifacts",
-             "session_status"]  # Index is the db id.
+DATABASES = [
+    "options", "components", "session_templates", "sessions",
+    "bss_tokens_boot_artifacts", "session_status"
+]  # Index is the db id.
 
 DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
@@ -64,13 +68,13 @@ class DBWrapper():
     def _get_client(self, db_id):
         """Create a connection with the database."""
         try:
-            LOGGER.debug("Creating database connection"
-                         "host: %s port: %s database: %s",
-                         DB_HOST, DB_PORT, db_id)
+            LOGGER.debug(
+                "Creating database connection"
+                "host: %s port: %s database: %s", DB_HOST, DB_PORT, db_id)
             return redis.Redis(host=DB_HOST, port=DB_PORT, db=db_id)
         except Exception as err:
-            LOGGER.error("Failed to connect to database %s : %s",
-                         db_id, exc_type_msg(err))
+            LOGGER.error("Failed to connect to database %s : %s", db_id,
+                         exc_type_msg(err))
             raise
 
     @property
@@ -104,6 +108,34 @@ class DBWrapper():
             data.append(single_data)
         return data
 
+    def get_all_filtered(self,
+                         filter_func: Callable[[dict], dict | None],
+                         start_after_key: Optional[str] = None,
+                         page_size: int = 0) -> list[dict]:
+        """
+        Get an array of data for all keys after passing them through the specified filter
+        (discarding any for which the filter returns None)
+        If start_after_id is specified, all ids lexically <= that id will be skipped.
+        If page_size is specified, the list will be returned if it contains that many
+        elements, even if there may be more remaining.
+        """
+        data = []
+        for value in self.iter_values(start_after_key):
+            filtered_value = filter_func(value)
+            if filtered_value is not None:
+                data.append(filtered_value)
+                if page_size and len(data) == page_size:
+                    break
+        return data
+
+    def iter_values(self, start_after_key: Optional[str] = None):
+        all_keys = sorted({k.decode() for k in self.client.scan_iter()})
+        if start_after_key is not None:
+            all_keys = [k for k in all_keys if k > start_after_key]
+        for next_keys in batched(all_keys, 500):
+            for datastr in self.client.mget(next_keys):
+                yield json.loads(datastr) if datastr else None
+
     def get_all_as_dict(self):
         """Return a mapping from all keys to their corresponding data
            Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
@@ -112,9 +144,11 @@ class DBWrapper():
         cursor = '0'
         while cursor != 0:
             cursor, keys = self.client.scan(cursor=cursor, count=1000)
-            values = [ json.loads(datastr) if datastr else None
-                       for datastr in self.client.mget(keys) ]
-            keys = [ k.decode() for k in keys ]
+            values = [
+                json.loads(datastr) if datastr else None
+                for datastr in self.client.mget(keys)
+            ]
+            keys = [k.decode() for k in keys]
             data.update(dict(zip(keys, values)))
         return data
 
@@ -174,6 +208,7 @@ class DBWrapper():
 
 def redis_error_handler(func):
     """Decorator for returning better errors if Redis is unreachable"""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -185,7 +220,8 @@ def redis_error_handler(func):
         except redis.exceptions.ConnectionError as e:
             LOGGER.error('Unable to connect to the Redis database: %s', e)
             return connexion.problem(
-                status=503, title='Unable to connect to the Redis database',
+                status=503,
+                title='Unable to connect to the Redis database',
                 detail=str(e))
 
     return wrapper

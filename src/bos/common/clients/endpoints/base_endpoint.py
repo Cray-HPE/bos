@@ -21,24 +21,21 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+from abc import ABC
 
-from .base import BaseBosTenantAwareEndpoint
+import requests
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.sessions')
+from .base_generic_endpoint import BaseGenericEndpoint
+from .defs import JsonData
+from .response_data import ResponseData
 
 
-class SessionEndpoint(BaseBosTenantAwareEndpoint):
-    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
+class BaseEndpoint(BaseGenericEndpoint[JsonData], ABC):
+    """
+    This base class provides generic access to an API where the only part of the response
+    that is returned is the body.
+    """
 
-    def get_session(self, session_id, tenant):
-        return self.get_item(session_id, tenant)
-
-    def get_sessions(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def update_session(self, session_id, tenant, data):
-        return self.update_item(session_id, tenant, data)
-
-    def delete_sessions(self, **kwargs):
-        return self.delete_items(**kwargs)
+    @classmethod
+    def format_response(cls, response: requests.Response) -> JsonData:
+        return ResponseData.from_response(response).body

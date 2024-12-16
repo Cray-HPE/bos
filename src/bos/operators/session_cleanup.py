@@ -26,9 +26,9 @@ import logging
 import re
 
 from bos.operators.base import BaseOperator, main
-from bos.operators.utils.clients.bos.options import options
+from bos.common.clients.bos.options import options
 
-LOGGER = logging.getLogger('bos.operators.session_cleanup')
+LOGGER = logging.getLogger(__name__)
 
 
 class SessionCleanupOperator(BaseOperator):
@@ -36,6 +36,7 @@ class SessionCleanupOperator(BaseOperator):
     The Session Completion Operator marks sessions complete when all components
     that are part of the session have been disabled.
     """
+
     @property
     def name(self):
         return 'SessionCleanup'
@@ -45,7 +46,8 @@ class SessionCleanupOperator(BaseOperator):
         """
         When users set the cleanup time to 0, no cleanup behavior is desired.
         """
-        options_stripped = re.sub('[^0-9]', '', options.cleanup_completed_session_ttl)
+        options_stripped = re.sub('[^0-9]', '',
+                                  options.cleanup_completed_session_ttl)
         return not bool(int(options_stripped))
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
@@ -66,9 +68,12 @@ class SessionCleanupOperator(BaseOperator):
         if self.disabled:
             return
 
-        self.bos_client.sessions.delete_sessions(
-                            **{'status': 'complete',
-                               'min_age': options.cleanup_completed_session_ttl})
+        self.client.bos.sessions.delete_sessions(
+            **{
+                'status': 'complete',
+                'min_age': options.cleanup_completed_session_ttl
+            })
+
 
 if __name__ == '__main__':
     main(SessionCleanupOperator)

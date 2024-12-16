@@ -26,11 +26,11 @@ import logging
 
 from bos.common.utils import duration_to_timedelta
 from bos.common.values import EMPTY_ACTUAL_STATE
-from bos.operators.utils.clients.bos.options import options
+from bos.common.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, ActualStateAge, ActualBootStateIsSet
+from bos.operators.filters import ActualStateAge, ActualBootStateIsSet
 
-LOGGER = logging.getLogger('bos.operators.actual_state_cleanup')
+LOGGER = logging.getLogger(__name__)
 
 
 class ActualStateCleanupOperator(BaseOperator):
@@ -53,22 +53,23 @@ class ActualStateCleanupOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(),
+            self.BOSQuery(),
             ActualBootStateIsSet(),
-            ActualStateAge(
-                seconds=duration_to_timedelta(options.component_actual_state_ttl).total_seconds()
-            )
+            ActualStateAge(seconds=duration_to_timedelta(
+                options.component_actual_state_ttl).total_seconds())
         ]
 
     def _act(self, components):
         data = []
         for component_id in [component['id'] for component in components]:
-            data.append({'id': component_id,
-                         'actual_state': EMPTY_ACTUAL_STATE})
+            data.append({
+                'id': component_id,
+                'actual_state': EMPTY_ACTUAL_STATE
+            })
         if data:
             LOGGER.info('Found %d components that require updates', len(data))
             LOGGER.debug('Calling to update with payload: %s', data)
-            self.bos_client.components.update_components(data)
+            self.client.bos.components.update_components(data)
         return components
 
 

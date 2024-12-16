@@ -15,7 +15,7 @@ python-dateutil
 PyYAML
 redis
 requests
-requests-retry-session
+requests-retry-session>=0.2.2
 urllib3
 
 # The purpose of this file is to contain python runtime requirements

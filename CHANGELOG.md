@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added basic paging ability for `GET` requests for `components`.
+
+### Changed
+- Modified operators to use paging when requesting BOS components, using a page size equal to the `max_components_batch_size` option.
+- Put all requests code into context managers -- this includes the HTTP adapters, the sessions, and the request responses.
 
 ## [2.31.0] - 2024-11-01
 ### Removed
