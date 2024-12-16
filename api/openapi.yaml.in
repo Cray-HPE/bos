@@ -1704,7 +1704,8 @@ paths:
             maximum: 1048576
           in: query
           description: |-
-            Maximum number of Components to include in response. Used for paging.
+            Maximum number of Components to include in response. Used for paging. 0 means no limit
+            (which is the same as not specifying this parameter).
       description: |-
         Retrieve the full collection of Components in the form of a
         ComponentArray. Full results can also be filtered by query
