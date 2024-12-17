@@ -116,8 +116,8 @@ class DBWrapper():
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)
         If start_after_id is specified, all ids lexically <= that id will be skipped.
-        If page_size is specified, the list will be returned if it contains that many
-        elements, even if there may be more remaining.
+        If page_size is specified, the number of items in the returned list will be equal to or less than the page_size.
+        More elements may remain and additional queries will be needed to acquire them.
         """
         data = []
         for value in self.iter_values(start_after_key):
