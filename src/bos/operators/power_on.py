@@ -82,7 +82,7 @@ class PowerOnOperator(BaseOperator):
             raise Exception(
                 f"Error encountered setting BSS information: {e}") from e
         try:
-            self.client.cfs.set_cfs(components, enabled=False, clear_state=True)
+            self.client.cfs.components.set_cfs(components, enabled=False, clear_state=True)
         except Exception as e:
             raise Exception(
                 f"Error encountered setting CFS information: {e}") from e

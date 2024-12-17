@@ -119,7 +119,7 @@ class StatusOperator(BaseOperator):
         that was longer than uwsgi could handle when the number of nodes was very large.
         Requesting all components means none need to be specified in the request.
         """
-        cfs_data = self.client.cfs.get_components()
+        cfs_data = self.client.cfs.components.get_components()
         cfs_states = {}
         for component in cfs_data:
             cfs_states[component['id']] = component
