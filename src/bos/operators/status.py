@@ -30,7 +30,6 @@ from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
     DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
 
-
 LOGGER = logging.getLogger(__name__)
 
 
