@@ -31,7 +31,7 @@ from typing import List
 
 # Third party imports
 from dateutil.parser import parse
-from requests_retry_session import requests_retry_session as base_requests_retry_session
+import requests_retry_session as rrs
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
@@ -68,14 +68,32 @@ def duration_to_timedelta(timestamp: str):
     return datetime.timedelta(seconds=seconds)
 
 
-requests_retry_session = partial(base_requests_retry_session,
-                                 retries=10,
-                                 backoff_factor=0.5,
-                                 status_forcelist=(500, 502, 503, 504),
-                                 connect_timeout=3,
-                                 read_timeout=10,
+DEFAULT_RETRY_ADAPTER_ARGS = rrs.RequestsRetryAdapterArgs(
+    retries=10,
+    backoff_factor=0.5,
+    status_forcelist=(500, 502, 503, 504),
+    connect_timeout=3,
+    read_timeout=10)
+
+
+class RetrySessionManager(rrs.RetrySessionManager):
+    """
+    Just sets the default values we use for our requests sessions
+    """
+
+    def __init__(self,
+                 protocol: str = PROTOCOL,
+                 **adapter_kwargs: Unpack[rrs.RequestsRetryAdapterArgs]):
+        for key, value in DEFAULT_RETRY_ADAPTER_ARGS.items():
+            if key not in adapter_kwargs:
+                adapter_kwargs[key] = value
+        super().__init__(protocol=protocol, **adapter_kwargs)
+
+
+requests_retry_session = partial(rrs.requests_retry_session,                                 
                                  session=None,
-                                 protocol=PROTOCOL)
+                                 protocol=PROTOCOL,
+                                 **DEFAULT_RETRY_ADAPTER_ARGS)
 
 
 def compact_response_text(response_text: str) -> str:
