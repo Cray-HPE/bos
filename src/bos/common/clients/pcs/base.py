@@ -30,7 +30,7 @@ from requests.exceptions import ConnectionError as RequestsConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.clients.endpoints import ApiResponseError, BaseEndpoint, RequestErrorHandler, \
-                                         RequestsData
+                                         RequestData
 from bos.common.utils import PROTOCOL
 
 from .exceptions import PowerControlException
