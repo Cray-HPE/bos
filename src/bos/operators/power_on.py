@@ -80,7 +80,9 @@ class PowerOnOperator(BaseOperator):
             raise Exception(
                 f"Error encountered setting BSS information: {e}") from e
         try:
-            self.client.cfs.components.set_cfs(components, enabled=False, clear_state=True)
+            self.client.cfs.components.set_cfs(components,
+                                               enabled=False,
+                                               clear_state=True)
         except Exception as e:
             raise Exception(
                 f"Error encountered setting CFS information: {e}") from e
@@ -148,10 +150,11 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
-                resp = self.client.bss.boot_parameters.set_bss(node_set=nodes,
-                                   kernel_params=kernel_parameters,
-                                   kernel=kernel,
-                                   initrd=initrd)
+                resp = self.client.bss.boot_parameters.set_bss(
+                    node_set=nodes,
+                    kernel_params=kernel_parameters,
+                    kernel=kernel,
+                    initrd=initrd)
                 resp.raise_for_status()
             except HTTPError as err:
                 LOGGER.error(
@@ -237,7 +240,8 @@ class PowerOnOperator(BaseOperator):
         my_components_by_id = components_by_id(components)
         for image in image_ids:
             try:
-                self.client.ims.images.tag_image(image, "set", "sbps-project", "true")
+                self.client.ims.images.tag_image(image, "set", "sbps-project",
+                                                 "true")
             except Exception as e:
                 components_to_update = []
                 for node in image_id_to_nodes[image]:

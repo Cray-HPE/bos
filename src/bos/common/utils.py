@@ -28,7 +28,7 @@ import datetime
 from functools import partial
 import re
 import traceback
-from typing import Iterator, List, Optional, Unpack
+from typing import Iterator, Optional, Unpack
 
 # Third party imports
 from dateutil.parser import parse
@@ -77,7 +77,6 @@ DEFAULT_RETRY_ADAPTER_ARGS = rrs.RequestsRetryAdapterArgs(
     connect_timeout=3,
     read_timeout=10)
 
-
 retry_session_manager = partial(rrs.retry_session_manager,
                                 protocol=PROTOCOL,
                                 **DEFAULT_RETRY_ADAPTER_ARGS)
@@ -120,12 +119,6 @@ def retry_session_get(*get_args,
                        protocol=protocol,
                        adapter_kwargs=adapter_kwargs) as _session:
         return _session.get(*get_args, **get_kwargs)
-
-
-requests_retry_session = partial(rrs.requests_retry_session,
-                                 session=None,
-                                 protocol=PROTOCOL,
-                                 **DEFAULT_RETRY_ADAPTER_ARGS)
 
 
 def compact_response_text(response_text: str) -> str:
@@ -201,7 +194,7 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     return "root=sbps-s3" in kernel_parameters
 
 
-def components_by_id(components: List[dict]) -> dict:
+def components_by_id(components: list[dict]) -> dict:
     """
     Input:
     * components: a list containing individual components
@@ -215,7 +208,7 @@ def components_by_id(components: List[dict]) -> dict:
     return {component["id"]: component for component in components}
 
 
-def reverse_components_by_id(components_by_id_map: dict) -> List[dict]:
+def reverse_components_by_id(components_by_id_map: dict) -> list[dict]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the

@@ -40,7 +40,6 @@ from bos.operators.session_completion import SessionCompletionOperator
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.rootfs.factory import ProviderFactory
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -75,7 +74,8 @@ class SessionSetupOperator(BaseOperator):
         LOGGER.info('Found %d sessions that require action', len(sessions))
         inventory_cache = Inventory(self.client.hsm)
         for data in sessions:
-            session = Session(data, inventory_cache, self.client.bos, self.HSMState)
+            session = Session(data, inventory_cache, self.client.bos,
+                              self.HSMState)
             session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self):
@@ -84,7 +84,8 @@ class SessionSetupOperator(BaseOperator):
 
 class Session:
 
-    def __init__(self, data, inventory_cache, bos_client: BOSClient, hsm_state: Callable[...,HSMState]):
+    def __init__(self, data, inventory_cache, bos_client: BOSClient,
+                 hsm_state: Callable[..., HSMState]):
         self.session_data = data
         self.inventory = inventory_cache
         self.bos_client = bos_client

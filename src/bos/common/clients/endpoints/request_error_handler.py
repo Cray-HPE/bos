@@ -42,6 +42,7 @@ class BaseRequestErrorHandler(ABC):
     """
     The abstract base class for request error handlers that will be used by an API endpoint.
     """
+
     @classmethod
     @abstractmethod
     def handle_exception(cls, err: Exception,
@@ -53,6 +54,7 @@ class RequestErrorHandler(BaseRequestErrorHandler):
     """
     The default request error handler used by API endpoints.
     """
+
     @classmethod
     def handle_api_response_error(cls, err: ApiResponseError,
                                   request_data: RequestData) -> NoReturn:

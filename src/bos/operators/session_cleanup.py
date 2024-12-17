@@ -28,7 +28,6 @@ import re
 from bos.common.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 
-
 LOGGER = logging.getLogger(__name__)
 
 

@@ -62,6 +62,7 @@ class MissingSessionData(BaseOperatorException):
     desired state.
     """
 
+
 class ApiClients:
     """
     Context manager to provide API clients to BOS operators.
@@ -95,7 +96,6 @@ class ApiClients:
         context for all of the API clients.
         """
         return self._stack.__exit__(exc_type, exc_val, exc_tb)
-
 
 
 class BaseOperator(ABC):
