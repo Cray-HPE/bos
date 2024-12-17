@@ -31,8 +31,10 @@ import redis
 from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
-DATABASES = ["options", "components", "session_templates", "sessions", "bss_tokens_boot_artifacts",
-             "session_status"]  # Index is the db id.
+DATABASES = [
+    "options", "components", "session_templates", "sessions",
+    "bss_tokens_boot_artifacts", "session_status"
+]  # Index is the db id.
 
 DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
@@ -64,13 +66,13 @@ class DBWrapper():
     def _get_client(self, db_id):
         """Create a connection with the database."""
         try:
-            LOGGER.debug("Creating database connection"
-                         "host: %s port: %s database: %s",
-                         DB_HOST, DB_PORT, db_id)
+            LOGGER.debug(
+                "Creating database connection"
+                "host: %s port: %s database: %s", DB_HOST, DB_PORT, db_id)
             return redis.Redis(host=DB_HOST, port=DB_PORT, db=db_id)
         except Exception as err:
-            LOGGER.error("Failed to connect to database %s : %s",
-                         db_id, exc_type_msg(err))
+            LOGGER.error("Failed to connect to database %s : %s", db_id,
+                         exc_type_msg(err))
             raise
 
     @property
@@ -112,9 +114,11 @@ class DBWrapper():
         cursor = '0'
         while cursor != 0:
             cursor, keys = self.client.scan(cursor=cursor, count=1000)
-            values = [ json.loads(datastr) if datastr else None
-                       for datastr in self.client.mget(keys) ]
-            keys = [ k.decode() for k in keys ]
+            values = [
+                json.loads(datastr) if datastr else None
+                for datastr in self.client.mget(keys)
+            ]
+            keys = [k.decode() for k in keys]
             data.update(dict(zip(keys, values)))
         return data
 
@@ -174,6 +178,7 @@ class DBWrapper():
 
 def redis_error_handler(func):
     """Decorator for returning better errors if Redis is unreachable"""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         try:
@@ -185,7 +190,8 @@ def redis_error_handler(func):
         except redis.exceptions.ConnectionError as e:
             LOGGER.error('Unable to connect to the Redis database: %s', e)
             return connexion.problem(
-                status=503, title='Unable to connect to the Redis database',
+                status=503,
+                title='Unable to connect to the Redis database',
                 detail=str(e))
 
     return wrapper
