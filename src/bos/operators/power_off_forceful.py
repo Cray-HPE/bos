@@ -25,7 +25,6 @@
 import logging
 
 from bos.common.values import Action, Status
-from bos.operators.utils.clients import pcs
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
@@ -62,7 +61,7 @@ class ForcefulPowerOffOperator(BaseOperator):
     def _act(self, components):
         if components:
             component_ids = [component['id'] for component in components]
-            pcs.force_off(nodes=component_ids)
+            self.client.pcs.transitions.force_off(nodes=component_ids)
         return components
 
 
