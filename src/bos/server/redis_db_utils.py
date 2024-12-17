@@ -129,6 +129,10 @@ class DBWrapper():
         return data
 
     def iter_values(self, start_after_key: Optional[str] = None):
+        """
+        Iterate through every item in the database. Parse each item as JSON and yield it.
+        If start_after_key is specified, skip any keys that are lexically <= the specified key.
+        """
         all_keys = sorted({k.decode() for k in self.client.scan_iter()})
         if start_after_key is not None:
             all_keys = [k for k in all_keys if k > start_after_key]
