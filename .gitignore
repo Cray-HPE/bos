@@ -2,6 +2,8 @@ results
 .project
 .settings
 .version
+.venv
+.idea
 .pydevproject
 ansible/bos_deploy.retry
 .tox
