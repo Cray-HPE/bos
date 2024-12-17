@@ -36,7 +36,6 @@ from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
                              using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger(__name__)
@@ -60,7 +59,7 @@ class PowerOnOperator(BaseOperator):
     def filters(self):
         return [
             self.BOSQuery(enabled=True, status=Status.power_on_pending),
-            HSMState()
+            self.HSMState()
         ]
 
     def _act(self, components: Union[List[dict], None]):

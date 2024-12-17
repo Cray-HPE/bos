@@ -24,20 +24,21 @@
 #
 import copy
 import logging
-from typing import Set
+from typing import Callable, Set
 from botocore.exceptions import ClientError
 
+from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
+from bos.common.clients.hsm import Inventory
 from bos.common.clients.s3 import S3Object, S3ObjectNotFound
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseOperator, main, chunk_components
-from bos.operators.filters.filters import HSMState
-from bos.operators.utils.clients.hsm import Inventory
+from bos.operators.filters import HSMState
+from bos.operators.session_completion import SessionCompletionOperator
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.rootfs.factory import ProviderFactory
-from bos.operators.session_completion import SessionCompletionOperator
 
 
 LOGGER = logging.getLogger(__name__)
@@ -72,9 +73,9 @@ class SessionSetupOperator(BaseOperator):
         if not sessions:
             return
         LOGGER.info('Found %d sessions that require action', len(sessions))
-        inventory_cache = Inventory()
+        inventory_cache = Inventory(self.client.hsm)
         for data in sessions:
-            session = Session(data, inventory_cache, self.client.bos)
+            session = Session(data, inventory_cache, self.client.bos, self.HSMState)
             session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self):
@@ -83,10 +84,11 @@ class SessionSetupOperator(BaseOperator):
 
 class Session:
 
-    def __init__(self, data, inventory_cache, bos_client):
+    def __init__(self, data, inventory_cache, bos_client: BOSClient, hsm_state: Callable[...,HSMState]):
         self.session_data = data
         self.inventory = inventory_cache
         self.bos_client = bos_client
+        self.HSMState = hsm_state
         self._template = None
 
     @property
@@ -220,7 +222,7 @@ class Session:
         valid_archs = set([arch])
         if arch == 'X86':
             valid_archs.add('UNKNOWN')
-        hsm_filter = HSMState()
+        hsm_filter = self.HSMState()
         nodes = set(hsm_filter.filter_by_arch(nodes, valid_archs))
         if not nodes:
             self._log(
@@ -243,7 +245,7 @@ class Session:
         if include_disabled:
             # Nodes disabled in HSM may be included, so no filtering is required
             return nodes
-        hsmfilter = HSMState(enabled=True)
+        hsmfilter = self.HSMState(enabled=True)
         nodes = set(hsmfilter._filter(list(nodes)))
         if not nodes:
             self._log(

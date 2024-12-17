@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,40 +21,8 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
-
-from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
-
-LOGGER = logging.getLogger(__name__)
+from .base import BaseHsmEndpoint
 
 
-class GracefulPowerOffOperator(BaseOperator):
-    """
-    - Enabled in the BOS database and the status is power_off_pending
-    - Enabled in HSM
-    """
-
-    retry_attempt_field = "power_off_graceful_attempts"
-
-    @property
-    def name(self):
-        return Action.power_off_gracefully
-
-    # Filters
-    @property
-    def filters(self):
-        return [
-            self.BOSQuery(enabled=True, status=Status.power_off_pending),
-            self.HSMState(),
-        ]
-
-    def _act(self, components):
-        if components:
-            component_ids = [component['id'] for component in components]
-            self.client.pcs.transitions.soft_off(component_ids)
-        return components
-
-
-if __name__ == '__main__':
-    main(GracefulPowerOffOperator)
+class PartitionsEndpoint(BaseHsmEndpoint):
+    ENDPOINT = 'partitions'

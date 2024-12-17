@@ -39,11 +39,12 @@ from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
 from bos.common.clients.bss import BSSClient
 from bos.common.clients.cfs import CFSClient
+from bos.common.clients.hsm import HSMClient
 from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
-from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS
+from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, HSMState
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.liveness.timestamp import Timestamp
 
@@ -71,7 +72,7 @@ class ApiClients:
         self.bos = BOSClient()
         self.bss = BSSClient()
         self.cfs = CFSClient()
-        #self.hsm = HSMClient()
+        self.hsm = HSMClient()
         self.ims = IMSClient()
         self.pcs = PCSClient()
         self._stack = ExitStack()
@@ -83,7 +84,7 @@ class ApiClients:
         self._stack.enter_context(self.bos)
         self._stack.enter_context(self.bss)
         self._stack.enter_context(self.cfs)
-        #self._stack.enter_context(self.hsm)
+        self._stack.enter_context(self.hsm)
         self._stack.enter_context(self.ims)
         self._stack.enter_context(self.pcs)
         return self
@@ -152,6 +153,14 @@ class BaseOperator(ABC):
         Shortcut to get a DesiredConfigurationSetInCFS filter with the cfs_client for this operator
         """
         return DesiredConfigurationSetInCFS(self.client.cfs)
+
+    def HSMState(self, **kwargs) -> HSMState:
+        """
+        Shortcut to get a HSMState filter with the bos_client for this operator
+        """
+        if 'hsm_client' not in kwargs:
+            kwargs['hsm_client'] = self.client.hsm
+        return HSMState(**kwargs)
 
     def run(self) -> NoReturn:
         """

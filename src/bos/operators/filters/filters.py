@@ -30,9 +30,9 @@ from typing import List, Type
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.cfs import CFSClient
+from bos.common.clients.hsm import HSMClient
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
-from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
 LOGGER = logging.getLogger(__name__)
 
@@ -84,13 +84,18 @@ class BOSQuery(DetailsFilter):
 class HSMState(IDFilter):
     """ Returns all components that are in specified state """
 
-    def __init__(self, enabled: bool = None, ready: bool = None) -> None:
+    def __init__(self,
+                 hsm_client: HSMClient,
+                 enabled: bool = None,
+                 ready: bool = None) -> None:
         super().__init__()
         self.enabled = enabled
         self.ready = ready
+        self.hsm_client = hsm_client
 
     def _filter(self, components: List[str]) -> List[str]:
-        components = get_hsm_components(components, enabled=self.enabled)
+        components = self.hsm_client.state_components.get_components(
+            components, enabled=self.enabled)
         if self.ready is not None:
             return [
                 component['ID'] for component in components['Components']
@@ -110,7 +115,8 @@ class HSMState(IDFilter):
         returns:
           A list of xnames all matching one of the archs requested
         """
-        components = get_hsm_components(list(nodes), enabled=self.enabled)
+        components = self.hsm_client.state_components.get_components(
+            list(nodes), enabled=self.enabled)
         return [
             component['ID'] for component in components['Components']
             if component.get('Arch', 'Unknown') in arch
