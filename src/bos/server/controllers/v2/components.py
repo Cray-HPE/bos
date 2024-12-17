@@ -21,6 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from functools import partial
 import logging
 
 import connexion
@@ -46,7 +47,9 @@ def get_v2_components(ids="",
                       session=None,
                       staged_session=None,
                       phase=None,
-                      status=None):
+                      status=None,
+                      start_after_id=None,
+                      page_size=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -73,12 +76,13 @@ def get_v2_components(ids="",
                                       staged_session=staged_session,
                                       phase=phase,
                                       status=status,
-                                      tenant=tenant)
+                                      tenant=tenant,
+                                      start_after_id=start_after_id,
+                                      page_size=page_size or 0,
+                                      delete_timestamp=True)
     LOGGER.debug(
         "GET /v2/components returning data for tenant=%s on %d components",
         tenant, len(response))
-    for component in response:
-        del_timestamp(component)
     return response, 200
 
 
@@ -88,47 +92,80 @@ def get_v2_components_data(id_list=None,
                            staged_session=None,
                            phase=None,
                            status=None,
-                           tenant=None):
+                           tenant=None,
+                           start_after_id=None,
+                           page_size=0,
+                           delete_timestamp: bool = False):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
     """
-    response = []
-    if id_list:
-        for component_id in id_list:
-            data = DB.get(component_id)
-            if data:
-                response.append(data)
+    if any([id_list, enabled, session, staged_session, phase, status, tenant]):
+        tenant_components = None if not tenant else get_tenant_component_set(
+            tenant)
+        _component_filter_func = partial(_filter_component,
+                                         id_list=id_list or None,
+                                         enabled=enabled,
+                                         session=session or None,
+                                         staged_session=staged_session or None,
+                                         phase=phase or None,
+                                         status=status or None,
+                                         tenant_components=tenant_components
+                                         or None)
+    elif delete_timestamp:
+        _component_filter_func = partial(_set_status,
+                                         delete_timestamp=delete_timestamp)
     else:
-        # TODO: On large scale systems, this response may be too large
-        # and require paging to be implemented
-        response = DB.get_all()
-    # The status must be set before using _matches_filter as the status is one of the
-    # matching criteria.
-    response = [_set_status(r) for r in response if r]
-    if enabled is not None or session is not None or staged_session is not None or \
-       phase is not None or status is not None:
-        response = [
-            r for r in response if _matches_filter(
-                r, enabled, session, staged_session, phase, status)
-        ]
-    if tenant:
-        tenant_components = get_tenant_component_set(tenant)
-        limited_response = [
-            component for component in response
-            if component["id"] in tenant_components
-        ]
-        response = limited_response
-    return response
+        _component_filter_func = _set_status
+
+    return DB.get_all_filtered(filter_func=_component_filter_func,
+                               start_after_key=start_after_id,
+                               page_size=page_size)
 
 
-def _set_status(data):
+def _filter_component(data: dict,
+                      id_list=None,
+                      enabled=None,
+                      session=None,
+                      staged_session=None,
+                      phase=None,
+                      status=None,
+                      tenant_components=None,
+                      delete_timestamp: bool = False) -> dict | None:
+    # Do all of the checks we can before calculating status, to avoid doing it needlessly
+    if id_list is not None and data["id"] not in id_list:
+        return None
+    if tenant_components is not None and data["id"] not in tenant_components:
+        return None
+    if enabled is not None and data.get('enabled', None) != enabled:
+        return None
+    if session is not None and data.get('session', None) != session:
+        return None
+    if staged_session is not None and \
+       data.get('staged_state', {}).get('session', None) != staged_session:
+        return None
+    updated_data = _set_status(data)
+
+    status_data = updated_data.get('status')
+    if phase is not None and status_data.get('phase') != phase:
+        return None
+    if status is not None and status_data.get('status') not in status.split(
+            ','):
+        return None
+    if delete_timestamp:
+        del_timestamp(updated_data)
+    return updated_data
+
+
+def _set_status(data, delete_timestamp: bool = False):
     """
     This sets the status field of the overall status.
     """
     if "status" not in data:
         data["status"] = {"phase": "", "status_override": ""}
     data['status']['status'] = _calculate_status(data)
+    if delete_timestamp:
+        del_timestamp(data)
     return data
 
 
@@ -147,12 +184,13 @@ def _calculate_status(data):
 
     phase = status_data.get('phase', '')
     component = data.get('id', '')
-    last_action = data.get('last_action', {}).get('action', '')
+    last_action_dict = data.get('last_action', {})
+    last_action = last_action_dict.get('action', '')
 
     status = status = Status.stable
     if phase == Phase.powering_on:
-        if last_action == Action.power_on and not data.get(
-                'last_action', {}).get('failed', False):
+        if last_action == Action.power_on and not last_action_dict.get(
+                'failed', False):
             status = Status.power_on_called
         else:
             status = Status.power_on_pending
@@ -169,23 +207,6 @@ def _calculate_status(data):
     LOGGER.debug("Component: %s Last action: %s Phase: %s Status: %s",
                  component, last_action, phase, status)
     return status
-
-
-def _matches_filter(data, enabled, session, staged_session, phase, status):
-    if enabled is not None and data.get('enabled', None) != enabled:
-        return False
-    if session is not None and data.get('session', None) != session:
-        return False
-    if staged_session is not None and \
-       data.get('staged_state', {}).get('session', None) != staged_session:
-        return False
-    status_data = data.get('status')
-    if phase is not None and status_data.get('phase') != phase:
-        return False
-    if status is not None and status_data.get('status') not in status.split(
-            ','):
-        return False
-    return True
 
 
 @dbutils.redis_error_handler
