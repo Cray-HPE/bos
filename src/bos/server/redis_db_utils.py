@@ -21,9 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from itertools import batched
 import functools
 import json
 import logging
+from typing import Callable, Optional
 
 import connexion
 import redis
@@ -105,6 +107,38 @@ class DBWrapper():
             single_data = json.loads(datastr)
             data.append(single_data)
         return data
+
+    def get_all_filtered(self,
+                         filter_func: Callable[[dict], dict | None],
+                         start_after_key: Optional[str] = None,
+                         page_size: int = 0) -> list[dict]:
+        """
+        Get an array of data for all keys after passing them through the specified filter
+        (discarding any for which the filter returns None)
+        If start_after_id is specified, all ids lexically <= that id will be skipped.
+        If page_size is specified, the number of items in the returned list will be equal to or less than the page_size.
+        More elements may remain and additional queries will be needed to acquire them.
+        """
+        data = []
+        for value in self.iter_values(start_after_key):
+            filtered_value = filter_func(value)
+            if filtered_value is not None:
+                data.append(filtered_value)
+                if page_size and len(data) == page_size:
+                    break
+        return data
+
+    def iter_values(self, start_after_key: Optional[str] = None):
+        """
+        Iterate through every item in the database. Parse each item as JSON and yield it.
+        If start_after_key is specified, skip any keys that are lexically <= the specified key.
+        """
+        all_keys = sorted({k.decode() for k in self.client.scan_iter()})
+        if start_after_key is not None:
+            all_keys = [k for k in all_keys if k > start_after_key]
+        for next_keys in batched(all_keys, 500):
+            for datastr in self.client.mget(next_keys):
+                yield json.loads(datastr) if datastr else None
 
     def get_all_as_dict(self):
         """Return a mapping from all keys to their corresponding data
