@@ -58,7 +58,6 @@ def get_v2_components(ids="",
         "GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
         "staged_session=%s phase=%s status=%s", ids, enabled, session,
         staged_session, phase, status)
-    id_list = []
     if ids:
         try:
             id_list = ids.split(',')
@@ -67,6 +66,8 @@ def get_v2_components(ids="",
             return connexion.problem(status=400,
                                      title="Error parsing the ids provided.",
                                      detail=str(err))
+    else:
+        id_list = None
     tenant = get_tenant_from_header()
     LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified",
                  tenant, len(id_list))
@@ -100,18 +101,28 @@ def get_v2_components_data(id_list=None,
 
     Allows filtering using a comma separated list of ids.
     """
-    if any([id_list, enabled, session, staged_session, phase, status, tenant]):
-        tenant_components = None if not tenant else get_tenant_component_set(
-            tenant)
+    tenant_components = None if tenant is None else get_tenant_component_set(tenant)
+
+    if id_list is not None:
+        id_set = set(id_list)
+        if tenant_components is not None:
+            id_set.intersection_update(tenant_components)
+    else:
+         id_set = tenant_components
+
+    # If id_set is not None but is empty, that means no components in the system
+    # will match our filter, so we can return an empty list immediately.
+    if id_set is not None and not id_set:
+        return []
+
+    if any([id_set, enabled, session, staged_session, phase, status]):
         _component_filter_func = partial(_filter_component,
-                                         id_list=id_list or None,
+                                         id_set=id_set,
                                          enabled=enabled,
                                          session=session or None,
                                          staged_session=staged_session or None,
                                          phase=phase or None,
-                                         status=status or None,
-                                         tenant_components=tenant_components
-                                         or None)
+                                         status=status or None)
     elif delete_timestamp:
         _component_filter_func = partial(_set_status,
                                          delete_timestamp=delete_timestamp)
@@ -124,16 +135,15 @@ def get_v2_components_data(id_list=None,
 
 
 def _filter_component(data: dict,
-                      id_list=None,
+                      id_set=None,
                       enabled=None,
                       session=None,
                       staged_session=None,
                       phase=None,
                       status=None,
-                      tenant_components=None,
                       delete_timestamp: bool = False) -> dict | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
-    if id_list is not None and data["id"] not in id_list:
+    if id_set is not None and data["id"] not in id_set:
         return None
     if tenant_components is not None and data["id"] not in tenant_components:
         return None
