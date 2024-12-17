@@ -145,8 +145,6 @@ def _filter_component(data: dict,
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None
-    if tenant_components is not None and data["id"] not in tenant_components:
-        return None
     if enabled is not None and data.get('enabled', None) != enabled:
         return None
     if session is not None and data.get('session', None) != session:
