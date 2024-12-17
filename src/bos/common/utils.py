@@ -27,7 +27,7 @@ import datetime
 from functools import partial
 import re
 import traceback
-from typing import List
+from typing import List, Unpack
 
 # Third party imports
 from dateutil.parser import parse
