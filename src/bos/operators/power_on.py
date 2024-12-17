@@ -35,7 +35,6 @@ from requests import HTTPError
 from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
                              using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
-from bos.operators.utils.clients import bss
 from bos.operators.utils.clients.ims import tag_image
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
@@ -152,7 +151,7 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
-                resp = bss.set_bss(node_set=nodes,
+                resp = self.client.bss.boot_parameters.set_bss(node_set=nodes,
                                    kernel_params=kernel_parameters,
                                    kernel=kernel,
                                    initrd=initrd)
