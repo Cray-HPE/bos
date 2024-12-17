@@ -174,5 +174,5 @@ someone else's copyright/license (in which case that should be in the header). F
 purpose, source code files include Dockerfiles, Ansible files, RPM spec files, and shell
 scripts. It does **not** include Jenkinsfiles, OpenAPI/Swagger specs, or READMEs.
 
-When in doubt, provided the file is not covered under someone else's copyright or license, then
+In case of doubt, provided the file is not covered under someone else's copyright or license, then
 it does not hurt to add ours to the header.
