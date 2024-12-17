@@ -36,9 +36,11 @@ import time
 from typing import Generator, List, NoReturn, Type
 
 from bos.common.clients.bss import BSSClient
+from bos.common.clients.cfs import CFSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
+from bos.operators.filters import DesiredConfigurationSetInCFS
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.bos import BOSClient
@@ -67,7 +69,7 @@ class ApiClients:
     def __init__(self):
         #self.bos = BOSClient()
         self.bss = BSSClient()
-        #self.cfs = CFSClient()
+        self.cfs = CFSClient()
         #self.hsm = HSMClient()
         #self.ims = IMSClient()
         self.pcs = PCSClient()
@@ -79,7 +81,7 @@ class ApiClients:
         """
         #self._stack.enter_context(self.bos)
         self._stack.enter_context(self.bss)
-        #self._stack.enter_context(self.cfs)
+        self._stack.enter_context(self.cfs)
         #self._stack.enter_context(self.hsm)
         #self._stack.enter_context(self.ims)
         self._stack.enter_context(self.pcs)
@@ -120,7 +122,7 @@ class BaseOperator(ABC):
     def client(self) -> ApiClients:
         """
         Return the ApiClients object for this operator.
-        If it is not initialized, raise a ValueError (this should never be the case).        
+        If it is not initialized, raise a ValueError (this should never be the case).
         """
         if self._client is None:
             raise ValueError("Attempted to access uninitialized API client")
@@ -135,6 +137,13 @@ class BaseOperator(ABC):
     @abstractmethod
     def filters(self) -> List[Type[BaseFilter]]:
         return []
+
+    @property
+    def DesiredConfigurationSetInCFS(self) -> DesiredConfigurationSetInCFS:
+        """
+        Shortcut to get a DesiredConfigurationSetInCFS filter with the cfs_client for this operator
+        """
+        return DesiredConfigurationSetInCFS(self.client.cfs)
 
     def run(self) -> NoReturn:
         """
