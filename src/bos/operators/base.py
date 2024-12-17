@@ -35,6 +35,7 @@ import os
 import time
 from typing import Generator, List, NoReturn, Type
 
+from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
 from bos.operators.filters.base import BaseFilter
@@ -68,7 +69,7 @@ class ApiClients:
         #self.cfs = CFSClient()
         #self.hsm = HSMClient()
         #self.ims = IMSClient()
-        #self.pcs = PCSClient()
+        self.pcs = PCSClient()
         self._stack = ExitStack()
 
     def __enter__(self):
@@ -80,7 +81,7 @@ class ApiClients:
         #self._stack.enter_context(self.cfs)
         #self._stack.enter_context(self.hsm)
         #self._stack.enter_context(self.ims)
-        #self._stack.enter_context(self.pcs)
+        self._stack.enter_context(self.pcs)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
