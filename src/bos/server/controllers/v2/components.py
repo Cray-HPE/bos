@@ -70,7 +70,7 @@ def get_v2_components(ids="",
         id_list = None
     tenant = get_tenant_from_header()
     LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified",
-                 tenant, len(id_list))
+                 tenant, len(id_list) if id_list else 0)
     response = get_v2_components_data(id_list=id_list,
                                       enabled=enabled,
                                       session=session,
