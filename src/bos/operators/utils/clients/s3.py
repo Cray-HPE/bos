@@ -39,6 +39,7 @@ LOGGER = logging.getLogger(__name__)
 # This lock is used to serialize it.
 boto3_client_lock = threading.Lock()
 
+
 class ArtifactNotFound(Exception):
     """
     A boot artifact could not be located.
@@ -124,9 +125,8 @@ def s3_client(connection_timeout=60, read_timeout=60):
                           aws_secret_access_key=s3_secret_key,
                           use_ssl=False,
                           verify=False,
-                          config=BotoConfig(
-                              connect_timeout=connection_timeout,
-                              read_timeout=read_timeout))
+                          config=BotoConfig(connect_timeout=connection_timeout,
+                                            read_timeout=read_timeout))
     return s3
 
 
@@ -160,10 +160,8 @@ class S3Object:
 
         try:
             s3 = s3_client()
-            s3_obj = s3.head_object(
-                        Bucket=self.s3url.bucket,
-                        Key=self.s3url.key
-                    )
+            s3_obj = s3.head_object(Bucket=self.s3url.bucket,
+                                    Key=self.s3url.key)
         except ClientError as error:
             msg = f"s3 object {self.path} was not found."
             LOGGER.error(msg)
@@ -171,9 +169,10 @@ class S3Object:
             raise S3ObjectNotFound(msg) from error
 
         if self.etag and self.etag != s3_obj["ETag"].strip('\"'):
-            LOGGER.warning("s3 object %s was found, but has an etag '%s' that does "
-                               "not match what BOS has '%s'.", self.path, s3_obj["ETag"],
-                               self.etag)
+            LOGGER.warning(
+                "s3 object %s was found, but has an etag '%s' that does "
+                "not match what BOS has '%s'.", self.path, s3_obj["ETag"],
+                self.etag)
         return s3_obj
 
     @property
@@ -194,7 +193,8 @@ class S3Object:
 
         s3 = s3_client()
 
-        LOGGER.info("++ _get_s3_download_url %s with etag %s.", self.path, self.etag)
+        LOGGER.info("++ _get_s3_download_url %s with etag %s.", self.path,
+                    self.etag)
         try:
             return s3.get_object(Bucket=self.s3url.bucket, Key=self.s3url.key)
         except (ClientError, ParamValidationError) as error:
@@ -272,8 +272,10 @@ class S3BootArtifacts(S3Object):
           TooManyArtifacts -- There is more than one artifact when only one was expected
         """
         try:
-            artifacts = [artifact for artifact in self.manifest_json['artifacts'] if
-                                 artifact['type'] == artifact_type]
+            artifacts = [
+                artifact for artifact in self.manifest_json['artifacts']
+                if artifact['type'] == artifact_type
+            ]
         except ValueError as value_error:
             LOGGER.info("Received ValueError while processing manifest file.")
             LOGGER.debug(value_error)
@@ -317,7 +319,8 @@ class S3BootArtifacts(S3Object):
            boot parameters object if one exists, else None
         """
         try:
-            bp = self._get_artifact('application/vnd.cray.image.parameters.boot')
+            bp = self._get_artifact(
+                'application/vnd.cray.image.parameters.boot')
         except ArtifactNotFound:
             bp = None
 

@@ -56,11 +56,12 @@ class ImageNotFound(Exception):
     """
     Raised if querying IMS for an image and it is not found
     """
+
     def __init__(self, image_id: str):
         super().__init__(f"IMS image id '{image_id}' does not exist in IMS")
 
 
-def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
+def get_image(image_id: str, session: RequestsSession | None = None) -> dict:
     """
     Queries IMS to retrieve the specified image and return it.
     If the image does not exist, raise ImageNotFound.
@@ -68,15 +69,17 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
     """
     if not session:
         session = requests_retry_session()
-    url=f"{IMAGES_ENDPOINT}/{image_id}"
+    url = f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("GET %s", url)
     try:
         response = session.get(url)
     except Exception as err:
-        LOGGER.error("Exception during GET request to %s: %s", url, exc_type_msg(err))
+        LOGGER.error("Exception during GET request to %s: %s", url,
+                     exc_type_msg(err))
         raise
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, compact_response_text(response.text))
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                 response.status_code, response.reason,
+                 compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:
@@ -91,33 +94,42 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
     try:
         return response.json()
     except Exception as err:
-        LOGGER.error("Failed decoding JSON response from getting IMS image %s: %s", image_id,
-                     exc_type_msg(err))
+        LOGGER.error(
+            "Failed decoding JSON response from getting IMS image %s: %s",
+            image_id, exc_type_msg(err))
         raise
 
 
-def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -> None:
+def patch_image(image_id: str,
+                data: dict,
+                session: RequestsSession | None = None) -> None:
     if not data:
-        LOGGER.warning("patch_image called without data; returning without action.")
+        LOGGER.warning(
+            "patch_image called without data; returning without action.")
         return
     if not session:
         session = requests_retry_session()
-    url=f"{IMAGES_ENDPOINT}/{image_id}"
+    url = f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("PATCH %s with body=%s", url, data)
     response = session.patch(url, json=data)
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, compact_response_text(response.text))
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                 response.status_code, response.reason,
+                 compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:
-        LOGGER.error("Failed asking IMS to patch image %s: %s", image_id, exc_type_msg(err))
+        LOGGER.error("Failed asking IMS to patch image %s: %s", image_id,
+                     exc_type_msg(err))
         if response.status_code == 404:
             raise ImageNotFound(image_id) from err
         raise
 
 
-def tag_image(image_id: str, operation: str, key: str, value: str=None,
-              session: RequestsSession|None=None) -> None:
+def tag_image(image_id: str,
+              operation: str,
+              key: str,
+              value: str = None,
+              session: RequestsSession | None = None) -> None:
     if operation not in IMS_TAG_OPERATIONS:
         msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
         LOGGER.error(msg)
@@ -129,24 +141,20 @@ def tag_image(image_id: str, operation: str, key: str, value: str=None,
         raise TagFailure(msg)
 
     if value:
-        LOGGER.debug("Patching image %s %sing key: %s value: %s", image_id, operation, key, value)
+        LOGGER.debug("Patching image %s %sing key: %s value: %s", image_id,
+                     operation, key, value)
     else:
-        LOGGER.debug("Patching image %s %sing key: %s", image_id, operation, key)
+        LOGGER.debug("Patching image %s %sing key: %s", image_id, operation,
+                     key)
 
     if not session:
         session = requests_retry_session()
 
-    data = {
-        "metadata": {
-            "operation": operation,
-            "key": key,
-            "value": value
-            }
-    }
+    data = {"metadata": {"operation": operation, "key": key, "value": value}}
     patch_image(image_id=image_id, data=data, session=session)
 
 
-def get_ims_id_from_s3_url(s3_url: S3Url) -> str|None:
+def get_ims_id_from_s3_url(s3_url: S3Url) -> str | None:
     """
     If the s3_url matches the expected format of an IMS image path, then return the IMS image ID.
     Otherwise return None.
@@ -165,15 +173,17 @@ def get_arch_from_image_data(image_data: dict) -> str:
     try:
         arch = image_data['arch']
     except KeyError:
-        LOGGER.warning("Defaulting to '%s' because 'arch' not set in IMS image data: %s",
-                       DEFAULT_IMS_IMAGE_ARCH, image_data)
+        LOGGER.warning(
+            "Defaulting to '%s' because 'arch' not set in IMS image data: %s",
+            DEFAULT_IMS_IMAGE_ARCH, image_data)
         return DEFAULT_IMS_IMAGE_ARCH
     except Exception as err:
-        LOGGER.error("Unexpected error parsing IMS image data (%s): %s", exc_type_msg(err),
-                     image_data)
+        LOGGER.error("Unexpected error parsing IMS image data (%s): %s",
+                     exc_type_msg(err), image_data)
         raise
     if arch:
         return arch
-    LOGGER.warning("Defaulting to '%s' because 'arch' set to null value in IMS image data: %s",
-                   DEFAULT_IMS_IMAGE_ARCH, image_data)
+    LOGGER.warning(
+        "Defaulting to '%s' because 'arch' set to null value in IMS image data: %s",
+        DEFAULT_IMS_IMAGE_ARCH, image_data)
     return DEFAULT_IMS_IMAGE_ARCH

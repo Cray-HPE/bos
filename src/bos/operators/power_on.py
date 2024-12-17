@@ -67,12 +67,13 @@ class PowerOnOperator(BaseOperator):
             HSMState()
         ]
 
-    def _act(self, components: Union[List[dict],None]):
+    def _act(self, components: Union[List[dict], None]):
         if not components:
             return components
         self._preset_last_action(components)
 
-        boot_artifacts, sessions = self._sort_components_by_boot_artifacts(components)
+        boot_artifacts, sessions = self._sort_components_by_boot_artifacts(
+            components)
 
         try:
             self._tag_images(boot_artifacts, components)
@@ -81,19 +82,23 @@ class PowerOnOperator(BaseOperator):
         try:
             self._set_bss(boot_artifacts, bos_sessions=sessions)
         except Exception as e:
-            raise Exception(f"Error encountered setting BSS information: {e}") from e
+            raise Exception(
+                f"Error encountered setting BSS information: {e}") from e
         try:
             set_cfs(components, enabled=False, clear_state=True)
         except Exception as e:
-            raise Exception(f"Error encountered setting CFS information: {e}") from e
+            raise Exception(
+                f"Error encountered setting CFS information: {e}") from e
         component_ids = [component['id'] for component in components]
         try:
             pcs.power_on(component_ids)
         except Exception as e:
-            raise Exception(f"Error encountered calling CAPMC to power on: {e}") from e
+            raise Exception(
+                f"Error encountered calling CAPMC to power on: {e}") from e
         return components
 
-    def _sort_components_by_boot_artifacts(self, components: List[dict]) -> tuple[Dict, Dict]:
+    def _sort_components_by_boot_artifacts(
+            self, components: List[dict]) -> tuple[Dict, Dict]:
         """
         Create a two dictionaries.
         The first dictionary has keys with a unique combination of boot artifacts associated with
@@ -116,7 +121,8 @@ class PowerOnOperator(BaseOperator):
         bos_sessions = {}
         for component in components:
             # Handle the boot artifacts
-            nodes_boot_artifacts = component.get('desired_state', {}).get('boot_artifacts', {})
+            nodes_boot_artifacts = component.get('desired_state',
+                                                 {}).get('boot_artifacts', {})
             kernel = nodes_boot_artifacts.get('kernel')
             kernel_parameters = nodes_boot_artifacts.get('kernel_parameters')
             initrd = nodes_boot_artifacts.get('initrd')
@@ -147,39 +153,48 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
-                resp = bss.set_bss(node_set=nodes, kernel_params=kernel_parameters,
-                                   kernel=kernel, initrd=initrd)
+                resp = bss.set_bss(node_set=nodes,
+                                   kernel_params=kernel_parameters,
+                                   kernel=kernel,
+                                   initrd=initrd)
                 resp.raise_for_status()
             except HTTPError as err:
-                LOGGER.error("Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
-                             key, nodes, exc_type_msg(err))
+                LOGGER.error(
+                    "Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
+                    key, nodes, exc_type_msg(err))
             else:
                 token = resp.headers['bss-referral-token']
                 attempts = 0
                 while attempts <= retries:
                     try:
-                        record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                        record_boot_artifacts(token, kernel, kernel_parameters,
+                                              initrd)
                         break
                     except Exception as err:
                         attempts += 1
-                        LOGGER.error("An error occurred attempting to record the BSS token: %s",
-                                     exc_type_msg(err))
+                        LOGGER.error(
+                            "An error occurred attempting to record the BSS token: %s",
+                            exc_type_msg(err))
                         if attempts > retries:
                             raise
                         LOGGER.info("Retrying to record the BSS token.")
 
                 for node in nodes:
-                    bss_tokens.append({"id": node,
-                                       "desired_state": {"bss_token": token},
-                                       "session": bos_sessions[node]})
-        LOGGER.info('Found %d components that require BSS token updates', len(bss_tokens))
+                    bss_tokens.append({
+                        "id": node,
+                        "desired_state": {
+                            "bss_token": token
+                        },
+                        "session": bos_sessions[node]
+                    })
+        LOGGER.info('Found %d components that require BSS token updates',
+                    len(bss_tokens))
         if not bss_tokens:
             return
-        redacted_component_updates = [
-            { "id": comp["id"],
-              "session": comp["session"]
-            }
-            for comp in bss_tokens ]
+        redacted_component_updates = [{
+            "id": comp["id"],
+            "session": comp["session"]
+        } for comp in bss_tokens]
         LOGGER.debug('Updated components (minus desired_state data): %s',
                      redacted_component_updates)
         self.bos_client.components.update_components(bss_tokens)
@@ -234,6 +249,7 @@ class PowerOnOperator(BaseOperator):
                     my_components_by_id[node]["error"] = str(e)
                     components_to_update.append(my_components_by_id[node])
                 self._update_database(components_to_update)
+
 
 if __name__ == '__main__':
     main(PowerOnOperator)

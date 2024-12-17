@@ -33,7 +33,5 @@ LOGGER = logging.getLogger(__name__)
 def root_get():
     """ Get a list of supported versions """
     LOGGER.info('in get_versions')
-    versions = [
-        v2_base.calc_version(details=False)
-    ]
+    versions = [v2_base.calc_version(details=False)]
     return versions, 200

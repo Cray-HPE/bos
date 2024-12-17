@@ -61,12 +61,14 @@ def read_all_node_xnames():
     except ConnectionError as ce:
         LOGGER.error("Unable to contact HSM service: %s", exc_type_msg(ce))
         raise HWStateManagerException(ce) from ce
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, compact_response_text(response.text))
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                 response.status_code, response.reason,
+                 compact_response_text(response.text))
     try:
         response.raise_for_status()
     except (HTTPError, MaxRetryError) as hpe:
-        LOGGER.error("Unexpected response from HSM: %s (%s)", response, exc_type_msg(hpe))
+        LOGGER.error("Unexpected response from HSM: %s (%s)", response,
+                     exc_type_msg(hpe))
         raise HWStateManagerException(hpe) from hpe
     try:
         json_body = json.loads(response.text)
@@ -74,14 +76,17 @@ def read_all_node_xnames():
         LOGGER.error("Non-JSON response from HSM: %s", response.text)
         raise HWStateManagerException(jde) from jde
     try:
-        return {component['ID'] for component in json_body['Components']
-                    if component.get('Type', None) == 'Node'}
+        return {
+            component['ID']
+            for component in json_body['Components']
+            if component.get('Type', None) == 'Node'
+        }
     except KeyError as ke:
         LOGGER.error("Unexpected API response from HSM: %s", exc_type_msg(ke))
         raise HWStateManagerException(ke) from ke
 
 
-def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
+def get_components(node_list, enabled=None) -> dict[str, list[dict]]:
     """
     Get information for all list components HSM
 
@@ -130,8 +135,9 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
             payload['enabled'] = [str(enabled)]
         LOGGER.debug("POST %s with body=%s", ENDPOINT, payload)
         response = session.post(ENDPOINT, json=payload)
-        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                     response.reason, compact_response_text(response.text))
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                     response.status_code, response.reason,
+                     compact_response_text(response.text))
         response.raise_for_status()
         components = json.loads(response.text)
     except (ConnectionError, MaxRetryError) as e:
@@ -169,7 +175,8 @@ class Inventory:
             data = self.get('groups')
             groups = {}
             for group in data:
-                groups[group['label']] = set(group.get('members', {}).get('ids', []))
+                groups[group['label']] = set(
+                    group.get('members', {}).get('ids', []))
             self._groups = groups
         return self._groups
 
@@ -179,7 +186,8 @@ class Inventory:
             data = self.get('partitions')
             partitions = {}
             for partition in data:
-                partitions[partition['name']] = set(partition.get('members', {}).get('ids', []))
+                partitions[partition['name']] = set(
+                    partition.get('members', {}).get('ids', []))
             self._partitions = partitions
         return self._partitions
 
@@ -192,7 +200,7 @@ class Inventory:
             data = self.get('State/Components', params=params)
             roles = defaultdict(set)
             for component in data['Components']:
-                role=''
+                role = ''
                 if 'Role' in component:
                     role = str(component['Role'])
                     roles[role].add(component['ID'])
@@ -226,8 +234,9 @@ class Inventory:
         try:
             LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
             response = self._session.get(url, params=params, verify=VERIFY)
-            LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                         response.reason, compact_response_text(response.text))
+            LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                         response.status_code, response.reason,
+                         compact_response_text(response.text))
             response.raise_for_status()
         except HTTPError as err:
             LOGGER.error("Failed to get '%s': %s", url, exc_type_msg(err))

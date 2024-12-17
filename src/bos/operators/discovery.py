@@ -32,14 +32,19 @@ from bos.operators.base import BaseOperator, main
 
 LOGGER = logging.getLogger(__name__)
 
-NEW_COMPONENT = {'id': None,
-                 'actual_state': EMPTY_ACTUAL_STATE,
-                 'desired_state': EMPTY_DESIRED_STATE,
-                 'staged_state': {},
-                 'last_action': {'action': Action.newly_discovered},
-                 'enabled': False,
-                 'error': '',
-                 'session': ''}
+NEW_COMPONENT = {
+    'id': None,
+    'actual_state': EMPTY_ACTUAL_STATE,
+    'desired_state': EMPTY_DESIRED_STATE,
+    'staged_state': {},
+    'last_action': {
+        'action': Action.newly_discovered
+    },
+    'enabled': False,
+    'error': '',
+    'session': ''
+}
+
 
 class DiscoveryOperator(BaseOperator):
     """
@@ -105,6 +110,7 @@ class DiscoveryOperator(BaseOperator):
         The set of components that need to be added to BOS.
         """
         return self.hsm_xnames - self.bos_components
+
 
 if __name__ == '__main__':
     main(DiscoveryOperator)

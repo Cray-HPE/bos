@@ -22,7 +22,6 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-
 """
 Starting in CSM 1.6, BOS is enforcing many API restrictions for the first time.
 When migrating to this BOS version, this tool will attempt to clean up the BOS
@@ -56,7 +55,6 @@ import logging
 
 from .db import COMP_DB, SESS_DB, TEMP_DB
 from .sanitize import sanitize_component, sanitize_session, sanitize_session_template
-
 
 LOGGER = logging.getLogger(__name__)
 

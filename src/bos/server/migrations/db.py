@@ -28,33 +28,37 @@ import bos.server.redis_db_utils as dbutils
 
 LOGGER = logging.getLogger(__name__)
 
-TEMP_DB=dbutils.get_wrapper(db='session_templates')
-SESS_DB=dbutils.get_wrapper(db='sessions')
-STAT_DB=dbutils.get_wrapper(db='session_status')
-COMP_DB=dbutils.get_wrapper(db='components')
+TEMP_DB = dbutils.get_wrapper(db='session_templates')
+SESS_DB = dbutils.get_wrapper(db='sessions')
+STAT_DB = dbutils.get_wrapper(db='session_status')
+COMP_DB = dbutils.get_wrapper(db='components')
 
 
-def delete_from_db(db: dbutils.DBWrapper, key: str, err_msg: str|None=None) -> None:
+def delete_from_db(db: dbutils.DBWrapper,
+                   key: str,
+                   err_msg: str | None = None) -> None:
     if err_msg is None:
         LOGGER.warning("Deleting %s under DB key '%s'", db.db_string, key)
     else:
-        LOGGER.error("%s; Deleting %s under DB key '%s'", err_msg, db.db_string, key)
+        LOGGER.error("%s; Deleting %s under DB key '%s'", err_msg,
+                     db.db_string, key)
     data = db.get_and_delete(key)
     if data:
         LOGGER.info("Deleted %s '%s': %s", db.db_string, key, data)
     else:
-        LOGGER.warning("Could not delete %s '%s' -- does not exist", db.db_string, key)
+        LOGGER.warning("Could not delete %s '%s' -- does not exist",
+                       db.db_string, key)
 
 
-def delete_component(key: str, err_msg: str|None=None) -> None:
+def delete_component(key: str, err_msg: str | None = None) -> None:
     delete_from_db(COMP_DB, key, err_msg)
 
 
-def delete_template(key: str, err_msg: str|None=None) -> None:
+def delete_template(key: str, err_msg: str | None = None) -> None:
     delete_from_db(TEMP_DB, key, err_msg)
 
 
-def delete_session(key: str, err_msg: str|None=None) -> None:
+def delete_session(key: str, err_msg: str | None = None) -> None:
     delete_from_db(SESS_DB, key, err_msg)
     LOGGER.info("Deleting associated session status, if it exists")
     delete_from_db(STAT_DB, key, err_msg)

@@ -39,20 +39,26 @@ EXAMPLE_BOOT_SET = {
     "type": "s3",
     "etag": "boot-image-s3-etag",
     "kernel_parameters": "your-kernel-parameters",
-    "cfs": {"configuration": "bootset-specific-cfs-override"},
-    "node_list": [
-        "xname1", "xname2", "xname3"],
+    "cfs": {
+        "configuration": "bootset-specific-cfs-override"
+    },
+    "node_list": ["xname1", "xname2", "xname3"],
     "path": "s3://boot-images/boot-image-ims-id/manifest.json",
     "rootfs_provider": "cpss3",
-    "rootfs_provider_passthrough": "dvs:api-gw-service-nmn.local:300:hsn0,nmn0:0"}
+    "rootfs_provider_passthrough":
+    "dvs:api-gw-service-nmn.local:300:hsn0,nmn0:0"
+}
 
 EXAMPLE_SESSION_TEMPLATE = {
     "boot_sets": {
-        "name_your_boot_set": EXAMPLE_BOOT_SET},
+        "name_your_boot_set": EXAMPLE_BOOT_SET
+    },
     "cfs": {
-        "configuration": "default-sessiontemplate-cfs-config"},
+        "configuration": "default-sessiontemplate-cfs-config"
+    },
     "enable_cfs": True,
-    "name": "name-your-template"}
+    "name": "name-your-template"
+}
 
 
 @reject_invalid_tenant
@@ -62,24 +68,26 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
 
     Creates a new session template. # noqa: E501
     """
-    LOGGER.debug("PUT /v2/sessiontemplates/%s invoked put_v2_sessiontemplate", session_template_id)
+    LOGGER.debug("PUT /v2/sessiontemplates/%s invoked put_v2_sessiontemplate",
+                 session_template_id)
     try:
         template_data = get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing PUT '%s' request data: %s", session_template_id,
-                     exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        LOGGER.error("Error parsing PUT '%s' request data: %s",
+                     session_template_id, exc_type_msg(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     try:
         validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
-        LOGGER.error("Error creating session template '%s': %s", session_template_id,
-                     exc_type_msg(err))
+        LOGGER.error("Error creating session template '%s': %s",
+                     session_template_id, exc_type_msg(err))
         LOGGER.debug("Full template: %s", template_data)
         return connexion.problem(
-            status=400, title="The session template could not be created.",
+            status=400,
+            title="The session template could not be created.",
             detail=str(err))
 
     tenant = get_tenant_from_header()
@@ -97,7 +105,8 @@ def get_v2_sessiontemplates():  # noqa: E501
     """
     LOGGER.debug("GET /v2/sessiontemplates invoked get_v2_sessiontemplates")
     response = _get_filtered_templates(tenant=get_tenant_from_header())
-    LOGGER.debug("get_v2_sessiontemplates returning %d templates", len(response))
+    LOGGER.debug("get_v2_sessiontemplates returning %d templates",
+                 len(response))
     return response, 200
 
 
@@ -108,12 +117,15 @@ def get_v2_sessiontemplate(session_template_id):
 
     Get the session template by session template ID
     """
-    LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate", session_template_id)
-    template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
+    LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate",
+                 session_template_id)
+    template_key = get_tenant_aware_key(session_template_id,
+                                        get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
-            status=404, title="Sessiontemplate could not found.",
+            status=404,
+            title="Sessiontemplate could not found.",
             detail=f"Sessiontemplate {session_template_id} could not be found")
     template = DB.get(template_key)
     return template, 200
@@ -126,7 +138,9 @@ def get_v2_sessiontemplatetemplate():
 
     Get the example session template
     """
-    LOGGER.debug("GET /v2/sessiontemplatetemplate invoked get_v2_sessiontemplatetemplate")
+    LOGGER.debug(
+        "GET /v2/sessiontemplatetemplate invoked get_v2_sessiontemplatetemplate"
+    )
     return EXAMPLE_SESSION_TEMPLATE, 200
 
 
@@ -137,13 +151,16 @@ def delete_v2_sessiontemplate(session_template_id):
 
     Delete the session template by session template ID
     """
-    LOGGER.debug("DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate",
-                 session_template_id)
-    template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
+    LOGGER.debug(
+        "DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate",
+        session_template_id)
+    template_key = get_tenant_aware_key(session_template_id,
+                                        get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
-            status=404, title="Sessiontemplate could not found.",
+            status=404,
+            title="Sessiontemplate could not found.",
             detail=f"Sessiontemplate {session_template_id} could not be found")
     return DB.delete(template_key), 204
 
@@ -155,31 +172,35 @@ def patch_v2_sessiontemplate(session_template_id):
 
     Patch the session template by session template ID
     """
-    LOGGER.debug("PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
-                 session_template_id)
-    template_key = get_tenant_aware_key(session_template_id, get_tenant_from_header())
+    LOGGER.debug(
+        "PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
+        session_template_id)
+    template_key = get_tenant_aware_key(session_template_id,
+                                        get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
-            status=404, title="Sessiontemplate could not found.",
+            status=404,
+            title="Sessiontemplate could not found.",
             detail=f"Sessiontemplate {session_template_id} could not be found")
 
     try:
         template_data = get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing PATCH '%s' request data: %s", session_template_id,
-                     exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        LOGGER.error("Error parsing PATCH '%s' request data: %s",
+                     session_template_id, exc_type_msg(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     try:
         validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
-        LOGGER.error("Error patching session template '%s': %s", session_template_id,
-                     exc_type_msg(err))
+        LOGGER.error("Error patching session template '%s': %s",
+                     session_template_id, exc_type_msg(err))
         return connexion.problem(
-            status=400, title="The session template could not be patched.",
+            status=400,
+            title="The session template could not be patched.",
             detail=str(err))
 
     return DB.patch(template_key, template_data), 200
@@ -191,8 +212,9 @@ def validate_v2_sessiontemplate(session_template_id: str):
     Validate a V2 session template. Look for missing elements or errors that would prevent
     a session from being launched using this template.
     """
-    LOGGER.debug("GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate",
-                 session_template_id)
+    LOGGER.debug(
+        "GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate",
+        session_template_id)
     data, status_code = get_v2_sessiontemplate(session_template_id)
 
     if status_code != 200:

@@ -34,11 +34,7 @@ from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
 
 # Mapping from BOS boot set arch values to expected IMS image arch values
 # Omits BOS Other value, since there is no corresponding IMS image arch value
-EXPECTED_IMS_ARCH = {
-    "ARM": "aarch64",
-    "Unknown": "x86_64",
-    "X86": "x86_64"
-}
+EXPECTED_IMS_ARCH = {"ARM": "aarch64", "Unknown": "x86_64", "X86": "x86_64"}
 
 
 def validate_ims_boot_image(bs: dict, options_data: OptionsData) -> None:
@@ -91,7 +87,8 @@ def validate_ims_boot_image(bs: dict, options_data: OptionsData) -> None:
         raise BootSetWarning(str(err)) from err
 
     if EXPECTED_IMS_ARCH[bs_arch] != ims_image_arch:
-        raise BootSetArchMismatch(bs_arch=bs_arch, expected_ims_arch=EXPECTED_IMS_ARCH[bs_arch],
+        raise BootSetArchMismatch(bs_arch=bs_arch,
+                                  expected_ims_arch=EXPECTED_IMS_ARCH[bs_arch],
                                   actual_ims_arch=ims_image_arch)
 
 
@@ -106,18 +103,19 @@ def get_ims_image_id(path: str) -> str:
     ims_id = get_ims_id_from_s3_url(s3_url)
     if ims_id:
         return ims_id
-    raise NonImsImage(f"Boot artifact S3 URL '{s3_url.url}' doesn't follow convention "
-                      "for IMS images")
+    raise NonImsImage(
+        f"Boot artifact S3 URL '{s3_url.url}' doesn't follow convention "
+        "for IMS images")
 
 
-def get_ims_image_data(ims_id: str, num_retries: int|None=None) -> dict:
+def get_ims_image_data(ims_id: str, num_retries: int | None = None) -> dict:
     """
     Query IMS to get the image data and return it,
     or raise an exception.
     """
-    kwargs = { "image_id": ims_id }
+    kwargs = {"image_id": ims_id}
     if num_retries is not None:
         # A pylint bug generates a false positive error for this call
         # https://github.com/pylint-dev/pylint/issues/2271
-        kwargs['session'] = requests_retry_session(retries=4) # pylint: disable=redundant-keyword-arg
+        kwargs['session'] = requests_retry_session(retries=4)  # pylint: disable=redundant-keyword-arg
     return get_image(**kwargs)

@@ -103,22 +103,28 @@ class BaseOperator(ABC):
                 LOGGER.exception('Unhandled exception detected: %s', e)
 
             try:
-                sleep_time = getattr(options, self.frequency_option) - (time.time() - start_time)
+                sleep_time = getattr(options, self.frequency_option) - (
+                    time.time() - start_time)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             except Exception as e:
-                LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
-                time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
+                LOGGER.exception(
+                    'Unhandled exception getting polling frequency: %s', e)
+                time.sleep(
+                    5
+                )  # A small sleep for when exceptions getting the polling frequency
 
     @property
     def max_batch_size(self) -> int:
         max_batch_size = options.max_component_batch_size
         if max_batch_size != self.__max_batch_size:
-            LOGGER.info("max_component_batch_size option set to %d", max_batch_size)
+            LOGGER.info("max_component_batch_size option set to %d",
+                        max_batch_size)
             self.__max_batch_size = max_batch_size
         return max_batch_size
 
-    def _chunk_components(self, components: List[dict]) -> Generator[List[dict], None, None]:
+    def _chunk_components(
+            self, components: List[dict]) -> Generator[List[dict], None, None]:
         """
         Break up the components into groups of no more than max_batch_size nodes,
         and yield each group in turn.
@@ -145,16 +151,19 @@ class BaseOperator(ABC):
         if self.retry_attempt_field:
             components = self._handle_failed_components(components)
             if not components:
-                LOGGER.debug('After removing components that exceeded their retry limit, 0 '
-                             'components require action')
+                LOGGER.debug(
+                    'After removing components that exceeded their retry limit, 0 '
+                    'components require action')
                 return
         for component in components:  # Unset old errors components
             component['error'] = ''
         try:
             components = self._act(components)
         except Exception as e:
-            LOGGER.error("An unhandled exception was caught while trying to act on components: %s",
-                         e, exc_info=True)
+            LOGGER.error(
+                "An unhandled exception was caught while trying to act on components: %s",
+                e,
+                exc_info=True)
             for component in components:
                 component["error"] = str(e)
         self._update_database(components)
@@ -173,10 +182,13 @@ class BaseOperator(ABC):
             LOGGER.debug("_handle_failed_components: No components to handle")
             return []
         failed_components = []
-        good_components = []  # Any component that isn't determined to be in a failed state
+        good_components = [
+        ]  # Any component that isn't determined to be in a failed state
         for component in components:
-            num_attempts = component.get('event_stats', {}).get(self.retry_attempt_field, 0)
-            retries = int(component.get('retry_policy', options.default_retry_policy))
+            num_attempts = component.get('event_stats',
+                                         {}).get(self.retry_attempt_field, 0)
+            retries = int(
+                component.get('retry_policy', options.default_retry_policy))
             if retries != -1 and num_attempts >= retries:
                 # This component has hit its retry limit
                 failed_components.append(component)
@@ -190,35 +202,35 @@ class BaseOperator(ABC):
         """ The action taken by the operator on target components """
         raise NotImplementedError()
 
-    def _update_database(self, components: List[dict], additional_fields: dict=None) -> None:
+    def _update_database(self,
+                         components: List[dict],
+                         additional_fields: dict = None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
         Includes updating the last action, attempt count and error
         """
         if not components:
             # If we have been passed an empty list, there is nothing to do.
-            LOGGER.debug("_update_database: No components require database updates")
+            LOGGER.debug(
+                "_update_database: No components require database updates")
             return
         data = []
         for component in components:
             patch = {
                 'id': component['id'],
-                'error': component['error']  # New error, or clearing out old error
+                'error':
+                component['error']  # New error, or clearing out old error
             }
             if self.name:
-                last_action_data = {
-                    'action': self.name,
-                    'failed': False
-                }
+                last_action_data = {'action': self.name, 'failed': False}
                 patch['last_action'] = last_action_data
             if self.retry_attempt_field:
                 event_stats_data = {
-                    self.retry_attempt_field: component.get(
-                                                'event_stats',
-                                                {}
-                                              ).get(self.retry_attempt_field, 0) + 1
+                    self.retry_attempt_field:
+                    component.get('event_stats', {}).get(
+                        self.retry_attempt_field, 0) + 1
                 }
-                patch['event_stats']  = event_stats_data
+                patch['event_stats'] = event_stats_data
 
             if additional_fields:
                 patch.update(additional_fields)
@@ -243,19 +255,14 @@ class BaseOperator(ABC):
             return
         if not components:
             # If we have been passed an empty list, there is nothing to do.
-            LOGGER.debug("_preset_last_action: No components require database updates")
+            LOGGER.debug(
+                "_preset_last_action: No components require database updates")
             return
         data = []
         for component in components:
-            patch = {
-                'id': component['id'],
-                'error': component['error']
-            }
+            patch = {'id': component['id'], 'error': component['error']}
             if self.name:
-                last_action_data = {
-                    'action': self.name,
-                    'failed': False
-                }
+                last_action_data = {'action': self.name, 'failed': False}
                 patch['last_action'] = last_action_data
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
@@ -268,17 +275,22 @@ class BaseOperator(ABC):
         """
         if not components:
             # If we have been passed an empty list, there is nothing to do.
-            LOGGER.debug("_update_database_for_failure: No components require database updates")
+            LOGGER.debug(
+                "_update_database_for_failure: No components require database updates"
+            )
             return
         data = []
         for component in components:
             patch = {
                 'id': component['id'],
-                'status': {'status_override': Status.failed}
+                'status': {
+                    'status_override': Status.failed
+                }
             }
             if not component['error']:
-                patch['error'] = ('The retry limit has been hit for this component, '
-                                  'but no services have reported specific errors')
+                patch['error'] = (
+                    'The retry limit has been hit for this component, '
+                    'but no services have reported specific errors')
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
@@ -336,7 +348,8 @@ def _init_logging() -> None:
     log_level = logging.getLevelName(requested_log_level)
 
     if not isinstance(log_level, int):
-        LOGGER.warning('Log level %r is not valid. Falling back to INFO', requested_log_level)
+        LOGGER.warning('Log level %r is not valid. Falling back to INFO',
+                       requested_log_level)
         log_level = logging.INFO
     logging.basicConfig(level=log_level, format=log_format)
 

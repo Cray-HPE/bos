@@ -43,6 +43,7 @@ class Options(OptionsCache):
     This caches the options so that frequent use of these options do not all
     result in network calls.
     """
+
     def _get_options(self) -> dict:
         """Retrieves the current options from the BOS api"""
         session = requests_retry_session()

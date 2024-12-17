@@ -104,8 +104,8 @@ class Session:
     def template(self):
         if not self._template:
             template_name = self.session_data.get('template_name')
-            self._template = self.bos_client.session_templates.get_session_template(template_name,
-                                                                                    self.tenant)
+            self._template = self.bos_client.session_templates.get_session_template(
+                template_name, self.tenant)
         return self._template
 
     def setup(self, max_batch_size: int):
@@ -130,14 +130,16 @@ class Session:
                 else:
                     state = self._generate_desired_state(boot_set)
                 for component_id in components:
-                    data.append(self._operate(component_id, copy.deepcopy(state)))
+                    data.append(
+                        self._operate(component_id, copy.deepcopy(state)))
                 all_component_ids += components
             if not all_component_ids:
                 raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
             raise SessionSetupException(err) from err
         # No exception raised by previous block
-        self._log(LOGGER.info, 'Found %d components that require updates', len(data))
+        self._log(LOGGER.info, 'Found %d components that require updates',
+                  len(data))
         for chunk in chunk_components(data, max_batch_size):
             self._log(LOGGER.debug, f'Updated components: {chunk}')
             self.bos_client.components.update_components(chunk)
@@ -158,20 +160,25 @@ class Session:
         # Populate from node_groups
         for group_name in boot_set.get('node_groups', []):
             if group_name not in self.inventory.groups:
-                self._log(LOGGER.warning, f"No hardware matching label {group_name}")
+                self._log(LOGGER.warning,
+                          f"No hardware matching label {group_name}")
                 continue
             nodes |= self.inventory.groups[group_name]
         # Populate from node_roles_groups
         for role_name in boot_set.get('node_roles_groups', []):
             if role_name not in self.inventory.roles:
-                self._log(LOGGER.warning, f"No hardware matching role {role_name}")
+                self._log(LOGGER.warning,
+                          f"No hardware matching role {role_name}")
                 continue
             nodes |= self.inventory.roles[role_name]
         if not nodes:
-            self._log(LOGGER.warning,
-                      "After populating node list, before any filtering, no nodes to act upon.")
+            self._log(
+                LOGGER.warning,
+                "After populating node list, before any filtering, no nodes to act upon."
+            )
             return nodes
-        self._log(LOGGER.debug, "Before any limiting or filtering, %d nodes to act upon.",
+        self._log(LOGGER.debug,
+                  "Before any limiting or filtering, %d nodes to act upon.",
                   len(nodes))
         # Filter out any nodes that do not match the boot set architecture desired; boot sets that
         # do not have a specified arch are considered 'X86' nodes.
@@ -215,11 +222,15 @@ class Session:
         hsm_filter = HSMState()
         nodes = set(hsm_filter.filter_by_arch(nodes, valid_archs))
         if not nodes:
-            self._log(LOGGER.warning,
-                      "After filtering for architecture, no nodes remain to act upon.")
+            self._log(
+                LOGGER.warning,
+                "After filtering for architecture, no nodes remain to act upon."
+            )
         else:
-            self._log(LOGGER.debug,
-                      "After filtering for architecture, %d nodes remain to act upon.", len(nodes))
+            self._log(
+                LOGGER.debug,
+                "After filtering for architecture, %d nodes remain to act upon.",
+                len(nodes))
         return nodes
 
     def _apply_include_disabled(self, nodes):
@@ -234,11 +245,14 @@ class Session:
         hsmfilter = HSMState(enabled=True)
         nodes = set(hsmfilter._filter(list(nodes)))
         if not nodes:
-            self._log(LOGGER.warning,
-                      "After removing disabled nodes, no nodes remain to act upon.")
+            self._log(
+                LOGGER.warning,
+                "After removing disabled nodes, no nodes remain to act upon.")
         else:
-            self._log(LOGGER.debug, "After removing disabled nodes, %d nodes remain to act upon.",
-                      len(nodes))
+            self._log(
+                LOGGER.debug,
+                "After removing disabled nodes, %d nodes remain to act upon.",
+                len(nodes))
         return nodes
 
     def _apply_limit(self, nodes):
@@ -266,9 +280,11 @@ class Session:
             limit_node_set = op(limit_nodes)
         nodes = nodes.intersection(limit_node_set)
         if not nodes:
-            self._log(LOGGER.warning, "After applying limit, no nodes remain to act upon.")
+            self._log(LOGGER.warning,
+                      "After applying limit, no nodes remain to act upon.")
         else:
-            self._log(LOGGER.debug, "After applying limit, %d nodes remain to act upon.",
+            self._log(LOGGER.debug,
+                      "After applying limit, %d nodes remain to act upon.",
                       len(nodes))
         return nodes
 
@@ -282,16 +298,24 @@ class Session:
             raise SessionSetupException(str(e)) from e
         nodes = nodes.intersection(tenant_limit)
         if not nodes:
-            self._log(LOGGER.warning, "After applying tenant limit, no nodes remain to act upon.")
+            self._log(
+                LOGGER.warning,
+                "After applying tenant limit, no nodes remain to act upon.")
         else:
-            self._log(LOGGER.debug, "After applying tenant limit, %d nodes remain to act upon.",
-                      len(nodes))
+            self._log(
+                LOGGER.debug,
+                "After applying tenant limit, %d nodes remain to act upon.",
+                len(nodes))
         return nodes
 
     def _mark_running(self, component_ids):
         self.bos_client.sessions.update_session(
-            self.name, self.tenant,
-            {'status': {'status': 'running'}, "components": ",".join(component_ids)})
+            self.name, self.tenant, {
+                'status': {
+                    'status': 'running'
+                },
+                "components": ",".join(component_ids)
+            })
         self._log(LOGGER.info, 'Session is running')
 
     def _mark_failed(self, err):
@@ -299,8 +323,10 @@ class Session:
         Input:
           err (string): The error that prevented the session from running
         """
-        self.bos_client.sessions.update_session(
-            self.name, self.tenant, {'status': {'error': err}})
+        self.bos_client.sessions.update_session(self.name, self.tenant,
+                                                {'status': {
+                                                    'error': err
+                                                }})
         sco = SessionCompletionOperator()
         sco._mark_session_complete(self.name, self.tenant)
         self._log(LOGGER.info, 'Session %s has failed.', self.name)
@@ -317,7 +343,7 @@ class Session:
             data["staged_state"]["session"] = self.name
         else:
             data["desired_state"] = state
-            if self.operation_type == "reboot" :
+            if self.operation_type == "reboot":
                 data["actual_state"] = EMPTY_ACTUAL_STATE
             data["session"] = self.name
             data["enabled"] = True
@@ -346,11 +372,14 @@ class Session:
         image_metadata = BootImageMetaDataFactory(boot_set)()
         artifact_info = image_metadata.artifact_summary
         boot_artifacts['kernel'] = artifact_info['kernel']
-        boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")
-        boot_artifacts['kernel_parameters'] = self.assemble_kernel_boot_parameters(boot_set,
-                                                                                   artifact_info)
+        boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get(
+            "path", "")
+        boot_artifacts[
+            'kernel_parameters'] = self.assemble_kernel_boot_parameters(
+                boot_set, artifact_info)
         state['boot_artifacts'] = boot_artifacts
-        state['configuration'] = self._get_configuration_from_boot_set(boot_set)
+        state['configuration'] = self._get_configuration_from_boot_set(
+            boot_set)
         return state
 
     def _get_configuration_from_boot_set(self, boot_set: dict):
@@ -402,26 +431,28 @@ class Session:
         boot_param_pieces = []
 
         # Parameters from the image itself if the parameters exist.
-        if (artifact_info.get('boot_parameters') is not None and
-            artifact_info.get('boot_parameters_etag') is not None):
-            self._log(LOGGER.info,
-                        "++ _get_s3_download_url %s with etag %s.",
-                        artifact_info['boot_parameters'],
-                        artifact_info['boot_parameters_etag'])
+        if (artifact_info.get('boot_parameters') is not None
+                and artifact_info.get('boot_parameters_etag') is not None):
+            self._log(LOGGER.info, "++ _get_s3_download_url %s with etag %s.",
+                      artifact_info['boot_parameters'],
+                      artifact_info['boot_parameters_etag'])
 
             try:
                 s3_obj = S3Object(artifact_info['boot_parameters'],
                                   artifact_info['boot_parameters_etag'])
                 image_kernel_parameters_object = s3_obj.object
 
-                parameters_raw = image_kernel_parameters_object['Body'].read().decode('utf-8')
+                parameters_raw = image_kernel_parameters_object['Body'].read(
+                ).decode('utf-8')
                 image_kernel_parameters = parameters_raw.split()
                 if image_kernel_parameters:
                     boot_param_pieces.extend(image_kernel_parameters)
-            except (ClientError, UnicodeDecodeError, S3ObjectNotFound) as error:
-                self._log(LOGGER.error,
-                          "Error reading file %s; no kernel boot parameters obtained from image",
-                          artifact_info['boot_parameters'])
+            except (ClientError, UnicodeDecodeError,
+                    S3ObjectNotFound) as error:
+                self._log(
+                    LOGGER.error,
+                    "Error reading file %s; no kernel boot parameters obtained from image",
+                    artifact_info['boot_parameters'])
                 self._log(LOGGER.error, exc_type_msg(error))
                 raise
 
@@ -440,7 +471,8 @@ class Session:
             boot_param_pieces.append(nmd_parameters)
 
         # Add the bos actual state ttl value so nodes know how frequently to report
-        boot_param_pieces.append(f'bos_update_frequency={options.component_actual_state_ttl}')
+        boot_param_pieces.append(
+            f'bos_update_frequency={options.component_actual_state_ttl}')
 
         return ' '.join(boot_param_pieces)
 

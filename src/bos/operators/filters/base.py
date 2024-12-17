@@ -26,7 +26,6 @@ from abc import ABC, abstractmethod
 import logging
 from typing import List
 
-
 LOGGER = logging.getLogger(__name__)
 
 
@@ -57,20 +56,26 @@ class BaseFilter(ABC):
 
 class IDFilter(BaseFilter, ABC):
     """ A class for filters that take and return lists of component ids """
+
     def filter(self, components: List[dict]) -> List[dict]:
         component_ids = [component['id'] for component in components]
         results = BaseFilter.filter(self, components=component_ids)
-        LOGGER.debug('%s filter found the following components: %s', type(self).__name__,
-                     ','.join(results))
-        return [component for component in components if component['id'] in results]
+        LOGGER.debug('%s filter found the following components: %s',
+                     type(self).__name__, ','.join(results))
+        return [
+            component for component in components if component['id'] in results
+        ]
 
 
 class DetailsFilter(BaseFilter, ABC):
     """ A class for filters that take and return lists of detailed component information """
+
     def filter(self, components: List[dict]) -> List[dict]:
         results = BaseFilter.filter(self, components=components)
-        LOGGER.debug('%s filter found the following components: %s', type(self).__name__,
-                     ','.join([component.get('id', '') for component in results]))
+        LOGGER.debug(
+            '%s filter found the following components: %s',
+            type(self).__name__,
+            ','.join([component.get('id', '') for component in results]))
         return results
 
 
@@ -79,6 +84,7 @@ class LocalFilter(DetailsFilter, ABC):
     A class for filters that loop over component information that is already obtained.
     Only the _match method needs to be overridden to filter on one component at a time.
     """
+
     def _filter(self, components: List[dict]) -> List[dict]:
         matching_components = []
         for component in components:

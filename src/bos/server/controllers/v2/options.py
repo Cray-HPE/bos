@@ -48,6 +48,7 @@ class OptionsData(OptionsCache):
     This caches the options so that frequent use of these options do not all
     result in DB calls.
     """
+
     def _get_options(self) -> dict:
         """Retrieves the current options from the BOS DB"""
         LOGGER.debug("Retrieving options data from BOS DB")
@@ -60,7 +61,8 @@ class OptionsData(OptionsCache):
 
 def _init():
     # Start log level updater
-    log_level_updater = threading.Thread(target=check_v2_logging_level, args=())
+    log_level_updater = threading.Thread(target=check_v2_logging_level,
+                                         args=())
     log_level_updater.start()
 
     # Cleanup old options
@@ -69,7 +71,8 @@ def _init():
             data = DB.get(OPTIONS_KEY)
             break
         except Exception as err:
-            LOGGER.info('Database is not yet available (%s)', exc_type_msg(err))
+            LOGGER.info('Database is not yet available (%s)',
+                        exc_type_msg(err))
             time.sleep(1)
     if not data:
         return
@@ -131,9 +134,9 @@ def patch_v2_options():
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     if OPTIONS_KEY not in DB:
         DB.put(OPTIONS_KEY, {})
@@ -159,5 +162,6 @@ def check_v2_logging_level():
             if 'logging_level' in data:
                 update_log_level(data['logging_level'])
         except Exception as err:
-            LOGGER.debug("Error checking or updating log level: %s", exc_type_msg(err))
+            LOGGER.debug("Error checking or updating log level: %s",
+                         exc_type_msg(err))
         time.sleep(5)

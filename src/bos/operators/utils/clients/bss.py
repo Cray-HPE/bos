@@ -70,16 +70,19 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
     url = f"{ENDPOINT}/bootparameters"
 
     # Assignment payload
-    payload = {"hosts": list(node_set),
-               "params": kernel_params,
-               "kernel": kernel,
-               "initrd": initrd}
+    payload = {
+        "hosts": list(node_set),
+        "params": kernel_params,
+        "kernel": kernel,
+        "initrd": initrd
+    }
 
     LOGGER.debug("PUT %s for hosts %s", url, node_set)
     try:
         resp = session.put(url, data=json.dumps(payload), verify=False)
-        LOGGER.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
-                     resp.reason, compact_response_text(resp.text))
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                     resp.status_code, resp.reason,
+                     compact_response_text(resp.text))
         resp.raise_for_status()
         return resp
     except HTTPError as err:

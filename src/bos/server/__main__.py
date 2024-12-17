@@ -46,8 +46,7 @@ def create_app():
     app = connexion.App(__name__, specification_dir='./openapi/')
     app.app.json_encoder = JSONEncoder
     app.add_api('openapi.yaml',
-                arguments={'title':
-                           'Cray Boot Orchestration Service'},
+                arguments={'title': 'Cray Boot Orchestration Service'},
                 base_path='/')
     return app
 

@@ -61,11 +61,13 @@ class S3BootImageMetaData(BootImageMetaData):
         except ArtifactNotFound as err:
             LOGGER.warning(exc_type_msg(err))
         try:
-            self.artifact_summary['boot_parameters'] = self.boot_parameters_path
+            self.artifact_summary[
+                'boot_parameters'] = self.boot_parameters_path
         except ArtifactNotFound as err:
             LOGGER.warning(exc_type_msg(err))
         try:
-            self.artifact_summary['boot_parameters_etag'] = self.boot_parameters_etag
+            self.artifact_summary[
+                'boot_parameters_etag'] = self.boot_parameters_etag
         except ArtifactNotFound as err:
             LOGGER.warning(exc_type_msg(err))
 
@@ -81,8 +83,8 @@ class S3BootImageMetaData(BootImageMetaData):
         try:
             return self.boot_artifacts.manifest_json
         except (ClientError, S3MissingConfiguration) as error:
-            LOGGER.error("Unable to read %s -- Error: %s", self._boot_set.get('path', ''),
-                         exc_type_msg(error))
+            LOGGER.error("Unable to read %s -- Error: %s",
+                         self._boot_set.get('path', ''), exc_type_msg(error))
             raise BootImageMetaDataBadRead(error) from error
 
     @property

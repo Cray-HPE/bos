@@ -27,13 +27,13 @@ import logging
 
 import jsonschema
 
-
 LOGGER = logging.getLogger(__name__)
 
 API_JSON_SCHEMA_PATH = "/app/lib/bos/server/openapi.jsonschema"
 
 
 class Validator:
+
     def __init__(self):
         LOGGER.info("Loading API schema from %s", API_JSON_SCHEMA_PATH)
         with open(API_JSON_SCHEMA_PATH, "rt") as f:
@@ -72,5 +72,6 @@ class Validator:
     @property
     def cfs_fields(self):
         return self.get_schema_fields("V2CfsParameters")
+
 
 validator = Validator()

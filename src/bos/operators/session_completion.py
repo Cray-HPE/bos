@@ -55,21 +55,26 @@ class SessionCompletionOperator(BaseOperator):
         for session in sessions:
             components = self._get_incomplete_components(session["name"])
             if not components:
-                self._mark_session_complete(session["name"], session.get("tenant"))
+                self._mark_session_complete(session["name"],
+                                            session.get("tenant"))
 
     def _get_incomplete_sessions(self):
-        return self.bos_client.sessions.get_sessions(status = 'running')
+        return self.bos_client.sessions.get_sessions(status='running')
 
     def _get_incomplete_components(self, session_id):
-        components = self.bos_client.components.get_components(session = session_id, enabled = True)
-        components += self.bos_client.components.get_components(staged_session = session_id)
+        components = self.bos_client.components.get_components(
+            session=session_id, enabled=True)
+        components += self.bos_client.components.get_components(
+            staged_session=session_id)
         return components
 
     def _mark_session_complete(self, session_id, tenant):
-        self.bos_client.sessions.update_session(session_id, tenant,
-                                                { 'status': { 'status': 'complete',
-                                                              'end_time': get_current_timestamp()
-                                                            }})
+        self.bos_client.sessions.update_session(session_id, tenant, {
+            'status': {
+                'status': 'complete',
+                'end_time': get_current_timestamp()
+            }
+        })
         # This call causes the session status to saved in the database.
         self.bos_client.session_status.post_session_status(session_id, tenant)
         LOGGER.info('Session %s is complete', session_id)

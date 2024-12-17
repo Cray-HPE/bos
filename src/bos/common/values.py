@@ -28,6 +28,7 @@ class Phase:
     configuring = "configuring"
     none = ""
 
+
 # Actions
 class Action:
     power_on = "powering_on"
@@ -36,6 +37,7 @@ class Action:
     apply_staged = "apply_staged"
     session_setup = "session_setup"
     newly_discovered = "newly_discovered"
+
 
 # Status
 class Status:
@@ -50,16 +52,9 @@ class Status:
     on_hold = "on_hold"
 
 
-EMPTY_BOOT_ARTIFACTS = {
-    "kernel": "",
-    "kernel_parameters": "",
-    "initrd": ""
-}
+EMPTY_BOOT_ARTIFACTS = {"kernel": "", "kernel_parameters": "", "initrd": ""}
 
-EMPTY_ACTUAL_STATE = {
-    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
-    "bss_token": ""
-}
+EMPTY_ACTUAL_STATE = {"boot_artifacts": EMPTY_BOOT_ARTIFACTS, "bss_token": ""}
 
 EMPTY_DESIRED_STATE = {
     "configuration": "",

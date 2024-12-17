@@ -53,8 +53,14 @@ class OR(DetailsFilter):
         results_b = copy.deepcopy(components)
         for f in self.filters_b:
             results_b = f.filter(results_b)
-        results_a_dict = {component['id']: component for component in results_a}
-        results_b_dict = {component['id']: component for component in results_b}
+        results_a_dict = {
+            component['id']: component
+            for component in results_a
+        }
+        results_b_dict = {
+            component['id']: component
+            for component in results_b
+        }
         results = {**results_a_dict, **results_b_dict}
         return list(results.values())
 
@@ -79,7 +85,7 @@ class BOSQuery(DetailsFilter):
 class HSMState(IDFilter):
     """ Returns all components that are in specified state """
 
-    def __init__(self, enabled: bool=None, ready: bool=None) -> None:
+    def __init__(self, enabled: bool = None, ready: bool = None) -> None:
         super().__init__()
         self.enabled = enabled
         self.ready = ready
@@ -87,8 +93,10 @@ class HSMState(IDFilter):
     def _filter(self, components: List[str]) -> List[str]:
         components = get_hsm_components(components, enabled=self.enabled)
         if self.ready is not None:
-            return [component['ID'] for component in components['Components']
-                    if (component['State'] == 'Ready') is self.ready]
+            return [
+                component['ID'] for component in components['Components']
+                if (component['State'] == 'Ready') is self.ready
+            ]
         return [component['ID'] for component in components['Components']]
 
     def filter_by_arch(self, nodes, arch):
@@ -104,8 +112,11 @@ class HSMState(IDFilter):
           A list of xnames all matching one of the archs requested
         """
         components = get_hsm_components(list(nodes), enabled=self.enabled)
-        return [component['ID'] for component in components['Components']
-                if component.get('Arch', 'Unknown') in arch]
+        return [
+            component['ID'] for component in components['Components']
+            if component.get('Arch', 'Unknown') in arch
+        ]
+
 
 class NOT(LocalFilter):
     """ Returns the opposite of the given filter.  Use on local filters only."""
@@ -113,8 +124,10 @@ class NOT(LocalFilter):
     def __init__(self, filter: Type[LocalFilter]) -> None:
         self.negated_filter = filter
         self.filter_match = filter._match
+
         def negated_match(*args, **kwargs):
             return not self.filter_match(*args, **kwargs)
+
         self.negated_filter._match = negated_match
 
     def _filter(self, components: List[dict]) -> List[dict]:
@@ -168,13 +181,14 @@ class BootArtifactStatesMatch(LocalFilter):
         desired_boot_state = desired_state.get('boot_artifacts', {})
         actual_boot_state = actual_state.get('boot_artifacts', {})
         for key in ['kernel', 'initrd']:
-            if desired_boot_state.get(key, None) != actual_boot_state.get(key, None):
+            if desired_boot_state.get(key, None) != actual_boot_state.get(
+                    key, None):
                 return False
         # Filter out kernel parameters that dynamically change.
         actual_kernel_parameters = self._sanitize_kernel_parameters(
-                                            actual_boot_state.get('kernel_parameters', None))
+            actual_boot_state.get('kernel_parameters', None))
         desired_kernel_parameters = self._sanitize_kernel_parameters(
-                                            desired_boot_state.get('kernel_parameters', None))
+            desired_boot_state.get('kernel_parameters', None))
 
         if actual_kernel_parameters != desired_kernel_parameters:
             return False
@@ -193,7 +207,7 @@ class BootArtifactStatesMatch(LocalFilter):
         if not parameter_string:
             return None
 
-        return re.sub(r'(^\\s)+spire_join_token=[\S]*' , '', parameter_string)
+        return re.sub(r'(^\\s)+spire_join_token=[\S]*', '', parameter_string)
 
 
 class DesiredConfigurationSetInCFS(LocalFilter):
@@ -206,13 +220,16 @@ class DesiredConfigurationSetInCFS(LocalFilter):
     def _filter(self, components: List[dict]) -> List[dict]:
         component_ids = [component['id'] for component in components]
         cfs_components = get_cfs_components_from_id_list(id_list=component_ids)
-        self.cfs_components_dict = {component['id']: component for component in cfs_components}
+        self.cfs_components_dict = {
+            component['id']: component
+            for component in cfs_components
+        }
         matches = LocalFilter._filter(self, components)
         # Clear this, so there are no lingering side-effects of running this method.
         self.cfs_components_dict = {}
         return matches
 
-    def _match(self, component: dict, cfs_component: dict=None) -> bool:
+    def _match(self, component: dict, cfs_component: dict = None) -> bool:
         # There are two ways to communicate the cfs_component to this method.
         # First: cfs_component input variable
         # Second: cfs_component_dict instance attribute
@@ -224,9 +241,11 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         # However, the status operator needs to pass in the cfs_component parameter
         # (i.e. the first method) because it is not calling the _filter method
         # which sets/updates the cfs_components_dict attribute.
-        desired_configuration = component.get('desired_state', {}).get('configuration')
+        desired_configuration = component.get('desired_state',
+                                              {}).get('configuration')
         if cfs_component is None:
-            set_configuration = self.cfs_components_dict[component['id']].get('desired_config')
+            set_configuration = self.cfs_components_dict[component['id']].get(
+                'desired_config')
         else:
             set_configuration = cfs_component.get('desired_config')
         return desired_configuration == set_configuration
@@ -238,7 +257,8 @@ class DesiredBootStateIsNone(LocalFilter):
     def _match(self, component: dict) -> bool:
         desired_state = component.get('desired_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
-        if not desired_boot_state or not any(bool(v) for v in desired_boot_state.values()):
+        if not desired_boot_state or not any(
+                bool(v) for v in desired_boot_state.values()):
             return True
         return False
 
@@ -276,9 +296,11 @@ class ActualStateAge(LocalFilter):
         self.kwargs = kwargs
 
     def _match(self, component: dict) -> bool:
-        last_updated = component.get('actual_state', {}).get('last_updated', None)
+        last_updated = component.get('actual_state',
+                                     {}).get('last_updated', None)
         now = get_current_time()
-        if not last_updated or now > load_timestamp(last_updated) + timedelta(**self.kwargs):
+        if not last_updated or now > load_timestamp(last_updated) + timedelta(
+                **self.kwargs):
             return True
         return False
 
@@ -287,7 +309,8 @@ class ActualBootStateIsSet(LocalFilter):
     """ Returns when the actual state h """
 
     def _match(self, component: dict) -> bool:
-        actual_state_boot_artifacts = component.get('actual_state', {}).get('boot_artifacts', {})
+        actual_state_boot_artifacts = component.get('actual_state', {}).get(
+            'boot_artifacts', {})
         # The timestamp field doesn't count as a set record we particularly care about
         if 'timestamp' in actual_state_boot_artifacts:
             del actual_state_boot_artifacts['timestamp']
