@@ -1,0 +1,71 @@
+#
+# MIT License
+#
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the "Software"),
+# to deal in the Software without restriction, including without limitation
+# the rights to use, copy, modify, merge, publish, distribute, sublicense,
+# and/or sell copies of the Software, and to permit persons to whom the
+# Software is furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included
+# in all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+# THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+# OTHER DEALINGS IN THE SOFTWARE.
+#
+from abc import ABC
+import logging
+
+from bos.common.clients.endpoints import BaseEndpoint
+from bos.common.utils import PROTOCOL
+
+LOGGER = logging.getLogger(__name__)
+
+SERVICE_NAME = 'cray-cfs-api'
+BASE_CFS_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"
+
+
+class BaseCfsEndpoint(BaseEndpoint, ABC):
+    """
+    This base class provides generic access to the CFS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    BASE_ENDPOINT = BASE_CFS_ENDPOINT
+
+    def get_items(self, **kwargs):
+        """Get information for all CFS items"""
+        return self.get(params=kwargs)
+
+    def update_items(self, data):
+        """Update information for multiple CFS items"""
+        return self.patch(json=data)
+
+
+class BasePagedCfsEndpoint(BaseCfsEndpoint, ABC):
+    """
+    This base class provides generic access to the CFS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    ITEM_FIELD_NAME = ''
+
+    def get_items(self, **kwargs):
+        """Get information for all CFS items"""
+        item_list = []
+        while kwargs is not None:
+            response_json = super().get_items(**kwargs)
+            new_items = response_json[self.ITEM_FIELD_NAME]
+            LOGGER.debug("Query returned %d %ss", len(new_items),
+                         self.ITEM_FIELD_NAME)
+            item_list.extend(new_items)
+            kwargs = response_json["next"]
+        LOGGER.debug("Returning %d %ss from CFS", len(item_list),
+                     self.ITEM_FIELD_NAME)
+        return item_list

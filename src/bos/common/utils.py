@@ -23,14 +23,16 @@
 #
 
 # Standard imports
+from contextlib import nullcontext
 import datetime
 from functools import partial
 import re
 import traceback
-from typing import List
+from typing import Iterator, Optional, Unpack
 
 # Third party imports
 from dateutil.parser import parse
+import requests
 import requests_retry_session as rrs
 
 PROTOCOL = 'http'
@@ -75,6 +77,10 @@ DEFAULT_RETRY_ADAPTER_ARGS = rrs.RequestsRetryAdapterArgs(
     connect_timeout=3,
     read_timeout=10)
 
+retry_session_manager = partial(rrs.retry_session_manager,
+                                protocol=PROTOCOL,
+                                **DEFAULT_RETRY_ADAPTER_ARGS)
+
 
 class RetrySessionManager(rrs.RetrySessionManager):
     """
@@ -90,10 +96,29 @@ class RetrySessionManager(rrs.RetrySessionManager):
         super().__init__(protocol=protocol, **adapter_kwargs)
 
 
-requests_retry_session = partial(rrs.requests_retry_session,                                 
-                                 session=None,
-                                 protocol=PROTOCOL,
-                                 **DEFAULT_RETRY_ADAPTER_ARGS)
+def retry_session(
+    session: Optional[requests.Session] = None,
+    protocol: Optional[str] = None,
+    adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs] = None
+) -> Iterator[requests.Session]:
+    if session is not None:
+        return nullcontext(session)
+    kwargs = adapter_kwargs or {}
+    if protocol is not None:
+        return retry_session_manager(protocol=protocol, **kwargs)  # pylint: disable=redundant-keyword-arg
+    return retry_session_manager(**kwargs)
+
+
+def retry_session_get(*get_args,
+                      session: Optional[requests.Session] = None,
+                      protocol: Optional[str] = None,
+                      adapter_kwargs: Optional[
+                          rrs.RequestsRetryAdapterArgs] = None,
+                      **get_kwargs) -> Iterator[requests.Response]:
+    with retry_session(session=session,
+                       protocol=protocol,
+                       adapter_kwargs=adapter_kwargs) as _session:
+        return _session.get(*get_args, **get_kwargs)
 
 
 def compact_response_text(response_text: str) -> str:
@@ -169,7 +194,7 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     return "root=sbps-s3" in kernel_parameters
 
 
-def components_by_id(components: List[dict]) -> dict:
+def components_by_id(components: list[dict]) -> dict:
     """
     Input:
     * components: a list containing individual components
@@ -183,7 +208,7 @@ def components_by_id(components: List[dict]) -> dict:
     return {component["id"]: component for component in components}
 
 
-def reverse_components_by_id(components_by_id_map: dict) -> List[dict]:
+def reverse_components_by_id(components_by_id_map: dict) -> list[dict]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the

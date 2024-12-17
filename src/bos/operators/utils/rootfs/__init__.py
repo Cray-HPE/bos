@@ -71,8 +71,7 @@ class RootfsProvider:
         else:
             fields.append("")
 
-        rootfs_provider_passthrough = self.boot_set.get(
-            'rootfs_provider_passthrough', None)
+        rootfs_provider_passthrough = self.boot_set.get('rootfs_provider_passthrough', None)
         if rootfs_provider_passthrough:
             fields.append(rootfs_provider_passthrough)
 

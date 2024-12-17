@@ -28,11 +28,10 @@ from typing import Set
 from botocore.exceptions import ClientError
 
 from bos.operators.base import BaseOperator, main, chunk_components
-from bos.operators.filters.filters import HSMState
-from bos.operators.utils.clients.hsm import Inventory
-from bos.operators.utils.clients.s3 import S3Object, S3ObjectNotFound
+from bos.common.clients.hsm import Inventory
+from bos.common.clients.s3 import S3Object, S3ObjectNotFound
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
-from bos.operators.utils.clients.bos.options import options
+from bos.common.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
 from bos.common.utils import exc_type_msg
@@ -71,22 +70,24 @@ class SessionSetupOperator(BaseOperator):
         if not sessions:
             return
         LOGGER.info('Found %d sessions that require action', len(sessions))
-        inventory_cache = Inventory()
-        for data in sessions:
-            session = Session(data, inventory_cache, self.bos_client)
-            session.setup(self.max_batch_size)
+        with Inventory() as inventory_cache:
+            for data in sessions:
+                session = Session(data, inventory_cache, self.client.bos,
+                                  self.HSMState)
+                session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self):
-        return self.bos_client.sessions.get_sessions(status='pending')
+        return self.client.bos.sessions.get_sessions(status='pending')
 
 
 class Session:
 
-    def __init__(self, data, inventory_cache, bos_client):
+    def __init__(self, data, inventory_cache, bos_client, hsm_state):
         self.session_data = data
         self.inventory = inventory_cache
         self.bos_client = bos_client
         self._template = None
+        self.HSMState = hsm_state
 
     @property
     def name(self):
@@ -219,7 +220,7 @@ class Session:
         valid_archs = set([arch])
         if arch == 'X86':
             valid_archs.add('UNKNOWN')
-        hsm_filter = HSMState()
+        hsm_filter = self.HSMState()
         nodes = set(hsm_filter.filter_by_arch(nodes, valid_archs))
         if not nodes:
             self._log(
@@ -242,7 +243,7 @@ class Session:
         if include_disabled:
             # Nodes disabled in HSM may be included, so no filtering is required
             return nodes
-        hsmfilter = HSMState(enabled=True)
+        hsmfilter = self.HSMState(enabled=True)
         nodes = set(hsmfilter._filter(list(nodes)))
         if not nodes:
             self._log(

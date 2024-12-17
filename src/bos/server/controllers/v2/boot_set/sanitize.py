@@ -33,9 +33,7 @@ from .ims import validate_ims_boot_image
 from .validate import check_node_list_for_nids, verify_nonempty_hw_specifier_field
 
 
-def validate_sanitize_boot_sets(template_data: dict,
-                                options_data: OptionsData | None = None
-                                ) -> None:
+def validate_sanitize_boot_sets(template_data: dict, options_data: OptionsData|None=None) -> None:
     """
     Calls validate_sanitize_boot_set on every boot set in the template.
     Raises an exception if there are problems.
@@ -52,8 +50,7 @@ def validate_sanitize_boot_sets(template_data: dict,
 
     # The boot_sets field must be non-empty
     if not boot_sets:
-        raise BootSetError(
-            "Session templates must contain at least one boot set")
+        raise BootSetError("Session templates must contain at least one boot set")
 
     if options_data is None:
         options_data = OptionsData()
@@ -63,8 +60,7 @@ def validate_sanitize_boot_sets(template_data: dict,
         validate_sanitize_boot_set(bs_name, bs, options_data=options_data)
 
 
-def validate_sanitize_boot_set(bs_name: str, bs_data: dict,
-                               options_data: OptionsData) -> None:
+def validate_sanitize_boot_set(bs_name: str, bs_data: dict, options_data: OptionsData) -> None:
     """
     Called when creating/updating a BOS session template.
     Validates the boot set, and sanitizes it (editing it in place).
@@ -79,9 +75,8 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict,
     elif bs_data["name"] != bs_name:
         # All keys in the boot_sets mapping must match the 'name' fields in the
         # boot sets to which they map (if they contain a 'name' field).
-        raise BootSetError(
-            f"boot_sets key ({bs_name}) does not match 'name' "
-            f"field of corresponding boot set ({bs_data['name']})")
+        raise BootSetError(f"boot_sets key ({bs_name}) does not match 'name' "
+                               f"field of corresponding boot set ({bs_data['name']})")
 
     # Set the 'arch' field to the default value, if it is not present
     if "arch" not in bs_data:
@@ -119,6 +114,4 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: dict,
     except BootSetError as err:
         raise BootSetError(f"Boot set {bs_name}: {err}") from err
 
-    bs_data["node_list"] = [
-        canonize_xname(node) for node in bs_data["node_list"]
-    ]
+    bs_data["node_list"] = [ canonize_xname(node) for node in bs_data["node_list"] ]

@@ -27,6 +27,7 @@ BOS Operator - A Python operator for the Boot Orchestration Service.
 """
 
 from abc import ABC, abstractmethod
+from contextlib import ExitStack
 import itertools
 import logging
 import threading
@@ -36,9 +37,15 @@ from typing import Generator, List, NoReturn, Type
 
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
+from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, HSMState
 from bos.operators.filters.base import BaseFilter
-from bos.operators.utils.clients.bos.options import options
-from bos.operators.utils.clients.bos import BOSClient
+from bos.common.clients.bos.options import options
+from bos.common.clients.bos import BOSClient
+from bos.common.clients.bss import BSSClient
+from bos.common.clients.cfs import CFSClient
+from bos.common.clients.hsm import HSMClient
+from bos.common.clients.ims import IMSClient
+from bos.common.clients.pcs import PCSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 LOGGER = logging.getLogger(__name__)
@@ -54,6 +61,30 @@ class MissingSessionData(BaseOperatorException):
     Operators are expected to update the session data, if they are updating a component's
     desired state.
     """
+
+
+class ApiClients:
+
+    def __init__(self):
+        self.bos = BOSClient()
+        self.bss = BSSClient()
+        self.cfs = CFSClient()
+        self.hsm = HSMClient()
+        self.ims = IMSClient()
+        self.pcs = PCSClient()
+        self._stack = ExitStack()
+
+    def __enter__(self):
+        self._stack.enter_context(self.bos)
+        self._stack.enter_context(self.bss)
+        self._stack.enter_context(self.cfs)
+        self._stack.enter_context(self.hsm)
+        self._stack.enter_context(self.ims)
+        self._stack.enter_context(self.pcs)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self._stack.__exit__(exc_type, exc_val, exc_tb)
 
 
 class BaseOperator(ABC):
@@ -74,8 +105,14 @@ class BaseOperator(ABC):
     frequency_option = "polling_frequency"
 
     def __init__(self) -> NoReturn:
-        self.bos_client = BOSClient()
         self.__max_batch_size = 0
+        self._client: ApiClients | None = None
+
+    @property
+    def client(self) -> ApiClients:
+        if self._client is None:
+            raise ValueError("Attempted to access uninitialized API client")
+        return self._client
 
     @property
     @abstractmethod
@@ -86,6 +123,28 @@ class BaseOperator(ABC):
     @abstractmethod
     def filters(self) -> List[Type[BaseFilter]]:
         return []
+
+    def BOSQuery(self, **kwargs) -> BOSQuery:
+        """
+        Shortcut to get a BOSQuery filter with the bos_client for this operator
+        """
+        if 'bos_client' not in kwargs:
+            kwargs['bos_client'] = self.client.bos
+        return BOSQuery(**kwargs)
+
+    def DesiredConfigurationSetInCFS(self) -> DesiredConfigurationSetInCFS:
+        """
+        Shortcut to get a DesiredConfigurationSetInCFS filter with the cfs_client for this operator
+        """
+        return DesiredConfigurationSetInCFS(self.client.cfs)
+
+    def HSMState(self, **kwargs) -> HSMState:
+        """
+        Shortcut to get a HSMState filter with the bos_client for this operator
+        """
+        if 'hsm_client' not in kwargs:
+            kwargs['hsm_client'] = self.client.hsm
+        return HSMState(**kwargs)
 
     def run(self) -> NoReturn:
         """
@@ -98,9 +157,13 @@ class BaseOperator(ABC):
             try:
                 options.update()
                 _update_log_level()
-                self._run()
+                with ApiClients() as _client:
+                    self._client = _client
+                    self._run()
             except Exception as e:
                 LOGGER.exception('Unhandled exception detected: %s', e)
+            finally:
+                self._client = None
 
             try:
                 sleep_time = getattr(options, self.frequency_option) - (
@@ -244,7 +307,7 @@ class BaseOperator(ABC):
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
-        self.bos_client.components.update_components(data)
+        self.client.bos.components.update_components(data)
 
     def _preset_last_action(self, components: List[dict]) -> None:
         # This is done to eliminate the window between performing an action and marking the
@@ -267,7 +330,7 @@ class BaseOperator(ABC):
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
-        self.bos_client.components.update_components(data)
+        self.client.bos.components.update_components(data)
 
     def _update_database_for_failure(self, components: List[dict]) -> None:
         """
@@ -294,7 +357,7 @@ class BaseOperator(ABC):
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
-        self.bos_client.components.update_components(data)
+        self.client.bos.components.update_components(data)
 
 
 def chunk_components(components: List[dict],

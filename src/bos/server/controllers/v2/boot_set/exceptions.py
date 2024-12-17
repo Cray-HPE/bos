@@ -22,7 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-
 class BootSetError(Exception):
     """
     Generic error class for fatal problems found during boot set validation
@@ -42,16 +41,11 @@ class NonImsImage(BootSetWarning):
 
 
 class BootSetArchMismatch(BootSetError):
-
-    def __init__(self, bs_arch: str, expected_ims_arch: str,
-                 actual_ims_arch: str):
-        super().__init__(
-            f"Boot set arch '{bs_arch}' means IMS image arch should be "
-            f"'{expected_ims_arch}', but actual IMS image arch is '{actual_ims_arch}'"
-        )
+    def __init__(self, bs_arch: str, expected_ims_arch: str, actual_ims_arch: str):
+        super().__init__(f"Boot set arch '{bs_arch}' means IMS image arch should be "
+                         f"'{expected_ims_arch}', but actual IMS image arch is '{actual_ims_arch}'")
 
 
 class CannotValidateBootSetArch(BootSetWarning):
-
     def __init__(self, msg: str):
         super().__init__(f"Can't validate boot image arch: {msg}")

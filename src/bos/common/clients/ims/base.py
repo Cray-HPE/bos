@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,3 +21,24 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from abc import ABC
+
+from bos.common.clients.endpoints import BaseEndpoint
+
+from .defs import BASE_ENDPOINT as BASE_IMS_ENDPOINT
+
+
+class BaseImsEndpoint(BaseEndpoint, ABC):
+    """
+    This base class provides generic access to the IMS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    BASE_ENDPOINT = BASE_IMS_ENDPOINT
+
+    def get_item(self, item_id: str):
+        """Get information for a single IMS item"""
+        return self.get(uri=item_id)
+
+    def update_item(self, item_id: str, data):
+        """Update information for a single IMS item"""
+        return self.patch(uri=item_id, json=data)
