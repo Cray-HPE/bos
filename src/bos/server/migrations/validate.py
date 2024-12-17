@@ -32,7 +32,7 @@ from bos.server.schema import validator
 from .db import TEMP_DB
 
 
-LOGGER = logging.getLogger('bos.server.migration')
+LOGGER = logging.getLogger(__name__)
 
 
 class ValidationError(Exception):

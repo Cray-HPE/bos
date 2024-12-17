@@ -35,7 +35,7 @@ BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2/"
 ENDPOINT = os.path.join(BASE_ENDPOINT, 'State/Components/Query')
 VERIFY = True
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.hsm')
+LOGGER = logging.getLogger(__name__)
 
 
 class HWStateManagerException(Exception):

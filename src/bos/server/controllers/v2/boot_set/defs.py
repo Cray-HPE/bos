@@ -25,7 +25,7 @@
 from enum import IntEnum
 import logging
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.boot_set')
+LOGGER = logging.getLogger(__name__)
 
 # Use IntEnum to allow for inequalities
 class BootSetStatus(IntEnum):

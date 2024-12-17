@@ -39,7 +39,7 @@ ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
 POWER_STATUS_ENDPOINT = f'{ENDPOINT}/power-status'
 TRANSITION_ENDPOINT = f"{ENDPOINT}/transitions"
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.pcs')
+LOGGER = logging.getLogger(__name__)
 
 
 class PowerControlException(Exception):

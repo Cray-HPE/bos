@@ -26,7 +26,7 @@ import re
 
 import connexion
 
-LOGGER = logging.getLogger('bos.server.utils')
+LOGGER = logging.getLogger(__name__)
 
 
 class ParsingException(Exception):

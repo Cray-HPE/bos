@@ -32,7 +32,7 @@ from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.pcs import node_to_powerstate
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 
-LOGGER = logging.getLogger('bos.operators.status')
+LOGGER = logging.getLogger(__name__)
 
 
 class StatusOperator(BaseOperator):

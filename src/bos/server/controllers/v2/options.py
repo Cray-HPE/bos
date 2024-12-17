@@ -33,7 +33,7 @@ from bos.server import redis_db_utils as dbutils
 from bos.server.models.v2_options import V2Options as Options
 from bos.server.utils import get_request_json
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.options')
+LOGGER = logging.getLogger(__name__)
 DB = dbutils.get_wrapper(db='options')
 # We store all options as json under this key so that the data format is
 # similar to other data stored in the database, and to make retrieval of all

@@ -27,7 +27,7 @@ import logging
 from bos.common.utils import get_current_timestamp
 from bos.operators.base import BaseOperator, main
 
-LOGGER = logging.getLogger('bos.operators.session_completion')
+LOGGER = logging.getLogger(__name__)
 
 
 class SessionCompletionOperator(BaseOperator):

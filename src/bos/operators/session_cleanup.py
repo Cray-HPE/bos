@@ -28,7 +28,7 @@ import re
 from bos.operators.base import BaseOperator, main
 from bos.operators.utils.clients.bos.options import options
 
-LOGGER = logging.getLogger('bos.operators.session_cleanup')
+LOGGER = logging.getLogger(__name__)
 
 
 class SessionCleanupOperator(BaseOperator):

@@ -34,7 +34,7 @@ from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 from bos.server.utils import get_request_json
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.components')
+LOGGER = logging.getLogger(__name__)
 DB = dbutils.get_wrapper(db='components')
 SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 

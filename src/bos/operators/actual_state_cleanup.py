@@ -30,7 +30,7 @@ from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, ActualStateAge, ActualBootStateIsSet
 
-LOGGER = logging.getLogger('bos.operators.actual_state_cleanup')
+LOGGER = logging.getLogger(__name__)
 
 
 class ActualStateCleanupOperator(BaseOperator):

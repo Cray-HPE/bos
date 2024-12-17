@@ -26,7 +26,7 @@ import logging
 
 import bos.server.redis_db_utils as dbutils
 
-LOGGER = logging.getLogger('bos.server.migration')
+LOGGER = logging.getLogger(__name__)
 
 TEMP_DB=dbutils.get_wrapper(db='session_templates')
 SESS_DB=dbutils.get_wrapper(db='sessions')

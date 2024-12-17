@@ -29,7 +29,7 @@ from urllib3.exceptions import MaxRetryError
 from bos.common.tenant_utils import get_new_tenant_header
 from bos.common.utils import PROTOCOL, exc_type_msg, requests_retry_session
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
+LOGGER = logging.getLogger(__name__)
 
 API_VERSION = 'v2'
 SERVICE_NAME = 'cray-bos'

@@ -32,7 +32,7 @@ SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"
 COMPONENTS_ENDPOINT = f"{BASE_ENDPOINT}/components"
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.cfs')
+LOGGER = logging.getLogger(__name__)
 
 GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000

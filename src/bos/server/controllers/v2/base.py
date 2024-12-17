@@ -28,7 +28,7 @@ from bos.common.utils import exc_type_msg
 from bos.server.controllers.utils import url_for
 from bos.server.models import Version, Link
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.base')
+LOGGER = logging.getLogger(__name__)
 
 
 def calc_version(details):

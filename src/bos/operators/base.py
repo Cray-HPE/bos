@@ -41,7 +41,7 @@ from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
-LOGGER = logging.getLogger('bos.operators.base')
+LOGGER = logging.getLogger(__name__)
 MAIN_THREAD = threading.current_thread()
 
 

@@ -44,7 +44,7 @@ from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate
 from bos.server.utils import get_request_json, ParsingException
 
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.session')
+LOGGER = logging.getLogger(__name__)
 DB = dbutils.get_wrapper(db='sessions')
 COMPONENTS_DB = dbutils.get_wrapper(db='components')
 STATUS_DB = dbutils.get_wrapper(db='session_status')

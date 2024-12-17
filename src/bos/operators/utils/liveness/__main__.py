@@ -29,7 +29,7 @@ from bos.operators.utils.liveness import TIMESTAMP_PATH
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 
-LOGGER = logging.getLogger('bos.operators.utils.liveness.main')
+LOGGER = logging.getLogger(__name__)
 DEFAULT_LOG_LEVEL = logging.INFO
 
 

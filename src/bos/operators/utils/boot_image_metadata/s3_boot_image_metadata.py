@@ -30,7 +30,7 @@ from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImage
 from bos.operators.utils.clients.s3 import S3BootArtifacts, S3MissingConfiguration, S3Url, \
                                            ArtifactNotFound
 
-LOGGER = logging.getLogger('bos.operators.utils.boot_image_metadata.s3_boot_image_metadata')
+LOGGER = logging.getLogger(__name__)
 
 
 class S3BootImageMetaData(BootImageMetaData):

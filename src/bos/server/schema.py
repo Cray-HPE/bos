@@ -28,7 +28,7 @@ import logging
 import jsonschema
 
 
-LOGGER = logging.getLogger('bos.server.schema')
+LOGGER = logging.getLogger(__name__)
 
 API_JSON_SCHEMA_PATH = "/app/lib/bos/server/openapi.jsonschema"
 

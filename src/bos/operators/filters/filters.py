@@ -35,7 +35,7 @@ from bos.operators.utils.clients.cfs import get_components_from_id_list as \
                                             get_cfs_components_from_id_list
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
-LOGGER = logging.getLogger('bos.operators.filters.filters')
+LOGGER = logging.getLogger(__name__)
 
 
 # Usable filters

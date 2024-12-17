@@ -30,7 +30,7 @@ import connexion
 from requests.exceptions import HTTPError
 from bos.common.utils import exc_type_msg, requests_retry_session, PROTOCOL
 
-LOGGER = logging.getLogger('bos.common.tenant_utils')
+LOGGER = logging.getLogger(__name__)
 
 TENANT_HEADER = "Cray-Tenant-Name"
 SERVICE_NAME = 'cray-tapms/v1alpha3' # CASMCMS-9125: Currently when TAPMS bumps this version, it

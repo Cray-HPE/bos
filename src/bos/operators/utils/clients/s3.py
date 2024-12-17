@@ -33,7 +33,7 @@ from botocore.config import Config as BotoConfig
 
 from bos.common.utils import exc_type_msg
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.s3')
+LOGGER = logging.getLogger(__name__)
 
 # CASMCMS-9015: Instantiating the client is not thread-safe.
 # This lock is used to serialize it.

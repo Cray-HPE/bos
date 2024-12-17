@@ -27,7 +27,7 @@ import logging
 from typing import List
 
 
-LOGGER = logging.getLogger('bos.operators.filters.base')
+LOGGER = logging.getLogger(__name__)
 
 
 # Abstracts

@@ -35,7 +35,7 @@ IMS_VERSION = 'v3'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/{IMS_VERSION}"
 IMAGES_ENDPOINT = f"{BASE_ENDPOINT}/images"
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.ims')
+LOGGER = logging.getLogger(__name__)
 IMS_TAG_OPERATIONS = ['set', 'remove']
 
 # Making minimal assumptions about the IMS ID itself, this pattern just makes sure that the

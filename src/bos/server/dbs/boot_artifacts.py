@@ -26,7 +26,7 @@ import logging
 from bos.common.utils import get_current_timestamp
 from bos.server import redis_db_utils as dbutils
 
-LOGGER = logging.getLogger('bos.server.dbs.boot_artifacts')
+LOGGER = logging.getLogger(__name__)
 TOKENS_DB = dbutils.get_wrapper(db='bss_tokens_boot_artifacts')
 
 

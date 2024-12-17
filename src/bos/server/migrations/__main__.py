@@ -58,7 +58,7 @@ from .db import COMP_DB, SESS_DB, TEMP_DB
 from .sanitize import sanitize_component, sanitize_session, sanitize_session_template
 
 
-LOGGER = logging.getLogger('bos.server.migration')
+LOGGER = logging.getLogger(__name__)
 
 
 def main():

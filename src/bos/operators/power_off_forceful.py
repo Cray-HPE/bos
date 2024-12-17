@@ -30,7 +30,7 @@ from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
 
-LOGGER = logging.getLogger('bos.operators.power_off_forceful')
+LOGGER = logging.getLogger(__name__)
 
 
 class ForcefulPowerOffOperator(BaseOperator):

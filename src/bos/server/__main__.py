@@ -32,7 +32,7 @@ import connexion
 from bos.server.controllers.v2 import options
 from bos.server.encoder import JSONEncoder
 
-LOGGER = logging.getLogger('bos.__main__')
+LOGGER = logging.getLogger(__name__)
 
 
 def create_app():

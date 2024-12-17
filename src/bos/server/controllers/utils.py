@@ -28,7 +28,7 @@ from urllib.parse import urlparse, urlunparse
 import connexion
 import flask
 
-LOGGER = logging.getLogger('bos.server.controllers.utils')
+LOGGER = logging.getLogger(__name__)
 
 
 def url_for(endpoint, **values):

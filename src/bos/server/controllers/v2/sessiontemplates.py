@@ -32,7 +32,7 @@ from bos.server.schema import validator
 from bos.server.utils import get_request_json
 from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.sessiontemplates')
+LOGGER = logging.getLogger(__name__)
 DB = dbutils.get_wrapper(db='session_templates')
 
 EXAMPLE_BOOT_SET = {

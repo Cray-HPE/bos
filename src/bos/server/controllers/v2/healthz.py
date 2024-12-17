@@ -29,7 +29,7 @@ from bos.server import redis_db_utils
 
 DB = redis_db_utils.get_wrapper(db='options')
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.healthz')
+LOGGER = logging.getLogger(__name__)
 
 
 def _get_db_status():

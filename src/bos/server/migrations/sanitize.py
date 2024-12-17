@@ -37,7 +37,7 @@ from .validate import ValidationError, check_component, check_session, check_key
                       validate_bootset_path, validate_against_schema
 
 
-LOGGER = logging.getLogger('bos.server.migration')
+LOGGER = logging.getLogger(__name__)
 
 ALPHANUMERIC = string.ascii_letters + string.digits
 TEMPLATE_NAME_CHARACTERS = ALPHANUMERIC + '-._'

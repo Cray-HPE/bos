@@ -43,7 +43,7 @@ from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
-LOGGER = logging.getLogger('bos.operators.power_on')
+LOGGER = logging.getLogger(__name__)
 
 
 class PowerOnOperator(BaseOperator):

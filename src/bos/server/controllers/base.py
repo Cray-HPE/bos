@@ -27,7 +27,7 @@ import logging
 
 from bos.server.controllers.v2 import base as v2_base
 
-LOGGER = logging.getLogger('bos.server.controllers.base')
+LOGGER = logging.getLogger(__name__)
 
 
 def root_get():
