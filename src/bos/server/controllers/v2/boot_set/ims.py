@@ -22,10 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from bos.common.utils import exc_type_msg, requests_retry_session
-from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
+from bos.common.utils import exc_type_msg
+from bos.common.clients.ims import get_arch_from_image_data, IMSClient, \
                                             get_ims_id_from_s3_url, ImageNotFound
-from bos.operators.utils.clients.s3 import S3Url
+from bos.common.clients.s3 import S3Url
 from bos.server.controllers.v2.options import OptionsData
 
 from .defs import DEFAULT_ARCH
@@ -113,9 +113,8 @@ def get_ims_image_data(ims_id: str, num_retries: int | None = None) -> dict:
     Query IMS to get the image data and return it,
     or raise an exception.
     """
-    kwargs = {"image_id": ims_id}
+    kwargs = {}
     if num_retries is not None:
-        # A pylint bug generates a false positive error for this call
-        # https://github.com/pylint-dev/pylint/issues/2271
-        kwargs['session'] = requests_retry_session(retries=4)  # pylint: disable=redundant-keyword-arg
-    return get_image(**kwargs)
+        kwargs = {'retries': num_retries}
+    with IMSClient(**kwargs) as ims_client:
+        return ims_client.images.get_image(ims_id)

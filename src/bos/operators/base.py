@@ -39,6 +39,7 @@ from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
 from bos.common.clients.bss import BSSClient
 from bos.common.clients.cfs import CFSClient
+from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
@@ -71,7 +72,7 @@ class ApiClients:
         self.bss = BSSClient()
         self.cfs = CFSClient()
         #self.hsm = HSMClient()
-        #self.ims = IMSClient()
+        self.ims = IMSClient()
         self.pcs = PCSClient()
         self._stack = ExitStack()
 
@@ -83,7 +84,7 @@ class ApiClients:
         self._stack.enter_context(self.bss)
         self._stack.enter_context(self.cfs)
         #self._stack.enter_context(self.hsm)
-        #self._stack.enter_context(self.ims)
+        self._stack.enter_context(self.ims)
         self._stack.enter_context(self.pcs)
         return self
 
