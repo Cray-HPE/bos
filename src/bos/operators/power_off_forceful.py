@@ -27,7 +27,7 @@ import logging
 from bos.common.clients.bos.options import options
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import HSMState, TimeSinceLastAction
+from bos.operators.filters import TimeSinceLastAction
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,7 +55,7 @@ class ForcefulPowerOffOperator(BaseOperator):
                          Status.power_off_gracefully_called
                      ])),
             TimeSinceLastAction(seconds=options.max_power_off_wait_time),
-            HSMState(),
+            self.HSMState(),
         ]
 
     def _act(self, components):

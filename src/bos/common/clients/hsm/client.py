@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,40 +21,23 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+from bos.common.clients.api_client import APIClient
 
-from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
+from .groups import GroupsEndpoint
+from .partitions import PartitionsEndpoint
+from .state_components import StateComponentsEndpoint
 
-LOGGER = logging.getLogger(__name__)
 
-
-class GracefulPowerOffOperator(BaseOperator):
-    """
-    - Enabled in the BOS database and the status is power_off_pending
-    - Enabled in HSM
-    """
-
-    retry_attempt_field = "power_off_graceful_attempts"
+class HSMClient(APIClient):
 
     @property
-    def name(self):
-        return Action.power_off_gracefully
+    def groups(self) -> GroupsEndpoint:
+        return self.get_endpoint(GroupsEndpoint)
 
-    # Filters
     @property
-    def filters(self):
-        return [
-            self.BOSQuery(enabled=True, status=Status.power_off_pending),
-            self.HSMState(),
-        ]
+    def partitions(self) -> PartitionsEndpoint:
+        return self.get_endpoint(PartitionsEndpoint)
 
-    def _act(self, components):
-        if components:
-            component_ids = [component['id'] for component in components]
-            self.client.pcs.transitions.soft_off(component_ids)
-        return components
-
-
-if __name__ == '__main__':
-    main(GracefulPowerOffOperator)
+    @property
+    def state_components(self) -> StateComponentsEndpoint:
+        return self.get_endpoint(StateComponentsEndpoint)
