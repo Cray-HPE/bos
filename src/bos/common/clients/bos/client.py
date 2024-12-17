@@ -21,24 +21,23 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+from bos.common.clients.api_client import APIClient
 
-from .base import BaseBosTenantAwareEndpoint
+from .components import ComponentEndpoint
+from .sessions import SessionEndpoint
+from .session_templates import SessionTemplateEndpoint
 
-LOGGER = logging.getLogger(__name__)
 
+class BOSClient(APIClient):
 
-class SessionEndpoint(BaseBosTenantAwareEndpoint):
-    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
+    @property
+    def components(self) -> ComponentEndpoint:
+        return self.get_endpoint(ComponentEndpoint)
 
-    def get_session(self, session_id, tenant):
-        return self.get_item(session_id, tenant)
+    @property
+    def sessions(self) -> SessionEndpoint:
+        return self.get_endpoint(SessionEndpoint)
 
-    def get_sessions(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def update_session(self, session_id, tenant, data):
-        return self.update_item(session_id, tenant, data)
-
-    def delete_sessions(self, **kwargs):
-        return self.delete_items(**kwargs)
+    @property
+    def session_templates(self) -> SessionTemplateEndpoint:
+        return self.get_endpoint(SessionTemplateEndpoint)

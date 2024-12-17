@@ -35,15 +35,15 @@ import os
 import time
 from typing import Generator, List, NoReturn, Type
 
+from bos.common.clients.bos import BOSClient
+from bos.common.clients.bos.options import options
 from bos.common.clients.bss import BSSClient
 from bos.common.clients.cfs import CFSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
-from bos.operators.filters import DesiredConfigurationSetInCFS
+from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS
 from bos.operators.filters.base import BaseFilter
-from bos.operators.utils.clients.bos.options import options
-from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.liveness.timestamp import Timestamp
 
 LOGGER = logging.getLogger(__name__)
@@ -67,7 +67,7 @@ class ApiClients:
     """
 
     def __init__(self):
-        #self.bos = BOSClient()
+        self.bos = BOSClient()
         self.bss = BSSClient()
         self.cfs = CFSClient()
         #self.hsm = HSMClient()
@@ -79,7 +79,7 @@ class ApiClients:
         """
         Enter context for all API clients
         """
-        #self._stack.enter_context(self.bos)
+        self._stack.enter_context(self.bos)
         self._stack.enter_context(self.bss)
         self._stack.enter_context(self.cfs)
         #self._stack.enter_context(self.hsm)
@@ -114,7 +114,6 @@ class BaseOperator(ABC):
     frequency_option = "polling_frequency"
 
     def __init__(self) -> NoReturn:
-        self.bos_client = BOSClient()
         self.__max_batch_size = 0
         self._client: ApiClients | None = None
 
@@ -137,6 +136,14 @@ class BaseOperator(ABC):
     @abstractmethod
     def filters(self) -> List[Type[BaseFilter]]:
         return []
+
+    def BOSQuery(self, **kwargs) -> BOSQuery:
+        """
+        Shortcut to get a BOSQuery filter with the bos_client for this operator
+        """
+        if 'bos_client' not in kwargs:
+            kwargs['bos_client'] = self.client.bos
+        return BOSQuery(**kwargs)
 
     @property
     def DesiredConfigurationSetInCFS(self) -> DesiredConfigurationSetInCFS:
@@ -308,7 +315,7 @@ class BaseOperator(ABC):
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
-        self.bos_client.components.update_components(data)
+        self.client.bos.components.update_components(data)
 
     def _preset_last_action(self, components: List[dict]) -> None:
         # This is done to eliminate the window between performing an action and marking the
@@ -331,7 +338,7 @@ class BaseOperator(ABC):
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
-        self.bos_client.components.update_components(data)
+        self.client.bos.components.update_components(data)
 
     def _update_database_for_failure(self, components: List[dict]) -> None:
         """
@@ -358,7 +365,7 @@ class BaseOperator(ABC):
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
-        self.bos_client.components.update_components(data)
+        self.client.bos.components.update_components(data)
 
 
 def chunk_components(components: List[dict],

@@ -27,17 +27,18 @@ import logging
 from typing import Set
 from botocore.exceptions import ClientError
 
+from bos.common.clients.bos.options import options
+from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
+from bos.common.utils import exc_type_msg
+from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseOperator, main, chunk_components
 from bos.operators.filters.filters import HSMState
 from bos.operators.utils.clients.hsm import Inventory
 from bos.operators.utils.clients.s3 import S3Object, S3ObjectNotFound
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
-from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
-from bos.common.utils import exc_type_msg
-from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
-from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -73,11 +74,11 @@ class SessionSetupOperator(BaseOperator):
         LOGGER.info('Found %d sessions that require action', len(sessions))
         inventory_cache = Inventory()
         for data in sessions:
-            session = Session(data, inventory_cache, self.bos_client)
+            session = Session(data, inventory_cache, self.client.bos)
             session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self):
-        return self.bos_client.sessions.get_sessions(status='pending')
+        return self.client.bos.sessions.get_sessions(status='pending')
 
 
 class Session:
