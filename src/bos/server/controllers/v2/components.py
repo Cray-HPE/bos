@@ -56,8 +56,8 @@ def get_v2_components(ids="",
     """
     LOGGER.debug(
         "GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
-        "staged_session=%s phase=%s status=%s", ids, enabled, session,
-        staged_session, phase, status)
+        "staged_session=%s phase=%s status=%s start_after_id=%s page_size=%d", ids,
+        enabled, session, staged_session, phase, status, start_after_id, page_size)
     if ids:
         try:
             id_list = ids.split(',')
