@@ -26,7 +26,7 @@ import logging
 
 from bos.common.values import Status
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, NOT
+from bos.operators.filters import NOT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class ConfigurationOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True, status=Status.configuring),
+            self.BOSQuery(enabled=True, status=Status.configuring),
             NOT(self.DesiredConfigurationSetInCFS)
         ]
 

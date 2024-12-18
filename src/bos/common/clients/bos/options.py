@@ -23,17 +23,20 @@
 #
 import logging
 import json
+from typing import Optional
 
-from requests.exceptions import HTTPError, ConnectionError
+import requests
+from requests.exceptions import HTTPError
+from requests.exceptions import ConnectionError as RequestsConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.options import OptionsCache
-from bos.common.utils import exc_type_msg, requests_retry_session
-from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
+from bos.common.utils import exc_type_msg, retry_session_get
+from bos.common.clients.bos.base import BASE_BOS_ENDPOINT
 
 LOGGER = logging.getLogger(__name__)
 __name = __name__.lower().rsplit('.', maxsplit=1)[-1]
-ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
+ENDPOINT = f"{BASE_BOS_ENDPOINT}/{__name}"
 
 
 class Options(OptionsCache):
@@ -44,15 +47,14 @@ class Options(OptionsCache):
     result in network calls.
     """
 
-    def _get_options(self) -> dict:
+    def _get_options(self, session: Optional[requests.Session] = None) -> dict:
         """Retrieves the current options from the BOS api"""
-        session = requests_retry_session()
         LOGGER.debug("GET %s", ENDPOINT)
         try:
-            response = session.get(ENDPOINT)
-            response.raise_for_status()
-            return json.loads(response.text)
-        except (ConnectionError, MaxRetryError) as e:
+            with retry_session_get(ENDPOINT, session=session) as response:
+                response.raise_for_status()
+                return json.loads(response.text)
+        except (RequestsConnectionError, MaxRetryError) as e:
             LOGGER.error("Unable to connect to BOS: %s", exc_type_msg(e))
         except HTTPError as e:
             LOGGER.error("Unexpected response from BOS: %s", exc_type_msg(e))

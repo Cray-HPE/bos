@@ -24,10 +24,10 @@
 #
 import logging
 
+from bos.common.clients.bos.options import options
 from bos.common.values import Action, Status
-from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState, TimeSinceLastAction
+from bos.operators.filters import HSMState, TimeSinceLastAction
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class ForcefulPowerOffOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True,
+            self.BOSQuery(enabled=True,
                      status=','.join([
                          Status.power_off_forcefully_called,
                          Status.power_off_gracefully_called

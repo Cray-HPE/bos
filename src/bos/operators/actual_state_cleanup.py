@@ -24,9 +24,9 @@
 #
 import logging
 
+from bos.common.clients.bos.options import options
 from bos.common.utils import duration_to_timedelta
 from bos.common.values import EMPTY_ACTUAL_STATE
-from bos.operators.utils.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, ActualStateAge, ActualBootStateIsSet
 
@@ -53,7 +53,7 @@ class ActualStateCleanupOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(),
+            self.BOSQuery(),
             ActualBootStateIsSet(),
             ActualStateAge(seconds=duration_to_timedelta(
                 options.component_actual_state_ttl).total_seconds())
@@ -69,7 +69,7 @@ class ActualStateCleanupOperator(BaseOperator):
         if data:
             LOGGER.info('Found %d components that require updates', len(data))
             LOGGER.debug('Calling to update with payload: %s', data)
-            self.bos_client.components.update_components(data)
+            self.client.bos.components.update_components(data)
         return components
 
 

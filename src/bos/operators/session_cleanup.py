@@ -25,8 +25,9 @@
 import logging
 import re
 
+from bos.common.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.utils.clients.bos.options import options
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +69,7 @@ class SessionCleanupOperator(BaseOperator):
         if self.disabled:
             return
 
-        self.bos_client.sessions.delete_sessions(
+        self.client.bos.sessions.delete_sessions(
             **{
                 'status': 'complete',
                 'min_age': options.cleanup_completed_session_ttl

@@ -24,11 +24,12 @@
 #
 import logging
 
+from bos.common.clients.bos.options import options
 from bos.common.values import Phase, Status, Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
     DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
-from bos.operators.utils.clients.bos.options import options
+
 
 LOGGER = logging.getLogger(__name__)
 
@@ -74,7 +75,7 @@ class StatusOperator(BaseOperator):
 
     def _run(self) -> None:
         """ A single pass of detecting and acting on components  """
-        components = self.bos_client.components.get_components(enabled=True)
+        components = self.client.bos.components.get_components(enabled=True)
         if not components:
             LOGGER.debug('No enabled components found')
             return
@@ -110,7 +111,7 @@ class StatusOperator(BaseOperator):
         LOGGER.info('Found %d components that require status updates',
                     len(updated_components))
         LOGGER.debug('Updated components: %s', updated_components)
-        self.bos_client.components.update_components(updated_components)
+        self.client.bos.components.update_components(updated_components)
 
     def _get_cfs_components(self):
         """

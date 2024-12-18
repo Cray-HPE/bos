@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from bos.common.clients.api_client import APIClient
-from bos.operators.utils.clients.bos.options import options
+from bos.common.clients.bos.options import options
 
 from .components import ComponentEndpoint
 

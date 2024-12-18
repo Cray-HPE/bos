@@ -35,9 +35,9 @@ from requests import HTTPError
 from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
                              using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
-from bos.operators.utils.clients.ims import tag_image
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState
+from bos.operators.filters import HSMState
+from bos.operators.utils.clients.ims import tag_image
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ class PowerOnOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True, status=Status.power_on_pending),
+            self.BOSQuery(enabled=True, status=Status.power_on_pending),
             HSMState()
         ]
 
@@ -194,7 +194,7 @@ class PowerOnOperator(BaseOperator):
         } for comp in bss_tokens]
         LOGGER.debug('Updated components (minus desired_state data): %s',
                      redacted_component_updates)
-        self.bos_client.components.update_components(bss_tokens)
+        self.client.bos.components.update_components(bss_tokens)
 
     def _tag_images(self, boot_artifacts: Dict[Tuple[str, str, str], Set[str]],
                     components: List[dict]) -> None:
