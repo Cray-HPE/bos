@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.30.7] - 2024-12-18
+### Changed
+- Improve performance of large `GET` components requests.
+
 ## [2.30.6] - 2024-12-18
 ### Fixed
 - When renaming session templates during migration, use correct database key to store renamed template.
