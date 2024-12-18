@@ -37,7 +37,6 @@ from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import HSMState
-from bos.operators.utils.clients.ims import tag_image
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger(__name__)
@@ -239,7 +238,7 @@ class PowerOnOperator(BaseOperator):
         my_components_by_id = components_by_id(components)
         for image in image_ids:
             try:
-                tag_image(image, "set", "sbps-project", "true")
+                self.client.ims.images.tag_image(image, "set", "sbps-project", "true")
             except Exception as e:
                 components_to_update = []
                 for node in image_id_to_nodes[image]:
