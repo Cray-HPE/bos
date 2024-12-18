@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.48] - 2024-12-18
+### Changed
+- Improve performance of large `GET` components requests.
+
+### Dependencies
+- Bumped `certifi` version to resolve CVE.
+- Bumped `grpcio` version to resolve CVE.
+
 ## [2.0.47] - 2024-10-22
 ### Added
 #### BOS option
