@@ -122,12 +122,11 @@ def get_v2_components_data(id_list=None,
                                          session=session or None,
                                          staged_session=staged_session or None,
                                          phase=phase or None,
-                                         status=status or None)
-    elif delete_timestamp:
-        _component_filter_func = partial(_set_status,
+                                         status=status or None,
                                          delete_timestamp=delete_timestamp)
     else:
-        _component_filter_func = _set_status
+        _component_filter_func = partial(_set_status,
+                                         delete_timestamp=delete_timestamp)
 
     return DB.get_all_filtered(filter_func=_component_filter_func,
                                start_after_key=start_after_id,
