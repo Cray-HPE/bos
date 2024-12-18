@@ -1691,6 +1691,21 @@ paths:
           in: query
           description: |-
             Retrieve the Components with the given status.
+        - name: start_after_id
+          schema:
+            $ref: '#/components/schemas/V2ComponentId'
+          in: query
+          description: |-
+            Begin listing Components after the specified ID. Used for paging.
+        - name: page_size
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 1048576
+          in: query
+          description: |-
+            Maximum number of Components to include in response. Used for paging. 0 means no limit
+            (which is the same as not specifying this parameter).
       description: |-
         Retrieve the full collection of Components in the form of a
         ComponentArray. Full results can also be filtered by query
