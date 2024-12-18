@@ -28,6 +28,7 @@ The assumption is the artifact info contains information about the rootfs.
 
 from . import RootfsProvider
 
+
 class BaseRootfsProvider(RootfsProvider):
 
     PROTOCOL = None

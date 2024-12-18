@@ -25,7 +25,7 @@ import logging
 
 from .base import BaseBosEndpoint
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.components')
+LOGGER = logging.getLogger(__name__)
 
 
 class ComponentEndpoint(BaseBosEndpoint):

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.31.1] - 2024-12-18
+### Fixed
+- When renaming session templates during migration, use correct database key to store renamed template.
+
 ## [2.31.0] - 2024-11-01
 ### Removed
 - Moved BOS reporter to https://github.com/Cray-HPE/bos-reporter

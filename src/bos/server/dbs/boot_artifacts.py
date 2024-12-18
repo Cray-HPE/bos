@@ -26,7 +26,7 @@ import logging
 from bos.common.utils import get_current_timestamp
 from bos.server import redis_db_utils as dbutils
 
-LOGGER = logging.getLogger('bos.server.dbs.boot_artifacts')
+LOGGER = logging.getLogger(__name__)
 TOKENS_DB = dbutils.get_wrapper(db='bss_tokens_boot_artifacts')
 
 
@@ -40,20 +40,23 @@ class BssTokenUnknown(BssTokenException):
     """
 
 
-def record_boot_artifacts(token: str,
-                          kernel: str,
-                          kernel_parameters: str,
+def record_boot_artifacts(token: str, kernel: str, kernel_parameters: str,
                           initrd: str):
     """
     Associate the BSS token with the boot artifacts.
     BSS returns a token after BOS asks it to create or update the boot artifacts.
     """
-    LOGGER.info("Logging BSS token and boot artifacts: token='%s' kernel='%s' "
-                "kernel_parameters='%s' initrd='%s'", token, kernel, kernel_parameters, initrd)
-    TOKENS_DB.put(token, {"kernel": kernel,
-                          "kernel_parameters": kernel_parameters,
-                          "initrd": initrd,
-                          "timestamp": get_current_timestamp()})
+    LOGGER.info(
+        "Logging BSS token and boot artifacts: token='%s' kernel='%s' "
+        "kernel_parameters='%s' initrd='%s'", token, kernel, kernel_parameters,
+        initrd)
+    TOKENS_DB.put(
+        token, {
+            "kernel": kernel,
+            "kernel_parameters": kernel_parameters,
+            "initrd": initrd,
+            "timestamp": get_current_timestamp()
+        })
 
 
 def get_boot_artifacts(token: str) -> dict:

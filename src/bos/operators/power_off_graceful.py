@@ -29,7 +29,7 @@ from bos.operators.utils.clients import pcs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
 
-LOGGER = logging.getLogger('bos.operators.power_off_graceful')
+LOGGER = logging.getLogger(__name__)
 
 
 class GracefulPowerOffOperator(BaseOperator):

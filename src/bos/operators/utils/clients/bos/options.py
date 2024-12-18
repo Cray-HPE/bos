@@ -31,7 +31,7 @@ from bos.common.options import OptionsCache
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
+LOGGER = logging.getLogger(__name__)
 __name = __name__.lower().rsplit('.', maxsplit=1)[-1]
 ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
 
@@ -43,6 +43,7 @@ class Options(OptionsCache):
     This caches the options so that frequent use of these options do not all
     result in network calls.
     """
+
     def _get_options(self) -> dict:
         """Retrieves the current options from the BOS api"""
         session = requests_retry_session()

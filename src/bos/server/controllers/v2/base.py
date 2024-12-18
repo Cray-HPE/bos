@@ -28,7 +28,7 @@ from bos.common.utils import exc_type_msg
 from bos.server.controllers.utils import url_for
 from bos.server.models import Version, Link
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.base')
+LOGGER = logging.getLogger(__name__)
 
 
 def calc_version(details):
@@ -55,7 +55,8 @@ def calc_version(details):
         major, minor, patch = openapispec_map['info']['version'].split('.')
         return Version(major=major, minor=minor, patch=patch, links=links)
     except IOError as e:
-        LOGGER.exception('error opening "%s" file: %s', openapispec_f, exc_type_msg(e))
+        LOGGER.exception('error opening "%s" file: %s', openapispec_f,
+                         exc_type_msg(e))
         raise
 
 

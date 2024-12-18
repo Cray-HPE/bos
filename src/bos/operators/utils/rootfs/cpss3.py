@@ -30,5 +30,6 @@ another protocol (iSCSI or DVS) depending on the product.
 
 from .baserootfs import BaseRootfsProvider
 
+
 class CPSS3Provider(BaseRootfsProvider):
     PROTOCOL = 'craycps-s3'

@@ -24,7 +24,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-
 # This is the source of truth for default option values. All other BOS
 # code should either import this dict directly, or (preferably) access
 # its values indirectly using a DefaultOptions object
@@ -47,6 +46,7 @@ DEFAULTS = {
     'reject_nids': False,
     'session_limit_required': False
 }
+
 
 class BaseOptions(ABC):
     """
@@ -136,6 +136,7 @@ class DefaultOptions(BaseOptions):
     """
     Returns the default value for each option
     """
+
     def get_option(self, key: str) -> Any:
         if key in DEFAULTS:
             return DEFAULTS[key]
@@ -149,7 +150,8 @@ class OptionsCache(DefaultOptions, ABC):
     This caches the options so that frequent use of these options do not all
     result in network/DB calls.
     """
-    def __init__(self, update_on_create:bool=True):
+
+    def __init__(self, update_on_create: bool = True):
         super().__init__()
         if update_on_create:
             self.update()
@@ -170,4 +172,5 @@ class OptionsCache(DefaultOptions, ABC):
         try:
             return super().get_option(key)
         except KeyError as err:
-            raise KeyError(f'Option {key} not found and no default exists') from err
+            raise KeyError(
+                f'Option {key} not found and no default exists') from err

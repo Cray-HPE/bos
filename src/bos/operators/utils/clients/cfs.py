@@ -32,7 +32,7 @@ SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"
 COMPONENTS_ENDPOINT = f"{BASE_ENDPOINT}/components"
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.cfs')
+LOGGER = logging.getLogger(__name__)
 
 GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
@@ -51,12 +51,14 @@ def get_components(session=None, **params):
     while params is not None:
         LOGGER.debug("GET %s with params=%s", COMPONENTS_ENDPOINT, params)
         response = session.get(COMPONENTS_ENDPOINT, params=params)
-        LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                     response.reason, compact_response_text(response.text))
+        LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                     response.status_code, response.reason,
+                     compact_response_text(response.text))
         try:
             response.raise_for_status()
         except HTTPError as err:
-            LOGGER.error("Failed getting nodes from CFS: %s", exc_type_msg(err))
+            LOGGER.error("Failed getting nodes from CFS: %s",
+                         exc_type_msg(err))
             raise
         response_json = response.json()
         new_components = response_json["components"]
@@ -69,26 +71,32 @@ def get_components(session=None, **params):
 
 def patch_components(data, session=None):
     if not data:
-        LOGGER.warning("patch_components called without data; returning without action.")
+        LOGGER.warning(
+            "patch_components called without data; returning without action.")
         return
     if not session:
         session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     LOGGER.debug("PATCH %s with body=%s", COMPONENTS_ENDPOINT, data)
     response = session.patch(COMPONENTS_ENDPOINT, json=data)
-    LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
-                 response.reason, compact_response_text(response.text))
+    LOGGER.debug("Response status code=%d, reason=%s, body=%s",
+                 response.status_code, response.reason,
+                 compact_response_text(response.text))
     try:
         response.raise_for_status()
     except HTTPError as err:
-        LOGGER.error("Failed asking CFS to configure nodes: %s", exc_type_msg(err))
+        LOGGER.error("Failed asking CFS to configure nodes: %s",
+                     exc_type_msg(err))
         raise
 
 
 def get_components_from_id_list(id_list):
     if not id_list:
-        LOGGER.warning("get_components_from_id_list called without IDs; returning without action.")
+        LOGGER.warning(
+            "get_components_from_id_list called without IDs; returning without action."
+        )
         return []
-    LOGGER.debug("get_components_from_id_list called with %d IDs", len(id_list))
+    LOGGER.debug("get_components_from_id_list called with %d IDs",
+                 len(id_list))
     session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     component_list = []
     while id_list:
@@ -96,24 +104,33 @@ def get_components_from_id_list(id_list):
         next_comps = get_components(session=session, ids=','.join(next_batch))
         component_list.extend(next_comps)
         id_list = id_list[GET_BATCH_SIZE:]
-    LOGGER.debug("get_components_from_id_list returning a total of %d components from CFS",
-                 len(component_list))
+    LOGGER.debug(
+        "get_components_from_id_list returning a total of %d components from CFS",
+        len(component_list))
     return component_list
 
 
-def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False):
+def patch_desired_config(node_ids,
+                         desired_config,
+                         enabled=False,
+                         tags=None,
+                         clear_state=False):
     if not node_ids:
-        LOGGER.warning("patch_desired_config called without IDs; returning without action.")
+        LOGGER.warning(
+            "patch_desired_config called without IDs; returning without action."
+        )
         return
-    LOGGER.debug("patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
-                 " clear_state=%s", len(node_ids), desired_config, enabled, tags, clear_state)
+    LOGGER.debug(
+        "patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
+        " clear_state=%s", len(node_ids), desired_config, enabled, tags,
+        clear_state)
     session = requests_retry_session(read_timeout=options.cfs_read_timeout)  # pylint: disable=redundant-keyword-arg
     node_patch = {
         'enabled': enabled,
         'desired_config': desired_config,
         'tags': tags if tags else {}
     }
-    data={ "patch": node_patch, "filters": {} }
+    data = {"patch": node_patch, "filters": {}}
     if clear_state:
         node_patch['state'] = []
     while node_ids:
@@ -124,17 +141,23 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
 
 def set_cfs(components, enabled, clear_state=False):
     if not components:
-        LOGGER.warning("set_cfs called without components; returning without action.")
+        LOGGER.warning(
+            "set_cfs called without components; returning without action.")
         return
-    LOGGER.debug("set_cfs called on %d components with enabled=%s clear_state=%s", len(components),
-                 enabled, clear_state)
+    LOGGER.debug(
+        "set_cfs called on %d components with enabled=%s clear_state=%s",
+        len(components), enabled, clear_state)
     configurations = defaultdict(list)
     for component in components:
-        config_name = component.get('desired_state', {}).get('configuration', '')
+        config_name = component.get('desired_state',
+                                    {}).get('configuration', '')
         bos_session = component.get('session')
         key = (config_name, bos_session)
         configurations[key].append(component['id'])
     for key, ids in configurations.items():
         config_name, bos_session = key
-        patch_desired_config(ids, config_name, enabled=enabled,
-                             tags={'bos_session': bos_session}, clear_state=clear_state)
+        patch_desired_config(ids,
+                             config_name,
+                             enabled=enabled,
+                             tags={'bos_session': bos_session},
+                             clear_state=clear_state)

@@ -35,13 +35,14 @@ def validate_boot_artifacts(bs: dict):
     try:
         image_metadata = BootImageMetaDataFactory(bs)()
     except Exception as err:
-        raise BootSetError(f"Can't find boot artifacts. Error: {exc_type_msg(err)}") from err
+        raise BootSetError(
+            f"Can't find boot artifacts. Error: {exc_type_msg(err)}") from err
 
     # Check boot artifacts' S3 headers
     for boot_artifact in ["kernel"]:
         try:
             artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
-            path = artifact ['link']['path']
+            path = artifact['link']['path']
             etag = artifact['link']['etag']
             obj = S3Object(path, etag)
             _ = obj.object_header
@@ -55,7 +56,7 @@ def validate_boot_artifacts(bs: dict):
             artifact = getattr(image_metadata.boot_artifacts, boot_artifact)
             if not artifact:
                 raise ArtifactNotFound()
-            path = artifact ['link']['path']
+            path = artifact['link']['path']
             etag = artifact['link']['etag']
             obj = S3Object(path, etag)
             _ = obj.object_header

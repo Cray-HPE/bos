@@ -32,10 +32,11 @@ from .exceptions import BootSetError, BootSetWarning
 from .ims import validate_ims_boot_image
 
 
-def validate_boot_sets(session_template: dict,
-                       operation: str,
-                       template_name: str,
-                       options_data: OptionsData|None=None) -> tuple[BootSetStatus, str]:
+def validate_boot_sets(
+        session_template: dict,
+        operation: str,
+        template_name: str,
+        options_data: OptionsData | None = None) -> tuple[BootSetStatus, str]:
     """
     Validates the boot sets listed in a session template.
     This is called when creating a session or when using the sessiontemplatesvalid endpoint
@@ -67,15 +68,18 @@ def validate_boot_sets(session_template: dict,
     for bs_name, bs in session_template['boot_sets'].items():
         bs_msg = partial(_bs_msg, template_name=template_name, bs_name=bs_name)
         try:
-            bs_warning_msgs = validate_boot_set(bs=bs, operation=operation,
-                                                 options_data=options_data)
+            bs_warning_msgs = validate_boot_set(bs=bs,
+                                                operation=operation,
+                                                options_data=options_data)
         except BootSetError as err:
             msg = bs_msg(str(err))
             LOGGER.error(msg)
             return BootSetStatus.ERROR, msg
         except Exception as err:
             LOGGER.error(
-                bs_msg(f"Unexpected exception in _validate_boot_set: {exc_type_msg(err)}"))
+                bs_msg(
+                    f"Unexpected exception in _validate_boot_set: {exc_type_msg(err)}"
+                ))
             raise
         for msg in map(bs_msg, bs_warning_msgs):
             LOGGER.warning(msg)
@@ -94,7 +98,8 @@ def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
     return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
 
 
-def validate_boot_set(bs: dict, operation: str, options_data: OptionsData) -> list[str]:
+def validate_boot_set(bs: dict, operation: str,
+                      options_data: OptionsData) -> list[str]:
     """
     Helper function for validate_boot_sets that performs validation on a single boot set.
     Raises BootSetError if fatal errors found.
@@ -129,12 +134,15 @@ def verify_nonempty_hw_specifier_field(bs: dict) -> None:
     """
     # Validate that the boot set has at least one of the HARDWARE_SPECIFIER_FIELDS
     if not any(field_name in bs for field_name in HARDWARE_SPECIFIER_FIELDS):
-        raise BootSetError(f"No hardware specifier fields ({HARDWARE_SPECIFIER_FIELDS})")
+        raise BootSetError(
+            f"No hardware specifier fields ({HARDWARE_SPECIFIER_FIELDS})")
 
     # Validate that at least one of the HARDWARE_SPECIFIER_FIELDS is non-empty
     if not any(field_name in bs and bs[field_name]
                for field_name in HARDWARE_SPECIFIER_FIELDS):
-        raise BootSetError(f"No non-empty hardware specifier fields ({HARDWARE_SPECIFIER_FIELDS})")
+        raise BootSetError(
+            f"No non-empty hardware specifier fields ({HARDWARE_SPECIFIER_FIELDS})"
+        )
 
 
 def check_node_list_for_nids(bs: dict, options_data: OptionsData) -> None:
@@ -147,4 +155,5 @@ def check_node_list_for_nids(bs: dict, options_data: OptionsData) -> None:
         return
     if any(node[:3] == "nid" for node in bs["node_list"]):
         msg = "Has NID in 'node_list'"
-        raise BootSetError(msg) if options_data.reject_nids else BootSetWarning(msg)
+        raise BootSetError(
+            msg) if options_data.reject_nids else BootSetWarning(msg)

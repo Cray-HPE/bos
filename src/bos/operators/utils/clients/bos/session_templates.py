@@ -25,7 +25,7 @@ import logging
 
 from .base import BaseBosTenantAwareEndpoint
 
-LOGGER = logging.getLogger('bos.operators.utils.clients.bos.session_templates')
+LOGGER = logging.getLogger(__name__)
 
 
 class SessionTemplateEndpoint(BaseBosTenantAwareEndpoint):

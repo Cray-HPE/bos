@@ -34,45 +34,61 @@ from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 from bos.server.utils import get_request_json
 
-LOGGER = logging.getLogger('bos.server.controllers.v2.components')
+LOGGER = logging.getLogger(__name__)
 DB = dbutils.get_wrapper(db='components')
 SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None,
+def get_v2_components(ids="",
+                      enabled=None,
+                      session=None,
+                      staged_session=None,
+                      phase=None,
                       status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
     """
-    LOGGER.debug("GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
-                 "staged_session=%s phase=%s status=%s", ids, enabled, session, staged_session,
-                 phase, status)
+    LOGGER.debug(
+        "GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
+        "staged_session=%s phase=%s status=%s", ids, enabled, session,
+        staged_session, phase, status)
     id_list = []
     if ids:
         try:
             id_list = ids.split(',')
         except Exception as err:
             LOGGER.error("Error parsing component IDs: %s", exc_type_msg(err))
-            return connexion.problem(
-                status=400, title="Error parsing the ids provided.",
-                detail=str(err))
+            return connexion.problem(status=400,
+                                     title="Error parsing the ids provided.",
+                                     detail=str(err))
     tenant = get_tenant_from_header()
-    LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified", tenant, len(id_list))
-    response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session,
+    LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified",
+                 tenant, len(id_list))
+    response = get_v2_components_data(id_list=id_list,
+                                      enabled=enabled,
+                                      session=session,
                                       staged_session=staged_session,
-                                      phase=phase, status=status, tenant=tenant)
-    LOGGER.debug("GET /v2/components returning data for tenant=%s on %d components", tenant,
-                 len(response))
+                                      phase=phase,
+                                      status=status,
+                                      tenant=tenant)
+    LOGGER.debug(
+        "GET /v2/components returning data for tenant=%s on %d components",
+        tenant, len(response))
     for component in response:
         del_timestamp(component)
     return response, 200
 
 
-def get_v2_components_data(id_list=None, enabled=None, session=None, staged_session=None,
-                           phase=None, status=None, tenant=None):
+def get_v2_components_data(id_list=None,
+                           enabled=None,
+                           session=None,
+                           staged_session=None,
+                           phase=None,
+                           status=None,
+                           tenant=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -92,12 +108,16 @@ def get_v2_components_data(id_list=None, enabled=None, session=None, staged_sess
     response = [_set_status(r) for r in response if r]
     if enabled is not None or session is not None or staged_session is not None or \
        phase is not None or status is not None:
-        response = [r for r in response if _matches_filter(r, enabled, session, staged_session,
-                                                           phase, status)]
+        response = [
+            r for r in response if _matches_filter(
+                r, enabled, session, staged_session, phase, status)
+        ]
     if tenant:
         tenant_components = get_tenant_component_set(tenant)
-        limited_response = [component for component in response
-                                      if component["id"] in tenant_components]
+        limited_response = [
+            component for component in response
+            if component["id"] in tenant_components
+        ]
         response = limited_response
     return response
 
@@ -131,7 +151,8 @@ def _calculate_status(data):
 
     status = status = Status.stable
     if phase == Phase.powering_on:
-        if last_action == Action.power_on and not data.get('last_action', {}).get('failed', False):
+        if last_action == Action.power_on and not data.get(
+                'last_action', {}).get('failed', False):
             status = Status.power_on_called
         else:
             status = Status.power_on_pending
@@ -145,8 +166,8 @@ def _calculate_status(data):
     elif phase == Phase.configuring:
         status = Status.configuring
 
-    LOGGER.debug("Component: %s Last action: %s Phase: %s Status: %s", component, last_action,
-                 phase, status)
+    LOGGER.debug("Component: %s Last action: %s Phase: %s Status: %s",
+                 component, last_action, phase, status)
     return status
 
 
@@ -161,7 +182,8 @@ def _matches_filter(data, enabled, session, staged_session, phase, status):
     status_data = data.get('status')
     if phase is not None and status_data.get('phase') != phase:
         return False
-    if status is not None and status_data.get('status') not in status.split(','):
+    if status is not None and status_data.get('status') not in status.split(
+            ','):
         return False
     return True
 
@@ -174,9 +196,9 @@ def put_v2_components():
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PUT request data: %s", exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     components = []
     for component_data in data:
@@ -184,8 +206,10 @@ def put_v2_components():
             component_id = component_data['id']
         except KeyError:
             return connexion.problem(
-                status=400, title="Required field missing.",
-                detail="At least one component is missing the required 'id' field")
+                status=400,
+                title="Required field missing.",
+                detail=
+                "At least one component is missing the required 'id' field")
         components.append((component_id, component_data))
     response = []
     for component_id, component_data in components:
@@ -203,9 +227,9 @@ def patch_v2_components():
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     if isinstance(data, list):
         return patch_v2_components_list(data)
@@ -214,33 +238,38 @@ def patch_v2_components():
 
     LOGGER.error("Unexpected data type %s", str(type(data)))
     return connexion.problem(
-       status=400, title="Error parsing the data provided.",
-       detail=f"Unexpected data type {type(data).__name__}")
+        status=400,
+        title="Error parsing the data provided.",
+        detail=f"Unexpected data type {type(data).__name__}")
 
 
 def patch_v2_components_list(data):
     try:
-        LOGGER.debug("patch_v2_components_list: %d components specified", len(data))
+        LOGGER.debug("patch_v2_components_list: %d components specified",
+                     len(data))
         components = []
         for component_data in data:
             component_id = component_data['id']
-            if component_id not in DB or not _is_valid_tenant_component(component_id):
+            if component_id not in DB or not _is_valid_tenant_component(
+                    component_id):
                 LOGGER.warning("Component %s could not be found", component_id)
                 return connexion.problem(
-                    status=404, title="Component not found.",
+                    status=404,
+                    title="Component not found.",
                     detail=f"Component {component_id} could not be found")
             components.append((component_id, component_data))
     except Exception as err:
         LOGGER.error("Error loading component data: %s", exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
     response = []
     for component_id, component_data in components:
         if "id" in component_data:
             del component_data["id"]
         component_data = _set_auto_fields(component_data)
-        response.append(DB.patch(component_id, component_data, _update_handler))
+        response.append(DB.patch(component_id, component_data,
+                                 _update_handler))
     return response, 200
 
 
@@ -250,34 +279,41 @@ def patch_v2_components_dict(data):
     session = filters.get("session", None)
     if ids and session:
         LOGGER.warning("Multiple filters provided")
-        return connexion.problem(
-            status=400, title="Only one filter may be provided.",
-            detail="Only one filter may be provided.")
+        return connexion.problem(status=400,
+                                 title="Only one filter may be provided.",
+                                 detail="Only one filter may be provided.")
     if ids:
         try:
             id_list = ids.split(',')
         except Exception as err:
-            LOGGER.error("Error parsing the IDs provided: %s", exc_type_msg(err))
-            return connexion.problem(
-                status=400, title="Error parsing the ids provided.",
-                detail=str(err))
+            LOGGER.error("Error parsing the IDs provided: %s",
+                         exc_type_msg(err))
+            return connexion.problem(status=400,
+                                     title="Error parsing the ids provided.",
+                                     detail=str(err))
         # Make sure all of the components exist and belong to this tenant (if any)
-        LOGGER.debug("patch_v2_components_dict: %d IDs specified", len(id_list))
+        LOGGER.debug("patch_v2_components_dict: %d IDs specified",
+                     len(id_list))
         for component_id in id_list:
-            if component_id not in DB or not _is_valid_tenant_component(component_id):
+            if component_id not in DB or not _is_valid_tenant_component(
+                    component_id):
                 return connexion.problem(
-                    status=404, title="Component not found.",
+                    status=404,
+                    title="Component not found.",
                     detail=f"Component {component_id} could not be found")
     elif session:
-        id_list = [component["id"] for component in get_v2_components_data(
-                                                        session=session,
-                                                        tenant=get_tenant_from_header())]
-        LOGGER.debug("patch_v2_components_dict: %d IDs found for specified session", len(id_list))
+        id_list = [
+            component["id"] for component in get_v2_components_data(
+                session=session, tenant=get_tenant_from_header())
+        ]
+        LOGGER.debug(
+            "patch_v2_components_dict: %d IDs found for specified session",
+            len(id_list))
     else:
         LOGGER.warning("No filter provided")
-        return connexion.problem(
-            status=400, title="Exactly one filter must be provided.",
-            detail="Exactly one filter may be provided.")
+        return connexion.problem(status=400,
+                                 title="Exactly one filter must be provided.",
+                                 detail="Exactly one filter may be provided.")
     response = []
     patch = data.get("patch")
     if "id" in patch:
@@ -292,11 +328,13 @@ def patch_v2_components_dict(data):
 @dbutils.redis_error_handler
 def get_v2_component(component_id):
     """Used by the GET /components/{component_id} API operation"""
-    LOGGER.debug("GET /v2/components/%s invoked get_v2_component", component_id)
+    LOGGER.debug("GET /v2/components/%s invoked get_v2_component",
+                 component_id)
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
-            status=404, title="Component not found.",
+            status=404,
+            title="Component not found.",
             detail=f"Component {component_id} could not be found")
     component = DB.get(component_id)
     component = _set_status(component)
@@ -307,14 +345,16 @@ def get_v2_component(component_id):
 @dbutils.redis_error_handler
 def put_v2_component(component_id):
     """Used by the PUT /components/{component_id} API operation"""
-    LOGGER.debug("PUT /v2/components/%s invoked put_v2_component", component_id)
+    LOGGER.debug("PUT /v2/components/%s invoked put_v2_component",
+                 component_id)
     try:
         data = get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing PUT '%s' request data: %s", component_id, exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        LOGGER.error("Error parsing PUT '%s' request data: %s", component_id,
+                     exc_type_msg(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     data['id'] = component_id
     data = _set_auto_fields(data)
@@ -325,26 +365,31 @@ def put_v2_component(component_id):
 @dbutils.redis_error_handler
 def patch_v2_component(component_id):
     """Used by the PATCH /components/{component_id} API operation"""
-    LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component", component_id)
+    LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component",
+                 component_id)
     try:
         data = get_request_json()
     except Exception as err:
-        LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id, exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id,
+                     exc_type_msg(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
-            status=404, title="Component not found.",
+            status=404,
+            title="Component not found.",
             detail=f"Component {component_id} could not be found")
-    if "actual_state" in data and not validate_actual_state_change_is_allowed(component_id):
+    if "actual_state" in data and not validate_actual_state_change_is_allowed(
+            component_id):
         LOGGER.warning("Not able to update actual state")
         return connexion.problem(
-            status=409, title="Actual state can not be updated.",
+            status=409,
+            title="Actual state can not be updated.",
             detail="BOS is currently changing the state of the node,"
-                   " and the actual state can not be accurately recorded")
+            " and the actual state can not be accurately recorded")
     if "id" in data:
         del data["id"]
     data = _set_auto_fields(data)
@@ -373,11 +418,13 @@ def validate_actual_state_change_is_allowed(component_id):
 @dbutils.redis_error_handler
 def delete_v2_component(component_id):
     """Used by the DELETE /components/{component_id} API operation"""
-    LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component", component_id)
+    LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component",
+                 component_id)
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
         return connexion.problem(
-            status=404, title="Component not found.",
+            status=404,
+            title="Component not found.",
             detail=f"Component {component_id} could not be found")
     return DB.delete(component_id), 204
 
@@ -391,9 +438,9 @@ def post_v2_apply_staged():
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
 
     response = {"succeeded": [], "failed": [], "ignored": []}
     # Obtain latest desired behavior for how to clear staging information
@@ -411,13 +458,14 @@ def post_v2_apply_staged():
                     response["ignored"].append(xname)
             except Exception:
                 LOGGER.exception(
-                    "An error was encountered while attempting to apply stage for node %s", xname)
+                    "An error was encountered while attempting to apply stage for node %s",
+                    xname)
                 response["failed"].append(xname)
     except Exception as err:
         LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
-        return connexion.problem(
-            status=400, title="Error parsing the data provided.",
-            detail=str(err))
+        return connexion.problem(status=400,
+                                 title="Error parsing the data provided.",
+                                 detail=str(err))
     return response, 200
 
 
@@ -470,24 +518,29 @@ def _set_state_from_staged(data):
     staged_state = data.get("staged_state", {})
     staged_session_id_sans_tenant = staged_state.get("session", "")
     tenant = get_tenant_from_header()
-    staged_session_id = get_tenant_aware_key(staged_session_id_sans_tenant, tenant)
+    staged_session_id = get_tenant_aware_key(staged_session_id_sans_tenant,
+                                             tenant)
     if staged_session_id not in SESSIONS_DB:
         raise Exception("Staged session no longer exists")
     session = SESSIONS_DB.get(staged_session_id)
     operation = session["operation"]
     if operation == "shutdown":
         if any(staged_state.get("boot_artifacts", {}).values()):
-            raise Exception("Staged operation is shutdown but boot artifact have been specified")
+            raise Exception(
+                "Staged operation is shutdown but boot artifact have been specified"
+            )
         _copy_staged_to_desired(data)
     elif operation == "boot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception(
-                "Staged operation is boot but some boot artifacts have not been specified")
+                "Staged operation is boot but some boot artifacts have not been specified"
+            )
         _copy_staged_to_desired(data)
     elif operation == "reboot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception(
-                "Staged operation is reboot but some boot artifacts have not been specified")
+                "Staged operation is reboot but some boot artifacts have not been specified"
+            )
         _copy_staged_to_desired(data)
         data["actual_state"] = {
             "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
@@ -538,7 +591,8 @@ def _populate_boot_artifacts(data):
         # Populate the boot artifacts using the bss_token
         if token:
             try:
-                data['actual_state']['boot_artifacts'] = get_boot_artifacts(token)
+                data['actual_state']['boot_artifacts'] = get_boot_artifacts(
+                    token)
             except BssTokenUnknown:
                 LOGGER.warning("Reported BSS Token '%s' is unknown.", token)
     return data
@@ -559,9 +613,11 @@ def del_timestamp(data: dict):
 
 def _set_last_updated(data):
     timestamp = get_current_timestamp()
-    for section in ['actual_state', 'desired_state', 'staged_state', 'last_action']:
-        if section in data and isinstance(data[section],
-                                          dict) and data[section].keys() != {"bss_token"}:
+    for section in [
+            'actual_state', 'desired_state', 'staged_state', 'last_action'
+    ]:
+        if section in data and isinstance(
+                data[section], dict) and data[section].keys() != {"bss_token"}:
             data[section]['last_updated'] = timestamp
     return data
 

@@ -31,6 +31,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Timestamp(BaseTimestamp):
+
     @property
     def max_age(self):
         """
@@ -39,5 +40,6 @@ class Timestamp(BaseTimestamp):
 
         This value is returned as a timedelta object.
         """
-        computation_time = timedelta(seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
+        computation_time = timedelta(
+            seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
         return computation_time

@@ -28,14 +28,14 @@ from urllib.parse import urlparse, urlunparse
 import connexion
 import flask
 
-LOGGER = logging.getLogger('bos.server.controllers.utils')
+LOGGER = logging.getLogger(__name__)
 
 
 def url_for(endpoint, **values):
     """Calculate the URL for an endpoint
 
     This wraps flask.url_for. flask.url_for doesn't generate the path that we
-    need when PRS is running on a path behind a proxy. For example, if the app
+    need when BOS is running on a path behind a proxy. For example, if the app
     is proxied on `/apis/bos` and the client made a request like
     `/apis/bos/v1`, flask.url_for('repositories') would return
     `/v1/repositories` which wouldn't be valid because it's missing the path
@@ -64,10 +64,10 @@ def url_for(endpoint, **values):
 
     # Request was proxied, so update the path with the proxy path.
     parts = urlparse(url)
-    parts = (
-        parts.scheme, parts.netloc,
-        '/'.join([proxy_path.rstrip('/'), parts.path.lstrip('/')]),
-        parts.params, parts.query, parts.fragment)
+    parts = (parts.scheme, parts.netloc,
+             '/'.join([proxy_path.rstrip('/'),
+                       parts.path.lstrip('/')
+                       ]), parts.params, parts.query, parts.fragment)
     return urlunparse(parts)
 
     # TODO(CASMCMS-1869): there might be a better way to do this by overriding

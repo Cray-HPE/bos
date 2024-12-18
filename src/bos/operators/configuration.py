@@ -29,7 +29,7 @@ from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, NOT
 
-LOGGER = logging.getLogger('bos.operators.configuration')
+LOGGER = logging.getLogger(__name__)
 
 
 class ConfigurationOperator(BaseOperator):
