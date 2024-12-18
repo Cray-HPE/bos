@@ -21,10 +21,13 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import connexion
+from itertools import batched
 import functools
 import json
 import logging
+from typing import Callable
+
+import connexion
 import redis
 
 from bos.common.utils import exc_type_msg
@@ -89,6 +92,27 @@ class DBWrapper():
             single_data = json.loads(datastr)
             data.append(single_data)
         return data
+
+    def get_all_filtered(self,
+                         filter_func: Callable[[dict], dict | None]) -> list[dict]:
+        """
+        Get an array of data for all keys after passing them through the specified filter
+        (discarding any for which the filter returns None)
+        """
+        data = []
+        for value in self.iter_values():
+            filtered_value = filter_func(value)
+            if filtered_value is not None:
+                data.append(filtered_value)
+        return data
+
+    def iter_values(self):
+        """
+        Iterate through every item in the database. Parse each item as JSON and yield it.
+        """
+        for next_keys in batched(self.client.scan_iter(), 500):
+            for datastr in self.client.mget(next_keys):
+                yield json.loads(datastr) if datastr else None
 
     def get_keys(self):
         """Get an array of all keys"""
