@@ -21,7 +21,6 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from itertools import batched
 import functools
 import json
 import logging
@@ -110,9 +109,11 @@ class DBWrapper():
         """
         Iterate through every item in the database. Parse each item as JSON and yield it.
         """
-        for next_keys in batched(self.client.scan_iter(), 500):
-            for datastr in self.client.mget(next_keys):
+        all_keys = list(self.client.scan_iter())
+        while all_keys:
+            for datastr in self.client.mget(all_keys[:500]):
                 yield json.loads(datastr) if datastr else None
+            all_keys = all_keys[500:]
 
     def get_keys(self):
         """Get an array of all keys"""
