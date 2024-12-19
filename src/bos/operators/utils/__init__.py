@@ -23,7 +23,7 @@
 #
 from functools import partial
 
-from bos.common.base_requests_retry_session import requests_retry_session as base_requests_retry_session
+from .base_requests_retry_session import requests_retry_session as base_requests_retry_session
 
 PROTOCOL = 'http'
 
