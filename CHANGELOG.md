@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.30] - 2024-12-19
+### Fixed
+- Do not use `itertools.batched`, because it is not available in this Python version.
+
 ## [2.10.29] - 2024-12-18
 ### Changed
 - Improve performance of large `GET` components requests.
