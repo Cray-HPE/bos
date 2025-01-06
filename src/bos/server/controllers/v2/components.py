@@ -42,7 +42,7 @@ SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None,
+def get_v2_components(ids=None, enabled=None, session=None, staged_session=None, phase=None,
                       status=None):
     """Used by the GET /components API operation
 
@@ -51,7 +51,7 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
     LOGGER.debug("GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
                  "staged_session=%s phase=%s status=%s", ids, enabled, session, staged_session,
                  phase, status)
-    if ids:
+    if ids is not None:
         try:
             id_list = ids.split(',')
         except Exception as err:
