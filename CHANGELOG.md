@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Have BOS migration job wait for databases to be ready before proceeding
+
 ## [2.31.1] - 2024-12-18
 ### Fixed
 - When renaming session templates during migration, use correct database key to store renamed template.
