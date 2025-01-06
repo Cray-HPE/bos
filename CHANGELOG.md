@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.30.8] - 2025-01-06
+### Changed
+- Have BOS migration job wait for databases to be ready before proceeding
+
 ### Fixed
 - Fixed bug causing no components to be listed when no tenant specified.
 
