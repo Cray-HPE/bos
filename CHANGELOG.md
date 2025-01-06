@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Modified operators to use paging when requesting BOS components, using a page size equal to the `max_components_batch_size` option.
 - Put all requests code into context managers -- this includes the HTTP adapters, the sessions, and the request responses.
 
+### Fixed
+- Fixed bug causing no components to be listed when no tenant specified.
+
+## [2.31.1] - 2024-12-18
+### Fixed
+- When renaming session templates during migration, use correct database key to store renamed template.
+
 ## [2.31.0] - 2024-11-01
 ### Removed
 - Moved BOS reporter to https://github.com/Cray-HPE/bos-reporter
