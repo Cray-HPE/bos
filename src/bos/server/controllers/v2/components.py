@@ -42,7 +42,7 @@ SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids="",
+def get_v2_components(ids=None,
                       enabled=None,
                       session=None,
                       staged_session=None,
@@ -56,9 +56,9 @@ def get_v2_components(ids="",
     """
     LOGGER.debug(
         "GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
-        "staged_session=%s phase=%s status=%s", ids, enabled, session,
-        staged_session, phase, status)
-    if ids:
+        "staged_session=%s phase=%s status=%s start_after_id=%s page_size=%d", ids,
+        enabled, session, staged_session, phase, status, start_after_id, page_size)
+    if ids is not None:
         try:
             id_list = ids.split(',')
         except Exception as err:
@@ -68,7 +68,7 @@ def get_v2_components(ids="",
                                      detail=str(err))
     else:
         id_list = None
-    tenant = get_tenant_from_header()
+    tenant = get_tenant_from_header() or None
     LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified",
                  tenant, len(id_list) if id_list else 0)
     response = get_v2_components_data(id_list=id_list,
@@ -108,7 +108,7 @@ def get_v2_components_data(id_list=None,
         if tenant_components is not None:
             id_set.intersection_update(tenant_components)
     else:
-         id_set = tenant_components
+        id_set = tenant_components
 
     # If id_set is not None but is empty, that means no components in the system
     # will match our filter, so we can return an empty list immediately.
@@ -122,12 +122,11 @@ def get_v2_components_data(id_list=None,
                                          session=session or None,
                                          staged_session=staged_session or None,
                                          phase=phase or None,
-                                         status=status or None)
-    elif delete_timestamp:
-        _component_filter_func = partial(_set_status,
+                                         status=status or None,
                                          delete_timestamp=delete_timestamp)
     else:
-        _component_filter_func = _set_status
+        _component_filter_func = partial(_set_status,
+                                         delete_timestamp=delete_timestamp)
 
     return DB.get_all_filtered(filter_func=_component_filter_func,
                                start_after_key=start_after_id,
