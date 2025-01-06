@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -43,7 +43,8 @@ SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids="", enabled=None, session=None, staged_session=None, phase=None, status=None):
+def get_v2_components(ids=None, enabled=None, session=None, staged_session=None, phase=None,
+                      status=None):
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -51,7 +52,7 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
     LOGGER.debug("GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
                  "staged_session=%s phase=%s status=%s", ids, enabled, session, staged_session,
                  phase, status)
-    if ids:
+    if ids is not None:
         try:
             id_list = ids.split(',')
         except Exception as err:
@@ -61,7 +62,7 @@ def get_v2_components(ids="", enabled=None, session=None, staged_session=None, p
                 detail=str(err))
     else:
         id_list = None
-    tenant = get_tenant_from_header()
+    tenant = get_tenant_from_header() or None
     LOGGER.debug("GET /v2/components for tenant=%s with %d IDs specified",
                  tenant, len(id_list) if id_list else 0)
     response = get_v2_components_data(id_list=id_list, enabled=enabled, session=session, staged_session=staged_session,
