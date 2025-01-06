@@ -138,7 +138,7 @@ def _sanitize_session_template(key: str | bytes, data: dict) -> None:
 
     delete_template(key, data)
 
-    new_key = get_tenant_aware_key(name, tenant)
+    new_key = get_tenant_aware_key(new_name, tenant)
     LOGGER.info("Old DB key = '%s', new DB key = '%s'", key, new_key)
 
     new_data["name"] = new_name
