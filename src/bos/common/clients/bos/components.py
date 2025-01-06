@@ -22,6 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+from typing import Optional
 
 from .base import BaseBosNonTenantAwareEndpoint
 from .options import options
@@ -35,8 +36,8 @@ class ComponentEndpoint(BaseBosNonTenantAwareEndpoint):
     def get_component(self, component_id):
         return self.get_item(component_id)
 
-    def get_components(self, **kwargs):
-        page_size = options.max_component_batch_size
+    def get_components(self, page_size: Optional[int]=None, **kwargs):
+        page_size = options.max_component_batch_size if page_size is None else page_size
         if page_size == 0:
             return self.get_items(**kwargs)
         next_page = self.get_items(page_size=page_size, **kwargs)
