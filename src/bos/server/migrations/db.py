@@ -23,6 +23,7 @@
 #
 
 import logging
+import time
 
 import bos.server.redis_db_utils as dbutils
 
@@ -32,6 +33,35 @@ TEMP_DB=dbutils.get_wrapper(db='session_templates')
 SESS_DB=dbutils.get_wrapper(db='sessions')
 STAT_DB=dbutils.get_wrapper(db='session_status')
 COMP_DB=dbutils.get_wrapper(db='components')
+
+MAX_DB_WAIT_SECONDS=120.0
+
+def all_db_ready() -> bool:
+    """
+    Wait for up to MAX_DB_WAIT_SECONDS for all databases to be ready
+    """
+    start_time = time.time()
+    first = True
+    while time.time() - start_time <= MAX_DB_WAIT_SECONDS:
+        if first:
+            first = False
+        else:
+            LOGGER.info("Sleeping for 7 seconds before retrying databases")
+            time.sleep(7)
+        if not TEMP_DB.ready:
+            continue
+        LOGGER.info("Template database is ready")
+        if not SESS_DB.ready:
+            continue
+        LOGGER.info("Session database is ready")
+        if not STAT_DB.ready:
+            continue
+        LOGGER.info("Session status database is ready")
+        if not COMP_DB.ready:
+            continue
+        LOGGER.info("Component database is ready")
+        return True
+    return False
 
 
 def delete_from_db(db: dbutils.DBWrapper, key: str, err_msg: str|None=None) -> None:

@@ -80,6 +80,20 @@ class DBWrapper():
         """Returns the string name of the database, from the DATABASES array"""
         return DATABASES[self.db_id]
 
+    @property
+    def ready(self) -> bool:
+        """
+        Attempt a database query.
+        Return False if an exception is raised (and log a warning)
+        Return True otherwise.
+        """
+        try:
+            self.client.get('')
+        except Exception as err:
+            LOGGER.warning("Failed to query database %s : %s", self.db_string, exc_type_msg(err))
+            return False
+        return True
+
     # The following methods act like REST calls for single items
     def get(self, key):
         """Get the data for the given key."""
