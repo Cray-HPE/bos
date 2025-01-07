@@ -52,14 +52,19 @@ so that it stays around for much longer after completing.
 """
 
 import logging
+import sys
 
-from .db import COMP_DB, SESS_DB, TEMP_DB
+from .db import COMP_DB, SESS_DB, TEMP_DB, all_db_ready
 from .sanitize import sanitize_component, sanitize_session, sanitize_session_template
 
 LOGGER = logging.getLogger(__name__)
 
 
 def main():
+    if not all_db_ready():
+        LOGGER.error("Not all BOS databases are ready")
+        sys.exit(1)
+
     LOGGER.info("Sanitizing session templates")
     for key, data in TEMP_DB.get_all_as_dict().items():
         sanitize_session_template(key, data)
