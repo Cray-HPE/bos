@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Fixed bug causing no components to be listed when no tenant specified.
 
+### Changed
+- Have BOS migration job wait for databases to be ready before proceeding
+
 ## [2.31.1] - 2024-12-18
 ### Fixed
 - When renaming session templates during migration, use correct database key to store renamed template.
