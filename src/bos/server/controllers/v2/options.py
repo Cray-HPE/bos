@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -37,12 +37,15 @@ DB = dbutils.get_wrapper(db='options')
 # options simpler
 OPTIONS_KEY = 'options'
 DEFAULTS = {
+    'bss_read_timeout': 10,
+    'capmc_read_timeout': 10,
     'cfs_read_timeout': 10,
     'cleanup_completed_session_ttl': "7d",
     'clear_stage': False,
     'component_actual_state_ttl': "4h",
     'disable_components_on_completion': True,
     'discovery_frequency': 5*60,
+    'hsm_read_timeout': 10,
     'logging_level': 'INFO',
     'max_boot_wait_time': 1200,
     'max_power_on_wait_time': 120,
