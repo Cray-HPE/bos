@@ -28,6 +28,7 @@ from requests.exceptions import HTTPError
 from requests.sessions import Session as RequestsSession
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.clients.s3 import S3Url
 
 SERVICE_NAME = 'cray-ims'
@@ -67,7 +68,7 @@ def get_image(image_id: str, session: RequestsSession|None=None) -> dict:
     Other errors (like a failure to query IMS) will result in appropriate exceptions being raised.
     """
     if not session:
-        session = requests_retry_session()
+        session = requests_retry_session(read_timeout=options.ims_read_timeout)  # pylint: disable=redundant-keyword-arg
     url=f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("GET %s", url)
     try:
@@ -101,7 +102,7 @@ def patch_image(image_id: str, data: dict, session: RequestsSession|None=None) -
         LOGGER.warning("patch_image called without data; returning without action.")
         return
     if not session:
-        session = requests_retry_session()
+        session = requests_retry_session(read_timeout=options.ims_read_timeout)  # pylint: disable=redundant-keyword-arg
     url=f"{IMAGES_ENDPOINT}/{image_id}"
     LOGGER.debug("PATCH %s with body=%s", url, data)
     response = session.patch(url, json=data)
@@ -134,7 +135,7 @@ def tag_image(image_id: str, operation: str, key: str, value: str=None,
         LOGGER.debug("Patching image %s %sing key: %s", image_id, operation, key)
 
     if not session:
-        session = requests_retry_session()
+        session = requests_retry_session(read_timeout=options.ims_read_timeout)  # pylint: disable=redundant-keyword-arg
 
     data = {
         "metadata": {

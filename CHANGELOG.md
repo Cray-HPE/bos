@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- BOS options: bss_read_timeout, hsm_read_timeout, ims_read_timeout, pcs_read_timeout.
+  Allow the amount of time BOS waits for a response from these services before
+  timing out to be configurable
+
 ### Changed
 - Have BOS migration job wait for databases to be ready before proceeding
 
