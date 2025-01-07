@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,6 +31,7 @@ from typing import List
 
 from bos.common.utils import compact_response_text
 from bos.operators.utils import requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
 
 SERVICE_NAME = 'cray-capmc'
 CAPMC_VERSION = 'v1'
@@ -325,7 +326,7 @@ def status(nodes, filtertype = 'show_all', session = None):
 
     endpoint = '%s/get_xname_status' % (ENDPOINT)
     status_bucket = defaultdict(set)
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.capmc_read_timeout)  # pylint: disable=redundant-keyword-arg
     body = {'filter': filtertype,
             'xnames': list(nodes)}
 
@@ -405,7 +406,7 @@ def power(nodes: List, state: str, force: bool = True, session = None,
     if state not in valid_states:
         raise ValueError("State must be one of {} not {}".format(valid_states, state))
 
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.capmc_read_timeout)  # pylint: disable=redundant-keyword-arg
     prefix, output_format = node_type(nodes)
     power_endpoint = '%s/%s_%s' % (ENDPOINT, prefix, state)
 
@@ -452,7 +453,7 @@ def call(endpoint, nodes, node_format = 'xnames', cont = True, reason = "None gi
     payload = {'reason': reason,
                node_format: list(nodes),
                'continue': cont}
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.capmc_read_timeout)  # pylint: disable=redundant-keyword-arg
     if kwargs:
         payload.update(kwargs)
     LOGGER.debug("POST %s with body=%s", endpoint, payload)
