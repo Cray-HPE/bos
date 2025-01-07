@@ -35,6 +35,7 @@ import os
 import time
 from typing import Generator, List, NoReturn, Type
 
+from bos.common.clients.bss import BSSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg
 from bos.common.values import Status
@@ -65,7 +66,7 @@ class ApiClients:
 
     def __init__(self):
         #self.bos = BOSClient()
-        #self.bss = BSSClient()
+        self.bss = BSSClient()
         #self.cfs = CFSClient()
         #self.hsm = HSMClient()
         #self.ims = IMSClient()
@@ -77,7 +78,7 @@ class ApiClients:
         Enter context for all API clients
         """
         #self._stack.enter_context(self.bos)
-        #self._stack.enter_context(self.bss)
+        self._stack.enter_context(self.bss)
         #self._stack.enter_context(self.cfs)
         #self._stack.enter_context(self.hsm)
         #self._stack.enter_context(self.ims)
