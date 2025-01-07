@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- BOS options: bss_read_timeout, hsm_read_timeout, pcs_read_timeout.
+  Allow the amount of time BOS waits for a response from these services before
+  timing out to be configurable
+
 ### Fixed
 - Fixed bug causing no components to be listed when no tenant specified.
 
