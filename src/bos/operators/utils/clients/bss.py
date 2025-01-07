@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,6 +27,7 @@ import json
 from requests.exceptions import HTTPError
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
 
 LOGGER = logging.getLogger(__name__)
 SERVICE_NAME = 'cray-bss'
@@ -65,7 +66,7 @@ def set_bss(node_set, kernel_params, kernel, initrd, session=None):
         # Accordingly, an Exception is raised.
         raise Exception("set_bss called with empty node_set")
 
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.bss_read_timeout)  # pylint: disable=redundant-keyword-arg
     LOGGER.info("Params: %s", kernel_params)
     url = f"{ENDPOINT}/bootparameters"
 

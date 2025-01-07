@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -58,12 +58,8 @@ def validate_ims_boot_image(bs: dict, options_data: OptionsData) -> None:
 
     ims_id = get_ims_image_id(bs_path)
 
-    # If IMS being inaccessible is not a fatal error, then reduce the number
-    # of retries we make, to prevent a lengthy delay
-    num_retries = 8 if options_data.ims_errors_fatal else 4
-
     try:
-        image_data = get_ims_image_data(ims_id, num_retries)
+        image_data = get_ims_image_data(ims_id, options_data)
     except ImageNotFound as err:
         if options_data.ims_images_must_exist:
             raise BootSetError(str(err)) from err
@@ -110,14 +106,18 @@ def get_ims_image_id(path: str) -> str:
                       "for IMS images")
 
 
-def get_ims_image_data(ims_id: str, num_retries: int|None=None) -> dict:
+def get_ims_image_data(ims_id: str, options_data: OptionsData) -> dict:
     """
     Query IMS to get the image data and return it,
     or raise an exception.
     """
-    kwargs = { "image_id": ims_id }
-    if num_retries is not None:
-        # A pylint bug generates a false positive error for this call
-        # https://github.com/pylint-dev/pylint/issues/2271
-        kwargs['session'] = requests_retry_session(retries=4) # pylint: disable=redundant-keyword-arg
-    return get_image(**kwargs)
+    # If IMS being inaccessible is not a fatal error, then reduce the number
+    # of retries we make, to prevent a lengthy delay
+    num_retries = 8 if options_data.ims_errors_fatal else 4
+
+    # A pylint bug generates a false positive error for this call
+    # https://github.com/pylint-dev/pylint/issues/2271
+    session = requests_retry_session(  # pylint: disable=redundant-keyword-arg)
+                retries=num_retries,
+                read_timeout=options_data.ims_read_timeout)
+    return get_image(image_id=ims_id, session=session)

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,6 +29,7 @@ from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
 
 SERVICE_NAME = 'cray-smd'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2/"
@@ -53,7 +54,7 @@ def read_all_node_xnames():
     Queries HSM for the full set of xname components that
     have been discovered; return these as a set.
     """
-    session = requests_retry_session()
+    session = requests_retry_session(read_timeout=options.hsm_read_timeout)  # pylint: disable=redundant-keyword-arg
     endpoint = f'{BASE_ENDPOINT}/State/Components/'
     LOGGER.debug("GET %s", endpoint)
     try:
@@ -123,7 +124,7 @@ def get_components(node_list, enabled=None) -> dict[str,list[dict]]:
     if not node_list:
         LOGGER.warning("hsm.get_components called with empty node list")
         return {'Components': []}
-    session = requests_retry_session()
+    session = requests_retry_session(read_timeout=options.hsm_read_timeout)  # pylint: disable=redundant-keyword-arg
     try:
         payload = {'ComponentIDs': node_list}
         if enabled is not None:
@@ -222,7 +223,7 @@ class Inventory:
     def get(self, path, params=None):
         url = os.path.join(BASE_ENDPOINT, path)
         if self._session is None:
-            self._session = requests_retry_session()
+            self._session = requests_retry_session(read_timeout=options.hsm_read_timeout)  # pylint: disable=redundant-keyword-arg
         try:
             LOGGER.debug("HSM Inventory: GET %s with params=%s", url, params)
             response = self._session.get(url, params=params, verify=VERIFY)
