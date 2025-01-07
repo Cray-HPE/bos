@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -29,7 +29,6 @@ from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
     DesiredConfigurationIsNone, DesiredConfigurationSetInCFS, LastActionIs, TimeSinceLastAction
 from bos.operators.utils.clients.bos.options import options
-from bos.operators.utils.clients.pcs import node_to_powerstate
 from bos.operators.utils.clients.cfs import get_components as get_cfs_components
 
 LOGGER = logging.getLogger(__name__)
@@ -87,7 +86,8 @@ class StatusOperator(BaseOperator):
         """
         LOGGER.debug("Processing %d components", len(components))
         component_ids = [component['id'] for component in components]
-        power_states = node_to_powerstate(component_ids)
+        power_states = self.client.pcs.power_status.node_to_powerstate(
+            component_ids)
         cfs_states = self._get_cfs_components()
         updated_components = []
         # Recreate these filters to pull in the latest options values

@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -36,7 +36,6 @@ from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
                              using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
 from bos.operators.utils.clients import bss
-from bos.operators.utils.clients import pcs
 from bos.operators.utils.clients.ims import tag_image
 from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
@@ -91,7 +90,7 @@ class PowerOnOperator(BaseOperator):
                 f"Error encountered setting CFS information: {e}") from e
         component_ids = [component['id'] for component in components]
         try:
-            pcs.power_on(component_ids)
+            self.client.pcs.transitions.power_on(component_ids)
         except Exception as e:
             raise Exception(
                 f"Error encountered calling CAPMC to power on: {e}") from e
