@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,6 +31,7 @@ import json
 from collections import defaultdict
 
 from bos.common.utils import compact_response_text, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
 
 SERVICE_NAME = 'cray-power-control'
 POWER_CONTROL_VERSION = 'v1'
@@ -88,7 +89,7 @@ def _power_status(xname=None, power_state_filter=None, management_state_filter=N
     Per the spec, a power_status_all is returned. power_status_all is an array of power
     statuses.
     """
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     params = {}
     if xname:
         params['xname'] = xname
@@ -141,7 +142,7 @@ def status(nodes, session=None, **kwargs):
     if not nodes:
         LOGGER.warning("status called without nodes; returning without action.")
         return status_bucket
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     power_status_all = _power_status(xname=list(nodes), session=session, **kwargs)
     for power_status_entry in power_status_all['status']:
         # If the returned xname has an error, it itself is the status regardless of
@@ -164,7 +165,7 @@ def node_to_powerstate(nodes, session=None, **kwargs):
     if not nodes:
         LOGGER.warning("node_to_powerstate called without nodes; returning without action.")
         return power_states
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     status_bucket = status(nodes, session, **kwargs)
     for pstatus, nodeset in status_bucket.items():
         for node in nodeset:
@@ -201,7 +202,7 @@ def _transition_create(xnames, operation, task_deadline_minutes=None, deputy_key
     if not xnames:
         raise PowerControlComponentsEmptyException(
                 "_transition_create called with no xnames! (operation=%s)" % operation)
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     try:
         assert operation in set(['On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart', 'Init', 'Force-Off'])
     except AssertionError as err:
@@ -237,7 +238,7 @@ def power_on(nodes, session=None, task_deadline_minutes=1, **kwargs):
     """
     if not nodes:
         raise PowerControlComponentsEmptyException("power_on called with no nodes!")
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     return _transition_create(xnames=nodes, operation='On', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
@@ -247,7 +248,7 @@ def power_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     """
     if not nodes:
         raise PowerControlComponentsEmptyException("power_off called with no nodes!")
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     return _transition_create(xnames=nodes, operation='Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
@@ -257,7 +258,7 @@ def soft_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     """
     if not nodes:
         raise PowerControlComponentsEmptyException("soft_off called with no nodes!")
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     return _transition_create(xnames=nodes, operation='Soft-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)
 def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
@@ -267,6 +268,6 @@ def force_off(nodes, session=None, task_deadline_minutes=1, **kwargs):
     """
     if not nodes:
         raise PowerControlComponentsEmptyException("force_off called with no nodes!")
-    session = session or requests_retry_session()
+    session = session or requests_retry_session(read_timeout=options.pcs_read_timeout)  # pylint: disable=redundant-keyword-arg
     return _transition_create(xnames=nodes, operation='Force-Off', task_deadline_minutes=task_deadline_minutes,
                               session=session, **kwargs)

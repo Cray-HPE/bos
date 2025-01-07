@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -72,8 +72,20 @@ class Options:
             raise KeyError('Option {} not found and no default exists'.format(key))
 
     @property
+    def bss_read_timeout(self):
+        return self.get_option('bss_read_timeout', int, 10)
+
+    @property
     def cfs_read_timeout(self):
         return self.get_option('cfs_read_timeout', int, 10)
+
+    @property
+    def hsm_read_timeout(self):
+        return self.get_option('hsm_read_timeout', int, 10)
+
+    @property
+    def pcs_read_timeout(self):
+        return self.get_option('pcs_read_timeout', int, 10)
 
     @property
     def logging_level(self):
