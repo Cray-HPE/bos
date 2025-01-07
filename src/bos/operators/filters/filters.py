@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,11 +28,10 @@ import logging
 import re
 from typing import List, Type
 
+from bos.common.clients.cfs import CFSClient
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
-from bos.operators.utils.clients.cfs import get_components_from_id_list as \
-                                            get_cfs_components_from_id_list
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
 LOGGER = logging.getLogger(__name__)
@@ -213,13 +212,15 @@ class BootArtifactStatesMatch(LocalFilter):
 class DesiredConfigurationSetInCFS(LocalFilter):
     """ Returns when desired configuration is set in CFS """
 
-    def __init__(self):
-        self.cfs_components_dict = {}
+    def __init__(self, cfs_client: CFSClient):
         super().__init__()
+        self.cfs_components_dict = {}
+        self.cfs_client = cfs_client
 
     def _filter(self, components: List[dict]) -> List[dict]:
         component_ids = [component['id'] for component in components]
-        cfs_components = get_cfs_components_from_id_list(id_list=component_ids)
+        cfs_components = self.cfs_client.components.get_components_from_id_list(
+            id_list=component_ids)
         self.cfs_components_dict = {
             component['id']: component
             for component in cfs_components

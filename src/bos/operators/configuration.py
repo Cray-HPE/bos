@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,9 +25,8 @@
 import logging
 
 from bos.common.values import Status
-from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, NOT
+from bos.operators.filters import BOSQuery, NOT
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,12 +50,12 @@ class ConfigurationOperator(BaseOperator):
     def filters(self):
         return [
             BOSQuery(enabled=True, status=Status.configuring),
-            NOT(DesiredConfigurationSetInCFS())
+            NOT(self.DesiredConfigurationSetInCFS)
         ]
 
     def _act(self, components):
         if components:
-            set_cfs(components, enabled=True)
+            self.client.cfs.components.set_cfs(components, enabled=True)
         return components
 
 
