@@ -28,10 +28,10 @@ import logging
 import re
 from typing import List, Type
 
+from bos.common.clients.bos import BOSClient
 from bos.common.clients.cfs import CFSClient
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
-from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
 LOGGER = logging.getLogger(__name__)
@@ -68,14 +68,14 @@ class BOSQuery(DetailsFilter):
     """Gets all components from BOS that match the kwargs """
     INITIAL: bool = True
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, bos_client: BOSClient, **kwargs) -> None:
         """
         Init for the BOSQuery filter
         kwargs corresponds to arguments for the BOS get_components method
         """
         super().__init__()
         self.kwargs = kwargs
-        self.bos_client = BOSClient()
+        self.bos_client = bos_client
 
     def _filter(self, _) -> List[dict]:
         return self.bos_client.components.get_components(**self.kwargs)

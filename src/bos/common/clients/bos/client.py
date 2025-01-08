@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,16 +21,23 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from bos.common.clients.api_client import APIClient
+
 from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
-from .sessions_status import SessionStatusEndpoint
 
 
-class BOSClient:
+class BOSClient(APIClient):
 
-    def __init__(self):
-        self.components = ComponentEndpoint()
-        self.sessions = SessionEndpoint()
-        self.session_status = SessionStatusEndpoint()
-        self.session_templates = SessionTemplateEndpoint()
+    @property
+    def components(self) -> ComponentEndpoint:
+        return self.get_endpoint(ComponentEndpoint)
+
+    @property
+    def sessions(self) -> SessionEndpoint:
+        return self.get_endpoint(SessionEndpoint)
+
+    @property
+    def session_templates(self) -> SessionTemplateEndpoint:
+        return self.get_endpoint(SessionTemplateEndpoint)

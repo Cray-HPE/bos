@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,17 +28,24 @@ from .base import BaseBosTenantAwareEndpoint
 LOGGER = logging.getLogger(__name__)
 
 
-class SessionTemplateEndpoint(BaseBosTenantAwareEndpoint):
-    ENDPOINT = 'sessiontemplates'
+class SessionEndpoint(BaseBosTenantAwareEndpoint):
+    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
 
-    def get_session_template(self, session_template_id, tenant):
-        return self.get_item(session_template_id, tenant)
+    def get_session(self, session_id, tenant):
+        return self.get_item(session_id, tenant)
 
-    def get_session_templates(self, **kwargs):
+    def get_sessions(self, **kwargs):
         return self.get_items(**kwargs)
 
-    def update_session_template(self, session_template_id, tenant, data):
-        return self.update_item(session_template_id, tenant, data)
+    def update_session(self, session_id, tenant, data):
+        return self.update_item(session_id, tenant, data)
 
-    def update_session_templates(self, data):
-        raise Exception("Session templates don't support a bulk update")
+    def delete_sessions(self, **kwargs):
+        return self.delete_items(**kwargs)
+
+    def post_session_status(self, session_id, tenant):
+        """
+        Post information for a single BOS Session status.
+        This basically saves the BOS Session status to the database.
+        """
+        return self.post_item(f'{session_id}/status', tenant)

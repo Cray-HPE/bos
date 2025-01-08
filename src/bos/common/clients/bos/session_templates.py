@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
@@ -24,39 +23,22 @@
 #
 import logging
 
-from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
-from bos.operators.filters import HSMState
+from .base import BaseBosTenantAwareEndpoint
 
 LOGGER = logging.getLogger(__name__)
 
 
-class GracefulPowerOffOperator(BaseOperator):
-    """
-    - Enabled in the BOS database and the status is power_off_pending
-    - Enabled in HSM
-    """
+class SessionTemplateEndpoint(BaseBosTenantAwareEndpoint):
+    ENDPOINT = 'sessiontemplates'
 
-    retry_attempt_field = "power_off_graceful_attempts"
+    def get_session_template(self, session_template_id, tenant):
+        return self.get_item(session_template_id, tenant)
 
-    @property
-    def name(self):
-        return Action.power_off_gracefully
+    def get_session_templates(self, **kwargs):
+        return self.get_items(**kwargs)
 
-    # Filters
-    @property
-    def filters(self):
-        return [
-            self.BOSQuery(enabled=True, status=Status.power_off_pending),
-            HSMState(),
-        ]
+    def update_session_template(self, session_template_id, tenant, data):
+        return self.update_item(session_template_id, tenant, data)
 
-    def _act(self, components):
-        if components:
-            component_ids = [component['id'] for component in components]
-            self.client.pcs.transitions.soft_off(component_ids)
-        return components
-
-
-if __name__ == '__main__':
-    main(GracefulPowerOffOperator)
+    def update_session_templates(self, data):
+        raise Exception("Session templates don't support a bulk update")
