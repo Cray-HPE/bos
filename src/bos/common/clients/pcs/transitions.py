@@ -30,7 +30,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class TransitionsEndpoint(BasePcsEndpoint):
-    ENDPOINT = 'transitions'
+
+    @property
+    def ENDPOINT(self) -> str:
+        return 'transitions'
 
     def transition_create(self,
                           xnames,

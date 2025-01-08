@@ -29,12 +29,15 @@ from bos.common.utils import PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 
-SERVICE_NAME = 'cray-bss'
-ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/boot/v1"
+BSS_SERVICE_NAME = 'cray-bss'
+BASE_BSS_ENDPOINT = f"{PROTOCOL}://{BSS_SERVICE_NAME}/boot/v1"
 
 
 class BaseBssEndpoint(BaseRawEndpoint, ABC):
     """
     This base class provides generic access to the BSS API.
     """
-    BASE_ENDPOINT = ENDPOINT
+
+    @property
+    def BASE_ENDPOINT(self) -> str:
+        return BASE_BSS_ENDPOINT

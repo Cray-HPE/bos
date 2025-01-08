@@ -35,8 +35,8 @@ from bos.common.utils import PROTOCOL
 
 from .exceptions import PowerControlException
 
-SERVICE_NAME = 'cray-power-control'
-ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}"
+PCS_SERVICE_NAME = 'cray-power-control'
+BASE_PCS_ENDPOINT = f"{PROTOCOL}://{PCS_SERVICE_NAME}"
 
 
 class PcsRequestErrorHandler(RequestErrorHandler):
@@ -63,5 +63,9 @@ class BasePcsEndpoint(BaseEndpoint, ABC):
     """
     This base class provides generic access to the PCS API.
     """
-    BASE_ENDPOINT = ENDPOINT
+
     error_handler = PcsRequestErrorHandler
+
+    @property
+    def BASE_ENDPOINT(self) -> str:
+        return BASE_PCS_ENDPOINT

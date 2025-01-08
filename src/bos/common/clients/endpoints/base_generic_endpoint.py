@@ -21,7 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from abc import ABC, abstractmethod
+from abc import ABC, abstractmethod, abstractproperty
 import logging
 from typing import Generic, TypeVar
 
@@ -46,9 +46,15 @@ class BaseGenericEndpoint(ABC, Generic[RequestReturnT]):
     Exceptions are handled by a separate class, since different API clients
     may want to handle these differently.
     """
-    BASE_ENDPOINT: str = ''
-    ENDPOINT: str = ''
     error_handler: BaseRequestErrorHandler = RequestErrorHandler
+
+    @abstractproperty
+    def BASE_ENDPOINT(self) -> str:
+        ...
+
+    @abstractproperty
+    def ENDPOINT(self) -> str:
+        ...
 
     def __init__(self, session: requests.Session):
         super().__init__()
@@ -59,13 +65,12 @@ class BaseGenericEndpoint(ABC, Generic[RequestReturnT]):
     def format_response(cls, response: requests.Response) -> RequestReturnT:
         ...
 
-    @classmethod
-    def base_url(cls) -> str:
-        return f"{cls.BASE_ENDPOINT}/{cls.ENDPOINT}"
+    @property
+    def base_url(self) -> str:
+        return f"{self.BASE_ENDPOINT}/{self.ENDPOINT}"
 
-    @classmethod
-    def url(cls, uri: str) -> str:
-        base_url = cls.base_url()
+    def url(self, uri: str) -> str:
+        base_url = self.base_url
         if not uri:
             return base_url
         if uri[0] == '/' or base_url[-1] == '/':

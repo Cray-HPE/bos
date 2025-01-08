@@ -29,7 +29,10 @@ LOGGER = logging.getLogger(__name__)
 
 
 class BootParametersEndpoint(BaseBssEndpoint):
-    ENDPOINT = 'bootparameters'
+
+    @property
+    def ENDPOINT(self) -> str:
+        return 'bootparameters'
 
     def set_bss(self, node_set, kernel_params, kernel, initrd) -> str:
         '''

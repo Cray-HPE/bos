@@ -29,15 +29,18 @@ from bos.common.utils import PROTOCOL
 
 LOGGER = logging.getLogger(__name__)
 
-SERVICE_NAME = 'cray-cfs-api'
-BASE_CFS_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"
+CFS_SERVICE_NAME = 'cray-cfs-api'
+BASE_CFS_ENDPOINT = f"{PROTOCOL}://{CFS_SERVICE_NAME}/v3"
 
 
 class BaseCfsEndpoint(BaseEndpoint, ABC):
     """
     This base class provides generic access to the CFS API.
     """
-    BASE_ENDPOINT = BASE_CFS_ENDPOINT
+
+    @property
+    def BASE_ENDPOINT(self) -> str:
+        return BASE_CFS_ENDPOINT
 
     def get_items(self, **kwargs):
         """Get information for all CFS items"""

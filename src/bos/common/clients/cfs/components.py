@@ -33,7 +33,10 @@ PATCH_BATCH_SIZE = 1000
 
 
 class ComponentEndpoint(BasePagedCfsEndpoint):
-    ENDPOINT = 'components'
+
+    @property
+    def ENDPOINT(self) -> str:
+        return 'components'
 
     @property
     def ITEM_FIELD_NAME(self) -> str:

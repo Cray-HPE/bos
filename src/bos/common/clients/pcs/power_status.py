@@ -30,7 +30,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 class PowerStatusEndpoint(BasePcsEndpoint):
-    ENDPOINT = 'power-status'
+    @property
+    def ENDPOINT(self) -> str:
+        return 'power-status'
 
     def query(self,
               xname=None,
