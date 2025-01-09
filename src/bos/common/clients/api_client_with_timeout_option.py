@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,27 +21,40 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from abc import ABC, abstractproperty
 from requests_retry_session import RequestsRetryAdapterArgs
+from typing import Optional, Unpack
 
-from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
+from bos.common.clients.bos.options import options
+from bos.common.options import BaseOptions
 
-from .images import ImagesEndpoint
+from .api_client import APIClient
 
+class APIClientWithTimeoutOption(APIClient, ABC):
+    """
+    As a subclass of RetrySessionManager, this class can be used as a context manager,
+    and will have a requests session available as self.requests_session
 
-class IMSClient(APIClientWithTimeoutOption):
+    This context manager is used to provide API endpoints, via subclassing.
+    """
+
+    def __init__(self, bos_options: Optional[BaseOptions]=None,
+                 **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+        self._bos_options = options if bos_options is None else bos_options
+        kwargs = self.retry_kwargs
+        kwargs.update(adapter_kwargs)        
+        super().__init__(**kwargs)
 
     @property
+    def bos_options(self) -> BaseOptions:
+        return self._bos_options
+
+    @abstractproperty
     def read_timeout(self) -> int:
-        return self.bos_options.ims_read_timeout
+        """
+        Return the read_timeout value for this client
+        """
 
     @property
     def retry_kwargs(self) -> RequestsRetryAdapterArgs:
-        kwargs = super().retry_kwargs
-        # If IMS being inaccessible is not a fatal error, then reduce the number
-        # of retries we make, to prevent a lengthy delay
-        kwargs["retries"] = 8 if self.bos_options.ims_errors_fatal else 4
-        return kwargs
-
-    @property
-    def images(self) -> ImagesEndpoint:
-        return self.get_endpoint(ImagesEndpoint)
+        return { "read_timeout": self.read_timeout }

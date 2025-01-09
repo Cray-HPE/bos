@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,6 +28,7 @@ from typing import Any
 # code should either import this dict directly, or (preferably) access
 # its values indirectly using a DefaultOptions object
 DEFAULTS = {
+    'bss_read_timeout': 20,
     'cfs_read_timeout': 20,
     'cleanup_completed_session_ttl': "7d",
     'clear_stage': False,
@@ -35,13 +36,16 @@ DEFAULTS = {
     'default_retry_policy': 3,
     'disable_components_on_completion': True,
     'discovery_frequency': 300,
+    'hsm_read_timeout': 20,
     'ims_errors_fatal': False,
     'ims_images_must_exist': False,
+    'ims_read_timeout': 20,
     'logging_level': 'INFO',
     'max_boot_wait_time': 1200,
     'max_component_batch_size': 2800,
     'max_power_off_wait_time': 300,
     'max_power_on_wait_time': 120,
+    'pcs_read_timeout': 20,
     'polling_frequency': 15,
     'reject_nids': False,
     'session_limit_required': False
@@ -62,6 +66,10 @@ class BaseOptions(ABC):
     # These properties call the method responsible for getting the option value.
     # All these do is convert the response to the appropriate type for the option,
     # and return it.
+
+    @property
+    def bss_read_timeout(self) -> int:
+        return int(self.get_option('bss_read_timeout'))
 
     @property
     def cfs_read_timeout(self) -> int:
@@ -92,12 +100,20 @@ class BaseOptions(ABC):
         return int(self.get_option('discovery_frequency'))
 
     @property
+    def hsm_read_timeout(self) -> int:
+        return int(self.get_option('hsm_read_timeout'))
+
+    @property
     def ims_errors_fatal(self) -> bool:
         return bool(self.get_option('ims_errors_fatal'))
 
     @property
     def ims_images_must_exist(self) -> bool:
         return bool(self.get_option('ims_images_must_exist'))
+
+    @property
+    def ims_read_timeout(self) -> int:
+        return int(self.get_option('ims_read_timeout'))
 
     @property
     def logging_level(self) -> str:
@@ -118,6 +134,10 @@ class BaseOptions(ABC):
     @property
     def max_power_on_wait_time(self) -> int:
         return int(self.get_option('max_power_on_wait_time'))
+
+    @property
+    def pcs_read_timeout(self) -> int:
+        return int(self.get_option('pcs_read_timeout'))
 
     @property
     def polling_frequency(self) -> int:

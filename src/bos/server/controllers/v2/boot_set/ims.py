@@ -54,12 +54,8 @@ def validate_ims_boot_image(bs: dict, options_data: OptionsData) -> None:
 
     ims_id = get_ims_image_id(bs_path)
 
-    # If IMS being inaccessible is not a fatal error, then reduce the number
-    # of retries we make, to prevent a lengthy delay
-    num_retries = 8 if options_data.ims_errors_fatal else 4
-
     try:
-        image_data = get_ims_image_data(ims_id, num_retries)
+        image_data = get_ims_image_data(ims_id, options_data)
     except ImageNotFound as err:
         if options_data.ims_images_must_exist:
             raise BootSetError(str(err)) from err
@@ -108,13 +104,10 @@ def get_ims_image_id(path: str) -> str:
         "for IMS images")
 
 
-def get_ims_image_data(ims_id: str, num_retries: int | None = None) -> dict:
+def get_ims_image_data(ims_id: str, options_data: OptionsData) -> dict:
     """
     Query IMS to get the image data and return it,
     or raise an exception.
     """
-    kwargs = {}
-    if num_retries is not None:
-        kwargs = {'retries': num_retries}
-    with IMSClient(**kwargs) as ims_client:
+    with IMSClient(options_data) as ims_client:
         return ims_client.images.get_image(ims_id)

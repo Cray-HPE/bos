@@ -21,12 +21,16 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from bos.common.clients.api_client import APIClient
+from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .boot_parameters import BootParametersEndpoint
 
 
-class BSSClient(APIClient):
+class BSSClient(APIClientWithTimeoutOption):
+
+    @property
+    def read_timeout(self) -> int:
+        return self.bos_options.bss_read_timeout
 
     @property
     def boot_parameters(self) -> BootParametersEndpoint:

@@ -21,13 +21,17 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from bos.common.clients.api_client import APIClient
+from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .power_status import PowerStatusEndpoint
 from .transitions import TransitionsEndpoint
 
 
-class PCSClient(APIClient):
+class PCSClient(APIClientWithTimeoutOption):
+
+    @property
+    def read_timeout(self) -> int:
+        return self.bos_options.pcs_read_timeout
 
     @property
     def power_status(self) -> PowerStatusEndpoint:
