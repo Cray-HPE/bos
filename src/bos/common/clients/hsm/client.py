@@ -21,14 +21,18 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from bos.common.clients.api_client import APIClient
+from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .groups import GroupsEndpoint
 from .partitions import PartitionsEndpoint
 from .state_components import StateComponentsEndpoint
 
 
-class HSMClient(APIClient):
+class HSMClient(APIClientWithTimeoutOption):
+
+    @property
+    def read_timeout(self) -> int:
+        return self.bos_options.hsm_read_timeout
 
     @property
     def groups(self) -> GroupsEndpoint:

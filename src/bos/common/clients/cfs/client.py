@@ -21,16 +21,16 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from bos.common.clients.api_client import APIClient
-from bos.common.clients.bos.options import options
+from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .components import ComponentEndpoint
 
 
-class CFSClient(APIClient):
+class CFSClient(APIClientWithTimeoutOption):
 
-    def __init__(self):
-        super().__init__(read_timeout=options.cfs_read_timeout)
+    @property
+    def read_timeout(self) -> int:
+        return self.bos_options.cfs_read_timeout
 
     @property
     def components(self) -> ComponentEndpoint:
