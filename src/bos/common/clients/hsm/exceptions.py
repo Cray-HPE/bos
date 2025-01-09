@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,3 +21,13 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+
+class HWStateManagerException(Exception):
+    """
+    An error unique to interacting with the HWStateManager service;
+    should the service be unable to fulfill a given request (timeout,
+    no components, service 503s, etc.); this exception is raised. It is
+    intended to be further subclassed for more specific kinds of errors
+    in the future should they arise.
+    """

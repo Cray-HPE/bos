@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,27 +21,14 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+import requests
 
-from .base import BaseBosEndpoint
-
-LOGGER = logging.getLogger(__name__)
+from .response_data import ResponseData
 
 
-class ComponentEndpoint(BaseBosEndpoint):
-    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
+class ApiResponseError(Exception):
+    """Raised when API response has non-ok status"""
 
-    def get_component(self, component_id):
-        return self.get_item(component_id)
-
-    def get_components(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def update_component(self, component_id, data):
-        return self.update_item(component_id, data)
-
-    def update_components(self, data):
-        return self.update_items(data)
-
-    def put_components(self, data):
-        return self.put_items(data)
+    def __init__(self, *args, response: requests.Response, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.response_data = ResponseData.from_response(response)

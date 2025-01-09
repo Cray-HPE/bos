@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,16 +21,33 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from .components import ComponentEndpoint
-from .sessions import SessionEndpoint
-from .session_templates import SessionTemplateEndpoint
-from .sessions_status import SessionStatusEndpoint
+import json
+from typing import NamedTuple, Self
+
+import requests
+
+from .defs import JsonData, JsonDict
 
 
-class BOSClient:
+class ResponseData(NamedTuple):
+    """
+    Encapsulates data from a response to an API request. This allows the
+    response itself to be cleaned up when its context manager exits.
+    """
+    headers: JsonDict
+    ok: bool
+    reason: str
+    status_code: int
+    text: bytes | None
 
-    def __init__(self):
-        self.components = ComponentEndpoint()
-        self.sessions = SessionEndpoint()
-        self.session_status = SessionStatusEndpoint()
-        self.session_templates = SessionTemplateEndpoint()
+    @property
+    def body(self) -> JsonData:
+        return json.loads(self.text) if self.text else None
+
+    @classmethod
+    def from_response(cls, resp: requests.Response) -> Self:
+        return cls(headers=resp.headers,
+                   ok=resp.ok,
+                   reason=resp.reason,
+                   status_code=resp.status_code,
+                   text=resp.text)

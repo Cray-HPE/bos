@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -35,12 +35,7 @@ from requests import HTTPError
 from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
                              using_sbps_check_kernel_parameters, components_by_id
 from bos.common.values import Action, Status
-from bos.operators.utils.clients import bss
-from bos.operators.utils.clients import pcs
-from bos.operators.utils.clients.ims import tag_image
-from bos.operators.utils.clients.cfs import set_cfs
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger(__name__)
@@ -63,8 +58,8 @@ class PowerOnOperator(BaseOperator):
     @property
     def filters(self):
         return [
-            BOSQuery(enabled=True, status=Status.power_on_pending),
-            HSMState()
+            self.BOSQuery(enabled=True, status=Status.power_on_pending),
+            self.HSMState()
         ]
 
     def _act(self, components: Union[List[dict], None]):
@@ -85,13 +80,15 @@ class PowerOnOperator(BaseOperator):
             raise Exception(
                 f"Error encountered setting BSS information: {e}") from e
         try:
-            set_cfs(components, enabled=False, clear_state=True)
+            self.client.cfs.components.set_cfs(components,
+                                               enabled=False,
+                                               clear_state=True)
         except Exception as e:
             raise Exception(
                 f"Error encountered setting CFS information: {e}") from e
         component_ids = [component['id'] for component in components]
         try:
-            pcs.power_on(component_ids)
+            self.client.pcs.transitions.power_on(component_ids)
         except Exception as e:
             raise Exception(
                 f"Error encountered calling CAPMC to power on: {e}") from e
@@ -153,10 +150,11 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
-                resp = bss.set_bss(node_set=nodes,
-                                   kernel_params=kernel_parameters,
-                                   kernel=kernel,
-                                   initrd=initrd)
+                resp = self.client.bss.boot_parameters.set_bss(
+                    node_set=nodes,
+                    kernel_params=kernel_parameters,
+                    kernel=kernel,
+                    initrd=initrd)
                 resp.raise_for_status()
             except HTTPError as err:
                 LOGGER.error(
@@ -197,7 +195,7 @@ class PowerOnOperator(BaseOperator):
         } for comp in bss_tokens]
         LOGGER.debug('Updated components (minus desired_state data): %s',
                      redacted_component_updates)
-        self.bos_client.components.update_components(bss_tokens)
+        self.client.bos.components.update_components(bss_tokens)
 
     def _tag_images(self, boot_artifacts: Dict[Tuple[str, str, str], Set[str]],
                     components: List[dict]) -> None:
@@ -242,7 +240,8 @@ class PowerOnOperator(BaseOperator):
         my_components_by_id = components_by_id(components)
         for image in image_ids:
             try:
-                tag_image(image, "set", "sbps-project", "true")
+                self.client.ims.images.tag_image(image, "set", "sbps-project",
+                                                 "true")
             except Exception as e:
                 components_to_update = []
                 for node in image_id_to_nodes[image]:

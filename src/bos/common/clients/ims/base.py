@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,24 +21,24 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+from abc import ABC
 
-from .base import BaseBosTenantAwareEndpoint
+from bos.common.clients.endpoints import BaseEndpoint
 
-LOGGER = logging.getLogger(__name__)
+from .defs import BASE_ENDPOINT as BASE_IMS_ENDPOINT
 
 
-class SessionTemplateEndpoint(BaseBosTenantAwareEndpoint):
-    ENDPOINT = 'sessiontemplates'
+class BaseImsEndpoint(BaseEndpoint, ABC):
+    """
+    This base class provides generic access to the IMS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    BASE_ENDPOINT = BASE_IMS_ENDPOINT
 
-    def get_session_template(self, session_template_id, tenant):
-        return self.get_item(session_template_id, tenant)
+    def get_item(self, item_id: str):
+        """Get information for a single IMS item"""
+        return self.get(uri=item_id)
 
-    def get_session_templates(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def update_session_template(self, session_template_id, tenant, data):
-        return self.update_item(session_template_id, tenant, data)
-
-    def update_session_templates(self, data):
-        raise Exception("Session templates don't support a bulk update")
+    def update_item(self, item_id: str, data):
+        """Update information for a single IMS item"""
+        return self.patch(uri=item_id, json=data)
