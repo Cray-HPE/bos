@@ -27,7 +27,6 @@ from typing import Set
 from copy import copy
 
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
-from bos.operators.utils.clients.hsm import read_all_node_xnames
 from bos.operators.base import BaseOperator, main
 
 LOGGER = logging.getLogger(__name__)
@@ -102,7 +101,7 @@ class DiscoveryOperator(BaseOperator):
         """
         The set of components currently known to HSM State Manager
         """
-        return read_all_node_xnames()
+        return self.client.hsm.state_components.read_all_node_xnames()
 
     @property
     def missing_components(self) -> Set[str]:
