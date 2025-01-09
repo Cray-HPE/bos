@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.30.9] - 2025-01-09
+### Fixed
+- Limit version of `requests_retry_session` to avoid requirement errors.
+
 ## [2.30.8] - 2025-01-09
 ### Added
 - BOS options: bss_read_timeout, hsm_read_timeout, ims_read_timeout, pcs_read_timeout.
