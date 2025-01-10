@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.30.10] - 2025-01-10
+### Fixed
+- Change version limit on `requests_retry_session` to avoid install errors.
+
 ## [2.30.9] - 2025-01-09
 ### Fixed
 - Limit version of `requests_retry_session` to avoid requirement errors.
