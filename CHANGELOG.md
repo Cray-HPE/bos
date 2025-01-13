@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Have BOS migration job wait for databases to be ready before proceeding
 - Modified operators to use paging when requesting BOS components, using a page size equal to the `max_components_batch_size` option.
 - Put all requests code into context managers -- this includes the HTTP adapters, the sessions, and the request responses.
+- Update autoscaling `apiVersion` to support updated Kubernetes in CSM 1.7
 
 ## [2.31.1] - 2024-12-18
 ### Fixed
