@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [2.32.0] - 2025-01-13
 ### Added
 - Added basic paging ability for `GET` requests for `components`.
 - BOS options: bss_read_timeout, hsm_read_timeout, ims_read_timeout, pcs_read_timeout.
