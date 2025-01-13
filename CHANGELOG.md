@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.32.0] - 2025-01-13
+### Added
+- Added basic paging ability for `GET` requests for `components`.
+- BOS options: bss_read_timeout, hsm_read_timeout, ims_read_timeout, pcs_read_timeout.
+  Allow the amount of time BOS waits for a response from these services before
+  timing out to be configurable
+
+### Fixed
+- Fixed bug causing no components to be listed when no tenant specified.
+
+### Changed
+- Have BOS migration job wait for databases to be ready before proceeding
+- Modified operators to use paging when requesting BOS components, using a page size equal to the `max_components_batch_size` option.
+- Put all requests code into context managers -- this includes the HTTP adapters, the sessions, and the request responses.
+- Update autoscaling `apiVersion` to support updated Kubernetes in CSM 1.7
+
 ## [2.31.1] - 2024-12-18
 ### Fixed
 - When renaming session templates during migration, use correct database key to store renamed template.

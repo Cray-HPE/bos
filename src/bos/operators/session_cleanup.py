@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -25,8 +25,8 @@
 import logging
 import re
 
+from bos.common.clients.bos.options import options
 from bos.operators.base import BaseOperator, main
-from bos.operators.utils.clients.bos.options import options
 
 LOGGER = logging.getLogger(__name__)
 
@@ -68,7 +68,7 @@ class SessionCleanupOperator(BaseOperator):
         if self.disabled:
             return
 
-        self.bos_client.sessions.delete_sessions(
+        self.client.bos.sessions.delete_sessions(
             **{
                 'status': 'complete',
                 'min_age': options.cleanup_completed_session_ttl

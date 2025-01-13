@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,24 +21,27 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
-from .base import BaseBosTenantAwareEndpoint
+from .groups import GroupsEndpoint
+from .partitions import PartitionsEndpoint
+from .state_components import StateComponentsEndpoint
 
-LOGGER = logging.getLogger(__name__)
 
+class HSMClient(APIClientWithTimeoutOption):
 
-class SessionEndpoint(BaseBosTenantAwareEndpoint):
-    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
+    @property
+    def read_timeout(self) -> int:
+        return self.bos_options.hsm_read_timeout
 
-    def get_session(self, session_id, tenant):
-        return self.get_item(session_id, tenant)
+    @property
+    def groups(self) -> GroupsEndpoint:
+        return self.get_endpoint(GroupsEndpoint)
 
-    def get_sessions(self, **kwargs):
-        return self.get_items(**kwargs)
+    @property
+    def partitions(self) -> PartitionsEndpoint:
+        return self.get_endpoint(PartitionsEndpoint)
 
-    def update_session(self, session_id, tenant, data):
-        return self.update_item(session_id, tenant, data)
-
-    def delete_sessions(self, **kwargs):
-        return self.delete_items(**kwargs)
+    @property
+    def state_components(self) -> StateComponentsEndpoint:
+        return self.get_endpoint(StateComponentsEndpoint)

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,43 +21,31 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import json
 import logging
 
-from bos.common.tenant_utils import get_new_tenant_header
-from bos.common.utils import requests_retry_session
-from .base import BASE_ENDPOINT, log_call_errors
+from .base import BaseBosTenantAwareEndpoint
 
 LOGGER = logging.getLogger(__name__)
 
 
-class SessionStatusEndpoint:
-    ENDPOINT = 'sessions'
+class SessionEndpoint(BaseBosTenantAwareEndpoint):
+    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
 
-    def __init__(self):
-        self.base_url = f"{BASE_ENDPOINT}/{self.ENDPOINT}"
+    def get_session(self, session_id, tenant):
+        return self.get_item(session_id, tenant)
 
-    @log_call_errors
-    def get_session_status(self, session_id, tenant):
-        """Get information for a single BOS item"""
-        url = self.base_url + '/' + session_id + '/status'
-        session = requests_retry_session()
-        LOGGER.debug("GET %s for tenant=%s", url, tenant)
-        response = session.get(url, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
-        item = json.loads(response.text)
-        return item
+    def get_sessions(self, **kwargs):
+        return self.get_items(**kwargs)
 
-    @log_call_errors
+    def update_session(self, session_id, tenant, data):
+        return self.update_item(session_id, tenant, data)
+
+    def delete_sessions(self, **kwargs):
+        return self.delete_items(**kwargs)
+
     def post_session_status(self, session_id, tenant):
         """
         Post information for a single BOS Session status.
         This basically saves the BOS Session status to the database.
         """
-        session = requests_retry_session()
-        url = self.base_url + '/' + session_id + '/status'
-        LOGGER.debug("POST %s for tenant=%s", url, tenant)
-        response = session.post(url, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
-        items = json.loads(response.text)
-        return items
+        return self.post_item(f'{session_id}/status', tenant)

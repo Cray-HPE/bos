@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,16 +21,17 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
+
 from .components import ComponentEndpoint
-from .sessions import SessionEndpoint
-from .session_templates import SessionTemplateEndpoint
-from .sessions_status import SessionStatusEndpoint
 
 
-class BOSClient:
+class CFSClient(APIClientWithTimeoutOption):
 
-    def __init__(self):
-        self.components = ComponentEndpoint()
-        self.sessions = SessionEndpoint()
-        self.session_status = SessionStatusEndpoint()
-        self.session_templates = SessionTemplateEndpoint()
+    @property
+    def read_timeout(self) -> int:
+        return self.bos_options.cfs_read_timeout
+
+    @property
+    def components(self) -> ComponentEndpoint:
+        return self.get_endpoint(ComponentEndpoint)

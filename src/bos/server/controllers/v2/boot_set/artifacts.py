@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,9 +22,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+from bos.common.clients.s3 import S3Object, ArtifactNotFound
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
-from bos.operators.utils.clients.s3 import S3Object, ArtifactNotFound
 
 from .defs import LOGGER
 from .exceptions import BootSetError, BootSetWarning
