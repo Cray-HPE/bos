@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CASMCMS-9255: Improved parsing of kernel paths to extract IMS IDs
+- Correct bug that could result in some BOS components not having their error fields
+  updated if the IMS image tag failed.
+
 ## [2.32.0] - 2025-01-13
 ### Added
 - Added basic paging ability for `GET` requests for `components`.
