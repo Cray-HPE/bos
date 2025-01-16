@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -32,13 +32,14 @@ from typing import Dict, List, Set, Tuple, Union
 from requests import HTTPError
 
 # BOS module imports
-from bos.common.utils import exc_type_msg, get_image_id_from_kernel, \
-                             using_sbps_check_kernel_parameters, components_by_id
+from bos.common.utils import exc_type_msg, using_sbps_check_kernel_parameters, \
+                             components_by_id
 from bos.common.values import Action, Status
 from bos.operators.utils.clients import bss
 from bos.operators.utils.clients import pcs
-from bos.operators.utils.clients.ims import tag_image
+from bos.operators.utils.clients.ims import get_ims_id_from_s3_url, tag_image
 from bos.operators.utils.clients.cfs import set_cfs
+from bos.operators.utils.clients.s3 import S3Url
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, HSMState
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
@@ -211,29 +212,64 @@ class PowerOnOperator(BaseOperator):
             LOGGER.debug("_tag_images: No components to act on.")
             return
 
-        image_ids = set()
-        image_id_to_nodes = {}
+        image_id_to_nodes = defaultdict(set)
+        err_msg_to_nodes = defaultdict(set)
         for boot_artifact, components_list in boot_artifacts.items():
             kernel_parameters = boot_artifact[1]
             if using_sbps_check_kernel_parameters(kernel_parameters):
                 # Get the image ID
+                err_msg = None
+
+                # Get the path to the kernel
                 kernel = boot_artifact[0]
-                image_id = get_image_id_from_kernel(kernel)
-                # Add it to the set.
-                image_ids.add(image_id)
-                # Map image IDs to nodes
-                image_id_to_nodes[image_id] = components_list
+
+                # Parse kernel patch as an S3 URL (the only supported boot artifact type for BOS)
+                kernel_s3_url = S3Url(kernel)
+
+                # Extract IMS ID from S3 URL
+                image_id = get_ims_id_from_s3_url(kernel_s3_url) or None
+
+                if image_id is None:
+                    err_msg = f"Unable to extract IMS ID from kernel path: {kernel}"
+                elif image_id == 'deleted':
+                    # Soft deleted images in IMS move their S3 artifacts to have paths like s3://boot-images/deleted/<ims-id>/...
+                    err_msg = f"Kernel path appears to refer to soft-deleted IMS image: '{kernel}'"
+
+                if err_msg is None:
+                    # Map image IDs to nodes
+                    image_id_to_nodes[image_id].update(components_list)
+                    continue
+
+                LOGGER.error(err_msg)
+                err_msg_to_nodes[err_msg].update(components_list)
 
         my_components_by_id = components_by_id(components)
-        for image in image_ids:
+        for err_msg, component_set in err_msg_to_nodes.items():
+            self._record_component_errors(my_components_by_id, component_set, err_msg)
+
+        for image in image_id_to_nodes:
             try:
                 tag_image(image, "set", "sbps-project", "true")
             except Exception as e:
-                components_to_update = []
-                for node in image_id_to_nodes[image]:
-                    my_components_by_id[node]["error"] = str(e)
-                    components_to_update.append(my_components_by_id[node])
-                self._update_database(components_to_update)
+                self._record_component_errors(my_components_by_id, image_id_to_nodes[image],
+                                              str(e))
+
+    def _record_component_errors(self, my_components_by_id: Dict[str, dict],
+                                 component_set: Set[str], err_msg: str) -> None:
+        """
+        my_components_by_id: Mapping from BOS component ID to component dictionary.
+        component_set: Set of component IDs that need their error status updated.
+        err_msg: Error message to use for updating their status.
+
+        This updates the error status for each of the specified components, and then
+        calls _update_database to update them in BOS.
+        """
+        components_to_update = []
+        for node in component_set:
+            my_components_by_id[node]["error"] = err_msg
+            components_to_update.append(my_components_by_id[node])
+        self._update_database(components_to_update)
+
 
 if __name__ == '__main__':
     main(PowerOnOperator)
