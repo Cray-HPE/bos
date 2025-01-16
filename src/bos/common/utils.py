@@ -139,29 +139,6 @@ def exc_type_msg(exc: Exception) -> str:
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
 
-
-def get_image_id(component: str) -> str:
-    """
-    Extract the IMS image ID from the path to the kernel
-    We expect it to look something like this:
-    s3://boot-images/fbcc5b02-b6a4-46a8-9402-2b7138adc327/kernel
-    """
-    # Get kernel's path
-    boot_artifacts = component.get('desired_state',
-                                   {}).get('boot_artifacts', {})
-    kernel = boot_artifacts.get('kernel')
-    image_id = get_image_id_from_kernel(kernel)
-    return image_id
-
-
-def get_image_id_from_kernel(kernel_path: str) -> str:
-    # Extract image ID from kernel path
-    pattern = re.compile('.*//.*/(.*)/kernel')
-    match = pattern.match(kernel_path)
-    image_id = match.group(1)
-    return image_id
-
-
 def using_sbps(component: str) -> bool:
     """
     If the component is using the Scalable Boot Provisioning Service (SBPS) to
