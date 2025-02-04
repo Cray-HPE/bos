@@ -25,10 +25,6 @@ from typing import Any, Callable, ContextManager, NamedTuple
 
 import requests
 
-type JsonData = bool | str | None | int | float | list[JsonData] | dict[str, JsonData]
-type JsonDict = dict[str, JsonData]
-type JsonList = list[JsonData]
-
 type RequestsMethod = Callable[..., ContextManager[requests.Response]]
 
 class RequestData(NamedTuple):

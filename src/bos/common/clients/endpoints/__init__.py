@@ -25,6 +25,6 @@
 from .base_endpoint import BaseEndpoint
 from .base_generic_endpoint import BaseGenericEndpoint, RequestErrorHandler
 from .base_raw_endpoint import BaseRawEndpoint
-from .defs import JsonData, RequestData, RequestsMethod
+from .defs import RequestData, RequestsMethod
 from .exceptions import ApiResponseError
 from .response_data import ResponseData
