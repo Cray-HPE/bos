@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,12 +24,16 @@
 import logging
 import threading
 import time
+from typing import Literal, NoReturn
 
 import connexion
+from connexion.lifecycle import ConnexionResponse
 
 from bos.common.options import DEFAULTS, OptionsCache
+from bos.common.types import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.utils import _400_bad_request
 from bos.server.models.v2_options import V2Options as Options
 from bos.server.utils import get_request_json
 
@@ -49,7 +53,7 @@ class OptionsData(OptionsCache):
     result in DB calls.
     """
 
-    def _get_options(self) -> dict:
+    def _get_options(self) -> JsonDict:
         """Retrieves the current options from the BOS DB"""
         LOGGER.debug("Retrieving options data from BOS DB")
         try:
@@ -59,7 +63,7 @@ class OptionsData(OptionsCache):
         return {}
 
 
-def _init():
+def _init() -> None:
     # Start log level updater
     log_level_updater = threading.Thread(target=check_v2_logging_level,
                                          args=())
@@ -81,13 +85,13 @@ def _init():
 
 
 @dbutils.redis_error_handler
-def get_v2_options():
+def get_v2_options() -> tuple[JsonDict, Literal[200]]:
     """Used by the GET /options API operation"""
     LOGGER.debug("GET /v2/options invoked get_v2_options")
     return _get_v2_options(), 200
 
 
-def _get_v2_options() -> dict:
+def _get_v2_options() -> JsonDict:
     """
     Helper function for get_v2_options function and OptionsData class
     """
@@ -95,7 +99,7 @@ def _get_v2_options() -> dict:
     return _clean_options_data(data)
 
 
-def _clean_options_data(data):
+def _clean_options_data(data: JsonDict) -> JsonDict:
     """Removes keys that are not in the options spec"""
     to_delete = []
     all_options = set(Options().attribute_map.values())
@@ -107,11 +111,11 @@ def _clean_options_data(data):
     return data
 
 
-def get_v2_options_data():
+def get_v2_options_data() -> JsonDict:
     return _check_defaults(DB.get(OPTIONS_KEY))
 
 
-def _check_defaults(data):
+def _check_defaults(data: JsonDict) -> JsonDict:
     """Adds defaults to the options data if they don't exist"""
     put = False
     if not data:
@@ -127,23 +131,21 @@ def _check_defaults(data):
 
 
 @dbutils.redis_error_handler
-def patch_v2_options():
+def patch_v2_options() -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
     """Used by the PATCH /options API operation"""
     LOGGER.debug("PATCH /v2/options invoked patch_v2_options")
     try:
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     if OPTIONS_KEY not in DB:
         DB.put(OPTIONS_KEY, {})
     return DB.patch(OPTIONS_KEY, data), 200
 
 
-def update_log_level(new_level_str):
+def update_log_level(new_level_str: str) -> None:
     new_level = logging.getLevelName(new_level_str.upper())
     current_level = LOGGER.getEffectiveLevel()
     if current_level != new_level:
@@ -155,7 +157,7 @@ def update_log_level(new_level_str):
                    logging.getLevelName(current_level), new_level)
 
 
-def check_v2_logging_level():
+def check_v2_logging_level() -> NoReturn:
     while True:
         try:
             data = get_v2_options_data()
