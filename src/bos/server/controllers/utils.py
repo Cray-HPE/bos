@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -32,7 +32,7 @@ import flask
 LOGGER = logging.getLogger(__name__)
 
 
-def url_for(endpoint, **values):
+def url_for(endpoint: str, **values) -> str:
     """Calculate the URL for an endpoint
 
     This wraps flask.url_for. flask.url_for doesn't generate the path that we
