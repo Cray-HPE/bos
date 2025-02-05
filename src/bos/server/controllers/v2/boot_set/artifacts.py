@@ -24,13 +24,14 @@
 
 from bos.common.clients.s3 import S3Object, ArtifactNotFound
 from bos.common.utils import exc_type_msg
+from bos.common.types import JsonDict
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 
 from .defs import LOGGER
 from .exceptions import BootSetError, BootSetWarning
 
 
-def validate_boot_artifacts(bs: dict):
+def validate_boot_artifacts(bs: JsonDict) -> None:
     # Verify that the boot artifacts exist
     try:
         image_metadata = BootImageMetaDataFactory(bs)()
