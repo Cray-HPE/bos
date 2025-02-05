@@ -21,14 +21,18 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from functools import partial
 import logging
-import connexion
+from typing import Literal, Optional
+
 from connexion.lifecycle import ConnexionResponse
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
+from bos.common.types import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
 from bos.server.schema import validator
 from bos.server.utils import get_request_json
 from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
@@ -64,7 +68,7 @@ EXAMPLE_SESSION_TEMPLATE = {
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def put_v2_sessiontemplate(session_template_id):  # noqa: E501
+def put_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:  # noqa: E501
     """PUT /v2/sessiontemplates
 
     Creates a new session template. # noqa: E501
@@ -76,9 +80,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
     except Exception as err:
         LOGGER.error("Error parsing PUT '%s' request data: %s",
                      session_template_id, exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
         validate_sanitize_session_template(session_template_id, template_data)
@@ -86,10 +88,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
         LOGGER.error("Error creating session template '%s': %s",
                      session_template_id, exc_type_msg(err))
         LOGGER.debug("Full template: %s", template_data)
-        return connexion.problem(
-            status=400,
-            title="The session template could not be created.",
-            detail=str(err))
+        return _400_bad_request(f"The session template could not be created: {err}")
 
     tenant = get_tenant_from_header()
     template_data['tenant'] = tenant
@@ -98,7 +97,7 @@ def put_v2_sessiontemplate(session_template_id):  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def get_v2_sessiontemplates():  # noqa: E501
+def get_v2_sessiontemplates() -> tuple[list[JsonDict], Literal[200]]:  # noqa: E501
     """
     GET /v2/sessiontemplates
 
@@ -112,7 +111,7 @@ def get_v2_sessiontemplates():  # noqa: E501
 
 
 @dbutils.redis_error_handler
-def get_v2_sessiontemplate(session_template_id):
+def get_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
     """
     GET /v2/sessiontemplates
 
@@ -124,16 +123,13 @@ def get_v2_sessiontemplate(session_template_id):
                                         get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
-        return connexion.problem(
-            status=404,
-            title="Session template not found.",
-            detail=f"Session template {session_template_id} could not be found")
+        return _404_template_not_found(resource_id=session_template_id)  # pylint: disable=redundant-keyword-arg
     template = DB.get(template_key)
     return template, 200
 
 
 @dbutils.redis_error_handler
-def get_v2_sessiontemplatetemplate():
+def get_v2_sessiontemplatetemplate() -> tuple[JsonDict, Literal[200]]:
     """
     GET /v2/sessiontemplatetemplate
 
@@ -146,7 +142,7 @@ def get_v2_sessiontemplatetemplate():
 
 
 @dbutils.redis_error_handler
-def delete_v2_sessiontemplate(session_template_id):
+def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[204]] | ConnexionResponse:
     """
     DELETE /v2/sessiontemplates
 
@@ -159,15 +155,12 @@ def delete_v2_sessiontemplate(session_template_id):
                                         get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
-        return connexion.problem(
-            status=404,
-            title="Session template not found.",
-            detail=f"Session template {session_template_id} could not be found")
+        return _404_template_not_found(resource_id=session_template_id)  # pylint: disable=redundant-keyword-arg
     return DB.delete(template_key), 204
 
 
 @dbutils.redis_error_handler
-def patch_v2_sessiontemplate(session_template_id):
+def patch_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
     """
     PATCH /v2/sessiontemplates
 
@@ -180,35 +173,27 @@ def patch_v2_sessiontemplate(session_template_id):
                                         get_tenant_from_header())
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
-        return connexion.problem(
-            status=404,
-            title="Session template not found.",
-            detail=f"Session template {session_template_id} could not be found")
+        return _404_template_not_found(resource_id=session_template_id)  # pylint: disable=redundant-keyword-arg
 
     try:
         template_data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s",
                      session_template_id, exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
         validate_sanitize_session_template(session_template_id, template_data)
     except Exception as err:
         LOGGER.error("Error patching session template '%s': %s",
                      session_template_id, exc_type_msg(err))
-        return connexion.problem(
-            status=400,
-            title="The session template could not be patched.",
-            detail=str(err))
+        return _400_bad_request(f"The session template could not be patched: {err}")
 
     return DB.patch(template_key, template_data), 200
 
 
 @dbutils.redis_error_handler
-def validate_v2_sessiontemplate(session_template_id: str):
+def validate_v2_sessiontemplate(session_template_id: str) -> tuple[str, Literal[200]] | ConnexionResponse:
     """
     Validate a V2 session template. Look for missing elements or errors that would prevent
     a session from being launched using this template.
@@ -234,20 +219,20 @@ def validate_v2_sessiontemplate(session_template_id: str):
     return msg, 200
 
 
-def _get_filtered_templates(tenant):
+def _get_filtered_templates(tenant: Optional[str]) -> list[JsonDict]:
     response = DB.get_all()
     if any([tenant]):
         response = [r for r in response if _matches_filter(r, tenant)]
     return response
 
 
-def _matches_filter(data, tenant):
+def _matches_filter(data: JsonDict, tenant: str) -> bool:
     if tenant and tenant != data.get("tenant"):
         return False
     return True
 
 
-def validate_sanitize_session_template(session_template_id, template_data):
+def validate_sanitize_session_template(session_template_id: str, template_data: JsonDict) -> None:
     """
     Used when creating or patching session templates
     """
@@ -263,3 +248,6 @@ def validate_sanitize_session_template(session_template_id, template_data):
     # validate_sanitize_boot_sets()
     for bs in template_data["boot_sets"].values():
         del bs["name"]
+
+
+_404_template_not_found = partial(_404_resource_not_found, resource_type="Session template")

@@ -26,6 +26,7 @@ import os
 from urllib.parse import urlparse, urlunparse
 
 import connexion
+from connexion.lifecycle import ConnexionResponse
 import flask
 
 LOGGER = logging.getLogger(__name__)
@@ -73,3 +74,22 @@ def url_for(endpoint, **values):
     # TODO(CASMCMS-1869): there might be a better way to do this by overriding
     # url_adapter in the context or request, see
     # https://github.com/pallets/flask/blob/a74864ec229141784374f1998324d2cbac837295/flask/helpers.py#L302
+
+
+def _400_bad_request(msg: str) -> ConnexionResponse:
+    """
+    ProblemBadRequest
+    """
+    return connexion.problem(
+        status=400,
+        title="Bad Request",
+        detail=msg)
+
+def _404_resource_not_found(resource_type: str, resource_id: str) -> ConnexionResponse:
+    """
+    ProblemResourceNotFound
+    """
+    return connexion.problem(
+        status=404,
+        title="The resource was not found",
+        detail=f"{resource_type} '{resource_id}' does not exist")

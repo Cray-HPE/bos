@@ -23,6 +23,7 @@
 #
 from collections import defaultdict, Counter
 from datetime import datetime, timedelta
+from functools import partial
 import logging
 import re
 from typing import Literal, Optional
@@ -37,6 +38,7 @@ from bos.common.types import JsonDict
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
 from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.options import OptionsData
@@ -167,7 +169,7 @@ def patch_v2_session(session_id: str) -> tuple[JsonDict, Literal[200]] | Connexi
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(session_id)
+        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
 
     component = DB.patch(session_key, patch_data_json)
     return component, 200
@@ -187,7 +189,7 @@ def get_v2_session(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(session_id)
+        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
     session = DB.get(session_key)
     return session, 200
 
@@ -223,7 +225,7 @@ def delete_v2_session(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(session_id)
+        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
     if session_key in STATUS_DB:
         STATUS_DB.delete(session_key)
     return DB.delete(session_key), 204
@@ -270,7 +272,7 @@ def get_v2_session_status(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(session_id)
+        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
     session = DB.get(session_key)
     if session.get(
             "status",
@@ -296,7 +298,7 @@ def save_v2_session_status(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(session_id)
+        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
     return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
@@ -440,24 +442,8 @@ def _age_to_timestamp(age: str) -> datetime:
     return get_current_time() - delta
 
 
-def _400_bad_request(msg: str) -> ConnexionResponse:
-    """
-    ProblemBadRequest
-    """
-    return connexion.problem(
-        status=400,
-        title="Bad Request",
-        detail=msg)
+_404_session_not_found = partial(_404_resource_not_found, resource_type="Session")
 
-
-def _404_session_not_found(session_id: str) -> ConnexionResponse:
-    """
-    ProblemResourceNotFound
-    """
-    return connexion.problem(
-        status=404,
-        title="The resource was not found",
-        detail=f"Session '{session_id}' does not exist")
 
 def _409_session_already_exists(session_id: str) -> ConnexionResponse:
     """
