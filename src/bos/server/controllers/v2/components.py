@@ -23,14 +23,18 @@
 #
 from functools import partial
 import logging
+from typing import Literal, Optional
 
 import connexion
+from connexion.lifecycle import ConnexionResponse
 
 from bos.common.utils import exc_type_msg, get_current_timestamp
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, \
                                     tenant_error_handler, get_tenant_aware_key
+from bos.common.types import JsonDict
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
+from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
 from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 from bos.server.utils import get_request_json
@@ -42,14 +46,14 @@ SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids=None,
-                      enabled=None,
-                      session=None,
-                      staged_session=None,
-                      phase=None,
-                      status=None,
-                      start_after_id=None,
-                      page_size=0):
+def get_v2_components(ids: Optional[str]=None,
+                      enabled: Optional[bool]=None,
+                      session: Optional[str]=None,
+                      staged_session: Optional[str]=None,
+                      phase: Optional[str]=None,
+                      status: Optional[str]=None,
+                      start_after_id: Optional[str]=None,
+                      page_size: int=0) -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -63,9 +67,7 @@ def get_v2_components(ids=None,
             id_list = ids.split(',')
         except Exception as err:
             LOGGER.error("Error parsing component IDs: %s", exc_type_msg(err))
-            return connexion.problem(status=400,
-                                     title="Error parsing the ids provided.",
-                                     detail=str(err))
+            return _400_bad_request(f"Error parsing the ids provided: {err}")
     else:
         id_list = None
     tenant = get_tenant_from_header() or None
@@ -87,16 +89,16 @@ def get_v2_components(ids=None,
     return response, 200
 
 
-def get_v2_components_data(id_list=None,
-                           enabled=None,
-                           session=None,
-                           staged_session=None,
-                           phase=None,
-                           status=None,
-                           tenant=None,
-                           start_after_id=None,
-                           page_size=0,
-                           delete_timestamp: bool = False):
+def get_v2_components_data(id_list: Optional[list[str]]=None,
+                           enabled: Optional[bool]=None,
+                           session: Optional[str]=None,
+                           staged_session: Optional[str]=None,
+                           phase: Optional[str]=None,
+                           status: Optional[str]=None,
+                           tenant: Optional[str]=None,
+                           start_after_id: Optional[str]=None,
+                           page_size: int=0,
+                           delete_timestamp: bool=False) -> list[JsonDict]:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -134,14 +136,14 @@ def get_v2_components_data(id_list=None,
                                page_size=page_size)
 
 
-def _filter_component(data: dict,
-                      id_set=None,
-                      enabled=None,
-                      session=None,
-                      staged_session=None,
-                      phase=None,
-                      status=None,
-                      delete_timestamp: bool = False) -> dict | None:
+def _filter_component(data: JsonDict,
+                      id_set: Optional[set[str]]=None,
+                      enabled: Optional[bool]=None,
+                      session: Optional[str]=None,
+                      staged_session: Optional[str]=None,
+                      phase: Optional[str]=None,
+                      status: Optional[str]=None,
+                      delete_timestamp: bool=False) -> JsonDict | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None
@@ -165,7 +167,7 @@ def _filter_component(data: dict,
     return updated_data
 
 
-def _set_status(data, delete_timestamp: bool = False):
+def _set_status(data: JsonDict, delete_timestamp: bool = False) -> JsonDict:
     """
     This sets the status field of the overall status.
     """
@@ -177,7 +179,7 @@ def _set_status(data, delete_timestamp: bool = False):
     return data
 
 
-def _calculate_status(data):
+def _calculate_status(data: JsonDict) -> str:
     """
     Calculates and returns the status of a component
     """
@@ -218,27 +220,21 @@ def _calculate_status(data):
 
 
 @dbutils.redis_error_handler
-def put_v2_components():
+def put_v2_components() -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
     """Used by the PUT /components API operation"""
     LOGGER.debug("PUT /v2/components invoked put_v2_components")
     try:
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PUT request data: %s", exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     components = []
     for component_data in data:
         try:
             component_id = component_data['id']
         except KeyError:
-            return connexion.problem(
-                status=400,
-                title="Required field missing.",
-                detail=
-                "At least one component is missing the required 'id' field")
+            return _400_bad_request("At least one component is missing the required 'id' field")
         components.append((component_id, component_data))
     response = []
     for component_id, component_data in components:
@@ -249,16 +245,14 @@ def put_v2_components():
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def patch_v2_components():
+def patch_v2_components() -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
     """Used by the PATCH /components API operation"""
     LOGGER.debug("PATCH /v2/components invoked patch_v2_components")
     try:
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     if isinstance(data, list):
         return patch_v2_components_list(data)
@@ -266,13 +260,10 @@ def patch_v2_components():
         return patch_v2_components_dict(data)
 
     LOGGER.error("Unexpected data type %s", str(type(data)))
-    return connexion.problem(
-        status=400,
-        title="Error parsing the data provided.",
-        detail=f"Unexpected data type {type(data).__name__}")
+    return _400_bad_request(f"Unexpected data type {type(data).__name__}")
 
 
-def patch_v2_components_list(data):
+def patch_v2_components_list(data: list[JsonDict]) -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
     try:
         LOGGER.debug("patch_v2_components_list: %d components specified",
                      len(data))
@@ -282,16 +273,11 @@ def patch_v2_components_list(data):
             if component_id not in DB or not _is_valid_tenant_component(
                     component_id):
                 LOGGER.warning("Component %s could not be found", component_id)
-                return connexion.problem(
-                    status=404,
-                    title="Component not found.",
-                    detail=f"Component {component_id} could not be found")
+                return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
             components.append((component_id, component_data))
     except Exception as err:
         LOGGER.error("Error loading component data: %s", exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
     response = []
     for component_id, component_data in components:
         if "id" in component_data:
@@ -302,34 +288,27 @@ def patch_v2_components_list(data):
     return response, 200
 
 
-def patch_v2_components_dict(data):
+def patch_v2_components_dict(data: JsonDict) -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
     filters = data.get("filters", {})
     ids = filters.get("ids", None)
     session = filters.get("session", None)
     if ids and session:
         LOGGER.warning("Multiple filters provided")
-        return connexion.problem(status=400,
-                                 title="Only one filter may be provided.",
-                                 detail="Only one filter may be provided.")
+        return _400_bad_request("Multiple filters provided")
     if ids:
         try:
             id_list = ids.split(',')
         except Exception as err:
             LOGGER.error("Error parsing the IDs provided: %s",
                          exc_type_msg(err))
-            return connexion.problem(status=400,
-                                     title="Error parsing the ids provided.",
-                                     detail=str(err))
+            return _400_bad_request(f"Error parsing the ids provided: {err}")
         # Make sure all of the components exist and belong to this tenant (if any)
         LOGGER.debug("patch_v2_components_dict: %d IDs specified",
                      len(id_list))
         for component_id in id_list:
             if component_id not in DB or not _is_valid_tenant_component(
                     component_id):
-                return connexion.problem(
-                    status=404,
-                    title="Component not found.",
-                    detail=f"Component {component_id} could not be found")
+                return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     elif session:
         id_list = [
             component["id"] for component in get_v2_components_data(
@@ -340,9 +319,7 @@ def patch_v2_components_dict(data):
             len(id_list))
     else:
         LOGGER.warning("No filter provided")
-        return connexion.problem(status=400,
-                                 title="Exactly one filter must be provided.",
-                                 detail="Exactly one filter may be provided.")
+        return _400_bad_request("No filter provided.")
     response = []
     patch = data.get("patch")
     if "id" in patch:
@@ -355,16 +332,13 @@ def patch_v2_components_dict(data):
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_component(component_id):
+def get_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /v2/components/%s invoked get_v2_component",
                  component_id)
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
-        return connexion.problem(
-            status=404,
-            title="Component not found.",
-            detail=f"Component {component_id} could not be found")
+        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     component = DB.get(component_id)
     component = _set_status(component)
     del_timestamp(component)
@@ -372,7 +346,7 @@ def get_v2_component(component_id):
 
 
 @dbutils.redis_error_handler
-def put_v2_component(component_id):
+def put_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
     """Used by the PUT /components/{component_id} API operation"""
     LOGGER.debug("PUT /v2/components/%s invoked put_v2_component",
                  component_id)
@@ -381,9 +355,7 @@ def put_v2_component(component_id):
     except Exception as err:
         LOGGER.error("Error parsing PUT '%s' request data: %s", component_id,
                      exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     data['id'] = component_id
     data = _set_auto_fields(data)
@@ -392,7 +364,7 @@ def put_v2_component(component_id):
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def patch_v2_component(component_id):
+def patch_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
     """Used by the PATCH /components/{component_id} API operation"""
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component",
                  component_id)
@@ -401,16 +373,11 @@ def patch_v2_component(component_id):
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id,
                      exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
-        return connexion.problem(
-            status=404,
-            title="Component not found.",
-            detail=f"Component {component_id} could not be found")
+        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     if "actual_state" in data and not validate_actual_state_change_is_allowed(
             component_id):
         LOGGER.warning("Not able to update actual state")
@@ -425,7 +392,7 @@ def patch_v2_component(component_id):
     return DB.patch(component_id, data, _update_handler), 200
 
 
-def validate_actual_state_change_is_allowed(component_id):
+def validate_actual_state_change_is_allowed(component_id: str) -> bool:
     current_data = DB.get(component_id)
     if not current_data["enabled"]:
         # This component is not being managed on by BOS
@@ -445,31 +412,26 @@ def validate_actual_state_change_is_allowed(component_id):
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def delete_v2_component(component_id):
+def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | ConnexionResponse:
     """Used by the DELETE /components/{component_id} API operation"""
     LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component",
                  component_id)
     if component_id not in DB or not _is_valid_tenant_component(component_id):
         LOGGER.warning("Component %s could not be found", component_id)
-        return connexion.problem(
-            status=404,
-            title="Component not found.",
-            detail=f"Component {component_id} could not be found")
+        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     return DB.delete(component_id), 204
 
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def post_v2_apply_staged():
+def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
     """Used by the POST /applystaged API operation"""
     LOGGER.debug("POST /v2/applystaged invoked post_v2_apply_staged")
     try:
         data = get_request_json()
     except Exception as err:
         LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     response = {"succeeded": [], "failed": [], "ignored": []}
     # Obtain latest desired behavior for how to clear staging information
@@ -492,13 +454,12 @@ def post_v2_apply_staged():
                 response["failed"].append(xname)
     except Exception as err:
         LOGGER.error("Error parsing request data: %s", exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
+
     return response, 200
 
 
-def _apply_tenant_limit(component_list):
+def _apply_tenant_limit(component_list: list[str]) -> tuple[list[str], list[str]]:
     tenant = get_tenant_from_header()
     if not tenant:
         return component_list, []
@@ -509,7 +470,7 @@ def _apply_tenant_limit(component_list):
     return list(allowed_components), list(rejected_components)
 
 
-def _is_valid_tenant_component(component_id):
+def _is_valid_tenant_component(component_id: str) -> bool:
     tenant = get_tenant_from_header()
     if tenant:
         tenant_components = get_tenant_component_set(tenant)
@@ -518,7 +479,7 @@ def _is_valid_tenant_component(component_id):
     return True
 
 
-def _apply_staged(component_id, clear_staged=False):
+def _apply_staged(component_id: str, clear_staged: bool=False) -> Literal[False] | JsonDict:
     if component_id not in DB:
         return False
     data = DB.get(component_id)
@@ -543,7 +504,7 @@ def _apply_staged(component_id, clear_staged=False):
     return response
 
 
-def _set_state_from_staged(data):
+def _set_state_from_staged(data: JsonDict) -> Literal[True]:
     staged_state = data.get("staged_state", {})
     staged_session_id_sans_tenant = staged_state.get("session", "")
     tenant = get_tenant_from_header()
@@ -581,7 +542,7 @@ def _set_state_from_staged(data):
     return True
 
 
-def _copy_staged_to_desired(data):
+def _copy_staged_to_desired(data: JsonDict) -> None:
     staged_state = data.get("staged_state", {})
     data["desired_state"] = {
         "boot_artifacts": staged_state.get("boot_artifacts", {}),
@@ -589,7 +550,7 @@ def _copy_staged_to_desired(data):
     }
 
 
-def _set_auto_fields(data):
+def _set_auto_fields(data: JsonDict) -> JsonDict:
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     data = _set_on_hold_when_enabled(data)
@@ -598,7 +559,7 @@ def _set_auto_fields(data):
     return data
 
 
-def _populate_boot_artifacts(data):
+def _populate_boot_artifacts(data: JsonDict) -> JsonDict:
     """
     If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the
@@ -627,7 +588,7 @@ def _populate_boot_artifacts(data):
     return data
 
 
-def del_timestamp(data: dict):
+def del_timestamp(data: JsonDict) -> None:
     """
     # The actual state boot artifacts dictionary contains a timestamp
     # that is used for internal references only; we should strip it
@@ -640,7 +601,7 @@ def del_timestamp(data: dict):
         pass
 
 
-def _set_last_updated(data):
+def _set_last_updated(data: JsonDict) -> JsonDict:
     timestamp = get_current_timestamp()
     for section in [
             'actual_state', 'desired_state', 'staged_state', 'last_action'
@@ -651,7 +612,7 @@ def _set_last_updated(data):
     return data
 
 
-def _set_on_hold_when_enabled(data):
+def _set_on_hold_when_enabled(data: JsonDict) -> JsonDict:
     """
     The status operator doesn't monitor disabled components, so this causes a delay until it can
     revaluate the component so that other operators don't act on old phase information.
@@ -664,7 +625,7 @@ def _set_on_hold_when_enabled(data):
     return data
 
 
-def _clear_session_when_manually_updated(data):
+def _clear_session_when_manually_updated(data: JsonDict) -> JsonDict:
     """
     If the desired state for a component is updated outside of the setup operator, that component
     should no longer be considered part of it's original session.
@@ -674,7 +635,7 @@ def _clear_session_when_manually_updated(data):
     return data
 
 
-def _clear_event_stats_when_desired_state_changes(data):
+def _clear_event_stats_when_desired_state_changes(data: JsonDict) -> JsonDict:
     desired_state = data.get("desired_state", {})
     if "boot_artifacts" in desired_state or "configuration" in desired_state:
         data["event_stats"] = {
@@ -685,6 +646,8 @@ def _clear_event_stats_when_desired_state_changes(data):
     return data
 
 
-def _update_handler(data):
+def _update_handler(data: JsonDict) -> JsonDict:
     # Allows processing of data during common patch operation
     return data
+
+_404_component_not_found = partial(_404_resource_not_found, resource_type="Component")
