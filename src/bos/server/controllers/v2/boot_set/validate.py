@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,7 +23,10 @@
 #
 
 from functools import partial
+from typing import Optional
+
 from bos.common.utils import exc_type_msg
+from bos.common.types import JsonDict
 from bos.server.controllers.v2.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
@@ -33,10 +36,10 @@ from .ims import validate_ims_boot_image
 
 
 def validate_boot_sets(
-        session_template: dict,
+        session_template: JsonDict,
         operation: str,
         template_name: str,
-        options_data: OptionsData | None = None) -> tuple[BootSetStatus, str]:
+        options_data: Optional[OptionsData]=None) -> tuple[BootSetStatus, str]:
     """
     Validates the boot sets listed in a session template.
     This is called when creating a session or when using the sessiontemplatesvalid endpoint
@@ -98,7 +101,7 @@ def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
     return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
 
 
-def validate_boot_set(bs: dict, operation: str,
+def validate_boot_set(bs: JsonDict, operation: str,
                       options_data: OptionsData) -> list[str]:
     """
     Helper function for validate_boot_sets that performs validation on a single boot set.
@@ -128,7 +131,7 @@ def validate_boot_set(bs: dict, operation: str,
     return warning_msgs
 
 
-def verify_nonempty_hw_specifier_field(bs: dict) -> None:
+def verify_nonempty_hw_specifier_field(bs: JsonDict) -> None:
     """
     Raises an exception if there are no non-empty hardware specifier fields.
     """
@@ -145,7 +148,7 @@ def verify_nonempty_hw_specifier_field(bs: dict) -> None:
         )
 
 
-def check_node_list_for_nids(bs: dict, options_data: OptionsData) -> None:
+def check_node_list_for_nids(bs: JsonDict, options_data: OptionsData) -> None:
     """
     If the node list contains no NIDs, return.
     Otherwise, raise BootSetError or BootSetWarning, depending on the value of the
