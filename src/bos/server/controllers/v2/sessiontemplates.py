@@ -114,8 +114,8 @@ def get_v2_sessiontemplate(session_template_id):
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
-            status=404, title="Sessiontemplate could not found.",
-            detail=f"Sessiontemplate {session_template_id} could not be found")
+            status=404, title="Session template not found.",
+            detail=f"Session template {session_template_id} could not be found")
     template = DB.get(template_key)
     return template, 200
 
@@ -144,8 +144,8 @@ def delete_v2_sessiontemplate(session_template_id):
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
-            status=404, title="Sessiontemplate could not found.",
-            detail=f"Sessiontemplate {session_template_id} could not be found")
+            status=404, title="Session template not found.",
+            detail=f"Session template {session_template_id} could not be found")
     return DB.delete(template_key), 204
 
 
@@ -162,8 +162,8 @@ def patch_v2_sessiontemplate(session_template_id):
     if template_key not in DB:
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
-            status=404, title="Sessiontemplate could not found.",
-            detail=f"Sessiontemplate {session_template_id} could not be found")
+            status=404, title="Session template not found.",
+            detail=f"Session template {session_template_id} could not be found")
 
     try:
         template_data = get_request_json()

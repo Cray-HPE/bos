@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.30.12] - 2025-02-05
 ### Fixed
-- CASMCMS-9270: Properly handle being asked to validate nonexistent session template
+- CASMCMS-9270: Properly handle being asked to validate nonexistent session template; correct
+  nonexistent template error message
 
 ## [2.30.11] - 2025-01-15
 ### Fixed
