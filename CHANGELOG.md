@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9269: Improve Python type annotations in session templates controller code
 - CASMCMS-9271: Improve Python type annotations in components controller code
 - CASMCMS-9272: Improve Python type annotations in controller code for options, health, versions, and base/utility modules
+- CASMCMS-9273: Improve Python type annotations in `boot_set` controller submodule
 
 ### Fixed
 - CASMCMS-8965: Update sessions controller to provide error responses consistently and correctly
