@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,6 +22,8 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+from typing import Literal
+
 import yaml
 
 from bos.common.utils import exc_type_msg
@@ -31,7 +33,7 @@ from bos.server.models import Version, Link
 LOGGER = logging.getLogger(__name__)
 
 
-def calc_version(details):
+def calc_version(details: bool) -> Version:
     links = [
         Link(
             rel='self',
@@ -60,11 +62,11 @@ def calc_version(details):
         raise
 
 
-def get_v2():
+def get_v2() -> tuple[Version, Literal[200]]:
     LOGGER.debug("GET /v2 invoked get_v2")
     return calc_version(details=True), 200
 
 
-def get_version_v2():
+def get_version_v2() -> tuple[Version, Literal[200]]:
     LOGGER.debug("GET /v2/version invoked get_version_v2")
     return calc_version(details=True), 200
