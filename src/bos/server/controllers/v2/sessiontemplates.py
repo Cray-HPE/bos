@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 #
 import logging
 import connexion
+from connexion.lifecycle import ConnexionResponse
 
 from bos.common.utils import exc_type_msg
 from bos.server.models.v2_session_template import V2SessionTemplate as SessionTemplate  # noqa: E501
@@ -231,10 +232,13 @@ def validate_v2_sessiontemplate(session_template_id: str):
     a session from being launched using this template.
     """
     LOGGER.debug("GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate", session_template_id)
-    data, status_code = get_v2_sessiontemplate(session_template_id)
+    response = get_v2_sessiontemplate(session_template_id)
+    if isinstance(response, ConnexionResponse):
+        # This means it was an error, so we just pass it up
+        return response
 
-    if status_code != 200:
-        return data, status_code
+    # Otherwise it should be a tuple of data and 200 status code
+    data, _ = response
 
     # We assume boot because it and reboot are the most demanding from a validation
     # standpoint.

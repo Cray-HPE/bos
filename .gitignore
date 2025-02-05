@@ -7,9 +7,11 @@ ansible/bos_deploy.retry
 .tox
 tox.log
 .coverage
+.idea
 gitInfo.txt
 api/openapi.yaml
 bos.egg-info
+constraints.txt
 kubernetes/cray-bos/values.yaml
 kubernetes/cray-bos/Chart.yaml
 cray-boa.version
