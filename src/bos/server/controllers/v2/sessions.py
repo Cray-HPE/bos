@@ -55,7 +55,7 @@ LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def post_v2_session():  # noqa: E501
+def post_v2_session() -> tuple[JsonDict, Literal[201]] | ConnexionResponse:  # noqa: E501
     """POST /v2/session
     Creates a new session. # noqa: E501
     :param session: A JSON object for creating sessions
@@ -70,9 +70,7 @@ def post_v2_session():  # noqa: E501
             get_request_json())  # noqa: E501
     except Exception as err:
         LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     options_data = OptionsData()
 
@@ -80,7 +78,7 @@ def post_v2_session():  # noqa: E501
     if not session_create.limit and options_data.session_limit_required:
         msg = "session_limit_required option is set, but this session has no limit specified"
         LOGGER.error(msg)
-        return msg, 400
+        return _400_bad_request(msg)
 
     # If a limit is specified, check it for nids
     if session_create.limit and any(
@@ -90,7 +88,7 @@ def post_v2_session():  # noqa: E501
         if options_data.reject_nids:
             msg = f"reject_nids: {msg}"
             LOGGER.error(msg)
-            return msg, 400
+            return _400_bad_request(msg)
         # Since BOS does not support NIDs, still log this as a warning.
         # There is a chance that a node group has a name with a name resembling
         # a NID
@@ -104,7 +102,7 @@ def post_v2_session():  # noqa: E501
     if isinstance(session_template_response, ConnexionResponse):
         msg = f"Session Template Name invalid: {template_name}"
         LOGGER.error(msg)
-        return msg, 400
+        return _400_bad_request(msg)
     session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
@@ -113,8 +111,9 @@ def post_v2_session():  # noqa: E501
                                          template_name,
                                          options_data=options_data)
     if error_code >= BootSetStatus.ERROR:
-        LOGGER.error("Session template fails check: %s", msg)
-        return msg, 400
+        msg = f"Session template fails check: {msg}"
+        LOGGER.error(msg)
+        return _400_bad_request(msg)
 
     # -- Setup Record --
     tenant = get_tenant_from_header()
@@ -122,10 +121,7 @@ def post_v2_session():  # noqa: E501
     session_key = get_tenant_aware_key(session.name, tenant)
     if session_key in DB:
         LOGGER.warning("v2 session named %s already exists", session.name)
-        return connexion.problem(
-            detail=f"A session with the name {session.name} already exists",
-            status=409,
-            title="Conflicting session name")
+        return _409_session_already_exists(session.name)
     session_data = session.to_dict()
     response = DB.put(session_key, session_data)
     return response, 201
@@ -166,17 +162,12 @@ def patch_v2_session(session_id: str) -> tuple[JsonDict, Literal[200]] | Connexi
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", session_id,
                      exc_type_msg(err))
-        return connexion.problem(status=400,
-                                 title="Error parsing the data provided.",
-                                 detail=str(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
 
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return connexion.problem(
-            status=404,
-            title="Session could not found.",
-            detail=f"Session {session_id} could not be found")
+        return _404_session_not_found(session_id)
 
     component = DB.patch(session_key, patch_data_json)
     return component, 200
@@ -196,10 +187,7 @@ def get_v2_session(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return connexion.problem(
-            status=404,
-            title="Session could not found.",
-            detail=f"Session {session_id} could not be found")
+        return _404_session_not_found(session_id)
     session = DB.get(session_key)
     return session, 200
 
@@ -235,10 +223,7 @@ def delete_v2_session(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return connexion.problem(
-            status=404,
-            title="Session could not found.",
-            detail=f"Session {session_id} could not be found")
+        return _404_session_not_found(session_id)
     if session_key in STATUS_DB:
         STATUS_DB.delete(session_key)
     return DB.delete(session_key), 204
@@ -259,9 +244,7 @@ def delete_v2_sessions(
                                           status=status)
     except ParsingException as err:
         LOGGER.error("Error parsing age field: %s", exc_type_msg(err))
-        return connexion.problem(detail=str(err),
-                                 status=400,
-                                 title='Error parsing age field')
+        return _400_bad_request(f"Error parsing age field: {err}")
 
     for session in sessions:
         session_key = get_tenant_aware_key(session['name'], tenant)
@@ -287,10 +270,7 @@ def get_v2_session_status(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return connexion.problem(
-            status=404,
-            title="Session could not found.",
-            detail=f"Session {session_id} could not be found")
+        return _404_session_not_found(session_id)
     session = DB.get(session_key)
     if session.get(
             "status",
@@ -316,10 +296,7 @@ def save_v2_session_status(
     session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s", session_id)
-        return connexion.problem(
-            status=404,
-            title="Session could not found.",
-            detail=f"Session {session_id} could not be found")
+        return _404_session_not_found(session_id)
     return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
@@ -461,3 +438,32 @@ def _age_to_timestamp(age: str) -> datetime:
             delta[interval] = int(result.groups()[0])
     delta = timedelta(**delta)
     return get_current_time() - delta
+
+
+def _400_bad_request(msg: str) -> ConnexionResponse:
+    """
+    ProblemBadRequest
+    """
+    return connexion.problem(
+        status=400,
+        title="Bad Request",
+        detail=msg)
+
+
+def _404_session_not_found(session_id: str) -> ConnexionResponse:
+    """
+    ProblemResourceNotFound
+    """
+    return connexion.problem(
+        status=404,
+        title="The resource was not found",
+        detail=f"Session '{session_id}' does not exist")
+
+def _409_session_already_exists(session_id: str) -> ConnexionResponse:
+    """
+    ProblemAlreadyExists
+    """
+    return connexion.problem(
+        status=409,
+        title="The resource to be created already exists",
+        detail=f"Session '{session_id}' already exists")

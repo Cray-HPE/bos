@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9274: Prevent [`SNYK-PYTHON-WERKZEUG-6808933`](https://security.snyk.io/vuln/SNYK-PYTHON-WERKZEUG-6808933) from causing builds to fail.
 - CASMCMS-9265: Improve Python type annotations in sessions controller code
 
+### Fixed
+- CASMCMS-8965: Update sessions controller to provide error responses consistently and correctly
+
 ### Dependencies
 - Bumped Python dependency versions.
 
