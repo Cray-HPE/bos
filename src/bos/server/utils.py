@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,6 +26,8 @@ import re
 
 import connexion
 
+from bos.common.types import JsonData
+
 LOGGER = logging.getLogger(__name__)
 
 
@@ -33,7 +35,7 @@ class ParsingException(Exception):
     pass
 
 
-def canonize_xname(xname):
+def canonize_xname(xname: str) -> str:
     """Ensure the xname is canonical.
     * Its components should be lowercase.
     * Any leading zeros should be stripped off.
@@ -48,7 +50,7 @@ def canonize_xname(xname):
                   r'x\1c\2s\3b\4n\5', xname.lower())
 
 
-def get_request_json(log_data=True):
+def get_request_json(log_data: bool=True) -> JsonData:
     """
     Used by endpoints which are expecting a JSON payload in the request body.
     Returns the JSON payload.

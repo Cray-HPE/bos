@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,7 +26,9 @@ import copy
 import itertools
 import logging
 import string
+from typing import Optional
 
+from bos.common.types import JsonDict
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.server.controllers.v2.boot_set import DEFAULT_ARCH, HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
@@ -42,7 +44,7 @@ ALPHANUMERIC = string.ascii_letters + string.digits
 TEMPLATE_NAME_CHARACTERS = ALPHANUMERIC + '-._'
 
 
-def sanitize_component(key: str | bytes, data: dict) -> None:
+def sanitize_component(key: str | bytes, data: JsonDict) -> None:
     """
     If the id field is missing or invalid, delete the component
     """
@@ -52,7 +54,7 @@ def sanitize_component(key: str | bytes, data: dict) -> None:
         delete_component(key, str(exc))
 
 
-def sanitize_session(key: str | bytes, data: dict) -> None:
+def sanitize_session(key: str | bytes, data: JsonDict) -> None:
     """
     If the name field is missing, or if the name or tenant fields are invalid, delete the session.
     """
@@ -62,7 +64,7 @@ def sanitize_session(key: str | bytes, data: dict) -> None:
         delete_session(key, str(exc))
 
 
-def sanitize_session_template(key: str | bytes, data: dict) -> None:
+def sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
     """
     Session templates are the things most likely to run afoul of the API spec.
     This attempts to automatically fix them if at all possible, only deleting them
@@ -74,7 +76,7 @@ def sanitize_session_template(key: str | bytes, data: dict) -> None:
         delete_template(key, str(exc))
 
 
-def _sanitize_session_template(key: str | bytes, data: dict) -> None:
+def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
     """
     Validates and tries to sanitize the session template.
     If there are correctable errors, the function will update the database
@@ -157,7 +159,7 @@ def _sanitize_session_template(key: str | bytes, data: dict) -> None:
     TEMP_DB.put(new_key, new_data)
 
 
-def sanitize_description_field(data: dict) -> None:
+def sanitize_description_field(data: JsonDict) -> None:
     """
     Ensure that the description field (if present) is a string that is <= 1023 characters long.
     Delete or truncate it as needed.
@@ -185,7 +187,7 @@ def sanitize_description_field(data: dict) -> None:
         data["description"] = description[:1023]
 
 
-def sanitize_bootset(bsname: str, bsdata: dict) -> str | None:
+def sanitize_bootset(bsname: str, bsdata: JsonDict) -> str | None:
     """
     Corrects in-place bsdata.
     Returns an error message if this proves impossible.
@@ -255,7 +257,7 @@ def sanitize_bootset(bsname: str, bsdata: dict) -> str | None:
     )
 
 
-def sanitize_cfs_field(data: dict) -> None:
+def sanitize_cfs_field(data: JsonDict) -> None:
     """
     If the 'cfs' field is present:
     * If it's mapped to None, remove it
@@ -296,7 +298,7 @@ def sanitize_cfs_field(data: dict) -> None:
         del data["cfs"]
 
 
-def get_unused_legal_template_name(name: str, tenant: str | None) -> str:
+def get_unused_legal_template_name(name: str, tenant: Optional[str]) -> str:
     """
     If the current name is legal, return it unchanged.
     Otherwise, try to find a name which is not in use and which is legal per the spec.
@@ -343,7 +345,7 @@ def get_unused_legal_template_name(name: str, tenant: str | None) -> str:
     raise ValidationError("Name does not follow schema")
 
 
-def log_rename_in_template_description(old_name: str, data: dict) -> None:
+def log_rename_in_template_description(old_name: str, data: JsonDict) -> None:
     """
     If possible, update the session template description field to record the previous name of this
     template. Failing that, if possible, at least record that it was renamed.

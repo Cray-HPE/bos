@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2023-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2023-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,9 +23,9 @@
 #
 
 import logging
-from typing import Any
 
 from bos.common.tenant_utils import get_tenant_aware_key
+from bos.common.types import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server.schema import validator
 
@@ -40,7 +40,7 @@ class ValidationError(Exception):
     """
 
 
-def check_session(key: str | bytes, data: dict) -> None:
+def check_session(key: str | bytes, data: JsonDict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
@@ -51,7 +51,7 @@ def check_session(key: str | bytes, data: dict) -> None:
     check_keys(key, expected_db_key)
 
 
-def check_component(key: str | bytes, data: dict) -> None:
+def check_component(key: str | bytes, data: JsonDict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
@@ -60,7 +60,7 @@ def check_component(key: str | bytes, data: dict) -> None:
     check_keys(key, compid)
 
 
-def get_validate_tenant(data: dict) -> str | None:
+def get_validate_tenant(data: JsonDict) -> str | None:
     """
     If no tenant field present, return None.
     If the tenant field value is valid, return it.
@@ -72,7 +72,7 @@ def get_validate_tenant(data: dict) -> str | None:
     return tenant
 
 
-def validate_bootset_path(bsname: str, bsdata: dict) -> None:
+def validate_bootset_path(bsname: str, bsdata: JsonDict) -> None:
     try:
         path = get_required_field("path", bsdata)
     except ValidationError as exc:
@@ -109,7 +109,7 @@ def is_valid_available_template_name(name: str, tenant: str | None) -> bool:
     return True
 
 
-def validate_against_schema(obj: Any, schema_name: str) -> None:
+def validate_against_schema(obj: JsonData, schema_name: str) -> None:
     """
     Raises a ValidationError if it does not follow the schema
     """
@@ -121,7 +121,7 @@ def validate_against_schema(obj: Any, schema_name: str) -> None:
             f"Does not follow {schema_name} schema: {obj}") from exc
 
 
-def get_required_field(field: str, data: dict) -> Any:
+def get_required_field(field: str, data: JsonDict) -> JsonData:
     """
     Returns the value of the field in the dict
     Raises ValiationError otherwise
