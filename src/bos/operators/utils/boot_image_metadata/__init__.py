@@ -22,17 +22,27 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from abc import abstractmethod, ABC
+from bos.common.types import BootSet
 
+from abc import abstractmethod, ABC
+from typing import TypedDict
+
+class BootImageArtifactSummary(TypedDict, total=False):
+    kernel: str
+    initrd: str
+    rootfs: str
+    rootfs_etag: str
+    boot_parameters: str
+    boot_parameters_etag: str
 
 class BootImageMetaData(ABC):
     """
     Base class for BootImage Metadata
     """
 
-    def __init__(self, boot_set: dict):
+    def __init__(self, boot_set: BootSet) -> None:
         self._boot_set = boot_set
-        self.artifact_summary = {}
+        self.artifact_summary: BootImageArtifactSummary = {}
 
     @property
     @abstractmethod
@@ -71,7 +81,13 @@ class BootImageMetaData(ABC):
         """
 
 
-class BootImageMetaDataBadRead(Exception):
+class BootImageError(Exception):
+    """
+    General error getting boot image
+    """
+
+
+class BootImageMetaDataBadRead(BootImageError):
     """
     The metadata for the boot image could not be read/retrieved.
     """

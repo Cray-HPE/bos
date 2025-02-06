@@ -26,13 +26,15 @@ import copy
 from datetime import timedelta
 import logging
 import re
-from typing import List, Type
+from typing import Iterable, Optional
 
+from bos.common.types import Component
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.clients.cfs import get_components_from_id_list as \
                                             get_cfs_components_from_id_list
+from bos.operators.utils.clients.cfs import CfsComponent
 from bos.operators.utils.clients.hsm import get_components as get_hsm_components
 
 LOGGER = logging.getLogger('bos.operators.filters.filters')
@@ -41,12 +43,12 @@ LOGGER = logging.getLogger('bos.operators.filters.filters')
 # Usable filters
 class OR(DetailsFilter):
 
-    def __init__(self, filters_a, filters_b) -> None:
+    def __init__(self, filters_a: list[BaseFilter], filters_b: list[BaseFilter]) -> None:
         super().__init__()
-        self.filters_a: List[Type[BaseFilter]] = filters_a
-        self.filters_b: List[Type[BaseFilter]] = filters_b
+        self.filters_a = filters_a
+        self.filters_b = filters_b
 
-    def _filter(self, components: List[dict]) -> List[dict]:
+    def _filter(self, components: list[Component]) -> list[Component]:
         results_a = copy.deepcopy(components)
         for f in self.filters_a:
             results_a = f.filter(results_a)
@@ -72,26 +74,26 @@ class BOSQuery(DetailsFilter):
         self.kwargs = kwargs
         self.bos_client = BOSClient()
 
-    def _filter(self, _) -> List[dict]:
+    def _filter(self, _) -> list[Component]:
         return self.bos_client.components.get_components(**self.kwargs)
 
 
 class HSMState(IDFilter):
     """ Returns all components that are in specified state """
 
-    def __init__(self, enabled: bool=None, ready: bool=None) -> None:
+    def __init__(self, enabled: Optional[bool]=None, ready: Optional[bool]=None) -> None:
         super().__init__()
         self.enabled = enabled
         self.ready = ready
 
-    def _filter(self, components: List[str]) -> List[str]:
-        components = get_hsm_components(components, enabled=self.enabled)
+    def _filter(self, components: list[str]) -> list[str]:
+        hsm_components_data = get_hsm_components(components, enabled=self.enabled)
         if self.ready is not None:
-            return [component['ID'] for component in components['Components']
+            return [component['ID'] for component in hsm_components_data['Components']
                     if (component['State'] == 'Ready') is self.ready]
-        return [component['ID'] for component in components['Components']]
+        return [component['ID'] for component in hsm_components_data['Components']]
 
-    def filter_by_arch(self, nodes, arch):
+    def filter_by_arch(self, nodes: Iterable[str], arch: Iterable[str]) -> list[str]:
         """
         Given a list of component names, query HSM for state information pertaining to arch.
         Components that match one of the arch values specified are returned as a list of
@@ -107,35 +109,19 @@ class HSMState(IDFilter):
         return [component['ID'] for component in components['Components']
                 if component.get('Arch', 'Unknown') in arch]
 
-class NOT(LocalFilter):
-    """ Returns the opposite of the given filter.  Use on local filters only."""
-
-    def __init__(self, filter: Type[LocalFilter]) -> None:
-        self.negated_filter = filter
-        self.filter_match = filter._match
-        def negated_match(*args, **kwargs):
-            return not self.filter_match(*args, **kwargs)
-        self.negated_filter._match = negated_match
-
-    def _filter(self, components: List[dict]) -> List[dict]:
-        return self.negated_filter._filter(components)
-
-    def _match(self, component: dict):
-        return self.negated_filter._match(component)
-
 
 class TimeSinceLastAction(LocalFilter):
     """ Returns all components whose last actions was over some time ago """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, negate: bool = False, **kwargs) -> None:
         """
         Init for the TimeSinceLastAction filter
         kwargs corresponds to arguments for datetime.timedelta
         """
-        super().__init__()
+        super().__init__(negate=negate)
         self.kwargs = kwargs
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         last_action_time = component.get('last_action', {}).get('last_updated')
         if not last_action_time:
             return True
@@ -148,11 +134,11 @@ class TimeSinceLastAction(LocalFilter):
 class LastActionIs(LocalFilter):
     """ Returns with the specified last action(s) """
 
-    def __init__(self, actions: str) -> None:
-        super().__init__()
+    def __init__(self, actions: str, negate: bool = False) -> None:
+        super().__init__(negate=negate)
         self.actions = actions.split(',')
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         last_action = component.get('last_action', {}).get('action', '')
         if last_action in self.actions:
             return True
@@ -162,7 +148,7 @@ class LastActionIs(LocalFilter):
 class BootArtifactStatesMatch(LocalFilter):
     """ Returns when current and desired kernel and image states match """
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         desired_state = component.get('desired_state', {})
         actual_state = component.get('actual_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
@@ -181,7 +167,7 @@ class BootArtifactStatesMatch(LocalFilter):
 
         return True
 
-    def _sanitize_kernel_parameters(self, parameter_string):
+    def _sanitize_kernel_parameters(self, parameter_string: Optional[str]) -> str|None:
         """
         Filter out kernel parameters that dynamically change from session to session and
         should not be used for comparison.
@@ -199,11 +185,11 @@ class BootArtifactStatesMatch(LocalFilter):
 class DesiredConfigurationSetInCFS(LocalFilter):
     """ Returns when desired configuration is set in CFS """
 
-    def __init__(self):
-        self.cfs_components_dict = {}
-        super().__init__()
+    def __init__(self, negate: bool = False) -> None:
+        super().__init__(negate=negate)
+        self.cfs_components_dict: dict[str, CfsComponent] = {}
 
-    def _filter(self, components: List[dict]) -> List[dict]:
+    def _filter(self, components: list[Component]) -> list[Component]:
         component_ids = [component['id'] for component in components]
         cfs_components = get_cfs_components_from_id_list(id_list=component_ids)
         self.cfs_components_dict = {component['id']: component for component in cfs_components}
@@ -212,7 +198,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         self.cfs_components_dict = {}
         return matches
 
-    def _match(self, component: dict, cfs_component: dict=None) -> bool:
+    def _match(self, component: Component, cfs_component: Optional[CfsComponent]=None) -> bool:
         # There are two ways to communicate the cfs_component to this method.
         # First: cfs_component input variable
         # Second: cfs_component_dict instance attribute
@@ -235,7 +221,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
 class DesiredBootStateIsNone(LocalFilter):
     """ Returns when the desired state is None """
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         desired_state = component.get('desired_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
         if not desired_boot_state or not any(bool(v) for v in desired_boot_state.values()):
@@ -246,7 +232,7 @@ class DesiredBootStateIsNone(LocalFilter):
 class DesiredBootStateIsOff(LocalFilter):
     """ Returns when the desired state has no kernel set """
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         desired_state = component.get('desired_state', {})
         desired_boot_state = desired_state.get('boot_artifacts', {})
         if not desired_boot_state.get('kernel'):
@@ -257,7 +243,7 @@ class DesiredBootStateIsOff(LocalFilter):
 class DesiredConfigurationIsNone(LocalFilter):
     """ Returns when the desired configuration is None """
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         desired_state = component.get('desired_state', {})
         if not desired_state or not desired_state.get('configuration', ''):
             return True
@@ -267,15 +253,15 @@ class DesiredConfigurationIsNone(LocalFilter):
 class ActualStateAge(LocalFilter):
     """ Returns all components whose Actual Stage age is older than <age>, as set in kwargs. """
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, negate: bool = False, **kwargs) -> None:
         """
         Init for the ActualStateAge filter
         kwargs corresponds to arguments for datetime.timedelta
         """
-        super().__init__()
+        super().__init__(negate=negate)
         self.kwargs = kwargs
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         last_updated = component.get('actual_state', {}).get('last_updated', None)
         now = get_current_time()
         if not last_updated or now > load_timestamp(last_updated) + timedelta(**self.kwargs):
@@ -286,7 +272,7 @@ class ActualStateAge(LocalFilter):
 class ActualBootStateIsSet(LocalFilter):
     """ Returns when the actual state h """
 
-    def _match(self, component: dict) -> bool:
+    def _match(self, component: Component) -> bool:
         actual_state_boot_artifacts = component.get('actual_state', {}).get('boot_artifacts', {})
         # The timestamp field doesn't count as a set record we particularly care about
         if 'timestamp' in actual_state_boot_artifacts:

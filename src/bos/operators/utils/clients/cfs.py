@@ -23,10 +23,15 @@
 #
 from collections import defaultdict
 import logging
-from bos.operators.utils.clients.bos.options import options
-from requests.exceptions import HTTPError
+from typing import Any, Literal, Optional, Required, TypedDict
 
+from requests import HTTPError
+from requests import Session as RequestsSession
+
+from bos.common.types import Component as BosComponent
 from bos.common.utils import compact_response_text, exc_type_msg, requests_retry_session, PROTOCOL
+from bos.operators.utils.clients.bos.options import options
+
 
 SERVICE_NAME = 'cray-cfs-api'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"
@@ -38,7 +43,24 @@ GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
 
 
-def get_components(session=None, **params):
+CfsConfigurationStatus = Literal['configured', 'failed', 'pending', 'unconfigured']
+
+# In the future, would be nice to somehow get this from CFS
+class CfsComponent(TypedDict, total=False):
+    id: Required[str]
+    state: list
+    state_append: dict
+    desired_state: list
+    desired_config: str
+    error_count: int
+    retry_policy: int
+    enabled: bool
+    configuration_status: CfsConfigurationStatus
+    tags: dict
+    logs: str
+
+
+def get_components(session: Optional[RequestsSession]=None, **params) -> list[CfsComponent]:
     """
     Makes GET request for CFS components.
     Performs additional requests to get additional pages of components, if
@@ -67,7 +89,7 @@ def get_components(session=None, **params):
     return component_list
 
 
-def patch_components(data, session=None):
+def patch_components(data: dict[str,Any], session: Optional[RequestsSession]=None) -> None:
     if not data:
         LOGGER.warning("patch_components called without data; returning without action.")
         return
@@ -84,7 +106,7 @@ def patch_components(data, session=None):
         raise
 
 
-def get_components_from_id_list(id_list):
+def get_components_from_id_list(id_list: list[str]) -> list[CfsComponent]:
     if not id_list:
         LOGGER.warning("get_components_from_id_list called without IDs; returning without action.")
         return []
@@ -101,7 +123,8 @@ def get_components_from_id_list(id_list):
     return component_list
 
 
-def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, clear_state=False):
+def patch_desired_config(node_ids: list[str], desired_config: str, enabled: bool=False,
+                         tags: Optional[dict]=None, clear_state: bool=False) -> None:
     if not node_ids:
         LOGGER.warning("patch_desired_config called without IDs; returning without action.")
         return
@@ -122,7 +145,7 @@ def patch_desired_config(node_ids, desired_config, enabled=False, tags=None, cle
         node_ids = node_ids[PATCH_BATCH_SIZE:]
 
 
-def set_cfs(components, enabled, clear_state=False):
+def set_cfs(components: list[BosComponent], enabled: bool, clear_state: bool=False) -> None:
     if not components:
         LOGGER.warning("set_cfs called without components; returning without action.")
         return

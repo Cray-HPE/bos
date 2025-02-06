@@ -22,20 +22,25 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from abc import ABC, abstractmethod
 import copy
 import logging
-from typing import Set
+from typing import Generic, Optional, Set, TypeVar
 from botocore.exceptions import ClientError
 
 from bos.operators.base import BaseOperator, main, chunk_components
 from bos.operators.filters.filters import HSMState
 from bos.operators.utils.clients.hsm import Inventory
 from bos.operators.utils.clients.s3 import S3Object, S3ObjectNotFound
+from bos.operators.utils.boot_image_metadata import BootImageArtifactSummary
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
+from bos.operators.utils.clients.bos import BOSClient
 from bos.operators.utils.clients.bos.options import options
 from bos.operators.utils.rootfs.factory import ProviderFactory
 from bos.operators.session_completion import SessionCompletionOperator
 from bos.common.utils import exc_type_msg
+from bos.common.types import BootArtifacts, BootSet, Component, ComponentDesiredState, ComponentStagedState, SessionTemplate
+from bos.common.types import Session as SessionType
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 
@@ -53,7 +58,7 @@ class SessionSetupOperator(BaseOperator):
     """
 
     @property
-    def name(self):
+    def name(self) -> str:
         return 'SessionSetup'
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
@@ -62,7 +67,7 @@ class SessionSetupOperator(BaseOperator):
     def filters(self):
         return []
 
-    def _act(self, components):
+    def _act(self, components: list[Component]) -> list[Component]:
         return components
 
     def _run(self) -> None:
@@ -73,42 +78,50 @@ class SessionSetupOperator(BaseOperator):
         LOGGER.info('Found %d sessions that require action', len(sessions))
         inventory_cache = Inventory()
         for data in sessions:
-            session = Session(data, inventory_cache, self.bos_client)
+            session = session_factory(data, inventory_cache, self.bos_client)
             session.setup(self.max_batch_size)
 
-    def _get_pending_sessions(self):
+    def _get_pending_sessions(self) -> list[SessionType]:
         return self.bos_client.sessions.get_sessions(status='pending')
 
+T = TypeVar('T')
 
-class Session:
+class BaseSession(Generic[T], ABC):
 
-    def __init__(self, data, inventory_cache, bos_client):
+    def __init__(self, data: SessionType, inventory_cache: Inventory, bos_client: BOSClient) -> None:
         self.session_data = data
         self.inventory = inventory_cache
         self.bos_client = bos_client
-        self._template = None
+        self._template: Optional[SessionTemplate] = None
 
     @property
-    def name(self):
-        return self.session_data.get('name')
+    def name(self) -> str:
+        # name must be present, so do not use get method
+        # Also do not use try/except to raise SessionSetupException, because the error path for
+        # that calls this method.
+        return self.session_data['name']
 
     @property
-    def tenant(self):
+    def tenant(self) -> Optional[str]:
         return self.session_data.get('tenant')
 
     @property
-    def operation_type(self):
-        return self.session_data.get('operation')
+    def operation_type(self) -> str:
+        # operation field must be present, so do not use get method
+        try:
+            return self.session_data['operation']
+        except KeyError as err:
+            raise SessionSetupException("Session record missing required 'operation' field") from err
 
     @property
-    def template(self):
-        if not self._template:
+    def template(self) -> SessionTemplate:
+        if self._template is None:
             template_name = self.session_data.get('template_name')
             self._template = self.bos_client.session_templates.get_session_template(template_name,
                                                                                     self.tenant)
         return self._template
 
-    def setup(self, max_batch_size: int):
+    def setup(self, max_batch_size: int) -> None:
         try:
             component_ids = self._setup_components(max_batch_size)
         except SessionSetupException as err:
@@ -116,19 +129,15 @@ class Session:
         else:
             self._mark_running(component_ids)
 
-    def _setup_components(self, max_batch_size: int):
-        all_component_ids = []
-        data = []
-        stage = self.session_data.get("stage", False)
+    def _setup_components(self, max_batch_size: int) -> list[str]:
+        all_component_ids: list[str] = []
+        data: list[Component] = []
         try:
             for _, boot_set in self.template.get('boot_sets', {}).items():
                 components = self._get_boot_set_component_list(boot_set)
                 if not components:
                     continue
-                if stage:
-                    state = self._generate_desired_state(boot_set, staged=True)
-                else:
-                    state = self._generate_desired_state(boot_set)
+                state = self._generate_future_state(boot_set)
                 for component_id in components:
                     data.append(self._operate(component_id, copy.deepcopy(state)))
                 all_component_ids += components
@@ -143,7 +152,7 @@ class Session:
             self.bos_client.components.update_components(chunk)
         return list(set(all_component_ids))
 
-    def _get_boot_set_component_list(self, boot_set) -> Set[str]:
+    def _get_boot_set_component_list(self, boot_set: BootSet) -> Set[str]:
         nodes = set()
         # Populate from nodelist
         for node_name in boot_set.get('node_list', []):
@@ -191,7 +200,7 @@ class Session:
         nodes = self._apply_tenant_limit(nodes)
         return nodes
 
-    def _apply_arch(self, nodes, arch):
+    def _apply_arch(self, nodes: set[str], arch: str) -> set[str]:
         """
         Removes any node from <nodes> that does not match arch. Nodes in HSM that do not have the
         arch field, and nodes that have the arch field flagged as undefined are assumed to be of
@@ -209,7 +218,7 @@ class Session:
         """
         if not nodes:
             return nodes
-        valid_archs = set([arch])
+        valid_archs = { arch }
         if arch == 'X86':
             valid_archs.add('UNKNOWN')
         hsm_filter = HSMState()
@@ -222,7 +231,7 @@ class Session:
                       "After filtering for architecture, %d nodes remain to act upon.", len(nodes))
         return nodes
 
-    def _apply_include_disabled(self, nodes):
+    def _apply_include_disabled(self, nodes: set[str]) -> set[str]:
         """
         If include_disabled is False for this session, filter out any nodes which are disabled
         in HSM. Otherwise, return the node list unchanged.
@@ -241,13 +250,13 @@ class Session:
                       len(nodes))
         return nodes
 
-    def _apply_limit(self, nodes):
+    def _apply_limit(self, nodes: set[str]) -> set[str]:
         session_limit = self.session_data.get('limit')
         if not session_limit:
             # No limit is defined, so all nodes are allowed
             return nodes
         self._log(LOGGER.info, f'Applying limit to session: {session_limit}')
-        limit_node_set = set()
+        limit_node_set: set[str] = set()
         for limit in session_limit.split(','):
             if limit[0] == '&':
                 limit = limit[1:]
@@ -272,7 +281,7 @@ class Session:
                       len(nodes))
         return nodes
 
-    def _apply_tenant_limit(self, nodes):
+    def _apply_tenant_limit(self, nodes: set[str]) -> set[str]:
         tenant = self.session_data.get("tenant")
         if not tenant:
             return nodes
@@ -288,13 +297,13 @@ class Session:
                       len(nodes))
         return nodes
 
-    def _mark_running(self, component_ids):
+    def _mark_running(self, component_ids: list[str]) -> None:
         self.bos_client.sessions.update_session(
             self.name, self.tenant,
             {'status': {'status': 'running'}, "components": ",".join(component_ids)})
         self._log(LOGGER.info, 'Session is running')
 
-    def _mark_failed(self, err):
+    def _mark_failed(self, err: str) -> None:
         """
         Input:
           err (string): The error that prevented the session from running
@@ -309,30 +318,15 @@ class Session:
         logger(f'Session {self.name}: {message}', *xargs)
 
     # Operations
-    def _operate(self, component_id, state):
-        stage = self.session_data.get("stage", False)
-        data = {"id": component_id}
-        if stage:
-            data["staged_state"] = state
-            data["staged_state"]["session"] = self.name
-        else:
-            data["desired_state"] = state
-            if self.operation_type == "reboot" :
-                data["actual_state"] = EMPTY_ACTUAL_STATE
-            data["session"] = self.name
-            data["enabled"] = True
-            # Set node's last_action
-            data["last_action"] = {"action": Action.session_setup}
-        data['error'] = ''
-        return data
+    def _operate(self, component_id: str, state: T) -> Component:
+        return Component(id=component_id, error="")
 
-    def _generate_desired_state(self, boot_set, staged=False):
-        if self.operation_type == "shutdown":
-            return EMPTY_STAGED_STATE if staged else EMPTY_DESIRED_STATE
-        state = self._get_state_from_boot_set(boot_set)
-        return state
+    @abstractmethod
+    def _generate_future_state(self, boot_set: BootSet) -> T:
+        pass
 
-    def _get_state_from_boot_set(self, boot_set):
+    @abstractmethod
+    def _get_state_from_boot_set(self, boot_set: BootSet) -> T:
         """
         Returns:
           state: A dictionary containing two keys 'boot_artifacts' and 'configuration'.
@@ -341,19 +335,24 @@ class Session:
             paths to those artifacts in storage.
             'configuration' is a string.
         """
-        state = {}
-        boot_artifacts = {}
+
+    def _get_boot_artifacts_from_boot_set(self, boot_set: BootSet) -> BootArtifacts:
+        """
+        Returns:
+            A dictionary containing key/value pairs where the keys are
+            the boot artifacts (kernel, initrd, rootfs, and boot parameters) and the values are
+            paths to those artifacts in storage.
+        """
+        boot_artifacts: BootArtifacts = {}
         image_metadata = BootImageMetaDataFactory(boot_set)()
         artifact_info = image_metadata.artifact_summary
         boot_artifacts['kernel'] = artifact_info['kernel']
         boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get("path", "")
         boot_artifacts['kernel_parameters'] = self.assemble_kernel_boot_parameters(boot_set,
                                                                                    artifact_info)
-        state['boot_artifacts'] = boot_artifacts
-        state['configuration'] = self._get_configuration_from_boot_set(boot_set)
-        return state
+        return boot_artifacts
 
-    def _get_configuration_from_boot_set(self, boot_set: dict):
+    def _get_configuration_from_boot_set(self, boot_set: BootSet) -> str:
         """
         An abstraction method for determining the configuration to use
         in the event for any given <boot set> within a session. Boot Sets
@@ -370,7 +369,7 @@ class Session:
         # Otherwise, we take the configuration value from the session template itself
         return self.template.get('cfs', {}).get('configuration', '')
 
-    def assemble_kernel_boot_parameters(self, boot_set, artifact_info):
+    def assemble_kernel_boot_parameters(self, boot_set: BootSet, artifact_info: BootImageArtifactSummary) -> str:
         """
         Assemble the kernel boot parameters that we want to set in the
         Boot Script Service (BSS).
@@ -443,6 +442,53 @@ class Session:
         boot_param_pieces.append(f'bos_update_frequency={options.component_actual_state_ttl}')
 
         return ' '.join(boot_param_pieces)
+
+class Session(BaseSession[ComponentDesiredState]):
+    def _generate_future_state(self, boot_set: BootSet) -> ComponentDesiredState:
+        if self.operation_type == "shutdown":
+            return EMPTY_DESIRED_STATE
+        state = self._get_state_from_boot_set(boot_set)
+        return state
+
+    def _operate(self, component_id: str, state: ComponentDesiredState) -> Component:
+        data = super()._operate(component_id, state)
+        data["desired_state"] = state
+        if self.operation_type == "reboot" :
+            data["actual_state"] = EMPTY_ACTUAL_STATE
+        data["session"] = self.name
+        data["enabled"] = True
+        # Set node's last_action
+        data["last_action"] = {"action": Action.session_setup}
+        return data
+
+    def _get_state_from_boot_set(self, boot_set: BootSet) -> ComponentDesiredState:
+        return ComponentDesiredState(
+                boot_artifacts=self._get_boot_artifacts_from_boot_set(boot_set),
+                configuration=self._get_configuration_from_boot_set(boot_set))
+
+
+class StagedSession(BaseSession[ComponentStagedState]):
+    def _generate_future_state(self, boot_set: BootSet) -> ComponentStagedState:
+        if self.operation_type == "shutdown":
+            return EMPTY_STAGED_STATE
+        return self._get_state_from_boot_set(boot_set)
+
+    def _operate(self, component_id: str, state: ComponentStagedState) -> Component:
+        data = super()._operate(component_id, state)
+        data["staged_state"] = state
+        data["staged_state"]["session"] = self.name
+        return data
+
+    def _get_state_from_boot_set(self, boot_set: BootSet) -> ComponentStagedState:
+        return ComponentStagedState(
+                boot_artifacts=self._get_boot_artifacts_from_boot_set(boot_set),
+                configuration=self._get_configuration_from_boot_set(boot_set))
+
+
+def session_factory(data: SessionType, inventory_cache: Inventory, bos_client: BOSClient) -> BaseSession:
+    if data.get("stage", False):
+        return Session(data, inventory_cache, bos_client)
+    return StagedSession(data, inventory_cache, bos_client)
 
 
 if __name__ == '__main__':

@@ -24,7 +24,7 @@
 # Dockerfile for Cray Boot Orchestration Service (BOS)
 
 # Upstream Build Args
-ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.8.0
+ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.10.0
 ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
 
 # Generate Code
@@ -34,36 +34,71 @@ COPY api/openapi.yaml api/openapi.yaml
 COPY config/autogen-server.json config/autogen-server.json
 # Validate the spec file
 RUN /usr/local/bin/docker-entrypoint.sh validate \
-    -i api/openapi.yaml \
-    --recommend
-RUN /usr/local/bin/docker-entrypoint.sh generate \
-    -i api/openapi.yaml \
-    -g python-flask \
-    -o lib \
-    -c config/autogen-server.json \
-    --generate-alias-as-model
+        -i api/openapi.yaml \
+        --recommend && \
+    /usr/local/bin/docker-entrypoint.sh generate \
+        -i api/openapi.yaml \
+        -g python-flask \
+        -o lib \
+        -c config/autogen-server.json \
+        --generate-alias-as-model \
+        --log-to-stderr \
+        --strict-spec true \
+        --verbose && \
+    /usr/local/bin/docker-entrypoint.sh generate \
+        -i api/openapi.yaml \
+        -g python \
+        -o lib2 \
+        -c config/autogen-server.json \
+        --log-to-stderr \
+        --strict-spec true \
+        --generate-alias-as-model \
+        --verbose
+RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<" || true
+RUN find /app/lib /app/lib2 -type f -name \*.py -exec grep -Eq "null<" {} \; -print0 | \
+    xargs -0 sed -i \
+        -e "s/^\(from pydantic import \)/\1RootModel, /" \
+        -e "s/^.*models[.]null[<]str[>].*$//" \
+        -e "s/models[.]null[<]\([^>]\+\)[>] import null[<]\([^>]\+\)[>]/models.\1 import \2/" \
+        -e "s/^\(class .*[(]\)null[<]\([^>]\+\)[>]/\1RootModel[List[\2]]/"
+RUN find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 grep -E "null<" || true
 
-
-# Start by taking a base Alpine image, copying in our generated code,
-# applying some updates, and creating our virtual Python environment
-FROM $ALPINE_BASE_IMAGE AS alpine-base
+# pre-base image
+FROM $ALPINE_BASE_IMAGE AS pre-alpine-base
 WORKDIR /app
-# Copy in generated code
-COPY --from=codegen /app/lib/ /app/lib
-# Copy in Python constraints file
-COPY constraints.txt /app/
 # Update packages to avoid security problems
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     apk add --upgrade --no-cache apk-tools busybox && \
-    apk update && \
-    apk add --no-cache python3-dev py3-pip && \
-    apk -U upgrade --no-cache
+    apk update
+
+# Post-process generated Python code
+FROM pre-alpine-base AS code-post-process
+WORKDIR /app
+# Copy in generated code
+COPY --from=codegen /app/lib/ /app/lib
+COPY --from=codegen /app/lib2/ /app/lib2
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    apk add --no-cache python3 py3-yapf py3-tomli && \
+    apk -U upgrade --no-cache && \
+    find /app/lib /app/lib2 -type f -name \*.py -print0 | xargs -0 python3 -m yapf -p -i -vv
+
+# Start by taking a base Alpine image, copying in our generated code,
+# applying some updates, and creating our virtual Python environment
+FROM pre-alpine-base AS alpine-base
+WORKDIR /app
+# Copy in generated code
+COPY --from=code-post-process /app/lib/ /app/lib
+COPY --from=code-post-process /app/lib2/ /app/lib2
+# Copy in Python constraints file
+COPY constraints.txt /app/
 ENV VIRTUAL_ENV=/app/venv
-RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    pip3 install --no-cache-dir -U pip -c constraints.txt && \
-    pip3 list --format freeze
+    apk add --no-cache python3-dev py3-pip && \
+    apk -U upgrade --no-cache && \
+    python3 -m venv $VIRTUAL_ENV && \
+    $VIRTUAL_ENV/bin/pip3 install --no-cache-dir -U pip -c constraints.txt && \
+    $VIRTUAL_ENV/bin/pip3 list --format freeze
 
 
 # Generate JSON version of openapi spec and then convert its
@@ -95,6 +130,8 @@ WORKDIR /app
 RUN mv -v lib/requirements.txt lib/bos/server/requirements.txt && \
     cat lib/bos/server/requirements.txt && \
     sed -i 's/Flask == 2\(.*\)$/Flask >= 2\1\nFlask < 3/' lib/bos/server/requirements.txt && \
+    cat lib/bos/server/requirements.txt && \
+    cat lib2/requirements.txt >> lib/bos/server/requirements.txt && \
     cat lib/bos/server/requirements.txt
 # Then copy all src into the base image
 COPY src/bos/ /app/lib/bos/
@@ -126,23 +163,42 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     pip3 list --format freeze
 
 
-# Pylint reporting
-FROM base AS pylint-base
+# lint base
+FROM base AS lint-base
 COPY srclist.txt docker_pylint.sh /app/venv/
+
+
+# Pylint reporting
+FROM lint-base AS pylint-base
 WORKDIR /app
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     pip3 install --no-cache-dir pylint -c constraints.txt && \
     pip3 list --format freeze
+
 
 # Pylint errors-only
 FROM pylint-base AS pylint-errors-only
 WORKDIR /app/venv
 CMD [ "./docker_pylint.sh", "--errors-only" ]
 
+
 # Pylint full
 FROM pylint-base AS pylint-full
 WORKDIR /app/venv
 CMD [ "./docker_pylint.sh", "--fail-under", "9" ]
+
+
+# mypy
+FROM lint-base AS mypy
+WORKDIR /app/venv
+COPY mypy-requirements.txt /app/
+COPY mypy.ini /app/venv/
+RUN --mount=type=secret,id=netrc,target=/root/.netrc \
+    cd /app && \
+    pip3 install --no-cache-dir -r mypy-requirements.txt && \
+    pip3 list --format freeze
+CMD [ "./docker_pylint.sh", "mypy" ]
+
 
 # Codestyle reporting
 FROM testing AS codestyle

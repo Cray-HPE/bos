@@ -22,18 +22,23 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+from typing import Optional
+
+from bos.common.types import BootSet, SessionTemplate
+from bos.common.types import BOOT_SET_DEFAULT_ARCH as DEFAULT_ARCH
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.utils import canonize_xname
 
 from .artifacts import validate_boot_artifacts
-from .defs import DEFAULT_ARCH, LOGGER
+from .defs import LOGGER
 from .exceptions import BootSetError, BootSetWarning
 from .ims import validate_ims_boot_image
 from .validate import check_node_list_for_nids, verify_nonempty_hw_specifier_field
 
 
-def validate_sanitize_boot_sets(template_data: dict, options_data: OptionsData|None=None) -> None:
+def validate_sanitize_boot_sets(template_data: SessionTemplate,
+                                options_data: Optional[OptionsData]=None) -> None:
     """
     Calls validate_sanitize_boot_set on every boot set in the template.
     Raises an exception if there are problems.
@@ -60,7 +65,7 @@ def validate_sanitize_boot_sets(template_data: dict, options_data: OptionsData|N
         validate_sanitize_boot_set(bs_name, bs, options_data=options_data)
 
 
-def validate_sanitize_boot_set(bs_name: str, bs_data: dict, options_data: OptionsData) -> None:
+def validate_sanitize_boot_set(bs_name: str, bs_data: BootSet, options_data: OptionsData) -> None:
     """
     Called when creating/updating a BOS session template.
     Validates the boot set, and sanitizes it (editing it in place).
