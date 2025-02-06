@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -60,7 +60,7 @@ from .sanitize import sanitize_component, sanitize_session, sanitize_session_tem
 LOGGER = logging.getLogger(__name__)
 
 
-def main():
+def main() -> None:
     if not all_db_ready():
         LOGGER.error("Not all BOS databases are ready")
         sys.exit(1)
