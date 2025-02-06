@@ -35,6 +35,8 @@ from dateutil.parser import parse
 import requests
 import requests_retry_session as rrs
 
+from bos.common.types import JsonDict
+
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
 
@@ -52,7 +54,7 @@ def load_timestamp(timestamp: str) -> datetime.datetime:
     return parse(timestamp).replace(tzinfo=None)
 
 
-def duration_to_timedelta(timestamp: str):
+def duration_to_timedelta(timestamp: str) -> datetime.timedelta:
     """
     Converts a <digit><duration string> to a timedelta object.
     """
@@ -107,6 +109,8 @@ def retry_session(
     if protocol is not None:
         return retry_session_manager(protocol=protocol, **kwargs)  # pylint: disable=redundant-keyword-arg
     return retry_session_manager(**kwargs)
+
+
 
 
 def retry_session_get(*get_args,
@@ -171,7 +175,7 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     return "root=sbps-s3" in kernel_parameters
 
 
-def components_by_id(components: list[dict]) -> dict:
+def components_by_id(components: list[JsonDict]) -> JsonDict:
     """
     Input:
     * components: a list containing individual components
@@ -185,7 +189,7 @@ def components_by_id(components: list[dict]) -> dict:
     return {component["id"]: component for component in components}
 
 
-def reverse_components_by_id(components_by_id_map: dict) -> list[dict]:
+def reverse_components_by_id(components_by_id_map: JsonDict) -> list[JsonDict]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the
