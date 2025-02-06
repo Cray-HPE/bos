@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -35,7 +35,7 @@ from bos.server.encoder import JSONEncoder
 LOGGER = logging.getLogger(__name__)
 
 
-def create_app():
+def create_app() -> connexion.App:
     starting_log_level = os.environ.get('BOS_LOG_LEVEL', 'INFO')
     log_level = logging.getLevelName(starting_log_level.upper())
     logging.basicConfig(level=log_level)

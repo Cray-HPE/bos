@@ -21,15 +21,17 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from collections.abc import Callable
 from itertools import batched
 import functools
 import json
 import logging
-from typing import Callable, Optional
+from typing import Generator, Optional, ParamSpec, TypeVar
 
 import connexion
 import redis
 
+from bos.common.types import JsonDict
 from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
@@ -52,20 +54,20 @@ class DBWrapper():
     and can be safely shared by multiple threads.
     """
 
-    def __init__(self, db):
+    def __init__(self, db: int|str):
         self.db_id = self._get_db_id(db)
         self.client = self._get_client(self.db_id)
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         return self.client.exists(key)
 
-    def _get_db_id(self, db):
+    def _get_db_id(self, db: int|str) -> int:
         """Converts a db name to the id used by Redis."""
         if isinstance(db, int):
             return db
         return DATABASES.index(db)
 
-    def _get_client(self, db_id):
+    def _get_client(self, db_id: int) -> redis.Redis:
         """Create a connection with the database."""
         try:
             LOGGER.debug(
@@ -97,7 +99,7 @@ class DBWrapper():
         return True
 
     # The following methods act like REST calls for single items
-    def get(self, key):
+    def get(self, key: str) -> JsonDict:
         """Get the data for the given key."""
         datastr = self.client.get(key)
         if not datastr:
@@ -105,7 +107,7 @@ class DBWrapper():
         data = json.loads(datastr)
         return data
 
-    def get_and_delete(self, key):
+    def get_and_delete(self, key: str) -> JsonDict:
         """Get the data for the given key and delete it from the DB."""
         datastr = self.client.getdel(key)
         if not datastr:
@@ -113,7 +115,7 @@ class DBWrapper():
         data = json.loads(datastr)
         return data
 
-    def get_all(self):
+    def get_all(self) -> list[JsonDict]:
         """Get an array of data for all keys."""
         data = []
         for key in self.client.scan_iter():
@@ -123,9 +125,9 @@ class DBWrapper():
         return data
 
     def get_all_filtered(self,
-                         filter_func: Callable[[dict], dict | None],
+                         filter_func: Callable[[JsonDict], JsonDict | None],
                          start_after_key: Optional[str] = None,
-                         page_size: int = 0) -> list[dict]:
+                         page_size: int = 0) -> list[JsonDict]:
         """
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)
@@ -142,7 +144,7 @@ class DBWrapper():
                     break
         return data
 
-    def iter_values(self, start_after_key: Optional[str] = None):
+    def iter_values(self, start_after_key: Optional[str] = None) -> Generator[JsonDict, None, None]:
         """
         Iterate through every item in the database. Parse each item as JSON and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
@@ -154,7 +156,7 @@ class DBWrapper():
             for datastr in self.client.mget(next_keys):
                 yield json.loads(datastr) if datastr else None
 
-    def get_all_as_dict(self):
+    def get_all_as_dict(self) -> dict[str, JsonDict]:
         """Return a mapping from all keys to their corresponding data
            Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
         """
@@ -170,20 +172,21 @@ class DBWrapper():
             data.update(dict(zip(keys, values)))
         return data
 
-    def get_keys(self):
+    def get_keys(self) -> list[bytes]:
         """Get an array of all keys"""
         data = []
         for key in self.client.scan_iter():
             data.append(key)
         return data
 
-    def put(self, key, new_data):
+    def put(self, key: str, new_data: JsonDict) -> JsonDict:
         """Put data in to the database, replacing any old data."""
         datastr = json.dumps(new_data)
         self.client.set(key, datastr)
         return self.get(key)
 
-    def patch(self, key, new_data, data_handler=None):
+    def patch(self, key: str, new_data: JsonDict,
+              data_handler: Optional[Callable[[JsonDict],JsonDict]]=None) -> JsonDict:
         """Patch data in the database.
            data_handler provides a way to operate on the full patched data"""
         datastr = self.client.get(key)
@@ -195,13 +198,13 @@ class DBWrapper():
         self.client.set(key, datastr)
         return self.get(key)
 
-    def rename(self, old_key, new_key):
+    def rename(self, old_key: str, new_key: str):
         """
         Store data from old_key under new_key instead
         """
         self.client.rename(old_key, new_key)
 
-    def _update(self, data, new_data):
+    def _update(self, data: JsonDict, new_data: JsonDict) -> JsonDict:
         """Recursively patches json to allow sub-fields to be patched.
 
         Keyword arguments:
@@ -215,20 +218,23 @@ class DBWrapper():
                 data[k] = v
         return data
 
-    def delete(self, key):
+    def delete(self, key: str) -> None:
         """Deletes data from the database."""
         self.client.delete(key)
 
-    def info(self):
+    def info(self) -> dict:
         """Returns the database info."""
         return self.client.info()
 
 
-def redis_error_handler(func):
+P = ParamSpec('P')
+R = TypeVar('R')
+
+def redis_error_handler(func: Callable[P, R]) -> Callable[P, R]:
     """Decorator for returning better errors if Redis is unreachable"""
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             if 'body' in kwargs:
                 # Our get/patch functions don't take body, but the **kwargs
@@ -245,6 +251,6 @@ def redis_error_handler(func):
     return wrapper
 
 
-def get_wrapper(db):
+def get_wrapper(db: int|str) -> DBWrapper:
     """Returns a database object."""
     return DBWrapper(db)
