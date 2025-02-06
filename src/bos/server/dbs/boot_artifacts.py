@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 #
 import logging
 
+from bos.common.types import JsonDict
 from bos.common.utils import get_current_timestamp
 from bos.server import redis_db_utils as dbutils
 
@@ -41,7 +42,7 @@ class BssTokenUnknown(BssTokenException):
 
 
 def record_boot_artifacts(token: str, kernel: str, kernel_parameters: str,
-                          initrd: str):
+                          initrd: str) -> None:
     """
     Associate the BSS token with the boot artifacts.
     BSS returns a token after BOS asks it to create or update the boot artifacts.
@@ -59,7 +60,7 @@ def record_boot_artifacts(token: str, kernel: str, kernel_parameters: str,
         })
 
 
-def get_boot_artifacts(token: str) -> dict:
+def get_boot_artifacts(token: str) -> JsonDict:
     """
     Get the boot artifacts associated with a BSS token.
 
