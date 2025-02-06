@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.30.12] - 2025-02-05
+### Fixed
+- CASMCMS-9270: Properly handle being asked to validate nonexistent session template; correct
+  nonexistent template error message
+
 ## [2.30.11] - 2025-01-15
 ### Fixed
 - CASMCMS-9255: Improved parsing of kernel paths to extract IMS IDs
