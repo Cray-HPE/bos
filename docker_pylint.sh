@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,4 +23,8 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-pylint "$@" $(cat ./srclist.txt)
+if [[ $# -eq 1 && $1 == "mypy" ]]; then
+  mypy $(cat ./srclist.txt)
+else
+  pylint "$@" $(cat ./srclist.txt)
+fi
