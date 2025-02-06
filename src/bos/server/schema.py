@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,6 +24,7 @@
 
 import json
 import logging
+from typing import Any
 
 import jsonschema
 
@@ -40,37 +41,37 @@ class Validator:
             oas = json.load(f)
         self.api_schema = oas["components"]["schemas"]
 
-    def validate(self, data, schema_name):
+    def validate(self, data: Any, schema_name: str):
         jsonschema.validate(data, self.api_schema[schema_name])
 
-    def validate_component(self, data):
+    def validate_component(self, data: Any) -> None:
         self.validate(data, "V2ComponentWithId")
 
-    def validate_extended_session_status(self, data):
+    def validate_extended_session_status(self, data: Any) -> None:
         self.validate(data, "V2SessionExtendedStatus")
 
-    def validate_options(self, data):
+    def validate_options(self, data: Any) -> None:
         self.validate(data, "V2Options")
 
-    def validate_session(self, data):
+    def validate_session(self, data: Any) -> None:
         self.validate(data, "V2Session")
 
-    def validate_session_template(self, data):
+    def validate_session_template(self, data: Any) -> None:
         self.validate(data, "V2SessionTemplate")
 
-    def get_schema_fields(self, schema_name: str):
+    def get_schema_fields(self, schema_name: str) -> set[str]:
         return set(self.api_schema[schema_name]["properties"])
 
     @property
-    def session_template_fields(self):
+    def session_template_fields(self) -> set[str]:
         return self.get_schema_fields("V2SessionTemplate")
 
     @property
-    def boot_set_fields(self):
+    def boot_set_fields(self) -> set[str]:
         return self.get_schema_fields("V2BootSet")
 
     @property
-    def cfs_fields(self):
+    def cfs_fields(self) -> set[str]:
         return self.get_schema_fields("V2CfsParameters")
 
 
