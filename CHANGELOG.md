@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CASMCMS-9277: Added `mypy` into the build pipeline as a non-gating step
+
 ### Changed
 - CASMCMS-9274: Prevent [`SNYK-PYTHON-WERKZEUG-6808933`](https://security.snyk.io/vuln/SNYK-PYTHON-WERKZEUG-6808933) from causing builds to fail.
 - CASMCMS-9265: Improve Python type annotations in sessions controller code
