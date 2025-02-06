@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,6 +23,7 @@
 #
 import logging
 import connexion
+from connexion.lifecycle import ConnexionResponse
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
@@ -125,8 +126,8 @@ def get_v2_sessiontemplate(session_template_id):
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404,
-            title="Sessiontemplate could not found.",
-            detail=f"Sessiontemplate {session_template_id} could not be found")
+            title="Session template not found.",
+            detail=f"Session template {session_template_id} could not be found")
     template = DB.get(template_key)
     return template, 200
 
@@ -160,8 +161,8 @@ def delete_v2_sessiontemplate(session_template_id):
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404,
-            title="Sessiontemplate could not found.",
-            detail=f"Sessiontemplate {session_template_id} could not be found")
+            title="Session template not found.",
+            detail=f"Session template {session_template_id} could not be found")
     return DB.delete(template_key), 204
 
 
@@ -181,8 +182,8 @@ def patch_v2_sessiontemplate(session_template_id):
         LOGGER.warning("Session template not found: %s", session_template_id)
         return connexion.problem(
             status=404,
-            title="Sessiontemplate could not found.",
-            detail=f"Sessiontemplate {session_template_id} could not be found")
+            title="Session template not found.",
+            detail=f"Session template {session_template_id} could not be found")
 
     try:
         template_data = get_request_json()
@@ -215,10 +216,13 @@ def validate_v2_sessiontemplate(session_template_id: str):
     LOGGER.debug(
         "GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate",
         session_template_id)
-    data, status_code = get_v2_sessiontemplate(session_template_id)
+    response = get_v2_sessiontemplate(session_template_id)
+    if isinstance(response, ConnexionResponse):
+        # This means it was an error, so we just pass it up
+        return response
 
-    if status_code != 200:
-        return data, status_code
+    # Otherwise it should be a tuple of data and 200 status code
+    data, _ = response
 
     # We assume boot because it and reboot are the most demanding from a validation
     # standpoint.
