@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.51] - 2025-02-05
+### Fixed
+- CASMCMS-9270: Properly handle being asked to validate nonexistent session template; correct
+  nonexistent template error message
+
 ## [2.0.50] - 2025-01-07
 ### Added
 - BOS options: bss_read_timeout, hsm_read_timeout, capmc_read_timeout.
