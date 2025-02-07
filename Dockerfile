@@ -95,7 +95,7 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     pip3 list --format freeze && \
     python3 -m convert_oas30_schemas /app/openapi.json /app/lib/bos/server/openapi.jsonschema && \
     cat /app/lib/bos/server/openapi.jsonschema
-RUN pylint /app/convert_oas/convert_oas.py || true
+
 
 # Base image
 FROM alpine-base AS base
