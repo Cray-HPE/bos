@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019, 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019, 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,12 +26,13 @@ import os
 from urllib.parse import urlparse, urlunparse
 
 import connexion
+from connexion.lifecycle import ConnexionResponse
 import flask
 
 LOGGER = logging.getLogger(__name__)
 
 
-def url_for(endpoint, **values):
+def url_for(endpoint: str, **values) -> str:
     """Calculate the URL for an endpoint
 
     This wraps flask.url_for. flask.url_for doesn't generate the path that we
@@ -73,3 +74,22 @@ def url_for(endpoint, **values):
     # TODO(CASMCMS-1869): there might be a better way to do this by overriding
     # url_adapter in the context or request, see
     # https://github.com/pallets/flask/blob/a74864ec229141784374f1998324d2cbac837295/flask/helpers.py#L302
+
+
+def _400_bad_request(msg: str) -> ConnexionResponse:
+    """
+    ProblemBadRequest
+    """
+    return connexion.problem(
+        status=400,
+        title="Bad Request",
+        detail=msg)
+
+def _404_resource_not_found(resource_type: str, resource_id: str) -> ConnexionResponse:
+    """
+    ProblemResourceNotFound
+    """
+    return connexion.problem(
+        status=404,
+        title="The resource was not found",
+        detail=f"{resource_type} '{resource_id}' does not exist")

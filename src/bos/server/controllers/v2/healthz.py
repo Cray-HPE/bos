@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,6 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+from typing import Literal
 
 from bos.common.utils import exc_type_msg
 from bos.server.models.healthz import Healthz
@@ -32,7 +33,7 @@ DB = redis_db_utils.get_wrapper(db='options')
 LOGGER = logging.getLogger(__name__)
 
 
-def _get_db_status():
+def _get_db_status() -> str:
     available = False
     try:
         if DB.info():
@@ -45,7 +46,7 @@ def _get_db_status():
     return 'not_available'
 
 
-def get_v2_healthz():
+def get_v2_healthz() -> tuple[Healthz, Literal[200]]:
     """GET /v2/healthz
 
     Query BOS etcd for health status

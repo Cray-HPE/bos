@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,6 +24,7 @@
 
 import logging
 import time
+from typing import Optional
 
 import bos.server.redis_db_utils as dbutils
 
@@ -66,7 +67,7 @@ def all_db_ready() -> bool:
 
 def delete_from_db(db: dbutils.DBWrapper,
                    key: str,
-                   err_msg: str | None = None) -> None:
+                   err_msg: Optional[str] = None) -> None:
     if err_msg is None:
         LOGGER.warning("Deleting %s under DB key '%s'", db.db_string, key)
     else:
@@ -80,15 +81,15 @@ def delete_from_db(db: dbutils.DBWrapper,
                        db.db_string, key)
 
 
-def delete_component(key: str, err_msg: str | None = None) -> None:
+def delete_component(key: str, err_msg: Optional[str] = None) -> None:
     delete_from_db(COMP_DB, key, err_msg)
 
 
-def delete_template(key: str, err_msg: str | None = None) -> None:
+def delete_template(key: str, err_msg: Optional[str] = None) -> None:
     delete_from_db(TEMP_DB, key, err_msg)
 
 
-def delete_session(key: str, err_msg: str | None = None) -> None:
+def delete_session(key: str, err_msg: Optional[str] = None) -> None:
     delete_from_db(SESS_DB, key, err_msg)
     LOGGER.info("Deleting associated session status, if it exists")
     delete_from_db(STAT_DB, key, err_msg)

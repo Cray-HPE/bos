@@ -28,7 +28,8 @@ from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.clients.endpoints import ApiResponseError, BaseEndpoint, JsonData, RequestsMethod
+from bos.common.clients.endpoints import ApiResponseError, BaseEndpoint, RequestsMethod
+from bos.common.types import JsonData
 from bos.common.utils import PROTOCOL
 
 from .exceptions import HWStateManagerException
