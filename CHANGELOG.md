@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.33.0] - 2025-02-12
+
 ### Added
 - CASMCMS-9277: Added `mypy` into the build pipeline as a non-gating step
 
