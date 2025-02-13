@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - CASMCMS-9274: Prevent [`SNYK-PYTHON-WERKZEUG-6808933`](https://security.snyk.io/vuln/SNYK-PYTHON-WERKZEUG-6808933) from causing builds to fail.
 
+### Dependencies
+- Pin Alpine version in release branch
+
 ## [2.30.12] - 2025-02-05
 ### Fixed
 - CASMCMS-9270: Properly handle being asked to validate nonexistent session template; correct
