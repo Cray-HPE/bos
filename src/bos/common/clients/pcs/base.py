@@ -64,4 +64,7 @@ class BasePcsEndpoint(BaseEndpoint, ABC):
     This base class provides generic access to the PCS API.
     """
     BASE_ENDPOINT = ENDPOINT
-    error_handler = PcsRequestErrorHandler
+
+    @property
+    def error_handler(self) -> PcsRequestErrorHandler:
+        return PcsRequestErrorHandler
