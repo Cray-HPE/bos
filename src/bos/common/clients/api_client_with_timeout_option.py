@@ -21,9 +21,10 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from abc import ABC, abstractproperty
-from requests_retry_session import RequestsRetryAdapterArgs
+from abc import ABC, abstractmethod
 from typing import Optional, Unpack
+
+from requests_retry_session import RequestsRetryAdapterArgs
 
 from bos.common.clients.bos.options import options
 from bos.common.options import BaseOptions
@@ -42,14 +43,15 @@ class APIClientWithTimeoutOption(APIClient, ABC):
                  **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
         self._bos_options = options if bos_options is None else bos_options
         kwargs = self.retry_kwargs
-        kwargs.update(adapter_kwargs)        
+        kwargs.update(adapter_kwargs)
         super().__init__(**kwargs)
 
     @property
     def bos_options(self) -> BaseOptions:
         return self._bos_options
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def read_timeout(self) -> int:
         """
         Return the read_timeout value for this client

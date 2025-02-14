@@ -23,8 +23,7 @@
 #
 from typing import NoReturn
 
-from bos.common.clients.endpoints import ApiResponseError, RequestData, RequestErrorHandler, \
-                                         RequestsMethod
+from bos.common.clients.endpoints import ApiResponseError, RequestData, RequestErrorHandler
 
 from .base import BaseImsEndpoint
 from .defs import IMS_TAG_OPERATIONS, LOGGER

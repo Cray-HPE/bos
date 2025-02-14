@@ -32,7 +32,7 @@ from urllib3.exceptions import MaxRetryError
 
 from bos.common.utils import compact_response_text, exc_type_msg
 
-from .defs import RequestData, RequestsMethod
+from .defs import RequestData
 from .exceptions import ApiResponseError
 
 LOGGER = logging.getLogger(__name__)

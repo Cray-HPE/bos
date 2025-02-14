@@ -29,8 +29,10 @@ import connexion
 from connexion.lifecycle import ConnexionResponse
 
 from bos.common.utils import exc_type_msg, get_current_timestamp
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_component_set, \
-                                    tenant_error_handler, get_tenant_aware_key
+from bos.common.tenant_utils import (get_tenant_aware_key,
+                                     get_tenant_component_set,
+                                     get_tenant_from_header,
+                                     tenant_error_handler)
 from bos.common.types.general import JsonDict
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils

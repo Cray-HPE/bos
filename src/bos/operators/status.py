@@ -28,8 +28,11 @@ from bos.common.clients.bos.options import options
 from bos.common.types.components import ComponentRecord
 from bos.common.values import Phase, Status, Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
-    DesiredConfigurationIsNone, LastActionIs, TimeSinceLastAction
+from bos.operators.filters import (BootArtifactStatesMatch,
+                                   DesiredBootStateIsOff,
+                                   DesiredConfigurationIsNone,
+                                   LastActionIs,
+                                   TimeSinceLastAction)
 
 LOGGER = logging.getLogger(__name__)
 

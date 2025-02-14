@@ -26,7 +26,6 @@ import threading
 import time
 from typing import Literal, NoReturn
 
-import connexion
 from connexion.lifecycle import ConnexionResponse
 
 from bos.common.options import DEFAULTS, OptionsCache

@@ -22,8 +22,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC
-from requests_retry_session import RequestsRetryAdapterArgs
 from typing import Type, TypeVar, Unpack
+
+from requests_retry_session import RequestsRetryAdapterArgs
 
 from bos.common.clients.endpoints import BaseGenericEndpoint
 from bos.common.utils import RetrySessionManager
