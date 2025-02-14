@@ -48,7 +48,10 @@ class BaseGenericEndpoint(ABC, Generic[RequestReturnT]):
     """
     BASE_ENDPOINT: str = ''
     ENDPOINT: str = ''
-    error_handler: BaseRequestErrorHandler = RequestErrorHandler
+
+    @property
+    def error_handler(self) -> BaseRequestErrorHandler:
+        return RequestErrorHandler
 
     def __init__(self, session: requests.Session):
         super().__init__()
