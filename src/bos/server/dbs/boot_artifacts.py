@@ -23,7 +23,7 @@
 #
 import logging
 
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.common.utils import get_current_timestamp
 from bos.server import redis_db_utils as dbutils
 

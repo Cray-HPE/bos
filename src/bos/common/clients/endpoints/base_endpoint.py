@@ -25,7 +25,7 @@ from abc import ABC
 
 import requests
 
-from bos.common.types import JsonData
+from bos.common.types.general import JsonData
 
 from .base_generic_endpoint import BaseGenericEndpoint
 from .response_data import ResponseData

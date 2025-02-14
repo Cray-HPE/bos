@@ -35,7 +35,7 @@ from dateutil.parser import parse
 import requests
 import requests_retry_session as rrs
 
-from bos.common.types import JsonDict
+from bos.common.types.components import ComponentRecord
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
@@ -143,7 +143,7 @@ def exc_type_msg(exc: Exception) -> str:
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
 
-def using_sbps(component: str) -> bool:
+def using_sbps(component: ComponentRecord) -> bool:
     """
     If the component is using the Scalable Boot Provisioning Service (SBPS) to
     provide the root filesystem, then return True.
@@ -175,7 +175,7 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     return "root=sbps-s3" in kernel_parameters
 
 
-def components_by_id(components: list[JsonDict]) -> JsonDict:
+def components_by_id(components: list[ComponentRecord]) -> dict[str, ComponentRecord]:
     """
     Input:
     * components: a list containing individual components
@@ -189,7 +189,7 @@ def components_by_id(components: list[JsonDict]) -> JsonDict:
     return {component["id"]: component for component in components}
 
 
-def reverse_components_by_id(components_by_id_map: JsonDict) -> list[JsonDict]:
+def reverse_components_by_id(components_by_id_map: dict[str, ComponentRecord]) -> list[ComponentRecord]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the
