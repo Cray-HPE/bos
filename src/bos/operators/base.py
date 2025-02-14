@@ -22,6 +22,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
 """
 BOS Operator - A Python operator for the Boot Orchestration Service.
 """
@@ -205,8 +206,9 @@ class BaseOperator(ABC):
             self.__max_batch_size = max_batch_size
         return max_batch_size
 
-    def _chunk_components(
-            self, components: list[ComponentRecord]) -> Generator[list[ComponentRecord], None, None]:
+    def _chunk_components(self,
+                          components: list[ComponentRecord]) -> Generator[list[ComponentRecord],
+                                                                          None, None]:
         """
         Break up the components into groups of no more than max_batch_size nodes,
         and yield each group in turn.

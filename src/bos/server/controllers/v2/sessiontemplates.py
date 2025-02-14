@@ -27,8 +27,9 @@ from typing import Literal, Optional
 
 from connexion.lifecycle import ConnexionResponse
 
-from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
-                                    reject_invalid_tenant
+from bos.common.tenant_utils import (get_tenant_aware_key,
+                                     get_tenant_from_header,
+                                     reject_invalid_tenant)
 from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
