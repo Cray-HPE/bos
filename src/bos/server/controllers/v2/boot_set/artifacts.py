@@ -24,7 +24,7 @@
 
 from bos.common.clients.s3 import S3Object, ArtifactNotFound
 from bos.common.utils import exc_type_msg
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 
 from .defs import LOGGER

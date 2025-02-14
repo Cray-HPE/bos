@@ -32,7 +32,7 @@ import connexion
 import requests
 from requests.exceptions import HTTPError
 
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg, retry_session_get, PROTOCOL
 
 LOGGER = logging.getLogger(__name__)

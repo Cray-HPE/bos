@@ -28,8 +28,8 @@ import logging
 import string
 from typing import Optional
 
-from bos.common.types import JsonDict
 from bos.common.tenant_utils import get_tenant_aware_key
+from bos.common.types.general import JsonDict
 from bos.server.controllers.v2.boot_set import DEFAULT_ARCH, HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
 

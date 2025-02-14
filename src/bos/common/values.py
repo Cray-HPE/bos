@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,6 +21,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+from bos.common.types.components import (BootArtifacts,
+                                         ComponentActualState,
+                                         ComponentDesiredState,
+                                         ComponentStagedState)
+
 # Phases
 class Phase:
     powering_on = "powering_on"
@@ -52,17 +58,24 @@ class Status:
     on_hold = "on_hold"
 
 
-EMPTY_BOOT_ARTIFACTS = {"kernel": "", "kernel_parameters": "", "initrd": ""}
+EMPTY_BOOT_ARTIFACTS: BootArtifacts = {
+    "kernel": "",
+    "kernel_parameters": "",
+    "initrd": ""
+}
 
-EMPTY_ACTUAL_STATE = {"boot_artifacts": EMPTY_BOOT_ARTIFACTS, "bss_token": ""}
+EMPTY_ACTUAL_STATE: ComponentActualState = {
+    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+    "bss_token": ""
+}
 
-EMPTY_DESIRED_STATE = {
+EMPTY_DESIRED_STATE: ComponentDesiredState = {
     "configuration": "",
     "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
     "bss_token": ""
 }
 
-EMPTY_STAGED_STATE = {
+EMPTY_STAGED_STATE: ComponentStagedState = {
     "configuration": "",
     "boot_artifacts": EMPTY_BOOT_ARTIFACTS
 }

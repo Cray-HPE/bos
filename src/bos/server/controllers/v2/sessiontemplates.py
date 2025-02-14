@@ -29,7 +29,7 @@ from connexion.lifecycle import ConnexionResponse
 
 from bos.common.tenant_utils import get_tenant_from_header, get_tenant_aware_key, \
                                     reject_invalid_tenant
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found

@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CASMCMS-9285: Convert `bos.common.types` into a submodule; begin creating type definitions for BOS structures;
+  select minor type annotation improvements
+
 ## [2.33.0] - 2025-02-12
 
 ### Added
