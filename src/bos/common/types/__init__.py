@@ -21,33 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import json
-from typing import NamedTuple, Self
 
-import requests
-
-from bos.common.types.general import JsonData, JsonDict
-
-
-class ResponseData(NamedTuple):
-    """
-    Encapsulates data from a response to an API request. This allows the
-    response itself to be cleaned up when its context manager exits.
-    """
-    headers: JsonDict
-    ok: bool
-    reason: str
-    status_code: int
-    text: bytes | None
-
-    @property
-    def body(self) -> JsonData:
-        return json.loads(self.text) if self.text else None
-
-    @classmethod
-    def from_response(cls, resp: requests.Response) -> Self:
-        return cls(headers=resp.headers,
-                   ok=resp.ok,
-                   reason=resp.reason,
-                   status_code=resp.status_code,
-                   text=resp.text)
+"""
+BOS type annotations
+"""

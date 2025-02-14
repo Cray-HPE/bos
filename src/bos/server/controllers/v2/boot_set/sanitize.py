@@ -25,7 +25,7 @@
 from typing import Optional
 
 from bos.common.utils import exc_type_msg
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.utils import canonize_xname
 

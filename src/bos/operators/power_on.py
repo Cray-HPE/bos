@@ -26,7 +26,6 @@
 # Standard imports
 from collections import defaultdict
 import logging
-from typing import Dict, List, Set, Tuple, Union
 
 # Third party imports
 from requests import HTTPError
@@ -34,6 +33,7 @@ from requests import HTTPError
 # BOS module imports
 from bos.common.clients.ims import get_ims_id_from_s3_url
 from bos.common.clients.s3 import S3Url
+from bos.common.types.components import ComponentRecord
 from bos.common.utils import exc_type_msg, using_sbps_check_kernel_parameters, \
                              components_by_id
 from bos.common.values import Action, Status
@@ -42,6 +42,8 @@ from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger(__name__)
 
+# This type hint is too unwieldy without giving it a name
+type BootArtifactsToCompIds = dict[tuple[str, str, str], set[str]]
 
 class PowerOnOperator(BaseOperator):
     """
@@ -64,7 +66,7 @@ class PowerOnOperator(BaseOperator):
             self.HSMState()
         ]
 
-    def _act(self, components: Union[List[dict], None]):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         if not components:
             return components
         self._preset_last_action(components)
@@ -97,7 +99,8 @@ class PowerOnOperator(BaseOperator):
         return components
 
     def _sort_components_by_boot_artifacts(
-            self, components: List[dict]) -> tuple[Dict, Dict]:
+            self, components: list[ComponentRecord]) -> tuple[BootArtifactsToCompIds,
+                                                              dict[str, str]]:
         """
         Create a two dictionaries.
         The first dictionary has keys with a unique combination of boot artifacts associated with
@@ -105,7 +108,7 @@ class PowerOnOperator(BaseOperator):
          * kernel
          * kernel parameters
          * initrd
-        The first dictionary's values are a set of the nodes that boot with those boot
+        The first dictionary's values are a set of the node IDs that boot with those boot
         artifacts.
 
         The second dictionary has keys that are nodes and values are that node's BOS
@@ -134,9 +137,10 @@ class PowerOnOperator(BaseOperator):
 
         return (boot_artifacts, bos_sessions)
 
-    def _set_bss(self, boot_artifacts, bos_sessions, retries=5):
+    def _set_bss(self, boot_artifacts: BootArtifactsToCompIds, bos_sessions: dict[str, str],
+                 retries: int=5) -> None:
         """
-        Set the boot artifacts (kernel, kernel parameters, and initrd) in BSS.
+        set the boot artifacts (kernel, kernel parameters, and initrd) in BSS.
         Receive a BSS_REFERRAL_TOKEN from BSS.
         Map the token to the boot artifacts.
         Update each node's desired state with the token.
@@ -145,7 +149,7 @@ class PowerOnOperator(BaseOperator):
         infrequent use, retry up to retries number of times.
         """
         if not boot_artifacts:
-            # If we have been passed an empty list, there is nothing to do.
+            # If we have been passed an empty dict, there is nothing to do.
             LOGGER.debug("_set_bss: No components to act on")
             return
         bss_tokens = []
@@ -199,8 +203,8 @@ class PowerOnOperator(BaseOperator):
                      redacted_component_updates)
         self.client.bos.components.update_components(bss_tokens)
 
-    def _tag_images(self, boot_artifacts: Dict[Tuple[str, str, str], Set[str]],
-                    components: List[dict]) -> None:
+    def _tag_images(self, boot_artifacts: BootArtifactsToCompIds,
+                    components: list[ComponentRecord]) -> None:
         """
         If the component is receiving its root file system via the SBPS provisioner,
         then tag that image in IMS, so that SBPS makes it available.
@@ -269,11 +273,11 @@ class PowerOnOperator(BaseOperator):
                 self._record_component_errors(my_components_by_id, image_id_to_nodes[image],
                                               str(e))
 
-    def _record_component_errors(self, my_components_by_id: Dict[str, dict],
-                                 component_set: Set[str], err_msg: str) -> None:
+    def _record_component_errors(self, my_components_by_id: dict[str, ComponentRecord],
+                                 component_set: set[str], err_msg: str) -> None:
         """
         my_components_by_id: Mapping from BOS component ID to component dictionary.
-        component_set: Set of component IDs that need their error status updated.
+        component_set: set of component IDs that need their error status updated.
         err_msg: Error message to use for updating their status.
 
         This updates the error status for each of the specified components, and then

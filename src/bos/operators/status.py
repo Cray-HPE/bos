@@ -25,6 +25,7 @@
 import logging
 
 from bos.common.clients.bos.options import options
+from bos.common.types.components import ComponentRecord
 from bos.common.values import Phase, Status, Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import DesiredBootStateIsOff, BootArtifactStatesMatch, \
@@ -69,7 +70,7 @@ class StatusOperator(BaseOperator):
     def filters(self):
         return []
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         return components
 
     def _run(self) -> None:
@@ -83,7 +84,7 @@ class StatusOperator(BaseOperator):
         for chunk in self._chunk_components(components):
             self._run_on_chunk(chunk)
 
-    def _run_on_chunk(self, components) -> None:
+    def _run_on_chunk(self, components: list[ComponentRecord]) -> None:
         """
         Acts on a chunk of components
         """
@@ -125,7 +126,7 @@ class StatusOperator(BaseOperator):
             cfs_states[component['id']] = component
         return cfs_states
 
-    def _check_status(self, component, power_state, cfs_component):
+    def _check_status(self, component: ComponentRecord, power_state, cfs_component):
         """
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
@@ -185,7 +186,7 @@ class StatusOperator(BaseOperator):
             return updated_component
         return None
 
-    def _calculate_status(self, component, power_state, cfs_component):
+    def _calculate_status(self, component: ComponentRecord, power_state, cfs_component):
         """
         Calculate a component's status based on its current state, power state, and
         CFS state.
