@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.34.1] - 2025-02-18
+
+### Fixed
+- CASMCMS-9288: Fix session setup operator attempting to use uninitialized API client
+
 ## [2.34.0] - 2025-02-18
 
 ### Changed

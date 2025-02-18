@@ -24,6 +24,7 @@
 #
 import logging
 
+from bos.common.clients.bos import BOSClient
 from bos.common.utils import get_current_timestamp
 from bos.operators.base import BaseOperator, main
 
@@ -55,8 +56,9 @@ class SessionCompletionOperator(BaseOperator):
         for session in sessions:
             components = self._get_incomplete_components(session["name"])
             if not components:
-                self._mark_session_complete(session["name"],
-                                            session.get("tenant"))
+                mark_session_complete(session_id=session["name"],
+                                      tenant=session.get("tenant"),
+                                      bos_client=self.client.bos)
 
     def _get_incomplete_sessions(self):
         return self.client.bos.sessions.get_sessions(status='running')
@@ -68,16 +70,28 @@ class SessionCompletionOperator(BaseOperator):
             staged_session=session_id)
         return components
 
-    def _mark_session_complete(self, session_id, tenant):
-        self.client.bos.sessions.update_session(session_id, tenant, {
-            'status': {
-                'status': 'complete',
-                'end_time': get_current_timestamp()
-            }
-        })
-        # This call causes the session status to saved in the database.
-        self.client.bos.sessions.post_session_status(session_id, tenant)
-        LOGGER.info('Session %s is complete', session_id)
+
+# CASMCMS-9288: This function is not a method of the operator class, because it is also called
+# by the session setup operator
+def mark_session_complete(session_id: str, tenant: str | None, bos_client: BOSClient,
+                          err: str | None=None) -> None:
+    """
+    Update the session to mark it complete and set the end time. If an error message is specified,
+    include that as well.
+    Save the session status to the database.
+    """
+    comp_patch_data = {
+        'status': {
+            'status': 'complete',
+            'end_time': get_current_timestamp()
+        }
+    }
+    if err is not None:
+        comp_patch_data["status"]["error"] = err
+    bos_client.sessions.update_session(session_id, tenant, comp_patch_data)
+    # This call causes the session status to saved in the database.
+    bos_client.sessions.post_session_status(session_id, tenant)
+    LOGGER.info('Session %s is complete', session_id)
 
 
 if __name__ == '__main__':
