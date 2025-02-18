@@ -26,7 +26,7 @@ import re
 
 import connexion
 
-from bos.common.types import JsonData
+from bos.common.types.general import JsonData
 
 LOGGER = logging.getLogger(__name__)
 

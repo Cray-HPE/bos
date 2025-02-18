@@ -21,7 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 import logging
 
 from bos.common.clients.endpoints import BaseEndpoint
@@ -53,7 +53,8 @@ class BasePagedCfsEndpoint(BaseCfsEndpoint, ABC):
     This base class provides generic access to the CFS API, for endpoints that support paging.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def ITEM_FIELD_NAME(self) -> str:
         """
         Return the name of the field in the paged responses that contains

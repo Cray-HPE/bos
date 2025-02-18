@@ -22,6 +22,31 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-type JsonData = bool | str | None | int | float | list[JsonData] | dict[str, JsonData]
-type JsonDict = dict[str, JsonData]
-type JsonList = list[JsonData]
+"""
+Type annotation definitions for BOS sessions
+"""
+
+from typing import Literal, Optional, Required, TypedDict
+
+SessionStatusLabel = Literal['complete', 'pending', 'running']
+
+class SessionStatus(TypedDict, total=False):
+    # Optional means these can be a string or be None
+    end_time: Optional[str]
+    error: Optional[str]
+    start_time: str
+    status: SessionStatusLabel
+
+SessionOperation = Literal['boot', 'reboot', 'shutdown']
+
+class Session(TypedDict, total=False):
+    components: str
+    include_disabled: bool
+    limit: str
+    name: Required[str]
+    operation: Required[SessionOperation]
+    stage: bool
+    status: Required[SessionStatus]
+    template_name: Required[str]
+    # Optional means this can be a string or be None
+    tenant: Optional[str]

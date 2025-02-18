@@ -26,11 +26,10 @@ import threading
 import time
 from typing import Literal, NoReturn
 
-import connexion
 from connexion.lifecycle import ConnexionResponse
 
 from bos.common.options import DEFAULTS, OptionsCache
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request

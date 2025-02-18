@@ -26,7 +26,7 @@ from typing import NamedTuple, Self
 
 import requests
 
-from bos.common.types import JsonData, JsonDict
+from bos.common.types.general import JsonData, JsonDict
 
 
 class ResponseData(NamedTuple):

@@ -23,8 +23,7 @@
 #
 from typing import NoReturn
 
-from bos.common.clients.endpoints import ApiResponseError, RequestData, RequestErrorHandler, \
-                                         RequestsMethod
+from bos.common.clients.endpoints import ApiResponseError, RequestData, RequestErrorHandler
 
 from .base import BaseImsEndpoint
 from .defs import IMS_TAG_OPERATIONS, LOGGER
@@ -48,7 +47,10 @@ class ImsImageRequestErrorHandler(RequestErrorHandler):
 
 class ImagesEndpoint(BaseImsEndpoint):
     ENDPOINT = 'images'
-    error_handler = ImsImageRequestErrorHandler
+
+    @property
+    def error_handler(self) -> ImsImageRequestErrorHandler:
+        return ImsImageRequestErrorHandler
 
     def get_image(self, image_id: str) -> dict:
         return self.get_item(image_id)

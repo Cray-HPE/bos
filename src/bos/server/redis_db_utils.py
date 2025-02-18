@@ -31,7 +31,7 @@ from typing import Generator, Optional, ParamSpec, TypeVar
 import connexion
 import redis
 
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
@@ -132,7 +132,8 @@ class DBWrapper():
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)
         If start_after_id is specified, all ids lexically <= that id will be skipped.
-        If page_size is specified, the number of items in the returned list will be equal to or less than the page_size.
+        If page_size is specified, the number of items in the returned list will be equal
+        to or less than the page_size.
         More elements may remain and additional queries will be needed to acquire them.
         """
         data = []

@@ -22,6 +22,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
 """
 BOS Operator - A Python operator for the Boot Orchestration Service.
 """
@@ -33,7 +34,7 @@ import logging
 import threading
 import os
 import time
-from typing import Generator, List, NoReturn, Type
+from typing import Generator, NoReturn, Optional, Type
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
@@ -43,6 +44,7 @@ from bos.common.clients.hsm import HSMClient
 from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg
+from bos.common.types.components import ComponentRecord
 from bos.common.values import Status
 from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, HSMState
 from bos.operators.filters.base import BaseFilter
@@ -136,7 +138,7 @@ class BaseOperator(ABC):
 
     @property
     @abstractmethod
-    def filters(self) -> List[Type[BaseFilter]]:
+    def filters(self) -> list[Type[BaseFilter]]:
         return []
 
     def BOSQuery(self, **kwargs) -> BOSQuery:
@@ -204,8 +206,9 @@ class BaseOperator(ABC):
             self.__max_batch_size = max_batch_size
         return max_batch_size
 
-    def _chunk_components(
-            self, components: List[dict]) -> Generator[List[dict], None, None]:
+    def _chunk_components(self,
+                          components: list[ComponentRecord]) -> Generator[list[ComponentRecord],
+                                                                          None, None]:
         """
         Break up the components into groups of no more than max_batch_size nodes,
         and yield each group in turn.
@@ -223,7 +226,7 @@ class BaseOperator(ABC):
         for chunk in self._chunk_components(components):
             self._run_on_chunk(chunk)
 
-    def _run_on_chunk(self, components: List[dict]) -> None:
+    def _run_on_chunk(self, components: list[ComponentRecord]) -> None:
         """
         Acts on a chunk of components
         """
@@ -249,14 +252,14 @@ class BaseOperator(ABC):
                 component["error"] = str(e)
         self._update_database(components)
 
-    def _get_components(self) -> List[dict]:
+    def _get_components(self) -> list[ComponentRecord]:
         """ Gets the list of all components that require actions  """
         components = []
         for f in self.filters:
             components = f.filter(components)
         return components
 
-    def _handle_failed_components(self, components: List[dict]) -> List[dict]:
+    def _handle_failed_components(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         """ Marks components failed if the retry limits are exceeded """
         if not components:
             # If we have been passed an empty list, there is nothing to do.
@@ -279,13 +282,13 @@ class BaseOperator(ABC):
         return good_components
 
     @abstractmethod
-    def _act(self, components: List[dict]) -> List[dict]:
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         """ The action taken by the operator on target components """
         raise NotImplementedError()
 
     def _update_database(self,
-                         components: List[dict],
-                         additional_fields: dict = None) -> None:
+                         components: list[ComponentRecord],
+                         additional_fields: Optional[dict] = None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
         Includes updating the last action, attempt count and error
@@ -327,7 +330,7 @@ class BaseOperator(ABC):
         LOGGER.debug('Updated components: %s', data)
         self.client.bos.components.update_components(data)
 
-    def _preset_last_action(self, components: List[dict]) -> None:
+    def _preset_last_action(self, components: list[ComponentRecord]) -> None:
         # This is done to eliminate the window between performing an action and marking the
         # nodes as acted
         # e.g. nodes could be powered-on without the correct power-on last action, causing
@@ -350,7 +353,7 @@ class BaseOperator(ABC):
         LOGGER.debug('Updated components: %s', data)
         self.client.bos.components.update_components(data)
 
-    def _update_database_for_failure(self, components: List[dict]) -> None:
+    def _update_database_for_failure(self, components: list[ComponentRecord]) -> None:
         """
         Updates the BOS database for all components the operator believes have failed
         """
@@ -378,8 +381,8 @@ class BaseOperator(ABC):
         self.client.bos.components.update_components(data)
 
 
-def chunk_components(components: List[dict],
-                     max_batch_size: int) -> Generator[List[dict], None, None]:
+def chunk_components(components: list[ComponentRecord],
+                     max_batch_size: int) -> Generator[list[ComponentRecord], None, None]:
     """
     Break up the components into groups of no more than max_batch_size nodes,
     and yield each group in turn.

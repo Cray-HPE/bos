@@ -23,22 +23,30 @@
 #
 
 # Standard imports
-from contextlib import nullcontext
+from contextlib import nullcontext, AbstractContextManager
+import copy
 import datetime
 from functools import partial
 import re
 import traceback
-from typing import Iterator, Optional, Unpack
+from typing import Optional, Unpack
 
 # Third party imports
 from dateutil.parser import parse
 import requests
 import requests_retry_session as rrs
 
-from bos.common.types import JsonDict
+from bos.common.types.components import ComponentRecord
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
+
+
+class InvalidDurationTimestamp(Exception):
+    """
+    Raised by duration_to_timedelta if it is asked to parse a timestamp
+    that does not fit its expected pattern
+    """
 
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.
@@ -66,7 +74,10 @@ def duration_to_timedelta(timestamp: str) -> datetime.timedelta:
         'd': 60 * 60 * 24,
         'w': 60 * 60 * 24 * 7
     }
-    timeval, durationval = TIME_DURATION_PATTERN.search(timestamp).groups()
+    match = TIME_DURATION_PATTERN.search(timestamp)
+    if match is None:
+        raise InvalidDurationTimestamp(f"Timestamp string does not match expected format: '{timestamp}'")
+    timeval, durationval = match.groups()
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
     return datetime.timedelta(seconds=seconds)
@@ -92,17 +103,16 @@ class RetrySessionManager(rrs.RetrySessionManager):
     def __init__(self,
                  protocol: str = PROTOCOL,
                  **adapter_kwargs: Unpack[rrs.RequestsRetryAdapterArgs]):
-        for key, value in DEFAULT_RETRY_ADAPTER_ARGS.items():
-            if key not in adapter_kwargs:
-                adapter_kwargs[key] = value
-        super().__init__(protocol=protocol, **adapter_kwargs)
+        _adapter_kwargs = copy.deepcopy(DEFAULT_RETRY_ADAPTER_ARGS)
+        _adapter_kwargs.update(adapter_kwargs)
+        super().__init__(protocol=protocol, **_adapter_kwargs)
 
 
 def retry_session(
     session: Optional[requests.Session] = None,
     protocol: Optional[str] = None,
     adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs] = None
-) -> Iterator[requests.Session]:
+) -> AbstractContextManager[requests.Session]:
     if session is not None:
         return nullcontext(session)
     kwargs = adapter_kwargs or {}
@@ -118,7 +128,7 @@ def retry_session_get(*get_args,
                       protocol: Optional[str] = None,
                       adapter_kwargs: Optional[
                           rrs.RequestsRetryAdapterArgs] = None,
-                      **get_kwargs) -> Iterator[requests.Response]:
+                      **get_kwargs) -> AbstractContextManager[requests.Response]:
     with retry_session(session=session,
                        protocol=protocol,
                        adapter_kwargs=adapter_kwargs) as _session:
@@ -143,7 +153,7 @@ def exc_type_msg(exc: Exception) -> str:
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
 
-def using_sbps(component: str) -> bool:
+def using_sbps(component: ComponentRecord) -> bool:
     """
     If the component is using the Scalable Boot Provisioning Service (SBPS) to
     provide the root filesystem, then return True.
@@ -175,7 +185,7 @@ def using_sbps_check_kernel_parameters(kernel_parameters: str) -> bool:
     return "root=sbps-s3" in kernel_parameters
 
 
-def components_by_id(components: list[JsonDict]) -> JsonDict:
+def components_by_id(components: list[ComponentRecord]) -> dict[str, ComponentRecord]:
     """
     Input:
     * components: a list containing individual components
@@ -189,7 +199,7 @@ def components_by_id(components: list[JsonDict]) -> JsonDict:
     return {component["id"]: component for component in components}
 
 
-def reverse_components_by_id(components_by_id_map: JsonDict) -> list[JsonDict]:
+def reverse_components_by_id(components_by_id_map: dict[str, ComponentRecord]) -> list[ComponentRecord]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the

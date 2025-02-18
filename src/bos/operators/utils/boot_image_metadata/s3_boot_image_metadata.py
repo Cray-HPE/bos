@@ -25,8 +25,10 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from bos.common.clients.s3 import S3BootArtifacts, S3MissingConfiguration, S3Url, \
-                                           ArtifactNotFound
+from bos.common.clients.s3 import (ArtifactNotFound,
+                                   S3BootArtifacts,
+                                   S3MissingConfiguration,
+                                   S3Url)
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
 

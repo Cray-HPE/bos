@@ -23,9 +23,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
-from typing import Set
 from copy import copy
 
+from bos.common.types.components import ComponentRecord
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
 from bos.operators.base import BaseOperator, main
 
@@ -65,7 +65,7 @@ class DiscoveryOperator(BaseOperator):
     def filters(self):
         return []
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         return components
 
     def _run(self) -> None:
@@ -87,9 +87,9 @@ class DiscoveryOperator(BaseOperator):
             LOGGER.info("%s new component(s) added to BOS!", len(chunk))
 
     @property
-    def bos_components(self) -> Set[str]:
+    def bos_components(self) -> set[str]:
         """
-        The set of components currently known to BOS
+        The set of component IDs currently known to BOS
         """
         components = set()
         for component in self.client.bos.components.get_components():
@@ -97,16 +97,16 @@ class DiscoveryOperator(BaseOperator):
         return components
 
     @property
-    def hsm_xnames(self) -> Set[str]:
+    def hsm_xnames(self) -> set[str]:
         """
-        The set of components currently known to HSM State Manager
+        The set of component IDs currently known to HSM State Manager
         """
         return self.client.hsm.state_components.read_all_node_xnames()
 
     @property
-    def missing_components(self) -> Set[str]:
+    def missing_components(self) -> set[str]:
         """
-        The set of components that need to be added to BOS.
+        The set of component IDs that need to be added to BOS.
         """
         return self.hsm_xnames - self.bos_components
 

@@ -28,15 +28,21 @@ import logging
 import string
 from typing import Optional
 
-from bos.common.types import JsonDict
 from bos.common.tenant_utils import get_tenant_aware_key
+from bos.common.types.general import JsonDict
 from bos.server.controllers.v2.boot_set import DEFAULT_ARCH, HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
 
 from .db import TEMP_DB, delete_component, delete_session, delete_template
-from .validate import ValidationError, check_component, check_session, check_keys, \
-                      get_required_field, get_validate_tenant, is_valid_available_template_name, \
-                      validate_bootset_path, validate_against_schema
+from .validate import (ValidationError,
+                       check_component,
+                       check_session,
+                       check_keys,
+                       get_required_field,
+                       get_validate_tenant,
+                       is_valid_available_template_name,
+                       validate_bootset_path,
+                       validate_against_schema)
 
 LOGGER = logging.getLogger(__name__)
 

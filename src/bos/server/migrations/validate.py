@@ -25,7 +25,7 @@
 import logging
 
 from bos.common.tenant_utils import get_tenant_aware_key
-from bos.common.types import JsonData, JsonDict
+from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server.schema import validator
 
