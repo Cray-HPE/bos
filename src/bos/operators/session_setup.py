@@ -38,7 +38,7 @@ from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseOperator, main, chunk_components
 from bos.operators.filters import HSMState
-from bos.operators.session_completion import SessionCompletionOperator
+from bos.operators.session_completion import mark_session_complete
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.rootfs.factory import ProviderFactory
 
@@ -329,12 +329,7 @@ class Session:
         Input:
           err (string): The error that prevented the session from running
         """
-        self.bos_client.sessions.update_session(self.name, self.tenant,
-                                                {'status': {
-                                                    'error': err
-                                                }})
-        sco = SessionCompletionOperator()
-        sco._mark_session_complete(self.name, self.tenant)
+        mark_session_complete(self.name, self.tenant, self.bos_client, err=err)
         self._log(LOGGER.info, 'Session %s has failed.', self.name)
 
     def _log(self, logger, message, *xargs):
