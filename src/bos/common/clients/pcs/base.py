@@ -29,8 +29,10 @@ from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.clients.endpoints import ApiResponseError, BaseEndpoint, RequestErrorHandler, \
-                                         RequestData
+from bos.common.clients.endpoints import (ApiResponseError,
+                                          BaseEndpoint,
+                                          RequestErrorHandler,
+                                          RequestData)
 from bos.common.utils import PROTOCOL
 
 from .exceptions import PowerControlException
@@ -55,8 +57,8 @@ class PcsRequestErrorHandler(RequestErrorHandler):
         try:
             super().handle_exception(err, request_data)
         except (ApiResponseError, RequestsConnectionError, HTTPError,
-                JSONDecodeError, MaxRetryError) as err:
-            raise PowerControlException(err) from err
+                JSONDecodeError, MaxRetryError) as exc:
+            raise PowerControlException(exc) from exc
 
 
 class BasePcsEndpoint(BaseEndpoint, ABC):
@@ -64,4 +66,7 @@ class BasePcsEndpoint(BaseEndpoint, ABC):
     This base class provides generic access to the PCS API.
     """
     BASE_ENDPOINT = ENDPOINT
-    error_handler = PcsRequestErrorHandler
+
+    @property
+    def error_handler(self) -> PcsRequestErrorHandler:
+        return PcsRequestErrorHandler
