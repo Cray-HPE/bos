@@ -32,7 +32,7 @@ from urllib3.exceptions import MaxRetryError
 
 from bos.common.utils import compact_response_text, exc_type_msg
 
-from .defs import RequestData, RequestsMethod
+from .defs import RequestData
 from .exceptions import ApiResponseError
 
 LOGGER = logging.getLogger(__name__)
@@ -58,12 +58,12 @@ class RequestErrorHandler(BaseRequestErrorHandler):
     @classmethod
     def handle_api_response_error(cls, err: ApiResponseError,
                                   request_data: RequestData) -> NoReturn:
-        msg = (f"Non-2XX response ({err.response.status_code}) to "
+        msg = (f"Non-2XX response ({err.response_data.status_code}) to "
                f"{request_data.method_name} {request_data.url}; "
-               f"{err.response.reason} "
-               f"{compact_response_text(err.response.text)}")
+               f"{err.response_data.reason} "
+               f"{compact_response_text(err.response_data.text)}")
         LOGGER.error(msg)
-        raise ApiResponseError(msg, response=err.response) from err
+        raise err
 
     @classmethod
     def handle_connection_error(cls, err: RequestsConnectionError,
