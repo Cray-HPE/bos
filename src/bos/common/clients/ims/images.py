@@ -62,7 +62,7 @@ class ImagesEndpoint(BaseImsEndpoint):
                   image_id: str,
                   operation: str,
                   key: str,
-                  value: str = None) -> None:
+                  value: str | None = None) -> None:
         if operation not in IMS_TAG_OPERATIONS:
             msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
             LOGGER.error(msg)

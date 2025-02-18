@@ -23,7 +23,7 @@
 #
 from functools import partial
 import logging
-from typing import Literal, Optional
+from typing import Literal
 
 from connexion.lifecycle import ConnexionResponse
 
@@ -220,7 +220,7 @@ def validate_v2_sessiontemplate(session_template_id: str) -> tuple[str, Literal[
     return msg, 200
 
 
-def _get_filtered_templates(tenant: Optional[str]) -> list[JsonDict]:
+def _get_filtered_templates(tenant: str | None) -> list[JsonDict]:
     response = DB.get_all()
     if any([tenant]):
         response = [r for r in response if _matches_filter(r, tenant)]

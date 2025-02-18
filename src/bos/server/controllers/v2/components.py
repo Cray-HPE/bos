@@ -23,7 +23,7 @@
 #
 from functools import partial
 import logging
-from typing import Literal, Optional
+from typing import Literal
 
 import connexion
 from connexion.lifecycle import ConnexionResponse
@@ -48,13 +48,13 @@ SESSIONS_DB = dbutils.get_wrapper(db='sessions')
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids: Optional[str]=None,
-                      enabled: Optional[bool]=None,
-                      session: Optional[str]=None,
-                      staged_session: Optional[str]=None,
-                      phase: Optional[str]=None,
-                      status: Optional[str]=None,
-                      start_after_id: Optional[str]=None,
+def get_v2_components(ids: str | None=None,
+                      enabled: bool | None=None,
+                      session: str | None=None,
+                      staged_session: str | None=None,
+                      phase: str | None=None,
+                      status: str | None=None,
+                      start_after_id: str | None=None,
                       page_size: int=0) -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
     """Used by the GET /components API operation
 
@@ -91,14 +91,14 @@ def get_v2_components(ids: Optional[str]=None,
     return response, 200
 
 
-def get_v2_components_data(id_list: Optional[list[str]]=None,
-                           enabled: Optional[bool]=None,
-                           session: Optional[str]=None,
-                           staged_session: Optional[str]=None,
-                           phase: Optional[str]=None,
-                           status: Optional[str]=None,
-                           tenant: Optional[str]=None,
-                           start_after_id: Optional[str]=None,
+def get_v2_components_data(id_list: list[str] | None=None,
+                           enabled: bool | None=None,
+                           session: str | None=None,
+                           staged_session: str | None=None,
+                           phase: str | None=None,
+                           status: str | None=None,
+                           tenant: str | None=None,
+                           start_after_id: str | None=None,
                            page_size: int=0,
                            delete_timestamp: bool=False) -> list[JsonDict]:
     """Used by the GET /components API operation
@@ -139,12 +139,12 @@ def get_v2_components_data(id_list: Optional[list[str]]=None,
 
 
 def _filter_component(data: JsonDict,
-                      id_set: Optional[set[str]]=None,
-                      enabled: Optional[bool]=None,
-                      session: Optional[str]=None,
-                      staged_session: Optional[str]=None,
-                      phase: Optional[str]=None,
-                      status: Optional[str]=None,
+                      id_set: set[str] | None=None,
+                      enabled: bool | None=None,
+                      session: str | None=None,
+                      staged_session: str | None=None,
+                      phase: str | None=None,
+                      status: str | None=None,
                       delete_timestamp: bool=False) -> JsonDict | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:

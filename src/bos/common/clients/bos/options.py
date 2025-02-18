@@ -23,7 +23,6 @@
 #
 import logging
 import json
-from typing import Optional
 
 import requests
 from requests.exceptions import HTTPError
@@ -47,7 +46,7 @@ class Options(OptionsCache):
     result in network calls.
     """
 
-    def _get_options(self, session: Optional[requests.Session] = None) -> dict:
+    def _get_options(self, session: requests.Session | None = None) -> dict:
         """Retrieves the current options from the BOS api"""
         LOGGER.debug("GET %s", ENDPOINT)
         try:

@@ -26,7 +26,7 @@ from itertools import batched
 import functools
 import json
 import logging
-from typing import Generator, Optional, ParamSpec, TypeVar
+from typing import Generator, ParamSpec, TypeVar
 
 import connexion
 import redis
@@ -126,7 +126,7 @@ class DBWrapper():
 
     def get_all_filtered(self,
                          filter_func: Callable[[JsonDict], JsonDict | None],
-                         start_after_key: Optional[str] = None,
+                         start_after_key: str | None = None,
                          page_size: int = 0) -> list[JsonDict]:
         """
         Get an array of data for all keys after passing them through the specified filter
@@ -145,7 +145,7 @@ class DBWrapper():
                     break
         return data
 
-    def iter_values(self, start_after_key: Optional[str] = None) -> Generator[JsonDict, None, None]:
+    def iter_values(self, start_after_key: str | None = None) -> Generator[JsonDict, None, None]:
         """
         Iterate through every item in the database. Parse each item as JSON and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
@@ -187,7 +187,7 @@ class DBWrapper():
         return self.get(key)
 
     def patch(self, key: str, new_data: JsonDict,
-              data_handler: Optional[Callable[[JsonDict],JsonDict]]=None) -> JsonDict:
+              data_handler: Callable[[JsonDict],JsonDict] | None=None) -> JsonDict:
         """Patch data in the database.
            data_handler provides a way to operate on the full patched data"""
         datastr = self.client.get(key)

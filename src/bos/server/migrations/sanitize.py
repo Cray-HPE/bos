@@ -26,7 +26,6 @@ import copy
 import itertools
 import logging
 import string
-from typing import Optional
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.types.general import JsonDict
@@ -304,7 +303,7 @@ def sanitize_cfs_field(data: JsonDict) -> None:
         del data["cfs"]
 
 
-def get_unused_legal_template_name(name: str, tenant: Optional[str]) -> str:
+def get_unused_legal_template_name(name: str, tenant: str | None) -> str:
     """
     If the current name is legal, return it unchanged.
     Otherwise, try to find a name which is not in use and which is legal per the spec.
