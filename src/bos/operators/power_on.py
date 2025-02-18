@@ -34,8 +34,9 @@ from requests import HTTPError
 from bos.common.clients.ims import get_ims_id_from_s3_url
 from bos.common.clients.s3 import S3Url
 from bos.common.types.components import ComponentRecord
-from bos.common.utils import exc_type_msg, using_sbps_check_kernel_parameters, \
-                             components_by_id
+from bos.common.utils import (exc_type_msg,
+                              using_sbps_check_kernel_parameters,
+                              components_by_id)
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
@@ -166,31 +167,19 @@ class PowerOnOperator(BaseOperator):
                 LOGGER.error(
                     "Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
                     key, nodes, exc_type_msg(err))
-            else:
+            else: # No exception raised in try block
                 token = resp.headers['bss-referral-token']
-                attempts = 0
-                while attempts <= retries:
-                    try:
-                        record_boot_artifacts(token, kernel, kernel_parameters,
-                                              initrd)
-                        break
-                    except Exception as err:
-                        attempts += 1
-                        LOGGER.error(
-                            "An error occurred attempting to record the BSS token: %s",
-                            exc_type_msg(err))
-                        if attempts > retries:
-                            raise
-                        LOGGER.info("Retrying to record the BSS token.")
-
-                for node in nodes:
-                    bss_tokens.append({
+                self._record_boot_artifacts(token=token, kernel=kernel,
+                                            kernel_parameters=kernel_parameters,
+                                            initrd=initrd, retries=retries)
+                bss_tokens.extend([
+                    {
                         "id": node,
                         "desired_state": {
                             "bss_token": token
                         },
                         "session": bos_sessions[node]
-                    })
+                    } for node in nodes])
         LOGGER.info('Found %d components that require BSS token updates',
                     len(bss_tokens))
         if not bss_tokens:
@@ -202,6 +191,28 @@ class PowerOnOperator(BaseOperator):
         LOGGER.debug('Updated components (minus desired_state data): %s',
                      redacted_component_updates)
         self.client.bos.components.update_components(bss_tokens)
+
+
+    def _record_boot_artifacts(self, token: str, kernel: str, kernel_parameters: str, initrd: str,
+                               retries: int) -> None:
+        """
+        Try to update the boot artifact records up to the specified number of retries.
+        Raise an exception if ultimately unsuccessful.
+        """
+        attempts = 0
+        while True:
+            try:
+                record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                return
+            except Exception as err:
+                attempts += 1
+                msg = f"An error occurred attempting to record the BSS token: {exc_type_msg(err)}"
+                if attempts > retries:
+                    LOGGER.error(msg)
+                    raise
+                LOGGER.warning(msg)
+                LOGGER.info("Retrying to record the BSS token.")
+
 
     def _tag_images(self, boot_artifacts: BootArtifactsToCompIds,
                     components: list[ComponentRecord]) -> None:
@@ -250,7 +261,8 @@ class PowerOnOperator(BaseOperator):
                 if image_id is None:
                     err_msg = f"Unable to extract IMS ID from kernel path: {kernel}"
                 elif image_id == 'deleted':
-                    # Soft deleted images in IMS move their S3 artifacts to have paths like s3://boot-images/deleted/<ims-id>/...
+                    # Soft deleted images in IMS move their S3 artifacts to have paths
+                    # like s3://boot-images/deleted/<ims-id>/...
                     err_msg = f"Kernel path appears to refer to soft-deleted IMS image: '{kernel}'"
 
                 if err_msg is None:

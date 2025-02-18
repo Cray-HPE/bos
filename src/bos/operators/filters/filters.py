@@ -26,7 +26,7 @@ import copy
 from datetime import timedelta
 import logging
 import re
-from typing import List, Type
+from typing import Type
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.cfs import CFSClient
@@ -42,10 +42,10 @@ class OR(DetailsFilter):
 
     def __init__(self, filters_a, filters_b) -> None:
         super().__init__()
-        self.filters_a: List[Type[BaseFilter]] = filters_a
-        self.filters_b: List[Type[BaseFilter]] = filters_b
+        self.filters_a: list[Type[BaseFilter]] = filters_a
+        self.filters_b: list[Type[BaseFilter]] = filters_b
 
-    def _filter(self, components: List[dict]) -> List[dict]:
+    def _filter(self, components: list[dict]) -> list[dict]:
         results_a = copy.deepcopy(components)
         for f in self.filters_a:
             results_a = f.filter(results_a)
@@ -77,7 +77,7 @@ class BOSQuery(DetailsFilter):
         self.kwargs = kwargs
         self.bos_client = bos_client
 
-    def _filter(self, _) -> List[dict]:
+    def _filter(self, _) -> list[dict]:
         return self.bos_client.components.get_components(**self.kwargs)
 
 
@@ -93,7 +93,7 @@ class HSMState(IDFilter):
         self.ready = ready
         self.hsm_client = hsm_client
 
-    def _filter(self, components: List[str]) -> List[str]:
+    def _filter(self, components: list[str]) -> list[str]:
         components = self.hsm_client.state_components.get_components(
             components, enabled=self.enabled)
         if self.ready is not None:
@@ -135,7 +135,7 @@ class NOT(LocalFilter):
 
         self.negated_filter._match = negated_match
 
-    def _filter(self, components: List[dict]) -> List[dict]:
+    def _filter(self, components: list[dict]) -> list[dict]:
         return self.negated_filter._filter(components)
 
     def _match(self, component: dict):
@@ -223,7 +223,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         self.cfs_components_dict = {}
         self.cfs_client = cfs_client
 
-    def _filter(self, components: List[dict]) -> List[dict]:
+    def _filter(self, components: list[dict]) -> list[dict]:
         component_ids = [component['id'] for component in components]
         cfs_components = self.cfs_client.components.get_components_from_id_list(
             id_list=component_ids)
