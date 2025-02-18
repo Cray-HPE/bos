@@ -29,7 +29,7 @@ import datetime
 from functools import partial
 import re
 import traceback
-from typing import Optional, Unpack
+from typing import Unpack
 
 # Third party imports
 from dateutil.parser import parse
@@ -109,9 +109,9 @@ class RetrySessionManager(rrs.RetrySessionManager):
 
 
 def retry_session(
-    session: Optional[requests.Session] = None,
-    protocol: Optional[str] = None,
-    adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs] = None
+    session: requests.Session | None = None,
+    protocol: str | None = None,
+    adapter_kwargs: rrs.RequestsRetryAdapterArgs | None = None
 ) -> AbstractContextManager[requests.Session]:
     if session is not None:
         return nullcontext(session)
@@ -124,10 +124,9 @@ def retry_session(
 
 
 def retry_session_get(*get_args,
-                      session: Optional[requests.Session] = None,
-                      protocol: Optional[str] = None,
-                      adapter_kwargs: Optional[
-                          rrs.RequestsRetryAdapterArgs] = None,
+                      session: requests.Session | None = None,
+                      protocol: str | None = None,
+                      adapter_kwargs: rrs.RequestsRetryAdapterArgs | None = None,
                       **get_kwargs) -> AbstractContextManager[requests.Response]:
     with retry_session(session=session,
                        protocol=protocol,

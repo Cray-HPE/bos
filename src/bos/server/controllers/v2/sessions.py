@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from functools import partial
 import logging
 import re
-from typing import Literal, Optional
+from typing import Literal
 import uuid
 
 import connexion
@@ -130,7 +130,7 @@ def post_v2_session() -> tuple[JsonDict, Literal[201]] | ConnexionResponse:  # n
     return response, 201
 
 
-def _create_session(session_create: SessionCreate, tenant: Optional[str]) -> Session:
+def _create_session(session_create: SessionCreate, tenant: str | None) -> Session:
     initial_status = {
         'status': 'pending',
         'start_time': get_current_timestamp(),
@@ -196,8 +196,8 @@ def get_v2_session(
 
 
 @dbutils.redis_error_handler
-def get_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
-                    status: Optional[str]=None) -> tuple[list[JsonDict],
+def get_v2_sessions(min_age: str | None=None, max_age: str | None=None,
+                    status: str | None=None) -> tuple[list[JsonDict],
                                                          Literal[200]]:  # noqa: E501
     """GET /v2/session
 
@@ -234,8 +234,8 @@ def delete_v2_session(
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(
-        min_age: Optional[str]=None, max_age: Optional[str]=None,
-        status: Optional[str]=None) -> tuple[None, Literal[204]] | ConnexionResponse:  # noqa: E501
+        min_age: str | None=None, max_age: str | None=None,
+        status: str | None=None) -> tuple[None, Literal[204]] | ConnexionResponse:  # noqa: E501
     LOGGER.debug(
         "DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
         min_age, max_age, status)
@@ -303,8 +303,8 @@ def save_v2_session_status(
     return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
-def _get_filtered_sessions(tenant: Optional[str], min_age: Optional[str], max_age: Optional[str],
-                           status: Optional[str]) -> list[JsonDict]:
+def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str | None,
+                           status: str | None) -> list[JsonDict]:
     response = DB.get_all()
     min_start = None
     max_start = None
@@ -328,8 +328,8 @@ def _get_filtered_sessions(tenant: Optional[str], min_age: Optional[str], max_ag
     return response
 
 
-def _matches_filter(data: dict, tenant: Optional[str], min_start: Optional[datetime],
-                    max_start: Optional[datetime], status: Optional[str]) -> bool:
+def _matches_filter(data: dict, tenant: str | None, min_start: datetime | None,
+                    max_start: datetime | None, status: str | None) -> bool:
     if tenant and tenant != data.get("tenant"):
         return False
     session_status = data.get('status', {})
@@ -346,7 +346,7 @@ def _matches_filter(data: dict, tenant: Optional[str], min_start: Optional[datet
     return True
 
 
-def _get_v2_session_status(session_key: str|bytes, session: Optional[JsonDict]=None) -> JsonDict:
+def _get_v2_session_status(session_key: str|bytes, session: JsonDict | None=None) -> JsonDict:
     if not session:
         session = DB.get(session_key)
     session_id = session.get("name", {})

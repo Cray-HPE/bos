@@ -26,7 +26,7 @@
 Type annotation definitions for BOS session templates
 """
 
-from typing import get_args, Literal, Optional, Required, TypedDict
+from typing import get_args, Literal, Required, TypedDict
 
 class Link(TypedDict, total=False):
     href: str
@@ -68,5 +68,4 @@ class SessionTemplate(TypedDict, total=False):
     enable_cfs: bool
     links: list[Link]
     name: Required[str]
-    # Optional means this can be a string or be None
-    tenant: Optional[str]
+    tenant: str | None

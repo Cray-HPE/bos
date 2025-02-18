@@ -26,14 +26,13 @@
 Type annotation definitions for BOS sessions
 """
 
-from typing import Literal, Optional, Required, TypedDict
+from typing import Literal, Required, TypedDict
 
 SessionStatusLabel = Literal['complete', 'pending', 'running']
 
 class SessionStatus(TypedDict, total=False):
-    # Optional means these can be a string or be None
-    end_time: Optional[str]
-    error: Optional[str]
+    end_time: str | None
+    error: str | None
     start_time: str
     status: SessionStatusLabel
 
@@ -48,5 +47,4 @@ class Session(TypedDict, total=False):
     stage: bool
     status: Required[SessionStatus]
     template_name: Required[str]
-    # Optional means this can be a string or be None
-    tenant: Optional[str]
+    tenant: str | None

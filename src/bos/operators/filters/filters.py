@@ -86,8 +86,8 @@ class HSMState(IDFilter):
 
     def __init__(self,
                  hsm_client: HSMClient,
-                 enabled: bool = None,
-                 ready: bool = None) -> None:
+                 enabled: bool | None = None,
+                 ready: bool | None = None) -> None:
         super().__init__()
         self.enabled = enabled
         self.ready = ready
@@ -236,7 +236,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         self.cfs_components_dict = {}
         return matches
 
-    def _match(self, component: dict, cfs_component: dict = None) -> bool:
+    def _match(self, component: dict, cfs_component: dict | None = None) -> bool:
         # There are two ways to communicate the cfs_component to this method.
         # First: cfs_component input variable
         # Second: cfs_component_dict instance attribute

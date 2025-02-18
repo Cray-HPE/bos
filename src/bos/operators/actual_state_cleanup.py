@@ -26,6 +26,7 @@ import logging
 
 from bos.common.clients.bos.options import options
 from bos.common.utils import duration_to_timedelta
+from bos.common.types.components import ComponentRecord
 from bos.common.values import EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import BOSQuery, ActualStateAge, ActualBootStateIsSet
@@ -59,7 +60,7 @@ class ActualStateCleanupOperator(BaseOperator):
                 options.component_actual_state_ttl).total_seconds())
         ]
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         data = []
         for component_id in [component['id'] for component in components]:
             data.append({

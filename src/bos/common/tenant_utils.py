@@ -26,7 +26,7 @@ from collections.abc import Callable
 import functools
 import logging
 import hashlib
-from typing import Optional, ParamSpec, TypeVar
+from typing import ParamSpec, TypeVar
 
 import connexion
 import requests
@@ -58,7 +58,7 @@ def get_tenant_from_header() -> str:
     return tenant
 
 
-def add_tenant_to_headers(tenant: str, headers: Optional[JsonDict]=None) -> JsonDict:
+def add_tenant_to_headers(tenant: str, headers: JsonDict | None=None) -> JsonDict:
     if not headers:
         headers = {}
     headers[TENANT_HEADER] = tenant
@@ -69,7 +69,7 @@ def get_new_tenant_header(tenant: str) -> JsonDict:
     return add_tenant_to_headers(tenant)
 
 
-def get_tenant_aware_key(key: str, tenant: Optional[str]) -> str:
+def get_tenant_aware_key(key: str, tenant: str | None) -> str:
     if not tenant:
         # The no tenant case should already be standardized, but this adds some safety.
         tenant = ""
@@ -78,7 +78,7 @@ def get_tenant_aware_key(key: str, tenant: Optional[str]) -> str:
     return f"{tenant_hash}-{key_hash}"
 
 
-def get_tenant_data(tenant: str, session: Optional[requests.Session] = None) -> JsonDict:
+def get_tenant_data(tenant: str, session: requests.Session | None = None) -> JsonDict:
     url = f"{TENANT_ENDPOINT}/{tenant}"
     with retry_session_get(url, session=session) as response:
         try:

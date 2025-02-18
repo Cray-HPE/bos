@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC, abstractmethod
-from typing import Optional, Unpack
+from typing import Unpack
 
 from requests_retry_session import RequestsRetryAdapterArgs
 
@@ -39,7 +39,7 @@ class APIClientWithTimeoutOption(APIClient, ABC):
     This context manager is used to provide API endpoints, via subclassing.
     """
 
-    def __init__(self, bos_options: Optional[BaseOptions]=None,
+    def __init__(self, bos_options: BaseOptions | None=None,
                  **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
         self._bos_options = options if bos_options is None else bos_options
         kwargs = self.retry_kwargs
