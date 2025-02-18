@@ -24,7 +24,7 @@
 #
 import copy
 import logging
-from typing import Callable, Set
+from typing import Callable, Iterable
 from botocore.exceptions import ClientError
 
 from bos.common.clients.bos import BOSClient
@@ -32,6 +32,7 @@ from bos.common.clients.bos.options import options
 from bos.common.clients.hsm import Inventory
 from bos.common.clients.s3 import S3Object, S3ObjectNotFound
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
+from bos.common.types.components import ComponentRecord
 from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseOperator, main, chunk_components
@@ -63,7 +64,7 @@ class SessionSetupOperator(BaseOperator):
     def filters(self):
         return []
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         return components
 
     def _run(self) -> None:
@@ -93,26 +94,26 @@ class Session:
         self._template = None
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self.session_data.get('name')
 
     @property
-    def tenant(self):
+    def tenant(self) -> str | None:
         return self.session_data.get('tenant')
 
     @property
-    def operation_type(self):
+    def operation_type(self) -> str:
         return self.session_data.get('operation')
 
     @property
-    def template(self):
+    def template(self) -> str:
         if not self._template:
             template_name = self.session_data.get('template_name')
             self._template = self.bos_client.session_templates.get_session_template(
                 template_name, self.tenant)
         return self._template
 
-    def setup(self, max_batch_size: int):
+    def setup(self, max_batch_size: int) -> None:
         try:
             component_ids = self._setup_components(max_batch_size)
         except SessionSetupException as err:
@@ -120,7 +121,7 @@ class Session:
         else:
             self._mark_running(component_ids)
 
-    def _setup_components(self, max_batch_size: int):
+    def _setup_components(self, max_batch_size: int) -> list[str]:
         all_component_ids = []
         data = []
         stage = self.session_data.get("stage", False)
@@ -149,7 +150,7 @@ class Session:
             self.bos_client.components.update_components(chunk)
         return list(set(all_component_ids))
 
-    def _get_boot_set_component_list(self, boot_set) -> Set[str]:
+    def _get_boot_set_component_list(self, boot_set) -> set[str]:
         nodes = set()
         # Populate from nodelist
         for node_name in boot_set.get('node_list', []):
@@ -202,7 +203,7 @@ class Session:
         nodes = self._apply_tenant_limit(nodes)
         return nodes
 
-    def _apply_arch(self, nodes, arch):
+    def _apply_arch(self, nodes: Iterable[str], arch: str) -> set[str]:
         """
         Removes any node from <nodes> that does not match arch. Nodes in HSM that do not have the
         arch field, and nodes that have the arch field flagged as undefined are assumed to be of
@@ -237,7 +238,7 @@ class Session:
                 len(nodes))
         return nodes
 
-    def _apply_include_disabled(self, nodes):
+    def _apply_include_disabled(self, nodes: Iterable[str]) -> Iterable[str]:
         """
         If include_disabled is False for this session, filter out any nodes which are disabled
         in HSM. Otherwise, return the node list unchanged.
@@ -259,7 +260,7 @@ class Session:
                 len(nodes))
         return nodes
 
-    def _apply_limit(self, nodes):
+    def _apply_limit(self, nodes: Iterable[str]) -> Iterable[str]:
         session_limit = self.session_data.get('limit')
         if not session_limit:
             # No limit is defined, so all nodes are allowed
@@ -292,7 +293,7 @@ class Session:
                       len(nodes))
         return nodes
 
-    def _apply_tenant_limit(self, nodes):
+    def _apply_tenant_limit(self, nodes: Iterable[str]) -> Iterable[str]:
         tenant = self.session_data.get("tenant")
         if not tenant:
             return nodes
@@ -312,7 +313,7 @@ class Session:
                 len(nodes))
         return nodes
 
-    def _mark_running(self, component_ids):
+    def _mark_running(self, component_ids: list[str]) -> None:
         self.bos_client.sessions.update_session(
             self.name, self.tenant, {
                 'status': {
@@ -322,7 +323,7 @@ class Session:
             })
         self._log(LOGGER.info, 'Session is running')
 
-    def _mark_failed(self, err):
+    def _mark_failed(self, err: str) -> None:
         """
         Input:
           err (string): The error that prevented the session from running

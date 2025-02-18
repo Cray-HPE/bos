@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.common.clients.ims import get_arch_from_image_data, IMSClient, \
                                             get_ims_id_from_s3_url, ImageNotFound

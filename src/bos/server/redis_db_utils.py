@@ -31,7 +31,7 @@ from typing import Generator, Optional, ParamSpec, TypeVar
 import connexion
 import redis
 
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)

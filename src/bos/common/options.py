@@ -23,7 +23,7 @@
 #
 from abc import ABC, abstractmethod
 
-from bos.common.types import JsonData, JsonDict
+from bos.common.types.general import JsonData, JsonDict
 
 # This is the source of truth for default option values. All other BOS
 # code should either import this dict directly, or (preferably) access

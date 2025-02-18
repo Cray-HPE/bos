@@ -26,7 +26,7 @@ from functools import partial
 from typing import Optional
 
 from bos.common.utils import exc_type_msg
-from bos.common.types import JsonDict
+from bos.common.types.general import JsonDict
 from bos.server.controllers.v2.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
