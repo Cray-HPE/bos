@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.34.2] - 2025-02-19
+
 ### Fixed
 - CASMCMS-9289: Remove extra `/` from HSM URLs to prevent request failures
 - CASMCMS-9290
