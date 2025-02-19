@@ -55,14 +55,21 @@ spec:
       labels:
         app.kubernetes.io/name: "{{ include "cray-service.name" . }}-db"
     spec:
+      securityContext:
+        fsGroup: 65534
       containers:
       - name: "{{ include "cray-service.name" . }}-db"
         image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
-        command: ["/bin/sh"]
-        args: ["-c", "echo 'save 10 1' >> /etc/redis.conf && sleep 1 && redis-server /etc/redis.conf"]
+        securityContext:
+          runAsUser: 65534
+          runAsGroup: 65534
         volumeMounts:
         - mountPath: /data
           name: "{{ include "cray-service.name" . }}-db"
+        - name: redis-config
+          mountPath: /usr/local/etc/redis/redis.conf
+          subPath: redis.conf  # Mount the custom redis.conf file
+        command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
         ports:
         - containerPort: 6379
           name: redis
@@ -70,9 +77,9 @@ spec:
         livenessProbe:
           exec:
             command:
-            - ash
-            - -c
-            - redis-cli -h localhost ping
+              - ash
+              - -c
+              - redis-cli -h localhost ping
           failureThreshold: 5
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -81,9 +88,9 @@ spec:
         readinessProbe:
           exec:
             command:
-            - ash
-            - -c
-            - redis-cli -h localhost ping
+              - ash
+              - -c
+              - redis-cli -h localhost ping
           failureThreshold: 5
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -93,6 +100,18 @@ spec:
       - name: "{{ include "cray-service.name" . }}-db"
         persistentVolumeClaim:
           claimName: "{{ include "cray-service.name" . }}-db"
+      - name: redis-config
+        configMap:
+            name: redis-configmap
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-configmap
+data:
+  redis.conf: |
+    # Custom redis.conf configuration here
+    save 10 1
 ---
 apiVersion: v1
 kind: Service
