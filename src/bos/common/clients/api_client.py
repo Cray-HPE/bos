@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC
-from typing import Generic, Type, TypeVar, Unpack
+from typing import Type, TypeVar, Unpack
 
 from requests_retry_session import RequestsRetryAdapterArgs
 
@@ -32,7 +32,7 @@ from bos.common.utils import RetrySessionManager
 ClientEndpoint = TypeVar('ClientEndpoint', bound=BaseGenericEndpoint)
 
 
-class APIClient(RetrySessionManager, Generic[ClientEndpoint], ABC):
+class APIClient(RetrySessionManager, ABC):
     """
     As a subclass of RetrySessionManager, this class can be used as a context manager,
     and will have a requests session available as self.requests_session
@@ -42,7 +42,7 @@ class APIClient(RetrySessionManager, Generic[ClientEndpoint], ABC):
 
     def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
         super().__init__(**adapter_kwargs)
-        self._endpoint_values: dict[Type[ClientEndpoint], ClientEndpoint] = {}
+        self._endpoint_values = {}
 
     def get_endpoint(self,
                      endpoint_type: Type[ClientEndpoint]) -> ClientEndpoint:

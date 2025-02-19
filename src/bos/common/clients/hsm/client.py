@@ -28,8 +28,7 @@ from .groups import GroupsEndpoint
 from .partitions import PartitionsEndpoint
 from .state_components import StateComponentsEndpoint
 
-
-class HSMClient(APIClientWithTimeoutOption[BaseHsmEndpoint]):
+class HSMClient(APIClientWithTimeoutOption):
 
     @property
     def read_timeout(self) -> int:

@@ -26,8 +26,7 @@ from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeo
 from .base import BaseBssEndpoint
 from .boot_parameters import BootParametersEndpoint
 
-
-class BSSClient(APIClientWithTimeoutOption[BaseBssEndpoint]):
+class BSSClient(APIClientWithTimeoutOption):
 
     @property
     def read_timeout(self) -> int:

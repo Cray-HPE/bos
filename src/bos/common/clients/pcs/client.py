@@ -21,14 +21,22 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from typing import Type
+
+from bos.common.clients.api_client import ClientEndpoint
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .base import BasePcsEndpoint
 from .power_status import PowerStatusEndpoint
 from .transitions import TransitionsEndpoint
 
+class PCSClient(APIClientWithTimeoutOption):
 
-class PCSClient(APIClientWithTimeoutOption[BasePcsEndpoint]):
+    def get_endpoint(self,
+                     endpoint_type: Type[ClientEndpoint]) -> ClientEndpoint:
+        if issubclass(endpoint_type, BasePcsEndpoint):
+            return super().get_endpoint(endpoint_type)
+        raise TypeError(f"{type(self).__name__} called with invalid endpoint type: {endpoint_type.__name__}")
 
     @property
     def read_timeout(self) -> int:

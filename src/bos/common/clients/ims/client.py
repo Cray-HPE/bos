@@ -21,6 +21,8 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from typing import TypeVar
+
 from requests_retry_session import RequestsRetryAdapterArgs
 
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
@@ -28,8 +30,7 @@ from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeo
 from .base import BaseImsEndpoint
 from .images import ImagesEndpoint
 
-
-class IMSClient(APIClientWithTimeoutOption[BaseImsEndpoint]):
+class IMSClient(APIClientWithTimeoutOption):
 
     @property
     def read_timeout(self) -> int:

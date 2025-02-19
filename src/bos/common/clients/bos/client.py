@@ -28,8 +28,7 @@ from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
 
-
-class BOSClient(APIClient[BaseBosEndpoint]):
+class BOSClient(APIClient):
 
     @property
     def components(self) -> ComponentEndpoint:
