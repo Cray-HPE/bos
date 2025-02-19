@@ -21,16 +21,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from abc import ABC
-from typing import Type, TypeVar, Unpack
+from abc import ABC, abstractmethod
+from typing import Unpack
 
 from requests_retry_session import RequestsRetryAdapterArgs
 
-from bos.common.clients.endpoints import BaseGenericEndpoint
 from bos.common.utils import RetrySessionManager
-
-ClientEndpoint = TypeVar('ClientEndpoint', bound=BaseGenericEndpoint)
-
 
 class APIClient(RetrySessionManager, ABC):
     """
@@ -42,17 +38,13 @@ class APIClient(RetrySessionManager, ABC):
 
     def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
         super().__init__(**adapter_kwargs)
-        self._endpoint_values = {}
+        self._init_endpoint_values()
 
-    def get_endpoint(self,
-                     endpoint_type: Type[ClientEndpoint]) -> ClientEndpoint:
-        """
-        Endpoints are created only as needed, and passed the managed retry session.
-        """
-        if endpoint_type not in self._endpoint_values:
-            self._endpoint_values[endpoint_type] = endpoint_type(
-                self.requests_session)
-        return self._endpoint_values[endpoint_type]
+    @abstractmethod
+    def _init_endpoint_values(self) -> None: ...
+
+    @abstractmethod
+    def _clear_endpoint_values(self) -> None: ...
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> bool | None:
         """
@@ -60,5 +52,5 @@ class APIClient(RetrySessionManager, ABC):
         our list of API clients. Our call to super().__exit__ will take care of closing
         out the underlying request session.
         """
-        self._endpoint_values.clear()
+        self._clear_endpoint_values()
         return super().__exit__(exc_type, exc_val, exc_tb)

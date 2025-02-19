@@ -21,14 +21,28 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from typing import Unpack
+
+from requests_retry_session import RequestsRetryAdapterArgs
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
-from .base import BaseHsmEndpoint
 from .groups import GroupsEndpoint
 from .partitions import PartitionsEndpoint
 from .state_components import StateComponentsEndpoint
 
 class HSMClient(APIClientWithTimeoutOption):
+
+    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+        super().__init__(**adapter_kwargs)
+        self._groups: GroupsEndpoint | None = GroupsEndpoint(self.requests_session)
+        self._partitions: PartitionsEndpoint | None = PartitionsEndpoint(self.requests_session)
+        self._state_components: StateComponentsEndpoint | None = StateComponentsEndpoint(self.requests_session)
+
+    def _clear_endpoint_values(self) -> None:
+        self._groups = None
+        self._partitions = None
+        self._state_components = None
 
     @property
     def read_timeout(self) -> int:
@@ -36,12 +50,18 @@ class HSMClient(APIClientWithTimeoutOption):
 
     @property
     def groups(self) -> GroupsEndpoint:
-        return self.get_endpoint(GroupsEndpoint)
+        if self._groups is None:
+            raise ValueError("Attempt to use uninitialized HSM groups endpoint")
+        return self._groups
 
     @property
     def partitions(self) -> PartitionsEndpoint:
-        return self.get_endpoint(PartitionsEndpoint)
+        if self._partitions is None:
+            raise ValueError("Attempt to use uninitialized HSM partitions endpoint")
+        return self._partitions
 
     @property
     def state_components(self) -> StateComponentsEndpoint:
-        return self.get_endpoint(StateComponentsEndpoint)
+        if self._state_components is None:
+            raise ValueError("Attempt to use uninitialized HSM state components endpoint")
+        return self._state_components

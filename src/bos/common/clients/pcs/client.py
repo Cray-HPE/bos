@@ -21,22 +21,25 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from typing import Type
+from typing import Unpack
 
-from bos.common.clients.api_client import ClientEndpoint
+from requests_retry_session import RequestsRetryAdapterArgs
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
-from .base import BasePcsEndpoint
 from .power_status import PowerStatusEndpoint
 from .transitions import TransitionsEndpoint
 
 class PCSClient(APIClientWithTimeoutOption):
 
-    def get_endpoint(self,
-                     endpoint_type: Type[ClientEndpoint]) -> ClientEndpoint:
-        if issubclass(endpoint_type, BasePcsEndpoint):
-            return super().get_endpoint(endpoint_type)
-        raise TypeError(f"{type(self).__name__} called with invalid endpoint type: {endpoint_type.__name__}")
+    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+        super().__init__(**adapter_kwargs)
+        self._power_status: PowerStatusEndpoint | None = PowerStatusEndpoint(self.requests_session)
+        self._transitions: TransitionsEndpoint | None = TransitionsEndpoint(self.requests_session)
+
+    def _clear_endpoint_values(self) -> None:
+        self._power_status = None
+        self._transitions = None
 
     @property
     def read_timeout(self) -> int:
@@ -44,8 +47,12 @@ class PCSClient(APIClientWithTimeoutOption):
 
     @property
     def power_status(self) -> PowerStatusEndpoint:
-        return self.get_endpoint(PowerStatusEndpoint)
+        if self._power_status is None:
+            raise ValueError("Attempt to use uninitialized PCS power status endpoint")
+        return self._power_status
 
     @property
     def transitions(self) -> TransitionsEndpoint:
-        return self.get_endpoint(TransitionsEndpoint)
+        if self._transitions is None:
+            raise ValueError("Attempt to use uninitialized PCS transitions endpoint")
+        return self._transitions

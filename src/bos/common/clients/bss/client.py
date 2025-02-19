@@ -21,12 +21,22 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from typing import Unpack
+
+from requests_retry_session import RequestsRetryAdapterArgs
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
-from .base import BaseBssEndpoint
 from .boot_parameters import BootParametersEndpoint
 
 class BSSClient(APIClientWithTimeoutOption):
+
+    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+        super().__init__(**adapter_kwargs)
+        self._boot_parameters: BootParametersEndpoint | None = BootParametersEndpoint(self.requests_session)
+
+    def _clear_endpoint_values(self) -> None:
+        self._boot_parameters = None
 
     @property
     def read_timeout(self) -> int:
@@ -34,4 +44,6 @@ class BSSClient(APIClientWithTimeoutOption):
 
     @property
     def boot_parameters(self) -> BootParametersEndpoint:
-        return self.get_endpoint(BootParametersEndpoint)
+        if self._boot_parameters is None:
+            raise ValueError("Attempt to use uninitialized BSS boot parameters endpoint")
+        return self._boot_parameters

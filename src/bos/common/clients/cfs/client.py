@@ -21,12 +21,22 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from typing import Unpack
+
+from requests_retry_session import RequestsRetryAdapterArgs
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
-from .base import BaseCfsEndpoint
 from .components import ComponentEndpoint
 
 class CFSClient(APIClientWithTimeoutOption):
+
+    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+        super().__init__(**adapter_kwargs)
+        self._components: ComponentEndpoint | None = ComponentEndpoint(self.requests_session)
+
+    def _clear_endpoint_values(self) -> None:
+        self._components = None
 
     @property
     def read_timeout(self) -> int:
@@ -34,4 +44,6 @@ class CFSClient(APIClientWithTimeoutOption):
 
     @property
     def components(self) -> ComponentEndpoint:
-        return self.get_endpoint(ComponentEndpoint)
+        if self._components is None:
+            raise ValueError("Attempt to use uninitialized CFS components endpoint")
+        return self._components

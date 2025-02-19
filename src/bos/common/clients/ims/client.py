@@ -21,16 +21,22 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from typing import TypeVar
+from typing import Unpack
 
 from requests_retry_session import RequestsRetryAdapterArgs
 
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
-from .base import BaseImsEndpoint
 from .images import ImagesEndpoint
 
 class IMSClient(APIClientWithTimeoutOption):
+
+    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+        super().__init__(**adapter_kwargs)
+        self._images: ImagesEndpoint | None = ImagesEndpoint(self.requests_session)
+
+    def _clear_endpoint_values(self) -> None:
+        self._images = None
 
     @property
     def read_timeout(self) -> int:
@@ -46,4 +52,6 @@ class IMSClient(APIClientWithTimeoutOption):
 
     @property
     def images(self) -> ImagesEndpoint:
-        return self.get_endpoint(ImagesEndpoint)
+        if self._images is None:
+            raise ValueError("Attempt to use uninitialized IMS images endpoint")
+        return self._images

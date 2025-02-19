@@ -21,23 +21,43 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from typing import Unpack
+
+from requests_retry_session import RequestsRetryAdapterArgs
+
 from bos.common.clients.api_client import APIClient
 
-from .base import BaseBosEndpoint
 from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
 
 class BOSClient(APIClient):
 
+    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+        super().__init__(**adapter_kwargs)
+        self._components: ComponentEndpoint | None = ComponentEndpoint(self.requests_session)
+        self._sessions: SessionEndpoint | None = SessionEndpoint(self.requests_session)
+        self._session_templates: SessionTemplateEndpoint | None = SessionTemplateEndpoint(self.requests_session)
+
+    def _clear_endpoint_values(self) -> None:
+        self._components = None
+        self._sessions = None
+        self._session_templates = None
+
     @property
     def components(self) -> ComponentEndpoint:
-        return self.get_endpoint(ComponentEndpoint)
+        if self._components is None:
+            raise ValueError("Attempt to use uninitialized BOS components endpoint")
+        return self._components
 
     @property
     def sessions(self) -> SessionEndpoint:
-        return self.get_endpoint(SessionEndpoint)
+        if self._sessions is None:
+            raise ValueError("Attempt to use uninitialized BOS sessions endpoint")
+        return self._sessions
 
     @property
     def session_templates(self) -> SessionTemplateEndpoint:
-        return self.get_endpoint(SessionTemplateEndpoint)
+        if self._session_templates is None:
+            raise ValueError("Attempt to use uninitialized BOS session templates endpoint")
+        return self._session_templates
