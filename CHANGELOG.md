@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.34.2] - 2025-02-19
+
+### Fixed
+- CASMCMS-9289: Remove extra `/` from HSM URLs to prevent request failures
+- CASMCMS-9290
+  - Remove no-longer-necessary call to `raise_for_status` in BOS power on operator
+  - Catch all exceptions arising from API call
+  - Update power on operator to reflect fact that the BSS API client returns the
+    `bss-referral-token` itself, not an API response object.
+
 ## [2.34.1] - 2025-02-18
 
 ### Fixed

@@ -27,9 +27,6 @@
 from collections import defaultdict
 import logging
 
-# Third party imports
-from requests import HTTPError
-
 # BOS module imports
 from bos.common.clients.ims import get_ims_id_from_s3_url
 from bos.common.clients.s3 import S3Url
@@ -157,18 +154,16 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
-                resp = self.client.bss.boot_parameters.set_bss(
+                token = self.client.bss.boot_parameters.set_bss(
                     node_set=nodes,
                     kernel_params=kernel_parameters,
                     kernel=kernel,
                     initrd=initrd)
-                resp.raise_for_status()
-            except HTTPError as err:
+            except Exception as err:
                 LOGGER.error(
                     "Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
                     key, nodes, exc_type_msg(err))
             else: # No exception raised in try block
-                token = resp.headers['bss-referral-token']
                 self._record_boot_artifacts(token=token, kernel=kernel,
                                             kernel_parameters=kernel_parameters,
                                             initrd=initrd, retries=retries)
