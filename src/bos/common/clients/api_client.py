@@ -22,10 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC, abstractmethod
-from typing import Unpack
-
-from requests_retry_session import RequestsRetryAdapterArgs
-
 from bos.common.utils import RetrySessionManager
 
 class APIClient(RetrySessionManager, ABC):
@@ -35,13 +31,6 @@ class APIClient(RetrySessionManager, ABC):
 
     This context manager is used to provide API endpoints, via subclassing.
     """
-
-    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
-        super().__init__(**adapter_kwargs)
-        self._init_endpoint_values()
-
-    @abstractmethod
-    def _init_endpoint_values(self) -> None: ...
 
     @abstractmethod
     def _clear_endpoint_values(self) -> None: ...
