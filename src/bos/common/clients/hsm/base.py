@@ -35,7 +35,7 @@ from bos.common.utils import PROTOCOL
 from .exceptions import HWStateManagerException
 
 SERVICE_NAME = 'cray-smd'
-ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2/"
+ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2"
 
 
 class BaseHsmEndpoint(BaseEndpoint, ABC):
