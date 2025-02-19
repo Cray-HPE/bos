@@ -22,16 +22,16 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC, abstractmethod
-from typing import Unpack
+from typing import Generic, Unpack
 
 from requests_retry_session import RequestsRetryAdapterArgs
 
 from bos.common.clients.bos.options import options
 from bos.common.options import BaseOptions
 
-from .api_client import APIClient
+from .api_client import APIClient, ClientEndpoint
 
-class APIClientWithTimeoutOption(APIClient, ABC):
+class APIClientWithTimeoutOption(Generic[ClientEndpoint], APIClient[ClientEndpoint], ABC):
     """
     As a subclass of RetrySessionManager, this class can be used as a context manager,
     and will have a requests session available as self.requests_session

@@ -23,12 +23,13 @@
 #
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
+from .base import BaseHsmEndpoint
 from .groups import GroupsEndpoint
 from .partitions import PartitionsEndpoint
 from .state_components import StateComponentsEndpoint
 
 
-class HSMClient(APIClientWithTimeoutOption):
+class HSMClient(APIClientWithTimeoutOption[BaseHsmEndpoint]):
 
     @property
     def read_timeout(self) -> int:

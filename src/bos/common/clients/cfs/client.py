@@ -23,10 +23,11 @@
 #
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
+from .base import BaseCfsEndpoint
 from .components import ComponentEndpoint
 
 
-class CFSClient(APIClientWithTimeoutOption):
+class CFSClient(APIClientWithTimeoutOption[BaseCfsEndpoint]):
 
     @property
     def read_timeout(self) -> int:
