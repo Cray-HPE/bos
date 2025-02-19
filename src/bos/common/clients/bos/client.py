@@ -23,12 +23,13 @@
 #
 from bos.common.clients.api_client import APIClient
 
+from .base import BaseBosEndpoint
 from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
 
 
-class BOSClient(APIClient):
+class BOSClient(APIClient[BaseBosEndpoint]):
 
     @property
     def components(self) -> ComponentEndpoint:

@@ -25,10 +25,11 @@ from requests_retry_session import RequestsRetryAdapterArgs
 
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
+from .base import BaseImsEndpoint
 from .images import ImagesEndpoint
 
 
-class IMSClient(APIClientWithTimeoutOption):
+class IMSClient(APIClientWithTimeoutOption[BaseImsEndpoint]):
 
     @property
     def read_timeout(self) -> int:

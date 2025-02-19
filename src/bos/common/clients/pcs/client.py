@@ -23,11 +23,12 @@
 #
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
+from .base import BasePcsEndpoint
 from .power_status import PowerStatusEndpoint
 from .transitions import TransitionsEndpoint
 
 
-class PCSClient(APIClientWithTimeoutOption):
+class PCSClient(APIClientWithTimeoutOption[BasePcsEndpoint]):
 
     @property
     def read_timeout(self) -> int:
