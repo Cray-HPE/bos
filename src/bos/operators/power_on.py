@@ -154,7 +154,7 @@ class PowerOnOperator(BaseOperator):
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
-                resp = self.client.bss.boot_parameters.set_bss(
+                token = self.client.bss.boot_parameters.set_bss(
                     node_set=nodes,
                     kernel_params=kernel_parameters,
                     kernel=kernel,
@@ -164,7 +164,6 @@ class PowerOnOperator(BaseOperator):
                     "Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
                     key, nodes, exc_type_msg(err))
             else: # No exception raised in try block
-                token = resp.headers['bss-referral-token']
                 self._record_boot_artifacts(token=token, kernel=kernel,
                                             kernel_parameters=kernel_parameters,
                                             initrd=initrd, retries=retries)
