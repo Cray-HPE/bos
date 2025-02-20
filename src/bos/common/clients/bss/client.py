@@ -43,7 +43,5 @@ class BSSClient(APIClientWithTimeoutOption[BssEndpoints]):
     @property
     def boot_parameters(self) -> BootParametersEndpoint:
         if self._endpoints.boot_parameters is None:
-            with self._lock:
-                if self._endpoints.boot_parameters is None:
-                    self._endpoints.boot_parameters = BootParametersEndpoint(self.requests_session)
+            self._endpoints.boot_parameters = BootParametersEndpoint(self.requests_session)
         return self._endpoints.boot_parameters

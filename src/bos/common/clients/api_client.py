@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC, abstractmethod
-import threading
+from types import TracebackType
 from typing import Unpack
 
 from requests_retry_session import RequestsRetryAdapterArgs
@@ -39,7 +39,6 @@ class APIClient[Endpoints](RetrySessionManager, ABC):
 
     def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
         super().__init__(**adapter_kwargs)
-        self._lock = threading.Lock()
         self._endpoint_data = self._init_endpoints
 
     @property
@@ -50,7 +49,9 @@ class APIClient[Endpoints](RetrySessionManager, ABC):
     @abstractmethod
     def _init_endpoints(self) -> Endpoints: ...
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> bool | None:
+    def __exit__(self, exc_type: type[BaseException] | None,
+                 exc_val: BaseException | None,
+                 exc_tb: TracebackType | None) -> bool | None:
         """
         The only cleanup we need to do when exiting the context manager is to clear out
         our list of API clients. Our call to super().__exit__ will take care of closing

@@ -47,23 +47,17 @@ class HSMClient(APIClientWithTimeoutOption[HsmEndpoints]):
     @property
     def groups(self) -> GroupsEndpoint:
         if self._endpoints.groups is None:
-            with self._lock:
-                if self._endpoints.groups is None:
-                    self._endpoints.groups = GroupsEndpoint(self.requests_session)
+            self._endpoints.groups = GroupsEndpoint(self.requests_session)
         return self._endpoints.groups
 
     @property
     def partitions(self) -> PartitionsEndpoint:
         if self._endpoints.partitions is None:
-            with self._lock:
-                if self._endpoints.partitions is None:
-                    self._endpoints.partitions = PartitionsEndpoint(self.requests_session)
+            self._endpoints.partitions = PartitionsEndpoint(self.requests_session)
         return self._endpoints.partitions
 
     @property
     def state_components(self) -> StateComponentsEndpoint:
         if self._endpoints.state_components is None:
-            with self._lock:
-                if self._endpoints.state_components is None:
-                    self._endpoints.state_components = StateComponentsEndpoint(self.requests_session)
+            self._endpoints.state_components = StateComponentsEndpoint(self.requests_session)
         return self._endpoints.state_components

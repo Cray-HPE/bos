@@ -43,7 +43,5 @@ class CFSClient(APIClientWithTimeoutOption):
     @property
     def components(self) -> ComponentEndpoint:
         if self._endpoints.components is None:
-            with self._lock:
-                if self._endpoints.components is None:
-                    self._endpoints.components = ComponentEndpoint(self.requests_session)
+            self._endpoints.components = ComponentEndpoint(self.requests_session)
         return self._endpoints.components

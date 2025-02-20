@@ -23,7 +23,7 @@
 #
 from abc import ABC
 from json import JSONDecodeError
-from typing import NoReturn, Type
+from typing import NoReturn
 
 from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError as RequestsConnectionError
@@ -68,5 +68,5 @@ class BasePcsEndpoint(BaseEndpoint, ABC):
     BASE_ENDPOINT = ENDPOINT
 
     @property
-    def error_handler(self) -> Type[PcsRequestErrorHandler]:
+    def error_handler(self) -> type[PcsRequestErrorHandler]:
         return PcsRequestErrorHandler

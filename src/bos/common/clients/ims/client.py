@@ -54,7 +54,5 @@ class IMSClient(APIClientWithTimeoutOption[ImsEndpoints]):
     @property
     def images(self) -> ImagesEndpoint:
         if self._endpoints.images is None:
-            with self._lock:
-                if self._endpoints.images is None:
-                    self._endpoints.images = ImagesEndpoint(self.requests_session)
+            self._endpoints.images = ImagesEndpoint(self.requests_session)
         return self._endpoints.images

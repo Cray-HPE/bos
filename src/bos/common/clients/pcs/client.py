@@ -46,15 +46,11 @@ class PCSClient(APIClientWithTimeoutOption[PcsEndpoints]):
     @property
     def power_status(self) -> PowerStatusEndpoint:
         if self._endpoints.power_status is None:
-            with self._lock:
-                if self._endpoints.power_status is None:
-                    self._endpoints.power_status = PowerStatusEndpoint(self.requests_session)
+            self._endpoints.power_status = PowerStatusEndpoint(self.requests_session)
         return self._endpoints.power_status
 
     @property
     def transitions(self) -> TransitionsEndpoint:
         if self._endpoints.transitions is None:
-            with self._lock:
-                if self._endpoints.transitions is None:
-                    self._endpoints.transitions = TransitionsEndpoint(self.requests_session)
+            self._endpoints.transitions = TransitionsEndpoint(self.requests_session)
         return self._endpoints.transitions

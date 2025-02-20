@@ -44,23 +44,17 @@ class BOSClient(APIClient[BosEndpoints]):
     @property
     def components(self) -> ComponentEndpoint:
         if self._endpoints.components is None:
-            with self._lock:
-                if self._endpoints.components is None:
-                    self._endpoints.components = ComponentEndpoint(self.requests_session)
+            self._endpoints.components = ComponentEndpoint(self.requests_session)
         return self._endpoints.components
 
     @property
     def sessions(self) -> SessionEndpoint:
         if self._endpoints.sessions is None:
-            with self._lock:
-                if self._endpoints.sessions is None:
-                    self._endpoints.sessions = SessionEndpoint(self.requests_session)
+            self._endpoints.sessions = SessionEndpoint(self.requests_session)
         return self._endpoints.sessions
 
     @property
     def session_templates(self) -> SessionTemplateEndpoint:
         if self._endpoints.session_templates is None:
-            with self._lock:
-                if self._endpoints.session_templates is None:
-                    self._endpoints.session_templates = SessionTemplateEndpoint(self.requests_session)
+            self._endpoints.session_templates = SessionTemplateEndpoint(self.requests_session)
         return self._endpoints.session_templates
