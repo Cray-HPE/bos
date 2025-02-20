@@ -23,12 +23,14 @@
 #
 from abc import ABC, abstractmethod
 
-from bos.common.types.general import JsonData, JsonDict
+# To help with type hints
+type OptionValue = int | bool | str
+type OptionsDict = dict[str, OptionValue]
 
 # This is the source of truth for default option values. All other BOS
 # code should either import this dict directly, or (preferably) access
 # its values indirectly using a DefaultOptions object
-DEFAULTS = {
+DEFAULTS: OptionsDict = {
     'bss_read_timeout': 20,
     'cfs_read_timeout': 20,
     'cleanup_completed_session_ttl': "7d",
@@ -59,7 +61,7 @@ class BaseOptions(ABC):
     """
 
     @abstractmethod
-    def get_option(self, key: str) -> JsonData:
+    def get_option(self, key: str) -> OptionValue:
         """
         Return the value for the specified option
         """
@@ -158,7 +160,7 @@ class DefaultOptions(BaseOptions):
     Returns the default value for each option
     """
 
-    def get_option(self, key: str) -> JsonData:
+    def get_option(self, key: str) -> OptionValue:
         if key in DEFAULTS:
             return DEFAULTS[key]
         raise KeyError(key)
@@ -177,17 +179,17 @@ class OptionsCache(DefaultOptions, ABC):
         if update_on_create:
             self.update()
         else:
-            self.options = {}
+            self.options: OptionsDict = {}
 
     def update(self) -> None:
         """Refreshes the cached options data"""
         self.options = self._get_options()
 
     @abstractmethod
-    def _get_options(self) -> JsonDict:
+    def _get_options(self) -> OptionsDict:
         """Retrieves the current options from the BOS api/DB"""
 
-    def get_option(self, key: str) -> JsonData:
+    def get_option(self, key: str) -> OptionValue:
         if key in self.options:
             return self.options[key]
         try:

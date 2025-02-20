@@ -152,6 +152,7 @@ def exc_type_msg(exc: Exception) -> str:
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
 
+
 def using_sbps(component: ComponentRecord) -> bool:
     """
     If the component is using the Scalable Boot Provisioning Service (SBPS) to
@@ -166,7 +167,7 @@ def using_sbps(component: ComponentRecord) -> bool:
     # Get the kernel boot parameters
     boot_artifacts = component.get('desired_state',
                                    {}).get('boot_artifacts', {})
-    kernel_parameters = boot_artifacts.get('kernel_parameters')
+    kernel_parameters = boot_artifacts.get('kernel_parameters', "")
     return using_sbps_check_kernel_parameters(kernel_parameters)
 
 
