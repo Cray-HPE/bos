@@ -35,7 +35,7 @@ import threading
 import os
 import time
 from types import TracebackType
-from typing import Generator, NoReturn, Self, Type
+from typing import Generator, NoReturn, Self
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
@@ -93,7 +93,7 @@ class ApiClients:
         self._stack.enter_context(self.pcs)
         return self
 
-    def __exit__(self, exc_type: Type[BaseException] | None,
+    def __exit__(self, exc_type: type[BaseException] | None,
                  exc_val: BaseException | None,
                  exc_tb: TracebackType | None) -> bool | None:
         """
@@ -141,7 +141,7 @@ class BaseOperator(ABC):
 
     @property
     @abstractmethod
-    def filters(self) -> list[Type[BaseFilter]]:
+    def filters(self) -> list[type[BaseFilter]]:
         return []
 
     def BOSQuery(self, **kwargs) -> BOSQuery:
@@ -441,7 +441,7 @@ def _init_logging() -> None:
     logging.basicConfig(level=log_level, format=log_format)
 
 
-def main(operator: Type[BaseOperator]):
+def main(operator: type[BaseOperator]):
     """
     The main method for any operator type.
     Automatically handles logging and heartbeats as well as starting the operator.

@@ -31,7 +31,7 @@ from bos.common.options import BaseOptions
 
 from .api_client import APIClient
 
-class APIClientWithTimeoutOption(APIClient, ABC):
+class APIClientWithTimeoutOption[T](APIClient[T], ABC):
     """
     As a subclass of RetrySessionManager, this class can be used as a context manager,
     and will have a requests session available as self.requests_session

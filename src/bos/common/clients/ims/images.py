@@ -49,7 +49,7 @@ class ImagesEndpoint(BaseImsEndpoint):
     ENDPOINT = 'images'
 
     @property
-    def error_handler(self) -> ImsImageRequestErrorHandler:
+    def error_handler(self) -> type[ImsImageRequestErrorHandler]:
         return ImsImageRequestErrorHandler
 
     def get_image(self, image_id: str) -> dict:
