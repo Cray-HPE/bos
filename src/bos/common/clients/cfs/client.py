@@ -21,12 +21,20 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .components import ComponentEndpoint
 
+@dataclass
+class CfsEndpoints:
+    components: ComponentEndpoint | None = None
 
 class CFSClient(APIClientWithTimeoutOption):
+    @property
+    def _init_endpoints(self) -> CfsEndpoints:
+        return CfsEndpoints()
 
     @property
     def read_timeout(self) -> int:
@@ -34,4 +42,8 @@ class CFSClient(APIClientWithTimeoutOption):
 
     @property
     def components(self) -> ComponentEndpoint:
-        return self.get_endpoint(ComponentEndpoint)
+        if self._endpoints.components is None:
+            with self._lock:
+                if self._endpoints.components is None:
+                    self._endpoints.components = ComponentEndpoint(self.requests_session)
+        return self._endpoints.components

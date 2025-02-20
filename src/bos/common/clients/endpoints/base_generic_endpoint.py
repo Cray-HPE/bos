@@ -23,7 +23,7 @@
 #
 from abc import ABC, abstractmethod
 import logging
-from typing import Generic, TypeVar
+from typing import Generic, Type, TypeVar
 
 import requests
 
@@ -50,7 +50,7 @@ class BaseGenericEndpoint(ABC, Generic[RequestReturnT]):
     ENDPOINT: str = ''
 
     @property
-    def error_handler(self) -> BaseRequestErrorHandler:
+    def error_handler(self) -> Type[BaseRequestErrorHandler]:
         return RequestErrorHandler
 
     def __init__(self, session: requests.Session):

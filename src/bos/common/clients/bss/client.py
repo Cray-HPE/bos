@@ -21,12 +21,20 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .boot_parameters import BootParametersEndpoint
 
+@dataclass
+class BssEndpoints:
+    boot_parameters: BootParametersEndpoint | None = None
 
-class BSSClient(APIClientWithTimeoutOption):
+class BSSClient(APIClientWithTimeoutOption[BssEndpoints]):
+    @property
+    def _init_endpoints(self) -> BssEndpoints:
+        return BssEndpoints()
 
     @property
     def read_timeout(self) -> int:
@@ -34,4 +42,8 @@ class BSSClient(APIClientWithTimeoutOption):
 
     @property
     def boot_parameters(self) -> BootParametersEndpoint:
-        return self.get_endpoint(BootParametersEndpoint)
+        if self._endpoints.boot_parameters is None:
+            with self._lock:
+                if self._endpoints.boot_parameters is None:
+                    self._endpoints.boot_parameters = BootParametersEndpoint(self.requests_session)
+        return self._endpoints.boot_parameters

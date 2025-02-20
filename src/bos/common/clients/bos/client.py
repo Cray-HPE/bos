@@ -21,23 +21,46 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
+
 from bos.common.clients.api_client import APIClient
 
 from .components import ComponentEndpoint
 from .sessions import SessionEndpoint
 from .session_templates import SessionTemplateEndpoint
 
+@dataclass
+class BosEndpoints:
+    components: ComponentEndpoint | None = None
+    sessions: SessionEndpoint | None = None
+    session_templates: SessionTemplateEndpoint | None = None
 
-class BOSClient(APIClient):
+class BOSClient(APIClient[BosEndpoints]):
+
+    @property
+    def _init_endpoints(self) -> BosEndpoints:
+        return BosEndpoints()
 
     @property
     def components(self) -> ComponentEndpoint:
-        return self.get_endpoint(ComponentEndpoint)
+        if self._endpoints.components is None:
+            with self._lock:
+                if self._endpoints.components is None:
+                    self._endpoints.components = ComponentEndpoint(self.requests_session)
+        return self._endpoints.components
 
     @property
     def sessions(self) -> SessionEndpoint:
-        return self.get_endpoint(SessionEndpoint)
+        if self._endpoints.sessions is None:
+            with self._lock:
+                if self._endpoints.sessions is None:
+                    self._endpoints.sessions = SessionEndpoint(self.requests_session)
+        return self._endpoints.sessions
 
     @property
     def session_templates(self) -> SessionTemplateEndpoint:
-        return self.get_endpoint(SessionTemplateEndpoint)
+        if self._endpoints.session_templates is None:
+            with self._lock:
+                if self._endpoints.session_templates is None:
+                    self._endpoints.session_templates = SessionTemplateEndpoint(self.requests_session)
+        return self._endpoints.session_templates

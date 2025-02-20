@@ -21,7 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from typing import NoReturn
+from typing import NoReturn, Type
 
 from bos.common.clients.endpoints import ApiResponseError, RequestData, RequestErrorHandler
 
@@ -49,7 +49,7 @@ class ImagesEndpoint(BaseImsEndpoint):
     ENDPOINT = 'images'
 
     @property
-    def error_handler(self) -> ImsImageRequestErrorHandler:
+    def error_handler(self) -> Type[ImsImageRequestErrorHandler]:
         return ImsImageRequestErrorHandler
 
     def get_image(self, image_id: str) -> dict:
