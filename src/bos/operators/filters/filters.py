@@ -26,7 +26,6 @@ import copy
 from datetime import timedelta
 import logging
 import re
-from typing import Type
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.cfs import CFSClient
@@ -42,8 +41,8 @@ class OR(DetailsFilter):
 
     def __init__(self, filters_a, filters_b) -> None:
         super().__init__()
-        self.filters_a: list[Type[BaseFilter]] = filters_a
-        self.filters_b: list[Type[BaseFilter]] = filters_b
+        self.filters_a: list[type[BaseFilter]] = filters_a
+        self.filters_b: list[type[BaseFilter]] = filters_b
 
     def _filter(self, components: list[dict]) -> list[dict]:
         results_a = copy.deepcopy(components)
@@ -126,7 +125,7 @@ class HSMState(IDFilter):
 class NOT(LocalFilter):
     """ Returns the opposite of the given filter.  Use on local filters only."""
 
-    def __init__(self, filter: Type[LocalFilter]) -> None:
+    def __init__(self, filter: type[LocalFilter]) -> None:
         self.negated_filter = filter
         self.filter_match = filter._match
 

@@ -68,5 +68,5 @@ class BasePcsEndpoint(BaseEndpoint, ABC):
     BASE_ENDPOINT = ENDPOINT
 
     @property
-    def error_handler(self) -> PcsRequestErrorHandler:
+    def error_handler(self) -> type[PcsRequestErrorHandler]:
         return PcsRequestErrorHandler

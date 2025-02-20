@@ -23,7 +23,6 @@
 #
 from abc import ABC, abstractmethod
 import logging
-from typing import Generic, TypeVar
 
 import requests
 
@@ -33,10 +32,7 @@ from .request_error_handler import BaseRequestErrorHandler, RequestErrorHandler
 
 LOGGER = logging.getLogger(__name__)
 
-RequestReturnT = TypeVar('RequestReturnT')
-
-
-class BaseGenericEndpoint(ABC, Generic[RequestReturnT]):
+class BaseGenericEndpoint[RequestReturnT](ABC):
     """
     This base class provides generic access to an API endpoint.
     RequestReturnT represents the type of data this API will return.
@@ -50,7 +46,7 @@ class BaseGenericEndpoint(ABC, Generic[RequestReturnT]):
     ENDPOINT: str = ''
 
     @property
-    def error_handler(self) -> BaseRequestErrorHandler:
+    def error_handler(self) -> type[BaseRequestErrorHandler]:
         return RequestErrorHandler
 
     def __init__(self, session: requests.Session):

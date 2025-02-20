@@ -21,14 +21,24 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .groups import GroupsEndpoint
 from .partitions import PartitionsEndpoint
 from .state_components import StateComponentsEndpoint
 
+@dataclass
+class HsmEndpoints:
+    groups: GroupsEndpoint | None = None
+    partitions: PartitionsEndpoint | None = None
+    state_components: StateComponentsEndpoint | None = None
 
-class HSMClient(APIClientWithTimeoutOption):
+class HSMClient(APIClientWithTimeoutOption[HsmEndpoints]):
+    @property
+    def _init_endpoints(self) -> HsmEndpoints:
+        return HsmEndpoints()
 
     @property
     def read_timeout(self) -> int:
@@ -36,12 +46,18 @@ class HSMClient(APIClientWithTimeoutOption):
 
     @property
     def groups(self) -> GroupsEndpoint:
-        return self.get_endpoint(GroupsEndpoint)
+        if self._endpoints.groups is None:
+            self._endpoints.groups = GroupsEndpoint(self.requests_session)
+        return self._endpoints.groups
 
     @property
     def partitions(self) -> PartitionsEndpoint:
-        return self.get_endpoint(PartitionsEndpoint)
+        if self._endpoints.partitions is None:
+            self._endpoints.partitions = PartitionsEndpoint(self.requests_session)
+        return self._endpoints.partitions
 
     @property
     def state_components(self) -> StateComponentsEndpoint:
-        return self.get_endpoint(StateComponentsEndpoint)
+        if self._endpoints.state_components is None:
+            self._endpoints.state_components = StateComponentsEndpoint(self.requests_session)
+        return self._endpoints.state_components

@@ -21,13 +21,23 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
+
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .power_status import PowerStatusEndpoint
 from .transitions import TransitionsEndpoint
 
+@dataclass
+class PcsEndpoints:
+    power_status: PowerStatusEndpoint | None = None
+    transitions: TransitionsEndpoint | None = None
 
-class PCSClient(APIClientWithTimeoutOption):
+class PCSClient(APIClientWithTimeoutOption[PcsEndpoints]):
+
+    @property
+    def _init_endpoints(self) -> PcsEndpoints:
+        return PcsEndpoints()
 
     @property
     def read_timeout(self) -> int:
@@ -35,8 +45,12 @@ class PCSClient(APIClientWithTimeoutOption):
 
     @property
     def power_status(self) -> PowerStatusEndpoint:
-        return self.get_endpoint(PowerStatusEndpoint)
+        if self._endpoints.power_status is None:
+            self._endpoints.power_status = PowerStatusEndpoint(self.requests_session)
+        return self._endpoints.power_status
 
     @property
     def transitions(self) -> TransitionsEndpoint:
-        return self.get_endpoint(TransitionsEndpoint)
+        if self._endpoints.transitions is None:
+            self._endpoints.transitions = TransitionsEndpoint(self.requests_session)
+        return self._endpoints.transitions

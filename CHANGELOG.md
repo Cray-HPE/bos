@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CASMCMS-9286: Reworked some of the API client implementation to resolve intractable mypy complaints
+
 ## [2.34.2] - 2025-02-19
 
 ### Fixed
