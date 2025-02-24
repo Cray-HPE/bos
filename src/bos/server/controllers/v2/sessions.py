@@ -167,7 +167,7 @@ def patch_v2_session(session_id: str) -> tuple[JsonDict, Literal[200]] | Connexi
                      exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    tenant=get_tenant_from_header()
+    tenant = get_tenant_from_header()
     session_key = get_tenant_aware_key(session_id, tenant)
     if session_key not in DB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
@@ -451,7 +451,7 @@ def _age_to_timestamp(age: str) -> datetime:
 _404_session_not_found = partial(_404_tenanted_resource_not_found, resource_type="Session")
 
 
-def _409_session_already_exists(session_id: str) -> ConnexionResponse:
+def _409_session_already_exists(session_id: str, tenant: str | None) -> ConnexionResponse:
     """
     ProblemAlreadyExists
     """
