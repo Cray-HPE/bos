@@ -23,15 +23,46 @@
 #
 
 """
-General type annotation definitions
+Type annotation definitions for BOS extended session statuses
 """
 from typing import TypedDict
 
-type JsonData = bool | str | None | int | float | list[JsonData] | dict[str, JsonData]
-type JsonDict = dict[str, JsonData]
-type JsonList = list[JsonData]
+from .general import BosDataRecord
+from .sessions import SessionStatusLabel
 
-class BosDataRecord(TypedDict):
+class SessionExtendedStatusPhases(TypedDict, total=True):
     """
-    Parent class for BOS database records
+    #/components/schemas/V2SessionExtendedStatusPhases
     """
+    percent_complete: float
+    percent_powering_on: float
+    percent_powering_off: float
+    percent_configuring: float
+
+class SessionExtendedStatusErrorComponents(TypedDict, total=True):
+    """
+    #/components/schemas/V2SessionExtendedStatusErrorComponents
+    """
+    count: int
+    list: str
+
+class SessionExtendedStatusTiming(TypedDict, total=True):
+    """
+    #/components/schemas/V2SessionExtendedStatusTiming
+    """
+    end_time: str | None
+    start_time: str
+    duration: str
+
+class SessionExtendedStatus(BosDataRecord, total=False):
+    """
+    #/components/schemas/V2SessionExtendedStatus
+    """
+    status: SessionStatusLabel
+    managed_components_count: int
+    phases: SessionExtendedStatusPhases
+    percent_successful: float
+    percent_failed: float
+    percent_staged: float
+    error_summary: dict[str, SessionExtendedStatusErrorComponents]
+    timing: SessionExtendedStatusTiming

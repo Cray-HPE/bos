@@ -23,9 +23,10 @@
 #
 from abc import ABC, abstractmethod
 
-# To help with type hints
-type OptionValue = int | bool | str
-type OptionsDict = dict[str, OptionValue]
+from bos.common.types.options import OptionsDict, OptionName, OptionValue
+
+# The data structures defined in here need to be kept in sync with the
+# definitions in bos.common.types.options
 
 # This is the source of truth for default option values. All other BOS
 # code should either import this dict directly, or (preferably) access
@@ -61,7 +62,7 @@ class BaseOptions(ABC):
     """
 
     @abstractmethod
-    def get_option(self, key: str) -> OptionValue:
+    def get_option(self, key: OptionName) -> OptionValue:
         """
         Return the value for the specified option
         """
@@ -160,10 +161,8 @@ class DefaultOptions(BaseOptions):
     Returns the default value for each option
     """
 
-    def get_option(self, key: str) -> OptionValue:
-        if key in DEFAULTS:
-            return DEFAULTS[key]
-        raise KeyError(key)
+    def get_option(self, key: OptionName) -> OptionValue:
+        return DEFAULTS[key]
 
 
 class OptionsCache(DefaultOptions, ABC):
@@ -189,7 +188,7 @@ class OptionsCache(DefaultOptions, ABC):
     def _get_options(self) -> OptionsDict:
         """Retrieves the current options from the BOS api/DB"""
 
-    def get_option(self, key: str) -> OptionValue:
+    def get_option(self, key: OptionName) -> OptionValue:
         if key in self.options:
             return self.options[key]
         try:
