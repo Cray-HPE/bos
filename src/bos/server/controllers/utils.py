@@ -93,3 +93,11 @@ def _404_resource_not_found(resource_type: str, resource_id: str) -> ConnexionRe
         status=404,
         title="The resource was not found",
         detail=f"{resource_type} '{resource_id}' does not exist")
+
+def _404_tenanted_resource_not_found(resource_type: str, resource_id: str, tenant: str | None) -> ConnexionResponse:
+    """
+    ProblemResourceNotFound
+    """
+    if tenant:
+        resource_type+=f" for tenant '{tenant}'"
+    return _404_resource_not_found(resource_type, resource_id)

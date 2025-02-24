@@ -33,7 +33,7 @@ from bos.common.tenant_utils import (get_tenant_aware_key,
 from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
-from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
+from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
 from bos.server.schema import validator
 from bos.server.utils import get_request_json
 from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
@@ -120,11 +120,14 @@ def get_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[
     """
     LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate",
                  session_template_id)
-    template_key = get_tenant_aware_key(session_template_id,
-                                        get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    template_key = get_tenant_aware_key(session_template_id, tenant)
     if template_key not in DB:
-        LOGGER.warning("Session template not found: %s", session_template_id)
-        return _404_template_not_found(resource_id=session_template_id)  # pylint: disable=redundant-keyword-arg
+        if tenant:
+            LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
+        else:
+            LOGGER.warning("Session template not found: %s", session_template_id)
+        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     template = DB.get(template_key)
     return template, 200
 
@@ -152,11 +155,14 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
     LOGGER.debug(
         "DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate",
         session_template_id)
-    template_key = get_tenant_aware_key(session_template_id,
-                                        get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    template_key = get_tenant_aware_key(session_template_id, tenant)
     if template_key not in DB:
-        LOGGER.warning("Session template not found: %s", session_template_id)
-        return _404_template_not_found(resource_id=session_template_id)  # pylint: disable=redundant-keyword-arg
+        if tenant:
+            LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
+        else:
+            LOGGER.warning("Session template not found: %s", session_template_id)
+        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     return DB.delete(template_key), 204
 
 
@@ -170,11 +176,14 @@ def patch_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Litera
     LOGGER.debug(
         "PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
         session_template_id)
-    template_key = get_tenant_aware_key(session_template_id,
-                                        get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    template_key = get_tenant_aware_key(session_template_id, tenant)
     if template_key not in DB:
-        LOGGER.warning("Session template not found: %s", session_template_id)
-        return _404_template_not_found(resource_id=session_template_id)  # pylint: disable=redundant-keyword-arg
+        if tenant:
+            LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
+        else:
+            LOGGER.warning("Session template not found: %s", session_template_id)
+        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
 
     try:
         template_data = get_request_json()
@@ -251,4 +260,4 @@ def validate_sanitize_session_template(session_template_id: str, template_data: 
         del bs["name"]
 
 
-_404_template_not_found = partial(_404_resource_not_found, resource_type="Session template")
+_404_template_not_found = partial(_404_tenanted_resource_not_found, resource_type="Session template")
