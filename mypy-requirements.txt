@@ -11,3 +11,4 @@ types-jsonschema
 types-python-dateutil
 types-PyYAML
 types-requests
+types-urllib3
