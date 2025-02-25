@@ -1,7 +1,7 @@
 {{/*
 MIT License
 
-(C) Copyright 2021-2023 Hewlett Packard Enterprise Development LP
+(C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -55,14 +55,21 @@ spec:
       labels:
         app.kubernetes.io/name: "{{ include "cray-service.name" . }}-db"
     spec:
+      securityContext:
+        fsGroup: 65534
       containers:
       - name: "{{ include "cray-service.name" . }}-db"
         image: "{{ .Values.database.image.repository }}:{{ .Values.database.image.tag }}"
-        command: ["/bin/sh"]
-        args: ["-c", "echo 'save 10 1' >> /etc/redis.conf && sleep 1 && redis-server /etc/redis.conf"]
+        securityContext:
+          runAsUser: 65534
+          runAsGroup: 65534
         volumeMounts:
         - mountPath: /data
           name: "{{ include "cray-service.name" . }}-db"
+        - name: "{{ include "cray-service.name" . }}-redis-config"
+          mountPath: /usr/local/etc/redis/redis.conf
+          subPath: redis.conf  # Mount the custom redis.conf file
+        command: [ "redis-server", "/usr/local/etc/redis/redis.conf" ]
         ports:
         - containerPort: 6379
           name: redis
@@ -93,6 +100,18 @@ spec:
       - name: "{{ include "cray-service.name" . }}-db"
         persistentVolumeClaim:
           claimName: "{{ include "cray-service.name" . }}-db"
+      - name: "{{ include "cray-service.name" . }}-redis-config"
+        configMap:
+            name: "{{ include "cray-service.name" . }}-redis-configmap"
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ include "cray-service.name" . }}-redis-configmap"
+data:
+  redis.conf: |
+    # Custom redis.conf configuration here
+    save 10 1
 ---
 apiVersion: v1
 kind: Service
