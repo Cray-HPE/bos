@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Created additional type-hinting definitions in bos.common.types
 - CASMCMS-9294: Improve Python type annotations, focused on DB modules
 - CASMCMS-9295: Improve Python type annotations in `boot_image_metadata` modules
+- CASMCMS-9296: Improve Python type annotations in `rootfs` modules
 
 ## [2.34.2] - 2025-02-19
 
