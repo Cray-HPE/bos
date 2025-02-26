@@ -25,12 +25,17 @@
 """
 Type annotation definitions for BOS sessions
 """
-
+import copy
 from typing import Literal, Required, TypedDict
+
+from .general import BosDataRecord
 
 SessionStatusLabel = Literal['complete', 'pending', 'running']
 
 class SessionStatus(TypedDict, total=False):
+    """
+    #/components/schemas/V2SessionStatus
+    """
     end_time: str | None
     error: str | None
     start_time: str
@@ -38,7 +43,10 @@ class SessionStatus(TypedDict, total=False):
 
 SessionOperation = Literal['boot', 'reboot', 'shutdown']
 
-class Session(TypedDict, total=False):
+class Session(BosDataRecord, total=False):
+    """
+    #/components/schemas/V2Session
+    """
     components: str
     include_disabled: bool
     limit: str
@@ -48,3 +56,21 @@ class Session(TypedDict, total=False):
     status: Required[SessionStatus]
     template_name: Required[str]
     tenant: str | None
+
+def update_session_record(record: Session, new_record: Session) -> None:
+    """
+    Patch 'record' in-place with the data from 'new_record'.
+    """
+    # Make a copy, to avoid changing new_record in place
+    new_record_copy = copy.deepcopy(new_record)
+
+    # First, merge the status sub-dict
+    if "status" in new_record_copy:
+        if "status" in record:
+            record["status"].update(new_record_copy["status"])
+            new_record_copy["status"] = record["status"]
+        else:
+            record["status"] = new_record_copy["status"]
+
+    # The remaining fields can be merged the old-fashioned way
+    record.update(new_record_copy)

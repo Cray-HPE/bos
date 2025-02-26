@@ -29,9 +29,10 @@ from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from urllib3.exceptions import MaxRetryError
 
-from bos.common.options import OptionsCache
-from bos.common.utils import exc_type_msg, retry_session_get
 from bos.common.clients.bos.base import BASE_BOS_ENDPOINT
+from bos.common.options import OptionsCache
+from bos.common.types.options import OptionsDict
+from bos.common.utils import exc_type_msg, retry_session_get
 
 LOGGER = logging.getLogger(__name__)
 __name = __name__.lower().rsplit('.', maxsplit=1)[-1]
@@ -46,7 +47,7 @@ class Options(OptionsCache):
     result in network calls.
     """
 
-    def _get_options(self, session: requests.Session | None = None) -> dict:
+    def _get_options(self, session: requests.Session | None = None) -> OptionsDict:
         """Retrieves the current options from the BOS api"""
         LOGGER.debug("GET %s", ENDPOINT)
         try:
