@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,40 +21,20 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
-from typing import Literal
+"""
+BootArtifactsDBWrapper class
+"""
 
-from bos.common.utils import exc_type_msg
-from bos.server.models.healthz import Healthz
-from bos.server import redis_db_utils
+from bos.common.types.components import TimestampedBootArtifacts
 
-DB = redis_db_utils.OptionsDBWrapper()
+from .dbwrapper import DBWrapper
+from .defs import Databases
 
-LOGGER = logging.getLogger(__name__)
-
-
-def _get_db_status() -> str:
-    available = False
-    try:
-        if DB.info():
-            available = True
-    except Exception as e:
-        LOGGER.error(exc_type_msg(e))
-
-    if available:
-        return 'ok'
-    return 'not_available'
-
-
-def get_v2_healthz() -> tuple[Healthz, Literal[200]]:
-    """GET /v2/healthz
-
-    Query BOS etcd for health status
-
-    :rtype: Healthz
+class BootArtifactsDBWrapper(DBWrapper[TimestampedBootArtifacts]):
     """
-    LOGGER.debug("GET /v2/healthz invoked get_v2_healthz")
-    return Healthz(
-        db_status=_get_db_status(),
-        api_status='ok',
-    ), 200
+    Boot artifacts database wrapper
+    """
+
+    @property
+    def db_id(self) -> Databases:
+        return Databases.BSS_TOKENS_BOOT_ARTIFACTS

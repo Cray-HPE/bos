@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9291
   - Updated API spec to define the format of the `error_summary` field
   - Created additional type-hinting definitions in bos.common.types
+- CASMCMS-9294: Improve Python type annotations, focused on DB modules
 
 ## [2.34.2] - 2025-02-19
 

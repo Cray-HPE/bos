@@ -23,12 +23,12 @@
 #
 import logging
 
-from bos.common.types.general import JsonDict
+from bos.common.types.components import TimestampedBootArtifacts
 from bos.common.utils import get_current_timestamp
-from bos.server import redis_db_utils as dbutils
+from bos.server.redis_db_utils import BootArtifactsDBWrapper
 
 LOGGER = logging.getLogger(__name__)
-TOKENS_DB = dbutils.get_wrapper(db='bss_tokens_boot_artifacts')
+TOKENS_DB = BootArtifactsDBWrapper()
 
 
 class BssTokenException(Exception):
@@ -60,7 +60,7 @@ def record_boot_artifacts(token: str, kernel: str, kernel_parameters: str,
         })
 
 
-def get_boot_artifacts(token: str) -> JsonDict:
+def get_boot_artifacts(token: str) -> TimestampedBootArtifacts:
     """
     Get the boot artifacts associated with a BSS token.
 
@@ -72,4 +72,7 @@ def get_boot_artifacts(token: str) -> JsonDict:
     """
     if token not in TOKENS_DB:
         raise BssTokenUnknown
-    return TOKENS_DB.get(token)
+    boot_artifacts = TOKENS_DB.get(token)
+    if boot_artifacts is None:
+        raise BssTokenUnknown
+    return boot_artifacts

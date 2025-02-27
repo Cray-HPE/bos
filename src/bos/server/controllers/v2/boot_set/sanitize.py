@@ -23,7 +23,7 @@
 #
 
 from bos.common.utils import exc_type_msg
-from bos.common.types.general import JsonDict
+from bos.common.types.templates import BootSet, SessionTemplate, remove_empty_cfs_field
 from bos.server.controllers.v2.options import OptionsData
 from bos.server.utils import canonize_xname
 
@@ -34,7 +34,7 @@ from .ims import validate_ims_boot_image
 from .validate import check_node_list_for_nids, verify_nonempty_hw_specifier_field
 
 
-def validate_sanitize_boot_sets(template_data: JsonDict,
+def validate_sanitize_boot_sets(template_data: SessionTemplate,
                                 options_data: OptionsData | None=None) -> None:
     """
     Calls validate_sanitize_boot_set on every boot set in the template.
@@ -63,7 +63,7 @@ def validate_sanitize_boot_sets(template_data: JsonDict,
         validate_sanitize_boot_set(bs_name, bs, options_data=options_data)
 
 
-def validate_sanitize_boot_set(bs_name: str, bs_data: JsonDict,
+def validate_sanitize_boot_set(bs_name: str, bs_data: BootSet,
                                options_data: OptionsData) -> None:
     """
     Called when creating/updating a BOS session template.
@@ -86,6 +86,9 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: JsonDict,
     # Set the 'arch' field to the default value, if it is not present
     if "arch" not in bs_data:
         bs_data["arch"] = DEFAULT_ARCH
+
+    # Remove the 'cfs' field if it is set to a null value (either an empty dict, or a dict whose 'configuration' field maps to an empty string
+    remove_empty_cfs_field(bs_data)
 
     # Check the boot artifacts
     try:
