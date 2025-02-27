@@ -348,6 +348,9 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None, session: Sess
     staged_components = get_v2_components_data(staged_session=session_id,
                                                tenant=tenant_id)
     num_managed_components = len(components) + len(staged_components)
+    LOGGER.debug("_get_v2_session_status: num_managed_components = %d, components = %s", num_managed_components, components)
+    cx = [ f"{c['id']}={c.get('status', {}).get('phase')}" for c in components ]
+    LOGGER.debug("_get_v2_session_status: %s", ','.join(cx))
     if num_managed_components:
         component_phase_counts = Counter([
             c.get('status', {}).get('phase') for c in components
