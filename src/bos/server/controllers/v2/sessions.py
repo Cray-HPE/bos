@@ -342,6 +342,8 @@ def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime
 
 
 def _get_v2_session_status(session_id: str, tenant_id: str | None, session: SessionRecord) -> SessionExtendedStatus:
+    LOGGER.debug("_get_v2_session_status: session_id: %s, tenant_id: %s, session: %s",
+                 session_id, tenant_id, session)
     components = get_v2_components_data(session=session_id, tenant=tenant_id)
     staged_components = get_v2_components_data(staged_session=session_id,
                                                tenant=tenant_id)

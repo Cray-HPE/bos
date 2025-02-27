@@ -193,18 +193,18 @@ class DBWrapper[DataType: BosDataRecord](ABC):
            Not all BOS databases support patch operations. Subclasses that do support them
            are expected to provide a patch method (that can optionally call this method, if
            appropriate)
-        """
+        """        
         datastr = self.client.get(key)
         data = self._load_data(datastr)
+        LOGGER.debug("_patch (before): data=%s, new_data=%s", data, new_data)
         if data:
             self._patch_data(data, new_data)
         else:
             data = new_data
         if data_handler:
             data = data_handler(data)
-        datastr = json.dumps(data)
-        self.client.set(key, datastr)
-        return self.get(key)
+        LOGGER.debug("_patch (after): data=%s", data)
+        return self.put(key, data)
 
     def delete(self, key: str) -> None:
         """Deletes data from the database."""
