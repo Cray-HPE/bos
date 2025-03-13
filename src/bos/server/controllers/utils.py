@@ -64,11 +64,11 @@ def url_for(endpoint: str, **values) -> str:
         return url
 
     # Request was proxied, so update the path with the proxy path.
-    parts = urlparse(url)
-    parts = (parts.scheme, parts.netloc,
+    _parts = urlparse(url)
+    parts = (_parts.scheme, _parts.netloc,
              '/'.join([proxy_path.rstrip('/'),
-                       parts.path.lstrip('/')
-                       ]), parts.params, parts.query, parts.fragment)
+                       _parts.path.lstrip('/')
+                       ]), _parts.params, _parts.query, _parts.fragment)
     return urlunparse(parts)
 
     # TODO(CASMCMS-1869): there might be a better way to do this by overriding
@@ -93,3 +93,11 @@ def _404_resource_not_found(resource_type: str, resource_id: str) -> ConnexionRe
         status=404,
         title="The resource was not found",
         detail=f"{resource_type} '{resource_id}' does not exist")
+
+def _404_tenanted_resource_not_found(resource_type: str, resource_id: str, tenant: str | None) -> ConnexionResponse:
+    """
+    ProblemResourceNotFound
+    """
+    if tenant:
+        resource_type+=f" for tenant '{tenant}'"
+    return _404_resource_not_found(resource_type, resource_id)

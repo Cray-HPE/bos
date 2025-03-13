@@ -22,8 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from typing import Optional
-
 from bos.common.utils import exc_type_msg
 from bos.common.types.general import JsonDict
 from bos.server.controllers.v2.options import OptionsData
@@ -37,7 +35,7 @@ from .validate import check_node_list_for_nids, verify_nonempty_hw_specifier_fie
 
 
 def validate_sanitize_boot_sets(template_data: JsonDict,
-                                options_data: Optional[OptionsData]=None) -> None:
+                                options_data: OptionsData | None=None) -> None:
     """
     Calls validate_sanitize_boot_set on every boot set in the template.
     Raises an exception if there are problems.

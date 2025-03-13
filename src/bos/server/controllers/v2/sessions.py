@@ -26,7 +26,7 @@ from datetime import datetime, timedelta
 from functools import partial
 import logging
 import re
-from typing import Literal, Optional
+from typing import Literal
 import uuid
 
 import connexion
@@ -39,7 +39,7 @@ from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
-from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
+from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
 from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.controllers.v2.options import OptionsData
@@ -123,14 +123,14 @@ def post_v2_session() -> tuple[JsonDict, Literal[201]] | ConnexionResponse:  # n
     session = _create_session(session_create, tenant)
     session_key = get_tenant_aware_key(session.name, tenant)
     if session_key in DB:
-        LOGGER.warning("v2 session named %s already exists", session.name)
-        return _409_session_already_exists(session.name)
+        LOGGER.warning("v2 session named %s already exists (tenant = '%s')", session.name, tenant)
+        return _409_session_already_exists(session.name, tenant)
     session_data = session.to_dict()
     response = DB.put(session_key, session_data)
     return response, 201
 
 
-def _create_session(session_create: SessionCreate, tenant: Optional[str]) -> Session:
+def _create_session(session_create: SessionCreate, tenant: str | None) -> Session:
     initial_status = {
         'status': 'pending',
         'start_time': get_current_timestamp(),
@@ -167,10 +167,11 @@ def patch_v2_session(session_id: str) -> tuple[JsonDict, Literal[200]] | Connexi
                      exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    session_key = get_tenant_aware_key(session_id, tenant)
     if session_key not in DB:
-        LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
+        LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
+        return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
 
     component = DB.patch(session_key, patch_data_json)
     return component, 200
@@ -187,17 +188,18 @@ def get_v2_session(
       Session Dictionary, Status Code
     """
     LOGGER.debug("GET /v2/sessions/%s invoked get_v2_session", session_id)
-    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    session_key = get_tenant_aware_key(session_id, tenant)
     if session_key not in DB:
-        LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
+        LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
+        return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     session = DB.get(session_key)
     return session, 200
 
 
 @dbutils.redis_error_handler
-def get_v2_sessions(min_age: Optional[str]=None, max_age: Optional[str]=None,
-                    status: Optional[str]=None) -> tuple[list[JsonDict],
+def get_v2_sessions(min_age: str | None=None, max_age: str | None=None,
+                    status: str | None=None) -> tuple[list[JsonDict],
                                                          Literal[200]]:  # noqa: E501
     """GET /v2/session
 
@@ -223,10 +225,11 @@ def delete_v2_session(
     """
     LOGGER.debug("DELETE /v2/sessions/%s invoked delete_v2_session",
                  session_id)
-    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    session_key = get_tenant_aware_key(session_id, tenant)
     if session_key not in DB:
-        LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
+        LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
+        return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     if session_key in STATUS_DB:
         STATUS_DB.delete(session_key)
     return DB.delete(session_key), 204
@@ -234,8 +237,8 @@ def delete_v2_session(
 
 @dbutils.redis_error_handler
 def delete_v2_sessions(
-        min_age: Optional[str]=None, max_age: Optional[str]=None,
-        status: Optional[str]=None) -> tuple[None, Literal[204]] | ConnexionResponse:  # noqa: E501
+        min_age: str | None=None, max_age: str | None=None,
+        status: str | None=None) -> tuple[None, Literal[204]] | ConnexionResponse:  # noqa: E501
     LOGGER.debug(
         "DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
         min_age, max_age, status)
@@ -270,10 +273,11 @@ def get_v2_session_status(
     """
     LOGGER.debug("GET /v2/sessions/status/%s invoked get_v2_session_status",
                  session_id)
-    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    session_key = get_tenant_aware_key(session_id, tenant)
     if session_key not in DB:
-        LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
+        LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
+        return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     session = DB.get(session_key)
     if session.get(
             "status",
@@ -296,15 +300,16 @@ def save_v2_session_status(
     """
     LOGGER.debug("POST /v2/sessions/status/%s invoked save_v2_session_status",
                  session_id)
-    session_key = get_tenant_aware_key(session_id, get_tenant_from_header())
+    tenant = get_tenant_from_header()
+    session_key = get_tenant_aware_key(session_id, tenant)
     if session_key not in DB:
-        LOGGER.warning("Could not find v2 session %s", session_id)
-        return _404_session_not_found(resource_id=session_id)  # pylint: disable=redundant-keyword-arg
+        LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
+        return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     return STATUS_DB.put(session_key, _get_v2_session_status(session_key)), 200
 
 
-def _get_filtered_sessions(tenant: Optional[str], min_age: Optional[str], max_age: Optional[str],
-                           status: Optional[str]) -> list[JsonDict]:
+def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str | None,
+                           status: str | None) -> list[JsonDict]:
     response = DB.get_all()
     min_start = None
     max_start = None
@@ -328,8 +333,8 @@ def _get_filtered_sessions(tenant: Optional[str], min_age: Optional[str], max_ag
     return response
 
 
-def _matches_filter(data: dict, tenant: Optional[str], min_start: Optional[datetime],
-                    max_start: Optional[datetime], status: Optional[str]) -> bool:
+def _matches_filter(data: dict, tenant: str | None, min_start: datetime | None,
+                    max_start: datetime | None, status: str | None) -> bool:
     if tenant and tenant != data.get("tenant"):
         return False
     session_status = data.get('status', {})
@@ -346,7 +351,7 @@ def _matches_filter(data: dict, tenant: Optional[str], min_start: Optional[datet
     return True
 
 
-def _get_v2_session_status(session_key: str|bytes, session: Optional[JsonDict]=None) -> JsonDict:
+def _get_v2_session_status(session_key: str|bytes, session: JsonDict | None=None) -> JsonDict:
     if not session:
         session = DB.get(session_key)
     session_id = session.get("name", {})
@@ -443,14 +448,18 @@ def _age_to_timestamp(age: str) -> datetime:
     return get_current_time() - delta
 
 
-_404_session_not_found = partial(_404_resource_not_found, resource_type="Session")
+_404_session_not_found = partial(_404_tenanted_resource_not_found, resource_type="Session")
 
 
-def _409_session_already_exists(session_id: str) -> ConnexionResponse:
+def _409_session_already_exists(session_id: str, tenant: str | None) -> ConnexionResponse:
     """
     ProblemAlreadyExists
     """
+    if tenant is None:
+        detail=f"Session '{session_id}' already exists"
+    else:
+        detail=f"Session '{session_id}' already exists for tenant '{tenant}'"
     return connexion.problem(
         status=409,
         title="The resource to be created already exists",
-        detail=f"Session '{session_id}' already exists")
+        detail=detail)

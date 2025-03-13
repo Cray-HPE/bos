@@ -49,7 +49,7 @@ class ImagesEndpoint(BaseImsEndpoint):
     ENDPOINT = 'images'
 
     @property
-    def error_handler(self) -> ImsImageRequestErrorHandler:
+    def error_handler(self) -> type[ImsImageRequestErrorHandler]:
         return ImsImageRequestErrorHandler
 
     def get_image(self, image_id: str) -> dict:
@@ -62,7 +62,7 @@ class ImagesEndpoint(BaseImsEndpoint):
                   image_id: str,
                   operation: str,
                   key: str,
-                  value: str = None) -> None:
+                  value: str | None = None) -> None:
         if operation not in IMS_TAG_OPERATIONS:
             msg = f"{operation} not valid. Expecting one of {IMS_TAG_OPERATIONS}"
             LOGGER.error(msg)

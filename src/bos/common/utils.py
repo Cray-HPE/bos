@@ -29,7 +29,7 @@ import datetime
 from functools import partial
 import re
 import traceback
-from typing import Optional, Unpack
+from typing import Unpack
 
 # Third party imports
 from dateutil.parser import parse
@@ -109,9 +109,9 @@ class RetrySessionManager(rrs.RetrySessionManager):
 
 
 def retry_session(
-    session: Optional[requests.Session] = None,
-    protocol: Optional[str] = None,
-    adapter_kwargs: Optional[rrs.RequestsRetryAdapterArgs] = None
+    session: requests.Session | None = None,
+    protocol: str | None = None,
+    adapter_kwargs: rrs.RequestsRetryAdapterArgs | None = None
 ) -> AbstractContextManager[requests.Session]:
     if session is not None:
         return nullcontext(session)
@@ -124,10 +124,9 @@ def retry_session(
 
 
 def retry_session_get(*get_args,
-                      session: Optional[requests.Session] = None,
-                      protocol: Optional[str] = None,
-                      adapter_kwargs: Optional[
-                          rrs.RequestsRetryAdapterArgs] = None,
+                      session: requests.Session | None = None,
+                      protocol: str | None = None,
+                      adapter_kwargs: rrs.RequestsRetryAdapterArgs | None = None,
                       **get_kwargs) -> AbstractContextManager[requests.Response]:
     with retry_session(session=session,
                        protocol=protocol,
@@ -153,6 +152,7 @@ def exc_type_msg(exc: Exception) -> str:
     """
     return ''.join(traceback.format_exception_only(type(exc), exc))
 
+
 def using_sbps(component: ComponentRecord) -> bool:
     """
     If the component is using the Scalable Boot Provisioning Service (SBPS) to
@@ -167,7 +167,7 @@ def using_sbps(component: ComponentRecord) -> bool:
     # Get the kernel boot parameters
     boot_artifacts = component.get('desired_state',
                                    {}).get('boot_artifacts', {})
-    kernel_parameters = boot_artifacts.get('kernel_parameters')
+    kernel_parameters = boot_artifacts.get('kernel_parameters', "")
     return using_sbps_check_kernel_parameters(kernel_parameters)
 
 

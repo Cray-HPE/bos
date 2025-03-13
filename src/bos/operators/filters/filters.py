@@ -26,7 +26,6 @@ import copy
 from datetime import timedelta
 import logging
 import re
-from typing import Type
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.cfs import CFSClient
@@ -42,8 +41,8 @@ class OR(DetailsFilter):
 
     def __init__(self, filters_a, filters_b) -> None:
         super().__init__()
-        self.filters_a: list[Type[BaseFilter]] = filters_a
-        self.filters_b: list[Type[BaseFilter]] = filters_b
+        self.filters_a: list[type[BaseFilter]] = filters_a
+        self.filters_b: list[type[BaseFilter]] = filters_b
 
     def _filter(self, components: list[dict]) -> list[dict]:
         results_a = copy.deepcopy(components)
@@ -86,8 +85,8 @@ class HSMState(IDFilter):
 
     def __init__(self,
                  hsm_client: HSMClient,
-                 enabled: bool = None,
-                 ready: bool = None) -> None:
+                 enabled: bool | None = None,
+                 ready: bool | None = None) -> None:
         super().__init__()
         self.enabled = enabled
         self.ready = ready
@@ -126,7 +125,7 @@ class HSMState(IDFilter):
 class NOT(LocalFilter):
     """ Returns the opposite of the given filter.  Use on local filters only."""
 
-    def __init__(self, filter: Type[LocalFilter]) -> None:
+    def __init__(self, filter: type[LocalFilter]) -> None:
         self.negated_filter = filter
         self.filter_match = filter._match
 
@@ -236,7 +235,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         self.cfs_components_dict = {}
         return matches
 
-    def _match(self, component: dict, cfs_component: dict = None) -> bool:
+    def _match(self, component: dict, cfs_component: dict | None = None) -> bool:
         # There are two ways to communicate the cfs_component to this method.
         # First: cfs_component input variable
         # Second: cfs_component_dict instance attribute

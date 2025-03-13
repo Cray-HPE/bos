@@ -21,14 +21,23 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from dataclasses import dataclass
+
 from requests_retry_session import RequestsRetryAdapterArgs
 
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .images import ImagesEndpoint
 
+@dataclass
+class ImsEndpoints:
+    images: ImagesEndpoint | None = None
 
-class IMSClient(APIClientWithTimeoutOption):
+class IMSClient(APIClientWithTimeoutOption[ImsEndpoints]):
+
+    @property
+    def _init_endpoints(self) -> ImsEndpoints:
+        return ImsEndpoints()
 
     @property
     def read_timeout(self) -> int:
@@ -44,4 +53,6 @@ class IMSClient(APIClientWithTimeoutOption):
 
     @property
     def images(self) -> ImagesEndpoint:
-        return self.get_endpoint(ImagesEndpoint)
+        if self._endpoints.images is None:
+            self._endpoints.images = ImagesEndpoint(self.requests_session)
+        return self._endpoints.images

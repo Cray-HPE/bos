@@ -28,7 +28,7 @@ from typing import Literal, NoReturn
 
 from connexion.lifecycle import ConnexionResponse
 
-from bos.common.options import DEFAULTS, OptionsCache
+from bos.common.options import DEFAULTS, OptionsCache, OptionsDict
 from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
@@ -52,7 +52,7 @@ class OptionsData(OptionsCache):
     result in DB calls.
     """
 
-    def _get_options(self) -> JsonDict:
+    def _get_options(self) -> OptionsDict:
         """Retrieves the current options from the BOS DB"""
         LOGGER.debug("Retrieving options data from BOS DB")
         try:
@@ -84,13 +84,13 @@ def _init() -> None:
 
 
 @dbutils.redis_error_handler
-def get_v2_options() -> tuple[JsonDict, Literal[200]]:
+def get_v2_options() -> tuple[OptionsDict, Literal[200]]:
     """Used by the GET /options API operation"""
     LOGGER.debug("GET /v2/options invoked get_v2_options")
     return _get_v2_options(), 200
 
 
-def _get_v2_options() -> JsonDict:
+def _get_v2_options() -> OptionsDict:
     """
     Helper function for get_v2_options function and OptionsData class
     """
@@ -98,7 +98,7 @@ def _get_v2_options() -> JsonDict:
     return _clean_options_data(data)
 
 
-def _clean_options_data(data: JsonDict) -> JsonDict:
+def _clean_options_data(data: JsonDict) -> OptionsDict:
     """Removes keys that are not in the options spec"""
     to_delete = []
     all_options = set(Options().attribute_map.values())
@@ -110,7 +110,7 @@ def _clean_options_data(data: JsonDict) -> JsonDict:
     return data
 
 
-def get_v2_options_data() -> JsonDict:
+def get_v2_options_data() -> OptionsDict:
     return _check_defaults(DB.get(OPTIONS_KEY))
 
 
@@ -130,7 +130,7 @@ def _check_defaults(data: JsonDict) -> JsonDict:
 
 
 @dbutils.redis_error_handler
-def patch_v2_options() -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
+def patch_v2_options() -> tuple[OptionsDict, Literal[200]] | ConnexionResponse:
     """Used by the PATCH /options API operation"""
     LOGGER.debug("PATCH /v2/options invoked patch_v2_options")
     try:

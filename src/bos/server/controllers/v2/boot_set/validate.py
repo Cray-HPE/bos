@@ -23,7 +23,6 @@
 #
 
 from functools import partial
-from typing import Optional
 
 from bos.common.utils import exc_type_msg
 from bos.common.types.general import JsonDict
@@ -39,7 +38,7 @@ def validate_boot_sets(
         session_template: JsonDict,
         operation: str,
         template_name: str,
-        options_data: Optional[OptionsData]=None) -> tuple[BootSetStatus, str]:
+        options_data: OptionsData | None=None) -> tuple[BootSetStatus, str]:
     """
     Validates the boot sets listed in a session template.
     This is called when creating a session or when using the sessiontemplatesvalid endpoint

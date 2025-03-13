@@ -34,7 +34,8 @@ import logging
 import threading
 import os
 import time
-from typing import Generator, NoReturn, Optional, Type
+from types import TracebackType
+from typing import Generator, NoReturn, Self
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
@@ -71,7 +72,7 @@ class ApiClients:
     Essentially, it uses an ExitStack context manager to manage the API clients.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.bos = BOSClient()
         self.bss = BSSClient()
         self.cfs = CFSClient()
@@ -80,7 +81,7 @@ class ApiClients:
         self.pcs = PCSClient()
         self._stack = ExitStack()
 
-    def __enter__(self):
+    def __enter__(self) -> Self:
         """
         Enter context for all API clients
         """
@@ -92,7 +93,9 @@ class ApiClients:
         self._stack.enter_context(self.pcs)
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: type[BaseException] | None,
+                 exc_val: BaseException | None,
+                 exc_tb: TracebackType | None) -> bool | None:
         """
         Exit context on the exit stack, which will take care of exiting
         context for all of the API clients.
@@ -117,7 +120,7 @@ class BaseOperator(ABC):
     retry_attempt_field = ""
     frequency_option = "polling_frequency"
 
-    def __init__(self) -> NoReturn:
+    def __init__(self) -> None:
         self.__max_batch_size = 0
         self._client: ApiClients | None = None
 
@@ -138,7 +141,7 @@ class BaseOperator(ABC):
 
     @property
     @abstractmethod
-    def filters(self) -> list[Type[BaseFilter]]:
+    def filters(self) -> list[type[BaseFilter]]:
         return []
 
     def BOSQuery(self, **kwargs) -> BOSQuery:
@@ -288,7 +291,7 @@ class BaseOperator(ABC):
 
     def _update_database(self,
                          components: list[ComponentRecord],
-                         additional_fields: Optional[dict] = None) -> None:
+                         additional_fields: dict | None = None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
         Includes updating the last action, attempt count and error
@@ -438,7 +441,7 @@ def _init_logging() -> None:
     logging.basicConfig(level=log_level, format=log_format)
 
 
-def main(operator: Type[BaseOperator]):
+def main(operator: type[BaseOperator]):
     """
     The main method for any operator type.
     Automatically handles logging and heartbeats as well as starting the operator.

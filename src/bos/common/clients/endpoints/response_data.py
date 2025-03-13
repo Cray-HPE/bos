@@ -26,7 +26,7 @@ from typing import NamedTuple, Self
 
 import requests
 
-from bos.common.types.general import JsonData, JsonDict
+from bos.common.types.general import JsonData
 
 
 class ResponseData(NamedTuple):
@@ -34,11 +34,11 @@ class ResponseData(NamedTuple):
     Encapsulates data from a response to an API request. This allows the
     response itself to be cleaned up when its context manager exits.
     """
-    headers: JsonDict
+    headers: requests.structures.CaseInsensitiveDict
     ok: bool
     reason: str
     status_code: int
-    text: bytes | None
+    text: str
 
     @property
     def body(self) -> JsonData:
