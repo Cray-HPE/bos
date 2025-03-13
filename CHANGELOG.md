@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.35.0] - 2025-03-13
+
 ### Changed
 - CASMCMS-9286: Reworked some of the API client implementation to resolve intractable mypy complaints
 - Improve session/sessiontemplate controller error responses by including tenant
