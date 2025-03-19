@@ -127,6 +127,10 @@ def post_v2_session() -> tuple[SessionRecord, Literal[201]] | CxResponse:  # noq
         return _409_session_already_exists(session.name, tenant)
     session_data = session.to_dict()
     response = DB.tenant_aware_put(session.name, tenant, session_data)
+    if response == session_data:
+        LOGGER.debug("post_v2_session: %s/%s to_db: %s, from_db: %s", session.name, tenant, session_data, response)
+    else:
+        LOGGER.error("post_v2_session: %s/%s to_db: %s, from_db: %s", session.name, tenant, session_data, response)
     return response, 201
 
 
@@ -172,7 +176,9 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | Cx
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
 
-    return DB.tenant_aware_patch(session_id, tenant, patch_data_json), 200
+    response = DB.tenant_aware_patch(session_id, tenant, patch_data_json)
+    LOGGER.debug("patch_v2_session: %s/%s to_db: %s, from_db: %s", session_id, tenant, patch_data_json, response)
+    return response, 200
 
 
 @dbutils.redis_error_handler
@@ -299,7 +305,13 @@ def save_v2_session_status(
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     extended_status = _get_v2_session_status(session_id, tenant, session)
-    return STATUS_DB.tenant_aware_put(session_id, tenant, extended_status), 200
+
+    response = STATUS_DB.tenant_aware_put(session_id, tenant, extended_status)
+    if extended_status == response:
+        LOGGER.debug("save_v2_session_status: %s/%s to_db: %s, from_db: %s", session_id, tenant, extended_status, response)
+    else:
+        LOGGER.error("save_v2_session_status: %s/%s to_db: %s, from_db: %s", session_id, tenant, extended_status, response)
+    return response, 200
 
 
 def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str | None,

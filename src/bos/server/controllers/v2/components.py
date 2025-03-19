@@ -243,7 +243,12 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
     response = []
     for component_id, component_data in components:
         component_data = _set_auto_fields(component_data)
-        response.append(DB.put(component_id, component_data))
+        db_response = DB.put(component_id, component_data)
+        if db_response == component_data:
+            LOGGER.debug("put_v2_components: %s to_db: %s, from_db: %s", component_id, component_data, db_response)
+        else:
+            LOGGER.error("put_v2_components: %s to_db: %s, from_db: %s", component_id, component_data, db_response)
+        response.append(db_response)
     return response, 200
 
 
@@ -288,8 +293,9 @@ def patch_v2_components_list(
         if "id" in component_data:
             del component_data["id"]
         component_data = _set_auto_fields(component_data)
-        response.append(DB.patch(component_id, component_data,
-                                 _update_handler))
+        db_response = DB.patch(component_id, component_data, _update_handler)
+        LOGGER.debug("patch_v2_components_list: %s to_db: %s, from_db: %s", component_id, component_data, db_response)
+        response.append(db_response)
     return response, 200
 
 
@@ -332,7 +338,9 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
         del patch["id"]
     patch = _set_auto_fields(patch)
     for component_id in id_list:
-        response.append(DB.patch(component_id, patch, _update_handler))
+        db_response = DB.patch(component_id, patch, _update_handler)
+        LOGGER.debug("patch_v2_components_dict: %s to_db: %s, from_db: %s", component_id, patch, db_response)
+        response.append(db_response)
     return response, 200
 
 
@@ -365,7 +373,12 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
 
     data['id'] = component_id
     data = _set_auto_fields(data)
-    return DB.put(component_id, data), 200
+    db_response = DB.put(component_id, data)
+    if db_response == component_data:
+        LOGGER.debug("put_v2_component: %s to_db: %s, from_db: %s", component_id, data, db_response)
+    else:
+        LOGGER.error("put_v2_component: %s to_db: %s, from_db: %s", component_id, data, db_response)
+    return db_response, 200
 
 
 @tenant_error_handler
@@ -395,7 +408,9 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
     if "id" in data:
         del data["id"]
     data = _set_auto_fields(data)
-    return DB.patch(component_id, data, _update_handler), 200
+    db_response = DB.patch(component_id, data, _update_handler)
+    LOGGER.debug("patch_v2_component: %s to_db: %s, from_db: %s", component_id, data, db_response)
+    return db_response, 200
 
 
 def validate_actual_state_change_is_allowed(component_id: str) -> bool:
