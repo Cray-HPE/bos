@@ -374,7 +374,7 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     data['id'] = component_id
     data = _set_auto_fields(data)
     db_response = DB.put(component_id, data)
-    if db_response == component_data:
+    if db_response == data:
         LOGGER.debug("put_v2_component: %s to_db: %s, from_db: %s", component_id, data, db_response)
     else:
         LOGGER.error("put_v2_component: %s to_db: %s, from_db: %s", component_id, data, db_response)
