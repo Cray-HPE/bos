@@ -441,10 +441,10 @@ def _409_session_already_exists(session_id: str, tenant: str | None) -> CxRespon
     """
     ProblemAlreadyExists
     """
-    if tenant is None:
-        detail=f"Session '{session_id}' already exists"
-    else:
+    if tenant:
         detail=f"Session '{session_id}' already exists for tenant '{tenant}'"
+    else:
+        detail=f"Session '{session_id}' already exists"
     return connexion.problem(
         status=409,
         title="The resource to be created already exists",

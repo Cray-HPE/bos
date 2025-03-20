@@ -107,8 +107,7 @@ def get_v2_components_data(id_list: list[str] | None=None,
 
     Allows filtering using a comma separated list of ids.
     """
-    tenant_components = None if tenant is None else get_tenant_component_set(
-        tenant)
+    tenant_components = get_tenant_component_set(tenant) if tenant else None
 
     if id_list is not None:
         id_set = set(id_list)

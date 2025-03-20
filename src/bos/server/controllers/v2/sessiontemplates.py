@@ -90,7 +90,7 @@ def put_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, L
         LOGGER.debug("Full template: %s", template_data)
         return _400_bad_request(f"The session template could not be created: {err}")
 
-    tenant = get_tenant_from_header()
+    tenant = get_tenant_from_header() or None
     template_data['tenant'] = tenant
     return DB.tenant_aware_put(session_template_id, tenant, template_data), 200
 
