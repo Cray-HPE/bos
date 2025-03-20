@@ -87,6 +87,8 @@ def _init() -> None:
 def get_v2_options() -> tuple[OptionsDict, Literal[200]]:
     """Used by the GET /options API operation"""
     LOGGER.debug("GET /v2/options invoked get_v2_options")
+    current_level = LOGGER.getEffectiveLevel()
+    LOGGER.log(current_level, 'get_v2_options: Current level is %s', logging.getLevelName(current_level))
     return _get_v2_options(), 200
 
 
