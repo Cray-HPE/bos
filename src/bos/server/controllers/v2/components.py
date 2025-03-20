@@ -23,16 +23,17 @@
 #
 from functools import partial
 import logging
-from typing import Literal
+from typing import Literal, cast
 
 import connexion
-from connexion.lifecycle import ConnexionResponse
+from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.utils import exc_type_msg, get_current_timestamp
 from bos.common.tenant_utils import (get_tenant_aware_key,
                                      get_tenant_component_set,
                                      get_tenant_from_header,
                                      tenant_error_handler)
+from bos.common.types.components import ComponentRecord
 from bos.common.types.general import JsonDict
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
@@ -42,20 +43,21 @@ from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 from bos.server.utils import get_request_json
 
 LOGGER = logging.getLogger(__name__)
-DB = dbutils.get_wrapper(db='components')
-SESSIONS_DB = dbutils.get_wrapper(db='sessions')
+DB = dbutils.ComponentDBWrapper()
+SESSIONS_DB = dbutils.SessionDBWrapper()
 
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_components(ids: str | None=None,
-                      enabled: bool | None=None,
-                      session: str | None=None,
-                      staged_session: str | None=None,
-                      phase: str | None=None,
-                      status: str | None=None,
-                      start_after_id: str | None=None,
-                      page_size: int=0) -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
+def get_v2_components(
+        ids: str | None=None,
+        enabled: bool | None=None,
+        session: str | None=None,
+        staged_session: str | None=None,
+        phase: str | None=None,
+        status: str | None=None,
+        start_after_id: str | None=None,
+        page_size: int=0) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -100,7 +102,7 @@ def get_v2_components_data(id_list: list[str] | None=None,
                            tenant: str | None=None,
                            start_after_id: str | None=None,
                            page_size: int=0,
-                           delete_timestamp: bool=False) -> list[JsonDict]:
+                           delete_timestamp: bool=False) -> list[ComponentRecord]:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -138,14 +140,14 @@ def get_v2_components_data(id_list: list[str] | None=None,
                                page_size=page_size)
 
 
-def _filter_component(data: JsonDict,
+def _filter_component(data: ComponentRecord,
                       id_set: set[str] | None=None,
                       enabled: bool | None=None,
                       session: str | None=None,
                       staged_session: str | None=None,
                       phase: str | None=None,
                       status: str | None=None,
-                      delete_timestamp: bool=False) -> JsonDict | None:
+                      delete_timestamp: bool=False) -> ComponentRecord | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None
@@ -169,7 +171,7 @@ def _filter_component(data: JsonDict,
     return updated_data
 
 
-def _set_status(data: JsonDict, delete_timestamp: bool = False) -> JsonDict:
+def _set_status(data: ComponentRecord, delete_timestamp: bool = False) -> ComponentRecord:
     """
     This sets the status field of the overall status.
     """
@@ -181,7 +183,7 @@ def _set_status(data: JsonDict, delete_timestamp: bool = False) -> JsonDict:
     return data
 
 
-def _calculate_status(data: JsonDict) -> str:
+def _calculate_status(data: ComponentRecord) -> str:
     """
     Calculates and returns the status of a component
     """
@@ -222,11 +224,11 @@ def _calculate_status(data: JsonDict) -> str:
 
 
 @dbutils.redis_error_handler
-def put_v2_components() -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
+def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PUT /components API operation"""
     LOGGER.debug("PUT /v2/components invoked put_v2_components")
     try:
-        data = get_request_json()
+        data = cast(list[ComponentRecord], get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PUT request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
@@ -247,7 +249,7 @@ def put_v2_components() -> tuple[list[JsonDict], Literal[200]] | ConnexionRespon
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def patch_v2_components() -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
+def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PATCH /components API operation"""
     LOGGER.debug("PATCH /v2/components invoked patch_v2_components")
     try:
@@ -265,7 +267,8 @@ def patch_v2_components() -> tuple[list[JsonDict], Literal[200]] | ConnexionResp
     return _400_bad_request(f"Unexpected data type {type(data).__name__}")
 
 
-def patch_v2_components_list(data: list[JsonDict]) -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
+def patch_v2_components_list(
+        data: list[ComponentRecord]) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     try:
         LOGGER.debug("patch_v2_components_list: %d components specified",
                      len(data))
@@ -290,7 +293,8 @@ def patch_v2_components_list(data: list[JsonDict]) -> tuple[list[JsonDict], Lite
     return response, 200
 
 
-def patch_v2_components_dict(data: JsonDict) -> tuple[list[JsonDict], Literal[200]] | ConnexionResponse:
+def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
+                                                      Literal[200]] | CxResponse:
     filters = data.get("filters", {})
     ids = filters.get("ids", None)
     session = filters.get("session", None)
@@ -334,7 +338,7 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[JsonDict], Literal[20
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
+def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /v2/components/%s invoked get_v2_component",
                  component_id)
@@ -348,12 +352,12 @@ def get_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | Conne
 
 
 @dbutils.redis_error_handler
-def put_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
+def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the PUT /components/{component_id} API operation"""
     LOGGER.debug("PUT /v2/components/%s invoked put_v2_component",
                  component_id)
     try:
-        data = get_request_json()
+        data = cast(ComponentRecord, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PUT '%s' request data: %s", component_id,
                      exc_type_msg(err))
@@ -366,12 +370,12 @@ def put_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | Conne
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def patch_v2_component(component_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
+def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the PATCH /components/{component_id} API operation"""
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component",
                  component_id)
     try:
-        data = get_request_json()
+        data = cast(ComponentRecord, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id,
                      exc_type_msg(err))
@@ -414,7 +418,7 @@ def validate_actual_state_change_is_allowed(component_id: str) -> bool:
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | ConnexionResponse:
+def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResponse:
     """Used by the DELETE /components/{component_id} API operation"""
     LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component",
                  component_id)
@@ -426,7 +430,7 @@ def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | Connex
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
+def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | CxResponse:
     """Used by the POST /applystaged API operation"""
     LOGGER.debug("POST /v2/applystaged invoked post_v2_apply_staged")
     try:
@@ -506,7 +510,7 @@ def _apply_staged(component_id: str, clear_staged: bool=False) -> Literal[False]
     return response
 
 
-def _set_state_from_staged(data: JsonDict) -> Literal[True]:
+def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
     staged_state = data.get("staged_state", {})
     staged_session_id_sans_tenant = staged_state.get("session", "")
     tenant = get_tenant_from_header()
@@ -544,7 +548,7 @@ def _set_state_from_staged(data: JsonDict) -> Literal[True]:
     return True
 
 
-def _copy_staged_to_desired(data: JsonDict) -> None:
+def _copy_staged_to_desired(data: ComponentRecord) -> None:
     staged_state = data.get("staged_state", {})
     data["desired_state"] = {
         "boot_artifacts": staged_state.get("boot_artifacts", {}),
@@ -552,7 +556,7 @@ def _copy_staged_to_desired(data: JsonDict) -> None:
     }
 
 
-def _set_auto_fields(data: JsonDict) -> JsonDict:
+def _set_auto_fields(data: ComponentRecord) -> ComponentRecord:
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     data = _set_on_hold_when_enabled(data)
@@ -561,7 +565,7 @@ def _set_auto_fields(data: JsonDict) -> JsonDict:
     return data
 
 
-def _populate_boot_artifacts(data: JsonDict) -> JsonDict:
+def _populate_boot_artifacts(data: ComponentRecord) -> ComponentRecord:
     """
     If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the
@@ -590,7 +594,7 @@ def _populate_boot_artifacts(data: JsonDict) -> JsonDict:
     return data
 
 
-def del_timestamp(data: JsonDict) -> None:
+def del_timestamp(data: ComponentRecord) -> None:
     """
     # The actual state boot artifacts dictionary contains a timestamp
     # that is used for internal references only; we should strip it
@@ -603,7 +607,7 @@ def del_timestamp(data: JsonDict) -> None:
         pass
 
 
-def _set_last_updated(data: JsonDict) -> JsonDict:
+def _set_last_updated(data: ComponentRecord) -> ComponentRecord:
     timestamp = get_current_timestamp()
     for section in [
             'actual_state', 'desired_state', 'staged_state', 'last_action'
@@ -614,7 +618,7 @@ def _set_last_updated(data: JsonDict) -> JsonDict:
     return data
 
 
-def _set_on_hold_when_enabled(data: JsonDict) -> JsonDict:
+def _set_on_hold_when_enabled(data: ComponentRecord) -> ComponentRecord:
     """
     The status operator doesn't monitor disabled components, so this causes a delay until it can
     revaluate the component so that other operators don't act on old phase information.
@@ -627,7 +631,7 @@ def _set_on_hold_when_enabled(data: JsonDict) -> JsonDict:
     return data
 
 
-def _clear_session_when_manually_updated(data: JsonDict) -> JsonDict:
+def _clear_session_when_manually_updated(data: ComponentRecord) -> ComponentRecord:
     """
     If the desired state for a component is updated outside of the setup operator, that component
     should no longer be considered part of it's original session.
@@ -637,7 +641,7 @@ def _clear_session_when_manually_updated(data: JsonDict) -> JsonDict:
     return data
 
 
-def _clear_event_stats_when_desired_state_changes(data: JsonDict) -> JsonDict:
+def _clear_event_stats_when_desired_state_changes(data: ComponentRecord) -> ComponentRecord:
     desired_state = data.get("desired_state", {})
     if "boot_artifacts" in desired_state or "configuration" in desired_state:
         data["event_stats"] = {
@@ -648,7 +652,7 @@ def _clear_event_stats_when_desired_state_changes(data: JsonDict) -> JsonDict:
     return data
 
 
-def _update_handler(data: JsonDict) -> JsonDict:
+def _update_handler(data: ComponentRecord) -> ComponentRecord:
     # Allows processing of data during common patch operation
     return data
 
