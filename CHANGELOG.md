@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.35.1] - 2025-03-20
+
+### Fixed
+- CASMCMS-9330: Print new logging level as string rather than integer
+
 ## [2.35.0] - 2025-03-13
 
 ### Changed
