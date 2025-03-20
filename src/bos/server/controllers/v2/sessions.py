@@ -275,11 +275,14 @@ def get_v2_session_status(
                  session_id)
     tenant = get_tenant_from_header()
     session = DB.tenant_aware_get(session_id, tenant)
+    LOGGER.debug("get_v2_session_status: session_id=%s, tenant=%s, session=%s", session_id, tenant, session)
     if session is None:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
+    LOGGER.debug("get_v2_session_status: session_id=%s, tenant=%s, status=%s", session_id, tenant, session.get("status",{}).get("status"))
     if session.get("status",{}).get("status") == "complete":
         session_status = STATUS_DB.tenant_aware_get(session_id, tenant)
+        LOGGER.debug("get_v2_session_status: session_id=%s, tenant=%s, session_status=%s", session_id, tenant, session_status)
         if session_status is not None:
             # If the session is complete and the status is saved,
             # return the status from completion time
@@ -301,6 +304,7 @@ def save_v2_session_status(
                  session_id)
     tenant = get_tenant_from_header()
     session = DB.tenant_aware_get(session_id, tenant)
+    LOGGER.debug("save_v2_session_status: session_id=%s, tenant=%s, session=%s", session_id, tenant, session)
     if session is None:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
@@ -354,6 +358,7 @@ def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime
 
 
 def _get_v2_session_status(session_id: str, tenant_id: str | None, session: SessionRecord) -> SessionExtendedStatus:
+    LOGGER.debug("_get_v2_session_status: %s/%s, session=%s", session_id, tenant_id, session)
     components = get_v2_components_data(session=session_id, tenant=tenant_id)
     staged_components = get_v2_components_data(staged_session=session_id,
                                                tenant=tenant_id)
