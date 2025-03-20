@@ -251,7 +251,7 @@ class Session:
             # Nodes disabled in HSM may be included, so no filtering is required
             return nodes
         hsmfilter = self.HSMState(enabled=True)
-        nodes = set(hsmfilter._filter(list(nodes)))
+        nodes = set(hsmfilter.filter_component_ids(list(nodes)))
         if not nodes:
             self._log(
                 LOGGER.warning,

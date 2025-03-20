@@ -34,6 +34,5 @@ from .filters import (ActualBootStateIsSet,
                       DesiredConfigurationSetInCFS,
                       HSMState,
                       LastActionIs,
-                      NOT,
                       OR,
                       TimeSinceLastAction)

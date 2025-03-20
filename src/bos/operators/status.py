@@ -46,21 +46,20 @@ class StatusOperator(BaseOperator):
     def __init__(self):
         super().__init__()
         # Reuse filter code
-        self.desired_boot_state_is_off = DesiredBootStateIsOff()._match
-        self.boot_artifact_states_match = BootArtifactStatesMatch()._match
-        self.desired_configuration_is_none = DesiredConfigurationIsNone(
-        )._match
-        self.last_action_is_power_on = LastActionIs(Action.power_on)._match
+        self.desired_boot_state_is_off = DesiredBootStateIsOff().component_match
+        self.boot_artifact_states_match = BootArtifactStatesMatch().component_match
+        self.desired_configuration_is_none = DesiredConfigurationIsNone().component_match
+        self.last_action_is_power_on = LastActionIs(Action.power_on).component_match
         self.boot_wait_time_elapsed = TimeSinceLastAction(
-            seconds=options.max_boot_wait_time)._match
+            seconds=options.max_boot_wait_time).component_match
         self.power_on_wait_time_elapsed = TimeSinceLastAction(
-            seconds=options.max_power_on_wait_time)._match
+            seconds=options.max_power_on_wait_time).component_match
 
     def desired_configuration_set_in_cfs(self, *args, **kwargs):
         """
         Shortcut to DesiredConfigurationSetInCFS._match method
         """
-        return self.DesiredConfigurationSetInCFS._match(*args, **kwargs)
+        return self.DesiredConfigurationSetInCFS().component_match(*args, **kwargs)
 
     @property
     def name(self):
@@ -99,9 +98,9 @@ class StatusOperator(BaseOperator):
         updated_components = []
         # Recreate these filters to pull in the latest options values
         self.boot_wait_time_elapsed = TimeSinceLastAction(
-            seconds=options.max_boot_wait_time)._match
+            seconds=options.max_boot_wait_time).component_match
         self.power_on_wait_time_elapsed = TimeSinceLastAction(
-            seconds=options.max_power_on_wait_time)._match
+            seconds=options.max_power_on_wait_time).component_match
         for component in components:
             updated_component = self._check_status(
                 component, power_states.get(component['id']),
