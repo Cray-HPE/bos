@@ -30,19 +30,25 @@ from bos.common.clients.s3 import (ArtifactNotFound,
                                    S3MissingConfiguration,
                                    S3Url)
 from bos.common.utils import exc_type_msg
-from bos.operators.utils.boot_image_metadata import BootImageMetaData, BootImageMetaDataBadRead
+from bos.common.types.templates import BootSet
+from bos.operators.utils.boot_image_metadata import (BootImageError,
+                                                     BootImageMetaData,
+                                                     BootImageMetaDataBadRead)
 
 LOGGER = logging.getLogger(__name__)
 
 
 class S3BootImageMetaData(BootImageMetaData):
 
-    def __init__(self, boot_set: dict):
+    def __init__(self, boot_set: BootSet):
         """
         Create an S3 BootImage by downloading the manifest
         """
         super().__init__(boot_set)
-        path = self._boot_set.get('path', None)
+        try:
+            path = self._boot_set['path']
+        except KeyError as exc:
+            raise BootImageError(f"Boot set is missing required 'path' field: {boot_set}") from exc
         etag = self._boot_set.get('etag', None)
         self.boot_artifacts = S3BootArtifacts(path, etag)
         self.artifact_summary = {}
