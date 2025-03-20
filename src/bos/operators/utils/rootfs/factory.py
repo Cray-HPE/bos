@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,54 +21,42 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import importlib
 import logging
 
-from . import ProviderNotImplemented
+from bos.common.types.templates import BootSet
+from bos.operators.utils.boot_image_metadata import BootImageArtifactSummary
+
+from .cpss3_provider import CPSS3Provider
+from .rootfs_provider import RootfsProvider
+from .sbps_provider import SBPSProvider
 
 LOGGER = logging.getLogger(__name__)
 
-
-class ProviderFactory:
+class ProviderNotImplemented(Exception):
     """
-    Conditionally creates new instances of rootfilesystem providers based on
-    a given agent instance.
+    Raised when a user requests a Provider Provisioning mechanism that isn't yet supported
     """
 
-    def __init__(self, boot_set, artifact_info):
-        """
-        Inputs:
-            boot_set: A boot set from the session template data
-            artifact_info: The artifact summary from the boot_set.
-                           This is a dictionary containing keys which are boot artifacts
-                           (kernel, initrd, roots, and kernel boot parameters);
-                           the values are the paths to those boot artifacts in S3.
-                           It also contains the etags for the rootfs and kerenl boot parameters.
-        """
-        self.boot_set = boot_set
-        self.artifact_info = artifact_info
-
-    def __call__(self):
-        provider_name = self.boot_set.get('rootfs_provider', '').lower()
-
-        if provider_name:
-            # When a provisioning protocol is specified...
-            provider_module = f'bos.operators.utils.rootfs.{provider_name}'
-            provider_classname = f'{provider_name.upper()}Provider'
-        else:
-            # none specified or blank
-            provider_module = 'bos.operators.utils.rootfs'
-            provider_classname = 'RootfsProvider'
-
-        # Import the Provider's provisioning model
-        try:
-            module = importlib.import_module(provider_module)
-        except ModuleNotFoundError as mnfe:
-            # This is pretty much unrecoverable at this stage of development; make note and raise
-            LOGGER.error(
-                "Provider provisioning mechanism '%s' not yet implemented or not found.",
-                provider_name)
-            raise ProviderNotImplemented(mnfe) from mnfe
-
-        class_def = getattr(module, provider_classname)
-        return class_def(self.boot_set, self.artifact_info)
+def get_provider(boot_set: BootSet, artifact_info: BootImageArtifactSummary) -> RootfsProvider:
+    """
+    Inputs:
+        boot_set: A boot set from the session template data
+        artifact_info: The artifact summary from the boot_set.
+                       This is a dictionary containing keys which are boot artifacts
+                       (kernel, initrd, roots, and kernel boot parameters);
+                       the values are the paths to those boot artifacts in S3.
+                       It also contains the etags for the rootfs and kerenl boot parameters.
+    Returns a new instance of rootfilesystem provider, for this boot set.
+    """
+    try:
+        provider_name = boot_set['rootfs_provider']
+    except KeyError as exc:
+        # Default to RootfsProvider
+        return RootfsProvider(boot_set, artifact_info)
+    if provider_name == 'cpss3':
+        return CPSS3Provider(boot_set, artifact_info)
+    if provider_name == 'sbps':
+        return SBPSProvider(boot_set, artifact_info)
+    msg = f"Unsupported rootfs_provider ('{provider_name}') specified in boot set: {boot_set}"
+    LOGGER.error(msg)
+    raise ProviderNotImplemented(msg)

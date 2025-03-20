@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,26 +23,26 @@
 #
 '''
 Provisioning mechanism, base class
-The assumption is the artifact info contains information about the rootfs.
 '''
 
-from . import RootfsProvider
+from .rootfs_provider import RootfsProvider
 
 
-class BaseRootfsProvider(RootfsProvider):
-
-    PROTOCOL = None
+class RootfsProviderWithArtifactInfo(RootfsProvider):
+    """
+    The assumption is the artifact info contains information about the rootfs.
+    """
 
     @property
-    def provider_field(self):
+    def provider_field(self) -> str:
         return self.artifact_info['rootfs']
 
     @property
-    def provider_field_id(self):
+    def provider_field_id(self) -> str:
         return self.artifact_info['rootfs_etag']
 
     @property
-    def nmd_field(self):
+    def nmd_field(self) -> str:
         """
         The value to add to the kernel boot parameters for Node Memory Dump (NMD)
         parameter.
