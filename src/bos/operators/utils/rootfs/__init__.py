@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,71 +26,3 @@ Created on Apr 29, 2019
 
 @author: jsl
 '''
-
-import logging
-
-LOGGER = logging.getLogger(__name__)
-
-
-class ProviderNotImplemented(Exception):
-    """
-    Raised when a user requests a Provider Provisioning mechanism that isn't yet supported
-    """
-
-
-class RootfsProvider:
-    PROTOCOL = None
-    DELIMITER = ':'
-    """
-    This class is intended to be inherited by various kinds of root Provider provisioning
-    mechanisms.
-    """
-
-    def __init__(self, boot_set, artifact_info):
-        """
-        Given an bootset, extrapolate the required boot parameter value.
-        """
-        self.boot_set = boot_set
-        self.artifact_info = artifact_info
-
-    def __str__(self):
-        """
-        The value to add to the 'root=' kernel boot parameter.
-        """
-        fields = []
-        if self.PROTOCOL:
-            fields.append(self.PROTOCOL)
-
-        if self.provider_field:
-            fields.append(self.provider_field)
-        else:
-            fields.append("")
-
-        if self.provider_field_id:
-            fields.append(self.provider_field_id)
-        else:
-            fields.append("")
-
-        rootfs_provider_passthrough = self.boot_set.get(
-            'rootfs_provider_passthrough', None)
-        if rootfs_provider_passthrough:
-            fields.append(rootfs_provider_passthrough)
-
-        stripped_fields = [field for field in fields if field]
-        return f"root={self.DELIMITER.join(fields)}" if stripped_fields else ''
-
-    @property
-    def provider_field(self):
-        return None
-
-    @property
-    def provider_field_id(self):
-        return None
-
-    @property
-    def nmd_field(self):
-        """
-        The value to add to the kernel boot parameters for Node Memory Dump (NMD)
-        parameter.
-        """
-        return None
