@@ -148,8 +148,8 @@ def update_log_level(new_level_str: str) -> None:
     new_level = logging.getLevelName(new_level_str.upper())
     current_level = LOGGER.getEffectiveLevel()
     if current_level != new_level:
-        LOGGER.log(current_level, 'Changing logging level from %s to %s',
-                   logging.getLevelName(current_level), new_level)
+        LOGGER.log(current_level, 'Changing logging level from %s to %s (%s, %s)',
+                   logging.getLevelName(current_level), new_level, logging.getLevelName(new_level), new_level_str)
         logger = logging.getLogger()
         logger.setLevel(new_level)
         LOGGER.log(new_level, 'Logging level changed from %s to %s',
@@ -158,11 +158,14 @@ def update_log_level(new_level_str: str) -> None:
 
 def check_v2_logging_level() -> NoReturn:
     while True:
+        current_level = LOGGER.getEffectiveLevel()
         try:
             data = get_v2_options_data()
             if 'logging_level' in data:
                 update_log_level(data['logging_level'])
+            else:
+                LOGGER.log(current_level, "No logging_level in data!")
         except Exception as err:
-            LOGGER.debug("Error checking or updating log level: %s",
+            LOGGER.log(current_level, "Error checking or updating log level: %s",
                          exc_type_msg(err))
         time.sleep(5)
