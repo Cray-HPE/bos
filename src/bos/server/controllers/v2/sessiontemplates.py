@@ -23,14 +23,13 @@
 #
 from functools import partial
 import logging
-from typing import Literal
+from typing import Literal, cast
 
-from connexion.lifecycle import ConnexionResponse
+from connexion.lifecycle import ConnexionResponse as CxResponse
 
-from bos.common.tenant_utils import (get_tenant_aware_key,
-                                     get_tenant_from_header,
+from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
-from bos.common.types.general import JsonDict
+from bos.common.types.templates import SessionTemplate, remove_empty_cfs_field
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
@@ -39,7 +38,7 @@ from bos.server.utils import get_request_json
 from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
 
 LOGGER = logging.getLogger(__name__)
-DB = dbutils.get_wrapper(db='session_templates')
+DB = dbutils.SessionTemplateDBWrapper()
 
 EXAMPLE_BOOT_SET = {
     "type": "s3",
@@ -69,7 +68,7 @@ EXAMPLE_SESSION_TEMPLATE = {
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def put_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:  # noqa: E501
+def put_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, Literal[200]] | CxResponse:  # noqa: E501
     """PUT /v2/sessiontemplates
 
     Creates a new session template. # noqa: E501
@@ -77,7 +76,7 @@ def put_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[
     LOGGER.debug("PUT /v2/sessiontemplates/%s invoked put_v2_sessiontemplate",
                  session_template_id)
     try:
-        template_data = get_request_json()
+        template_data = cast(SessionTemplate, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PUT '%s' request data: %s",
                      session_template_id, exc_type_msg(err))
@@ -91,28 +90,33 @@ def put_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[
         LOGGER.debug("Full template: %s", template_data)
         return _400_bad_request(f"The session template could not be created: {err}")
 
-    tenant = get_tenant_from_header()
+    tenant = get_tenant_from_header() or None
     template_data['tenant'] = tenant
-    template_key = get_tenant_aware_key(session_template_id, tenant)
-    return DB.put(template_key, template_data), 200
+    return DB.tenant_aware_put(session_template_id, tenant, template_data), 200
 
 
 @dbutils.redis_error_handler
-def get_v2_sessiontemplates() -> tuple[list[JsonDict], Literal[200]]:  # noqa: E501
+def get_v2_sessiontemplates() -> tuple[list[SessionTemplate], Literal[200]]:  # noqa: E501
     """
     GET /v2/sessiontemplates
 
     List all sessiontemplates
     """
     LOGGER.debug("GET /v2/sessiontemplates invoked get_v2_sessiontemplates")
-    response = _get_filtered_templates(tenant=get_tenant_from_header())
+    tenant=get_tenant_from_header()
+    if tenant:
+        def _matches_filter(data: SessionTemplate) -> SessionTemplate | None:
+            return data if tenant == data.get("tenant") else None
+        response = DB.get_all_filtered(filter_func=_matches_filter)
+    else:
+        response = DB.get_all()
     LOGGER.debug("get_v2_sessiontemplates returning %d templates",
                  len(response))
     return response, 200
 
 
 @dbutils.redis_error_handler
-def get_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
+def get_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, Literal[200]] | CxResponse:
     """
     GET /v2/sessiontemplates
 
@@ -121,19 +125,18 @@ def get_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[
     LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate",
                  session_template_id)
     tenant = get_tenant_from_header()
-    template_key = get_tenant_aware_key(session_template_id, tenant)
-    if template_key not in DB:
+    template = DB.tenant_aware_get(session_template_id, tenant)
+    if template is None:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
         else:
             LOGGER.warning("Session template not found: %s", session_template_id)
-        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
-    template = DB.get(template_key)
+        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
     return template, 200
 
 
 @dbutils.redis_error_handler
-def get_v2_sessiontemplatetemplate() -> tuple[JsonDict, Literal[200]]:
+def get_v2_sessiontemplatetemplate() -> tuple[SessionTemplate, Literal[200]]:
     """
     GET /v2/sessiontemplatetemplate
 
@@ -146,7 +149,7 @@ def get_v2_sessiontemplatetemplate() -> tuple[JsonDict, Literal[200]]:
 
 
 @dbutils.redis_error_handler
-def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[204]] | ConnexionResponse:
+def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[204]] | CxResponse:
     """
     DELETE /v2/sessiontemplates
 
@@ -156,18 +159,18 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
         "DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate",
         session_template_id)
     tenant = get_tenant_from_header()
-    template_key = get_tenant_aware_key(session_template_id, tenant)
-    if template_key not in DB:
+    template = DB.tenant_aware_get_and_delete(session_template_id, tenant)
+    if template is None:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
         else:
             LOGGER.warning("Session template not found: %s", session_template_id)
-        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
-    return DB.delete(template_key), 204
+        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
+    return None, 204
 
 
 @dbutils.redis_error_handler
-def patch_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Literal[200]] | ConnexionResponse:
+def patch_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, Literal[200]] | CxResponse:
     """
     PATCH /v2/sessiontemplates
 
@@ -177,16 +180,15 @@ def patch_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Litera
         "PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
         session_template_id)
     tenant = get_tenant_from_header()
-    template_key = get_tenant_aware_key(session_template_id, tenant)
-    if template_key not in DB:
+    if not DB.has_tenanted_entry(session_template_id, tenant):
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
         else:
             LOGGER.warning("Session template not found: %s", session_template_id)
-        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
+        return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
 
     try:
-        template_data = get_request_json()
+        template_data = cast(SessionTemplate, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s",
                      session_template_id, exc_type_msg(err))
@@ -199,11 +201,11 @@ def patch_v2_sessiontemplate(session_template_id: str) -> tuple[JsonDict, Litera
                      session_template_id, exc_type_msg(err))
         return _400_bad_request(f"The session template could not be patched: {err}")
 
-    return DB.patch(template_key, template_data), 200
+    return DB.tenant_aware_patch(session_template_id, tenant, template_data), 200
 
 
 @dbutils.redis_error_handler
-def validate_v2_sessiontemplate(session_template_id: str) -> tuple[str, Literal[200]] | ConnexionResponse:
+def validate_v2_sessiontemplate(session_template_id: str) -> tuple[str, Literal[200]] | CxResponse:
     """
     Validate a V2 session template. Look for missing elements or errors that would prevent
     a session from being launched using this template.
@@ -212,7 +214,7 @@ def validate_v2_sessiontemplate(session_template_id: str) -> tuple[str, Literal[
         "GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate",
         session_template_id)
     response = get_v2_sessiontemplate(session_template_id)
-    if isinstance(response, ConnexionResponse):
+    if isinstance(response, CxResponse):
         # This means it was an error, so we just pass it up
         return response
 
@@ -229,25 +231,14 @@ def validate_v2_sessiontemplate(session_template_id: str) -> tuple[str, Literal[
     return msg, 200
 
 
-def _get_filtered_templates(tenant: str | None) -> list[JsonDict]:
-    response = DB.get_all()
-    if any([tenant]):
-        response = [r for r in response if _matches_filter(r, tenant)]
-    return response
-
-
-def _matches_filter(data: JsonDict, tenant: str) -> bool:
-    if tenant and tenant != data.get("tenant"):
-        return False
-    return True
-
-
-def validate_sanitize_session_template(session_template_id: str, template_data: JsonDict) -> None:
+def validate_sanitize_session_template(session_template_id: str, template_data: SessionTemplate) -> None:
     """
     Used when creating or patching session templates
     """
     validate_sanitize_boot_sets(template_data)
     template_data['name'] = session_template_id
+
+    remove_empty_cfs_field(template_data)
 
     # Validate this against the API schema
     # An exception will be raised if it does not follow it
@@ -258,6 +249,5 @@ def validate_sanitize_session_template(session_template_id: str, template_data: 
     # validate_sanitize_boot_sets()
     for bs in template_data["boot_sets"].values():
         del bs["name"]
-
 
 _404_template_not_found = partial(_404_tenanted_resource_not_found, resource_type="Session template")

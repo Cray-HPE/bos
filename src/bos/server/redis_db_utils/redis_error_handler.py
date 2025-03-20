@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,40 +21,39 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+"""
+Redis error handler wrapper for use with endpoint controllers
+"""
+
+from collections.abc import Callable
+import functools
 import logging
-from typing import Literal
+from typing import ParamSpec, TypeVar
 
-from bos.common.utils import exc_type_msg
-from bos.server.models.healthz import Healthz
-from bos.server import redis_db_utils
-
-DB = redis_db_utils.OptionsDBWrapper()
+import connexion
+import redis
 
 LOGGER = logging.getLogger(__name__)
 
+P = ParamSpec('P')
+R = TypeVar('R')
 
-def _get_db_status() -> str:
-    available = False
-    try:
-        if DB.info():
-            available = True
-    except Exception as e:
-        LOGGER.error(exc_type_msg(e))
+def redis_error_handler(func: Callable[P, R]) -> Callable[P, R]:
+    """Decorator for returning better errors if Redis is unreachable"""
 
-    if available:
-        return 'ok'
-    return 'not_available'
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            if 'body' in kwargs:
+                # Our get/patch functions don't take body, but the **kwargs
+                # in the arguments to this wrapper cause it to get passed.
+                del kwargs['body']
+            return func(*args, **kwargs)
+        except redis.exceptions.ConnectionError as e:
+            LOGGER.error('Unable to connect to the Redis database: %s', e)
+            return connexion.problem(
+                status=503,
+                title='Unable to connect to the Redis database',
+                detail=str(e))
 
-
-def get_v2_healthz() -> tuple[Healthz, Literal[200]]:
-    """GET /v2/healthz
-
-    Query BOS etcd for health status
-
-    :rtype: Healthz
-    """
-    LOGGER.debug("GET /v2/healthz invoked get_v2_healthz")
-    return Healthz(
-        db_status=_get_db_status(),
-        api_status='ok',
-    ), 200
+    return wrapper

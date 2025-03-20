@@ -21,30 +21,27 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+"""
+DBWrapper class
+"""
+
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from itertools import batched
-import functools
 import json
 import logging
-from typing import Generator, ParamSpec, TypeVar
+from typing import Generator, cast
 
-import connexion
 import redis
 
-from bos.common.types.general import JsonDict
+from bos.common.types.general import BosDataRecord
 from bos.common.utils import exc_type_msg
 
+from .defs import DB_HOST, DB_PORT, Databases
+
 LOGGER = logging.getLogger(__name__)
-DATABASES = [
-    "options", "components", "session_templates", "sessions",
-    "bss_tokens_boot_artifacts", "session_status"
-]  # Index is the db id.
 
-DB_HOST = 'cray-bos-db'
-DB_PORT = 6379
-
-
-class DBWrapper():
+class DBWrapper[DataType: BosDataRecord](ABC):
     """A wrapper around a Redis database connection
 
     This handles creating the Redis client and provides REST-like methods for
@@ -54,35 +51,34 @@ class DBWrapper():
     and can be safely shared by multiple threads.
     """
 
-    def __init__(self, db: int|str):
-        self.db_id = self._get_db_id(db)
-        self.client = self._get_client(self.db_id)
+    def __init__(self):
+        self.client = self._get_client()
 
     def __contains__(self, key: str) -> bool:
         return self.client.exists(key)
 
-    def _get_db_id(self, db: int|str) -> int:
-        """Converts a db name to the id used by Redis."""
-        if isinstance(db, int):
-            return db
-        return DATABASES.index(db)
+    # @property has to be listed before @abstractmethod, or you get runtime errors
+    @property
+    @abstractmethod
+    def db_id(self) -> Databases:
+        """Return the integer database ID"""
 
-    def _get_client(self, db_id: int) -> redis.Redis:
+    def _get_client(self) -> redis.Redis:
         """Create a connection with the database."""
         try:
             LOGGER.debug(
                 "Creating database connection"
-                "host: %s port: %s database: %s", DB_HOST, DB_PORT, db_id)
-            return redis.Redis(host=DB_HOST, port=DB_PORT, db=db_id)
+                "host: %s port: %s database: %d", DB_HOST, DB_PORT, self.db_id)
+            return redis.Redis(host=DB_HOST, port=DB_PORT, db=int(self.db_id))
         except Exception as err:
-            LOGGER.error("Failed to connect to database %s : %s", db_id,
+            LOGGER.error("Failed to connect to database %d : %s", self.db_id,
                          exc_type_msg(err))
             raise
 
     @property
     def db_string(self) -> str:
-        """Returns the string name of the database, from the DATABASES array"""
-        return DATABASES[self.db_id]
+        """Returns the string name of the database"""
+        return self.db_id.name
 
     @property
     def ready(self) -> bool:
@@ -98,8 +94,15 @@ class DBWrapper():
             return False
         return True
 
+    @classmethod
+    def _load_data(cls, datastr: str) -> DataType | None:
+        if not datastr:
+            return None
+        data = json.loads(datastr)
+        return cast(DataType, data)
+
     # The following methods act like REST calls for single items
-    def get(self, key: str) -> JsonDict:
+    def get(self, key: str) -> DataType | None:
         """Get the data for the given key."""
         datastr = self.client.get(key)
         if not datastr:
@@ -107,27 +110,24 @@ class DBWrapper():
         data = json.loads(datastr)
         return data
 
-    def get_and_delete(self, key: str) -> JsonDict:
+    def get_and_delete(self, key: str) -> DataType | None:
         """Get the data for the given key and delete it from the DB."""
         datastr = self.client.getdel(key)
-        if not datastr:
-            return None
-        data = json.loads(datastr)
-        return data
+        return self._load_data(datastr)
 
-    def get_all(self) -> list[JsonDict]:
+    def get_all(self) -> list[DataType | None]:
         """Get an array of data for all keys."""
         data = []
         for key in self.client.scan_iter():
             datastr = self.client.get(key)
-            single_data = json.loads(datastr)
+            single_data = self._load_data(datastr)
             data.append(single_data)
         return data
 
     def get_all_filtered(self,
-                         filter_func: Callable[[JsonDict], JsonDict | None],
+                         filter_func: Callable[[DataType], DataType | None],
                          start_after_key: str | None = None,
-                         page_size: int = 0) -> list[JsonDict]:
+                         page_size: int = 0) -> list[DataType]:
         """
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)
@@ -137,7 +137,7 @@ class DBWrapper():
         More elements may remain and additional queries will be needed to acquire them.
         """
         data = []
-        for value in self.iter_values(start_after_key):
+        for value in self._iter_values(start_after_key):
             filtered_value = filter_func(value)
             if filtered_value is not None:
                 data.append(filtered_value)
@@ -145,7 +145,7 @@ class DBWrapper():
                     break
         return data
 
-    def iter_values(self, start_after_key: str | None = None) -> Generator[JsonDict, None, None]:
+    def _iter_values(self, start_after_key: str | None = None) -> Generator[DataType, None, None]:
         """
         Iterate through every item in the database. Parse each item as JSON and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
@@ -155,9 +155,11 @@ class DBWrapper():
             all_keys = [k for k in all_keys if k > start_after_key]
         for next_keys in batched(all_keys, 500):
             for datastr in self.client.mget(next_keys):
-                yield json.loads(datastr) if datastr else None
+                data = self._load_data(datastr)
+                if data is not None:
+                    yield data
 
-    def get_all_as_dict(self) -> dict[str, JsonDict]:
+    def get_all_as_dict(self) -> dict[str, DataType]:
         """Return a mapping from all keys to their corresponding data
            Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
         """
@@ -166,58 +168,43 @@ class DBWrapper():
         while cursor != 0:
             cursor, keys = self.client.scan(cursor=cursor, count=1000)
             values = [
-                json.loads(datastr) if datastr else None
+                self._load_data(datastr)
                 for datastr in self.client.mget(keys)
             ]
             keys = [k.decode() for k in keys]
             data.update(dict(zip(keys, values)))
         return data
 
-    def get_keys(self) -> list[bytes]:
-        """Get an array of all keys"""
-        data = []
-        for key in self.client.scan_iter():
-            data.append(key)
-        return data
-
-    def put(self, key: str, new_data: JsonDict) -> JsonDict:
+    def put(self, key: str, new_data: DataType) -> DataType | None:
         """Put data in to the database, replacing any old data."""
         datastr = json.dumps(new_data)
         self.client.set(key, datastr)
         return self.get(key)
 
-    def patch(self, key: str, new_data: JsonDict,
-              data_handler: Callable[[JsonDict],JsonDict] | None=None) -> JsonDict:
+    @classmethod
+    def _patch_data(cls, data: DataType, new_data: DataType) -> None:
+        data.update(new_data)
+
+    def _patch(self, key: str, new_data: DataType,
+               data_handler: Callable[[DataType],DataType] | None=None) -> DataType | None:
         """Patch data in the database.
-           data_handler provides a way to operate on the full patched data"""
+           data_handler provides a way to operate on the full patched data.
+
+           Not all BOS databases support patch operations. Subclasses that do support them
+           are expected to provide a patch method (that can optionally call this method, if
+           appropriate)
+        """
         datastr = self.client.get(key)
-        data = json.loads(datastr)
-        data = self._update(data, new_data)
+        data = self._load_data(datastr)
+        if data:
+            self._patch_data(data, new_data)
+        else:
+            data = new_data
         if data_handler:
             data = data_handler(data)
         datastr = json.dumps(data)
         self.client.set(key, datastr)
         return self.get(key)
-
-    def rename(self, old_key: str, new_key: str):
-        """
-        Store data from old_key under new_key instead
-        """
-        self.client.rename(old_key, new_key)
-
-    def _update(self, data: JsonDict, new_data: JsonDict) -> JsonDict:
-        """Recursively patches json to allow sub-fields to be patched.
-
-        Keyword arguments:
-        data -- A dictionary of json data
-        new_data -- A dictionary of json data in the same format as "data"
-        """
-        for k, v in new_data.items():
-            if isinstance(v, dict):
-                data[k] = self._update(data.get(k, {}), v)
-            else:
-                data[k] = v
-        return data
 
     def delete(self, key: str) -> None:
         """Deletes data from the database."""
@@ -226,32 +213,3 @@ class DBWrapper():
     def info(self) -> dict:
         """Returns the database info."""
         return self.client.info()
-
-
-P = ParamSpec('P')
-R = TypeVar('R')
-
-def redis_error_handler(func: Callable[P, R]) -> Callable[P, R]:
-    """Decorator for returning better errors if Redis is unreachable"""
-
-    @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        try:
-            if 'body' in kwargs:
-                # Our get/patch functions don't take body, but the **kwargs
-                # in the arguments to this wrapper cause it to get passed.
-                del kwargs['body']
-            return func(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
-            LOGGER.error('Unable to connect to the Redis database: %s', e)
-            return connexion.problem(
-                status=503,
-                title='Unable to connect to the Redis database',
-                detail=str(e))
-
-    return wrapper
-
-
-def get_wrapper(db: int|str) -> DBWrapper:
-    """Returns a database object."""
-    return DBWrapper(db)
