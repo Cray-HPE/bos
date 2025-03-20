@@ -49,13 +49,10 @@ class InvalidTenantException(Exception):
     pass
 
 
-def get_tenant_from_header() -> str:
-    tenant = ""
+def get_tenant_from_header() -> str | None:
     if TENANT_HEADER in connexion.request.headers:
-        tenant = connexion.request.headers[TENANT_HEADER]
-        if not tenant:
-            tenant = ""
-    return tenant
+        return connexion.request.headers[TENANT_HEADER] or None
+    return None
 
 
 def add_tenant_to_headers(tenant: str, headers: JsonDict | None=None) -> JsonDict:
