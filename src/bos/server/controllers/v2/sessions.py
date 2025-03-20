@@ -358,12 +358,12 @@ def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime
 
 
 def _get_v2_session_status(session_id: str, tenant_id: str | None, session: SessionRecord) -> SessionExtendedStatus:
-    LOGGER.debug("_get_v2_session_status: %s/%s, session=%s", session_id, tenant_id, session)
+    LOGGER.debug("_get_v2_session_status: %s/%s/%s, session=%s", session_id, tenant_id, type(tenant_id), session)
     components = get_v2_components_data(session=session_id, tenant=tenant_id)
     staged_components = get_v2_components_data(staged_session=session_id,
                                                tenant=tenant_id)
     num_managed_components = len(components) + len(staged_components)
-    LOGGER.debug("_get_v2_session_status: %s/%s, session=%s, num_managed_components=%d, staged_components=%s, components=%s", session_id, tenant_id, session, num_managed_components, staged_components, components)
+    LOGGER.debug("_get_v2_session_status: %s/%s, num_managed_components=%d, staged_components=%s, components=%s", session_id, tenant_id, session, num_managed_components, staged_components, components)
     if num_managed_components:
         component_phase_counts = Counter([
             c.get('status', {}).get('phase') for c in components
