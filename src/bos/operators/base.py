@@ -136,36 +136,33 @@ class BaseOperator(ABC):
 
     @property
     @abstractmethod
-    def name(self) -> str:
-        return 'Invalid Action Type'
+    def name(self) -> str: ...
 
     @property
     @abstractmethod
-    def filters(self) -> list[type[BaseFilter]]:
-        return []
+    def filters(self) -> list[BaseFilter]: ...
 
-    def BOSQuery(self, **kwargs) -> BOSQuery:
+    def BOSQuery(self, bos_client: BOSClient | None = None, **kwargs) -> BOSQuery:
         """
         Shortcut to get a BOSQuery filter with the bos_client for this operator
         """
-        if 'bos_client' not in kwargs:
-            kwargs['bos_client'] = self.client.bos
-        return BOSQuery(**kwargs)
+        return BOSQuery(bos_client=self.client.bos if bos_client is None else bos_client,
+                        **kwargs)
 
-    @property
-    def DesiredConfigurationSetInCFS(self) -> DesiredConfigurationSetInCFS:
+    def DesiredConfigurationSetInCFS(self, cfs_client: CFSClient | None = None,
+                                     **kwargs) -> DesiredConfigurationSetInCFS:
         """
         Shortcut to get a DesiredConfigurationSetInCFS filter with the cfs_client for this operator
         """
-        return DesiredConfigurationSetInCFS(self.client.cfs)
+        return DesiredConfigurationSetInCFS(
+                cfs_client=self.client.cfs if cfs_client is None else cfs_client, **kwargs)
 
-    def HSMState(self, **kwargs) -> HSMState:
+    def HSMState(self, hsm_client: HSMClient | None = None, **kwargs) -> HSMState:
         """
         Shortcut to get a HSMState filter with the bos_client for this operator
         """
-        if 'hsm_client' not in kwargs:
-            kwargs['hsm_client'] = self.client.hsm
-        return HSMState(**kwargs)
+        return HSMState(hsm_client=self.client.hsm if hsm_client is None else hsm_client,
+                        **kwargs)
 
     def run(self) -> NoReturn:
         """
@@ -287,7 +284,6 @@ class BaseOperator(ABC):
     @abstractmethod
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         """ The action taken by the operator on target components """
-        raise NotImplementedError()
 
     def _update_database(self,
                          components: list[ComponentRecord],
