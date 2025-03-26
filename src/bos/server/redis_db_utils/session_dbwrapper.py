@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,35 +21,28 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-'''
-Provisioning mechanism, base class
-The assumption is the artifact info contains information about the rootfs.
-'''
+"""
+SessionDBWrapper class
+"""
 
-from . import RootfsProvider
+from bos.common.types.sessions import Session, update_session_record
 
+from .defs import Databases
+from .tenant_aware_dbwrapper import TenantAwareDBWrapper
 
-class BaseRootfsProvider(RootfsProvider):
+class SessionDBWrapper(TenantAwareDBWrapper[Session]):
+    """
+    Session database wrapper
+    """
 
-    PROTOCOL = None
-
-    @property
-    def provider_field(self):
-        return self.artifact_info['rootfs']
-
-    @property
-    def provider_field_id(self):
-        return self.artifact_info['rootfs_etag']
+    def __init__(self) -> None:
+        super().__init__()
+        self.tenant_aware_patch = self._tenant_aware_patch
 
     @property
-    def nmd_field(self):
-        """
-        The value to add to the kernel boot parameters for Node Memory Dump (NMD)
-        parameter.
-        """
-        fields = []
-        if self.provider_field:
-            fields.append(f"url={self.provider_field}")
-        if self.provider_field_id:
-            fields.append(f"etag={self.provider_field_id}")
-        return f"nmd_data={','.join(fields)}" if fields else ''
+    def db_id(self) -> Databases:
+        return Databases.SESSIONS
+
+    @classmethod
+    def _patch_data(cls, data: Session, new_data: Session) -> None:
+        update_session_record(data, new_data)

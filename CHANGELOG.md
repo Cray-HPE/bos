@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.36.0] - 2025-03-26
+
+### Changed
+- CASMCMS-9294: Improve Python type annotations, focused on DB modules
+- CASMCMS-9295: Improve Python type annotations in `boot_image_metadata` modules
+- CASMCMS-9296: Improve Python type annotations in `rootfs` modules
+- CASMCMS-9297: Improve Python type annotations in `filters` modules
+- CASMCMS-9320: Add "app.kubernetes.io/instance: cray-bos" label to cray-bos-db pod
+
 ## [2.35.1] - 2025-03-20
 
 ### Fixed

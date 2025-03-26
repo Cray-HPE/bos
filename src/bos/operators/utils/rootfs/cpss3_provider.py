@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,11 +22,17 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 '''
-Provisioning mechanism using the Scalable Boot Provisioning Service
+Provisioning mechanism unique to the ContentProjectionService
 '''
 
-from .baserootfs import BaseRootfsProvider
+from .rootfs_provider_with_artifact_info import RootfsProviderWithArtifactInfo
 
 
-class SBPSProvider(BaseRootfsProvider):
-    PROTOCOL = 'sbps-s3'
+class CPSS3Provider(RootfsProviderWithArtifactInfo):
+    '''
+    Provisioning mechanism unique to the ContentProjectionService; this is software
+    that is often installed as part of Cray CME images in both standard, enhanced
+    and premium offerings; the underlying implementation of CPS may be handled by
+    another protocol (iSCSI or DVS) depending on the product.
+    '''
+    PROTOCOL = 'craycps-s3'

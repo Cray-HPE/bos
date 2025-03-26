@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2022-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,15 +21,20 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-'''
-Provisioning mechanism unique to the ContentProjectionService; this is software
-that is often installed as part of Cray CME images in both standard, enhanced
-and premium offerings; the underlying implementation of CPS may be handled by
-another protocol (iSCSI or DVS) depending on the product.
-'''
+"""
+BootArtifactsDBWrapper class
+"""
 
-from .baserootfs import BaseRootfsProvider
+from bos.common.types.components import TimestampedBootArtifacts
 
+from .dbwrapper import DBWrapper
+from .defs import Databases
 
-class CPSS3Provider(BaseRootfsProvider):
-    PROTOCOL = 'craycps-s3'
+class BootArtifactsDBWrapper(DBWrapper[TimestampedBootArtifacts]):
+    """
+    Boot artifacts database wrapper
+    """
+
+    @property
+    def db_id(self) -> Databases:
+        return Databases.BSS_TOKENS_BOOT_ARTIFACTS

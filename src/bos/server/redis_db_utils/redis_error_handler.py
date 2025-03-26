@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
-# (C) Copyright 2022-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,41 +21,39 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+"""
+Redis error handler wrapper for use with endpoint controllers
+"""
 
-from bos.common.values import Status
-from bos.operators.base import BaseOperator, main
+from collections.abc import Callable
+import functools
+import logging
+from typing import ParamSpec, TypeVar
+
+import connexion
+import redis
 
 LOGGER = logging.getLogger(__name__)
 
+P = ParamSpec('P')
+R = TypeVar('R')
 
-class ConfigurationOperator(BaseOperator):
-    """
-    The Configure Operator sets the desired configuration in CFS if:
-    - Enabled in the BOS database and the current phase is configuring
-    - DesiredConfiguration != SetConfiguration
-    """
+def redis_error_handler(func: Callable[P, R]) -> Callable[P, R]:
+    """Decorator for returning better errors if Redis is unreachable"""
 
-    @property
-    def name(self):
-        # The Configuration step can take place at any time before power-on.
-        # This step is therefore outside the normal boot flow and the name is
-        # left empty so this step is not recorded to the component data.
-        return ''
+    @functools.wraps(func)
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+        try:
+            if 'body' in kwargs:
+                # Our get/patch functions don't take body, but the **kwargs
+                # in the arguments to this wrapper cause it to get passed.
+                del kwargs['body']
+            return func(*args, **kwargs)
+        except redis.exceptions.ConnectionError as e:
+            LOGGER.error('Unable to connect to the Redis database: %s', e)
+            return connexion.problem(
+                status=503,
+                title='Unable to connect to the Redis database',
+                detail=str(e))
 
-    # Filters
-    @property
-    def filters(self):
-        return [
-            self.BOSQuery(enabled=True, status=Status.configuring),
-            self.DesiredConfigurationSetInCFS(negate=True)
-        ]
-
-    def _act(self, components):
-        if components:
-            self.client.cfs.components.set_cfs(components, enabled=True)
-        return components
-
-
-if __name__ == '__main__':
-    main(ConfigurationOperator)
+    return wrapper

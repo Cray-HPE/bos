@@ -29,10 +29,10 @@ import bos.server.redis_db_utils as dbutils
 
 LOGGER = logging.getLogger(__name__)
 
-TEMP_DB = dbutils.get_wrapper(db='session_templates')
-SESS_DB = dbutils.get_wrapper(db='sessions')
-STAT_DB = dbutils.get_wrapper(db='session_status')
-COMP_DB = dbutils.get_wrapper(db='components')
+TEMP_DB = dbutils.SessionTemplateDBWrapper()
+SESS_DB = dbutils.SessionDBWrapper()
+STAT_DB = dbutils.SessionStatusDBWrapper()
+COMP_DB = dbutils.ComponentDBWrapper()
 
 MAX_DB_WAIT_SECONDS=120.0
 

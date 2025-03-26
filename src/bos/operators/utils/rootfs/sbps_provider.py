@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
@@ -22,41 +21,16 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+'''
+Provisioning mechanism using the Scalable Boot Provisioning Service
+'''
 
-from bos.common.values import Status
-from bos.operators.base import BaseOperator, main
-
-LOGGER = logging.getLogger(__name__)
-
-
-class ConfigurationOperator(BaseOperator):
-    """
-    The Configure Operator sets the desired configuration in CFS if:
-    - Enabled in the BOS database and the current phase is configuring
-    - DesiredConfiguration != SetConfiguration
-    """
-
-    @property
-    def name(self):
-        # The Configuration step can take place at any time before power-on.
-        # This step is therefore outside the normal boot flow and the name is
-        # left empty so this step is not recorded to the component data.
-        return ''
-
-    # Filters
-    @property
-    def filters(self):
-        return [
-            self.BOSQuery(enabled=True, status=Status.configuring),
-            self.DesiredConfigurationSetInCFS(negate=True)
-        ]
-
-    def _act(self, components):
-        if components:
-            self.client.cfs.components.set_cfs(components, enabled=True)
-        return components
+from .rootfs_provider_with_artifact_info import RootfsProviderWithArtifactInfo
 
 
-if __name__ == '__main__':
-    main(ConfigurationOperator)
+class SBPSProvider(RootfsProviderWithArtifactInfo):
+    '''
+    Provisioning mechanism using the Scalable Boot Provisioning Service
+    '''
+
+    PROTOCOL = 'sbps-s3'

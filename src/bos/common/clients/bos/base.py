@@ -79,43 +79,51 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint, ABC):
     This base class provides generic access to the BOS API for tenant aware endpoints.
     The individual endpoint needs to be overridden for a specific endpoint.
     """
-
     def get_item(self, item_id, tenant):
         """Get information for a single BOS item"""
-        return self.get(uri=item_id, headers=get_new_tenant_header(tenant))
+        kwargs = { "uri": item_id }
+        if tenant:
+            kwargs["headers"] = get_new_tenant_header(tenant)
+        return self.get(**kwargs)
 
-    def get_items(self, **kwargs):
+    def get_items(self, tenant: str | None = None, **params):
         """Get information for all BOS items"""
-        headers = None
-        if "tenant" in kwargs:
-            tenant = kwargs.pop("tenant")
-            headers = get_new_tenant_header(tenant)
-        return self.get(params=kwargs, headers=headers)
+        kwargs = { "params": params }
+        if tenant:
+            kwargs["headers"] = get_new_tenant_header(tenant)
+        return self.get(**kwargs)
 
     def update_item(self, item_id, tenant, data):
         """Update information for a single BOS item"""
-        return self.patch(uri=item_id,
-                          json=data,
-                          headers=get_new_tenant_header(tenant))
+        kwargs = { "uri": item_id, "json": data }
+        if tenant:
+            kwargs["headers"] = get_new_tenant_header(tenant)
+        return self.patch(**kwargs)
 
     def update_items(self, tenant, data):
         """Update information for multiple BOS items"""
-        return self.patch(json=data, headers=get_new_tenant_header(tenant))
+        kwargs = { "json": data }
+        if tenant:
+            kwargs["headers"] = get_new_tenant_header(tenant)
+        return self.patch(**kwargs)
 
     def post_item(self, item_id, tenant, data=None):
         """Post information for a single BOS item"""
-        return self.post(uri=item_id,
-                         json=data,
-                         headers=get_new_tenant_header(tenant))
+        kwargs = { "uri": item_id, "json": data }
+        if tenant:
+            kwargs["headers"] = get_new_tenant_header(tenant)
+        return self.post(**kwargs)
 
     def put_items(self, tenant, data):
         """Put information for multiple BOS items"""
-        return self.put(json=data, headers=get_new_tenant_header(tenant))
+        kwargs = { "json": data }
+        if tenant:
+            kwargs["headers"] = get_new_tenant_header(tenant)
+        return self.put(**kwargs)
 
-    def delete_items(self, **kwargs):
+    def delete_items(self, tenant: str | None = None, **params):
         """Delete information for multiple BOS items"""
-        headers = None
-        if "tenant" in kwargs:
-            tenant = kwargs.pop("tenant")
-            headers = get_new_tenant_header(tenant)
-        return self.delete(params=kwargs, headers=headers)
+        kwargs = { "params": params }
+        if tenant:
+            kwargs["headers"] = get_new_tenant_header(tenant)
+        return self.delete(**kwargs)

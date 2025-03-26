@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,17 +21,22 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+"""
+Definitions for redis_db_utils modules
+"""
 
+from enum import IntEnum
 
-from .filters import (ActualBootStateIsSet,
-                      ActualStateAge,
-                      BootArtifactStatesMatch,
-                      BOSQuery,
-                      DesiredBootStateIsNone,
-                      DesiredBootStateIsOff,
-                      DesiredConfigurationIsNone,
-                      DesiredConfigurationSetInCFS,
-                      HSMState,
-                      LastActionIs,
-                      OR,
-                      TimeSinceLastAction)
+class Databases(IntEnum):
+    """
+    Integer value is the database ID
+    """
+    OPTIONS = 0
+    COMPONENTS = 1
+    SESSION_TEMPLATES = 2
+    SESSIONS = 3
+    BSS_TOKENS_BOOT_ARTIFACTS = 4
+    SESSION_STATUS = 5
+
+DB_HOST = 'cray-bos-db'
+DB_PORT = 6379

@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,17 +21,28 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+"""
+ComponentDBWrapper class
+"""
 
+from bos.common.types.components import ComponentRecord, update_component_record
 
-from .filters import (ActualBootStateIsSet,
-                      ActualStateAge,
-                      BootArtifactStatesMatch,
-                      BOSQuery,
-                      DesiredBootStateIsNone,
-                      DesiredBootStateIsOff,
-                      DesiredConfigurationIsNone,
-                      DesiredConfigurationSetInCFS,
-                      HSMState,
-                      LastActionIs,
-                      OR,
-                      TimeSinceLastAction)
+from .dbwrapper import DBWrapper
+from .defs import Databases
+
+class ComponentDBWrapper(DBWrapper[ComponentRecord]):
+    """
+    Components database wrapper
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.patch = self._patch
+
+    @property
+    def db_id(self) -> Databases:
+        return Databases.COMPONENTS
+
+    @classmethod
+    def _patch_data(cls, data: ComponentRecord, new_data: ComponentRecord) -> None:
+        update_component_record(data, new_data)

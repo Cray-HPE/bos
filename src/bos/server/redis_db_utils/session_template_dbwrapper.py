@@ -1,8 +1,7 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,17 +21,28 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+"""
+SessionTemplateDBWrapper class
+"""
 
+from bos.common.types.templates import SessionTemplate, update_template_record
 
-from .filters import (ActualBootStateIsSet,
-                      ActualStateAge,
-                      BootArtifactStatesMatch,
-                      BOSQuery,
-                      DesiredBootStateIsNone,
-                      DesiredBootStateIsOff,
-                      DesiredConfigurationIsNone,
-                      DesiredConfigurationSetInCFS,
-                      HSMState,
-                      LastActionIs,
-                      OR,
-                      TimeSinceLastAction)
+from .defs import Databases
+from .tenant_aware_dbwrapper import TenantAwareDBWrapper
+
+class SessionTemplateDBWrapper(TenantAwareDBWrapper[SessionTemplate]):
+    """
+    Wrapper for session templates database
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.tenant_aware_patch = self._tenant_aware_patch
+
+    @property
+    def db_id(self) -> Databases:
+        return Databases.SESSION_TEMPLATES
+
+    @classmethod
+    def _patch_data(cls, data: SessionTemplate, new_data: SessionTemplate) -> None:
+        update_template_record(data, new_data)

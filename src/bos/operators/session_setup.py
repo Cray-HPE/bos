@@ -34,13 +34,15 @@ from bos.common.clients.hsm import Inventory
 from bos.common.clients.s3 import S3Object, S3ObjectNotFound
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 from bos.common.types.components import ComponentRecord
+from bos.common.types.templates import BootSet
 from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseOperator, main, chunk_components
 from bos.operators.filters import HSMState
 from bos.operators.session_completion import mark_session_complete
+from bos.operators.utils.boot_image_metadata import BootImageArtifactSummary
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
-from bos.operators.utils.rootfs.factory import ProviderFactory
+from bos.operators.utils.rootfs.factory import get_provider
 
 LOGGER = logging.getLogger(__name__)
 
@@ -249,7 +251,7 @@ class Session:
             # Nodes disabled in HSM may be included, so no filtering is required
             return nodes
         hsmfilter = self.HSMState(enabled=True)
-        nodes = set(hsmfilter._filter(list(nodes)))
+        nodes = set(hsmfilter.filter_component_ids(list(nodes)))
         if not nodes:
             self._log(
                 LOGGER.warning,
@@ -383,7 +385,7 @@ class Session:
             boot_set)
         return state
 
-    def _get_configuration_from_boot_set(self, boot_set: dict):
+    def _get_configuration_from_boot_set(self, boot_set: BootSet):
         """
         An abstraction method for determining the configuration to use
         in the event for any given <boot set> within a session. Boot Sets
@@ -400,7 +402,7 @@ class Session:
         # Otherwise, we take the configuration value from the session template itself
         return self.template.get('cfs', {}).get('configuration', '')
 
-    def assemble_kernel_boot_parameters(self, boot_set, artifact_info):
+    def assemble_kernel_boot_parameters(self, boot_set: BootSet, artifact_info: BootImageArtifactSummary):
         """
         Assemble the kernel boot parameters that we want to set in the
         Boot Script Service (BSS).
@@ -462,8 +464,7 @@ class Session:
             boot_param_pieces.append(boot_set.get('kernel_parameters'))
 
         # Append special parameters for the rootfs and Node Memory Dump
-        pf = ProviderFactory(boot_set, artifact_info)
-        provider = pf()
+        provider = get_provider(boot_set, artifact_info)
         rootfs_parameters = str(provider)
         if rootfs_parameters:
             boot_param_pieces.append(rootfs_parameters)

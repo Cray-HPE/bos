@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
@@ -22,41 +21,35 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
+'''
+Provisioning mechanism, base class
+'''
 
-from bos.common.values import Status
-from bos.operators.base import BaseOperator, main
-
-LOGGER = logging.getLogger(__name__)
+from .rootfs_provider import RootfsProvider
 
 
-class ConfigurationOperator(BaseOperator):
+class RootfsProviderWithArtifactInfo(RootfsProvider):
     """
-    The Configure Operator sets the desired configuration in CFS if:
-    - Enabled in the BOS database and the current phase is configuring
-    - DesiredConfiguration != SetConfiguration
+    The assumption is the artifact info contains information about the rootfs.
     """
 
     @property
-    def name(self):
-        # The Configuration step can take place at any time before power-on.
-        # This step is therefore outside the normal boot flow and the name is
-        # left empty so this step is not recorded to the component data.
-        return ''
+    def provider_field(self) -> str:
+        return self.artifact_info['rootfs']
 
-    # Filters
     @property
-    def filters(self):
-        return [
-            self.BOSQuery(enabled=True, status=Status.configuring),
-            self.DesiredConfigurationSetInCFS(negate=True)
-        ]
+    def provider_field_id(self) -> str:
+        return self.artifact_info['rootfs_etag']
 
-    def _act(self, components):
-        if components:
-            self.client.cfs.components.set_cfs(components, enabled=True)
-        return components
-
-
-if __name__ == '__main__':
-    main(ConfigurationOperator)
+    @property
+    def nmd_field(self) -> str:
+        """
+        The value to add to the kernel boot parameters for Node Memory Dump (NMD)
+        parameter.
+        """
+        fields = []
+        if self.provider_field:
+            fields.append(f"url={self.provider_field}")
+        if self.provider_field_id:
+            fields.append(f"etag={self.provider_field_id}")
+        return f"nmd_data={','.join(fields)}" if fields else ''

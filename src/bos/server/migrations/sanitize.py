@@ -318,9 +318,14 @@ def get_unused_legal_template_name(name: str, tenant: str | None) -> str:
         if not name or not any(c in TEMPLATE_NAME_CHARACTERS for c in name):
             raise
 
-    LOGGER.warning(
-        "Session template name '%s' (tenant: %s) does not follow schema. "
-        "Will attempt to rename to a legal name", name, tenant)
+    if tenant:
+        LOGGER.warning(
+            "Session template name '%s' (tenant: %s) does not follow schema. "
+            "Will attempt to rename to a legal name", name, tenant)
+    else:
+        LOGGER.warning(
+            "Session template name '%s' does not follow schema. "
+            "Will attempt to rename to a legal name", name)
 
     # Strip out illegal characters, but replace spaces with underscores and prepend 'auto_renamed_'
     new_name_base = 'auto_renamed_' + ''.join(
@@ -344,9 +349,12 @@ def get_unused_legal_template_name(name: str, tenant: str | None) -> str:
             if is_valid_available_template_name(new_name, tenant):
                 return new_name
 
-    LOGGER.error(
-        "Unable to find unused valid new name for session template '%s' (tenant: %s)",
-        name, tenant)
+    if tenant:
+        LOGGER.error(
+            "Unable to find unused valid new name for session template '%s' (tenant: %s)",
+            name, tenant)
+    else:
+        LOGGER.error("Unable to find unused valid new name for session template '%s'", name)
     raise ValidationError("Name does not follow schema")
 
 
