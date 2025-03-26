@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.36.0] - 2025-03-26
+
 ### Changed
 - CASMCMS-9294: Improve Python type annotations, focused on DB modules
 - CASMCMS-9295: Improve Python type annotations in `boot_image_metadata` modules
