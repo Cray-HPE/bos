@@ -70,8 +70,6 @@ def get_boot_artifacts(token: str) -> TimestampedBootArtifacts:
     Raises:
       BssTokenUnknown
     """
-    if token not in TOKENS_DB:
-        raise BssTokenUnknown
     boot_artifacts = TOKENS_DB.get(token)
     if boot_artifacts is None:
         raise BssTokenUnknown

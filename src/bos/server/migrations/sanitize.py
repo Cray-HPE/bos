@@ -132,7 +132,7 @@ def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
             "Updating session template to comply with the BOS API schema")
         LOGGER.warning("Old template data: %s", data)
         LOGGER.warning("New template data: %s", new_data)
-        TEMP_DB.put(key, new_data)
+        TEMP_DB.dict_put(key, new_data)
         return
 
     # Name changed
@@ -161,7 +161,7 @@ def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
         )
         return
 
-    TEMP_DB.put(new_key, new_data)
+    TEMP_DB.dict_put(new_key, new_data)
 
 
 def sanitize_description_field(data: JsonDict) -> None:

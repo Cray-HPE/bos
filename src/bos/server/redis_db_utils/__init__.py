@@ -25,8 +25,16 @@
 from .boot_artifacts_dbwrapper import BootArtifactsDBWrapper
 from .component_dbwrapper import ComponentDBWrapper
 from .dbwrapper import DBWrapper
+from .exceptions import (BosDBException,
+                         BosDBEntryException,
+                         InvalidDBData,
+                         InvalidDBDataType,
+                         InvalidDBJsonDataType,
+                         NonJsonDBData,
+                         NotFoundInDB)
 from .options_dbwrapper import OptionsDBWrapper
 from .redis_error_handler import redis_error_handler
 from .session_dbwrapper import SessionDBWrapper
 from .session_status_dbwrapper import SessionStatusDBWrapper
 from .session_template_dbwrapper import SessionTemplateDBWrapper
+from .tenant_aware_dbwrapper import TenantAwareDBWrapper

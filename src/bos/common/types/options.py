@@ -21,7 +21,9 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from typing import Literal, TypedDict
+from typing import get_args, Literal
+
+from typing_extensions import TypeIs
 
 from .general import BosDataRecord
 
@@ -52,6 +54,16 @@ type OptionName = Literal[
     'reject_nids',
     'session_limit_required'
 ]
+
+# This fancy footwork lets us construct a frozenset of the string values from the previous definition,
+# allowing us to avoid duplicating it.
+OPTION_NAMES: frozenset[OptionName] = frozenset(get_args(OptionName))
+
+def is_option_name(string: str) -> TypeIs[OptionName]:
+    """
+    Returns true if the specified string is a valid option name.
+    """
+    return string in OPTION_NAMES
 
 class OptionsDict(BosDataRecord, total=False):
     """

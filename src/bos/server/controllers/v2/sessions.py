@@ -34,9 +34,9 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
-from bos.common.types.general import JsonDict
 from bos.common.types.session_extended_status import SessionExtendedStatus
 from bos.common.types.sessions import Session as SessionRecord
+from bos.common.types.sessions import update_session_record
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
@@ -126,8 +126,8 @@ def post_v2_session() -> tuple[SessionRecord, Literal[201]] | CxResponse:  # noq
         LOGGER.warning("v2 session named %s already exists (tenant = '%s')", session.name, tenant)
         return _409_session_already_exists(session.name, tenant)
     session_data = session.to_dict()
-    response = DB.tenant_aware_put(session.name, tenant, session_data)
-    return response, 201
+    DB.tenanted_put(session.name, tenant, session_data)
+    return session_data, 201
 
 
 def _create_session(session_create: SessionCreate, tenant: str | None) -> Session:
@@ -168,11 +168,21 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | Cx
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     tenant = get_tenant_from_header()
-    if not DB.has_tenanted_entry(session_id, tenant):
+    try:
+        session_data = DB.tenanted_get(session_id, tenant)
+    except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
 
-    return DB.tenant_aware_patch(session_id, tenant, patch_data_json), 200
+    try:
+        update_session_record(session_data, patch_data_json)
+    except Exception as err:
+        LOGGER.error("Error parsing PATCH '%s' request with data: %s", session_id,
+                     exc_type_msg(err))
+        return _400_bad_request(f"Error patching with the data provided: {err}")
+
+    DB.tenanted_put(session_id, tenant, session_data)
+    return session_data, 200
 
 
 @dbutils.redis_error_handler
@@ -187,8 +197,9 @@ def get_v2_session(
     """
     LOGGER.debug("GET /v2/sessions/%s invoked get_v2_session", session_id)
     tenant = get_tenant_from_header()
-    session = DB.tenant_aware_get(session_id, tenant)
-    if session is None:
+    try:
+        session = DB.tenanted_get(session_id, tenant)
+    except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     return session, 200
@@ -223,11 +234,13 @@ def delete_v2_session(
     LOGGER.debug("DELETE /v2/sessions/%s invoked delete_v2_session",
                  session_id)
     tenant = get_tenant_from_header()
-    session = DB.tenant_aware_get_and_delete(session_id, tenant)
-    if session is None:
+    try:
+        DB.tenanted_delete(session_id, tenant)
+    except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
-    STATUS_DB.tenant_aware_delete(session_id, tenant)
+    # If there isn't an entry in the status DB for this session, that's okay
+    _tenanted_delete_if_present(STATUS_DB, session_id, tenant)
     return None, 204
 
 
@@ -249,10 +262,23 @@ def delete_v2_sessions(
         return _400_bad_request(f"Error parsing age field: {err}")
 
     for session in sessions:
-        STATUS_DB.tenant_aware_delete(session['name'], tenant)
-        DB.tenant_aware_delete(session['name'], tenant)
+        _tenanted_delete_if_present(STATUS_DB, session['name'], tenant)
+        _tenanted_delete_if_present(DB, session['name'], tenant)
 
     return None, 204
+
+
+def _tenanted_delete_if_present(db: dbutils.TenantAwareDBWrapper, session_id: str,
+                                tenant: str | None) -> None:
+    """
+    Attempt to remove the specified session for the specified tenant in the specified DB,
+    logging a debug entry if it is not found.
+    """
+    try:
+        db.tenanted_delete(session_id, tenant)
+    except dbutils.NotFoundInDB:
+        LOGGER.debug("No %s DB entry to delete for session %s (tenant = '%s')", db.db.name,
+                     session_id, tenant)
 
 
 @dbutils.redis_error_handler
@@ -268,14 +294,18 @@ def get_v2_session_status(
     LOGGER.debug("GET /v2/sessions/status/%s invoked get_v2_session_status",
                  session_id)
     tenant = get_tenant_from_header()
-    session = DB.tenant_aware_get(session_id, tenant)
-    if session is None:
+    try:
+        session = DB.tenanted_get(session_id, tenant)
+    except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     if session.get("status",{}).get("status") == "complete":
-        session_status = STATUS_DB.tenant_aware_get(session_id, tenant)
-        if session_status is not None:
-            # If the session is complete and the status is saved,
+        try:
+            session_status = STATUS_DB.tenanted_get(session_id, tenant)
+        except dbutils.NotFoundInDB:
+            pass
+        else: # No exception raised by DB get --> session status exists
+            # The session is complete and the status is saved, so
             # return the status from completion time
             return session_status, 200
     return _get_v2_session_status(session_id, tenant, session), 200
@@ -294,12 +324,14 @@ def save_v2_session_status(
     LOGGER.debug("POST /v2/sessions/status/%s invoked save_v2_session_status",
                  session_id)
     tenant = get_tenant_from_header()
-    session = DB.tenant_aware_get(session_id, tenant)
-    if session is None:
+    try:
+        session = DB.tenanted_get(session_id, tenant)
+    except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     extended_status = _get_v2_session_status(session_id, tenant, session)
-    return STATUS_DB.tenant_aware_put(session_id, tenant, extended_status), 200
+    STATUS_DB.tenanted_put(session_id, tenant, extended_status)
+    return extended_status, 200
 
 
 def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str | None,
@@ -320,7 +352,9 @@ def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str
         except Exception as e:
             LOGGER.warning('Unable to parse max_age: %s', max_age)
             raise ParsingException(e) from e
-    return DB.get_all_filtered(filter_func=partial(_matches_filter, tenant=tenant, min_start=min_start, max_start=max_start, status=status))
+    return DB.get_all_filtered(filter_func=partial(_matches_filter, tenant=tenant,
+                                                   min_start=min_start, max_start=max_start,
+                                                   status=status))
 
 
 def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime | None,
@@ -330,18 +364,18 @@ def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime
     session_status = data.get('status', {})
     if status and status != session_status.get('status'):
         return None
-    start_time = session_status['start_time']
-    session_start = None
-    if start_time:
-        session_start = load_timestamp(start_time)
-    if min_start and (not session_start or session_start < min_start):
-        return None
-    if max_start and (not session_start or session_start > max_start):
-        return None
+    if min_start or max_start:
+        start_time = session_status['start_time']
+        session_start = load_timestamp(start_time) if start_time else None
+        if min_start and (not session_start or session_start < min_start):
+            return None
+        if max_start and (not session_start or session_start > max_start):
+            return None
     return data
 
 
-def _get_v2_session_status(session_id: str, tenant_id: str | None, session: SessionRecord) -> SessionExtendedStatus:
+def _get_v2_session_status(session_id: str, tenant_id: str | None,
+                           session: SessionRecord) -> SessionExtendedStatus:
     components = get_v2_components_data(session=session_id, tenant=tenant_id)
     staged_components = get_v2_components_data(staged_session=session_id,
                                                tenant=tenant_id)

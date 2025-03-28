@@ -24,25 +24,32 @@
 """
 ComponentDBWrapper class
 """
+from collections.abc import Mapping
+from typing import cast
 
-from bos.common.types.components import ComponentRecord, update_component_record
+from bos.common.types.components import ComponentRecord
+from bos.common.types.general import JsonDict
 
-from .dbwrapper import DBWrapper
+from .bos_data_dbwrapper import BosDataDBWrapper
 from .defs import Databases
 
-class ComponentDBWrapper(DBWrapper[ComponentRecord]):
+class ComponentDBWrapper(BosDataDBWrapper[ComponentRecord]):
     """
     Components database wrapper
     """
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.patch = self._patch
-
-    @property
-    def db_id(self) -> Databases:
-        return Databases.COMPONENTS
+    _DatabaseId = Databases.COMPONENTS
 
     @classmethod
-    def _patch_data(cls, data: ComponentRecord, new_data: ComponentRecord) -> None:
-        update_component_record(data, new_data)
+    def _load_bosdata(cls, data: JsonDict) -> ComponentRecord:
+        """
+        Eventually this should probably actually make sure that the record being returned is in the
+        correct format. But for now, we'll just satisfy mypy        
+        """
+        return cast(ComponentRecord, data)
+
+    def write_components_by_id(self, comp_id_map: Mapping[str, ComponentRecord]) -> None:
+        """
+        comp_id_map: mapping from component IDs to ComponentRecords
+        """
+        for component_id, component_data in comp_id_map.items():
+            self.put(component_id, component_data)

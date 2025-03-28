@@ -24,7 +24,9 @@
 """
 SessionStatusDBWrapper class
 """
+from typing import cast
 
+from bos.common.types.general import JsonDict
 from bos.common.types.session_extended_status import SessionExtendedStatus
 
 from .defs import Databases
@@ -35,6 +37,12 @@ class SessionStatusDBWrapper(TenantAwareDBWrapper[SessionExtendedStatus]):
     Wrapper for session status database
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.SESSION_STATUS
+    _DatabaseId = Databases.SESSION_STATUS
+
+    @classmethod
+    def _load_bosdata(cls, data: JsonDict) -> SessionExtendedStatus:
+        """
+        Eventually this should probably actually make sure that the record being returned is in the
+        correct format. But for now, we'll just satisfy mypy        
+        """
+        return cast(SessionExtendedStatus, data)
