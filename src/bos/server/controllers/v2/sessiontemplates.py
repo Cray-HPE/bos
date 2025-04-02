@@ -94,7 +94,8 @@ def put_v2_sessiontemplate(
 
     tenant = get_tenant_from_header() or None
     template_data['tenant'] = tenant
-    return DB.tenant_aware_put(session_template_id, tenant, template_data), 200
+    DB.tenant_aware_put(session_template_id, tenant, template_data)
+    return template_data, 200
 
 
 @dbutils.redis_error_handler

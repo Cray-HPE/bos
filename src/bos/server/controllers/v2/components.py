@@ -240,7 +240,8 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
 
     for component_id, component_data in components.items():
         component_data = _set_auto_fields(component_data)
-        response.append(DB.put(component_id, component_data))
+        DB.put(component_id, component_data)
+        response.append(component_data)
     return response, 200
 
 
@@ -327,8 +328,7 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
             len(id_list))
     response = []
     patch = data.get("patch")
-    if "id" in patch:
-        del patch["id"]
+    patch.pop("id", None)
     patch = _set_auto_fields(patch)
     for component_id in id_list:
         response.append(DB.patch(component_id, patch, _update_handler))
@@ -365,7 +365,8 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
 
     data['id'] = component_id
     data = _set_auto_fields(data)
-    return DB.put(component_id, data), 200
+    DB.put(component_id, data)
+    return data, 200
 
 
 @tenant_error_handler
@@ -427,7 +428,8 @@ def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResp
                                                                get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-    return DB.delete(component_id), 204
+    DB.delete(component_id)
+    return None, 204
 
 
 @tenant_error_handler

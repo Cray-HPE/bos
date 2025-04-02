@@ -126,8 +126,8 @@ def post_v2_session() -> tuple[SessionRecord, Literal[201]] | CxResponse:  # noq
         LOGGER.warning("v2 session named %s already exists (tenant = '%s')", session.name, tenant)
         return _409_session_already_exists(session.name, tenant)
     session_data = session.to_dict()
-    response = DB.tenant_aware_put(session.name, tenant, session_data)
-    return response, 201
+    DB.tenant_aware_put(session.name, tenant, session_data)
+    return session_data, 201
 
 
 def _create_session(session_create: SessionCreate, tenant: str | None) -> Session:
@@ -299,7 +299,8 @@ def save_v2_session_status(
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     extended_status = _get_v2_session_status(session_id, tenant, session)
-    return STATUS_DB.tenant_aware_put(session_id, tenant, extended_status), 200
+    STATUS_DB.tenant_aware_put(session_id, tenant, extended_status)
+    return extended_status, 200
 
 
 def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str | None,
