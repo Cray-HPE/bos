@@ -29,7 +29,7 @@ from bos.common.utils import duration_to_timedelta
 from bos.common.types.components import ComponentRecord
 from bos.common.values import EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
-from bos.operators.filters import BOSQuery, ActualStateAge, ActualBootStateIsSet
+from bos.operators.filters import ActualStateAge, ActualBootStateIsSet
 
 LOGGER = logging.getLogger(__name__)
 

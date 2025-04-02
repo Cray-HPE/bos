@@ -21,6 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+Type annotation definitions for BOS options
+"""
+
 from typing import Literal, TypedDict
 
 from .general import BosDataRecord

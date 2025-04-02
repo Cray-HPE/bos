@@ -68,7 +68,9 @@ EXAMPLE_SESSION_TEMPLATE = {
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def put_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, Literal[200]] | CxResponse:  # noqa: E501
+def put_v2_sessiontemplate(
+    session_template_id: str
+) -> tuple[SessionTemplate, Literal[200]] | CxResponse:  # noqa: E501
     """PUT /v2/sessiontemplates
 
     Creates a new session template. # noqa: E501
@@ -116,7 +118,9 @@ def get_v2_sessiontemplates() -> tuple[list[SessionTemplate], Literal[200]]:  # 
 
 
 @dbutils.redis_error_handler
-def get_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, Literal[200]] | CxResponse:
+def get_v2_sessiontemplate(
+    session_template_id: str
+) -> tuple[SessionTemplate, Literal[200]] | CxResponse:
     """
     GET /v2/sessiontemplates
 
@@ -128,7 +132,8 @@ def get_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, L
     template = DB.tenant_aware_get(session_template_id, tenant)
     if template is None:
         if tenant:
-            LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
+            LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
+                           session_template_id)
         else:
             LOGGER.warning("Session template not found: %s", session_template_id)
         return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
@@ -162,7 +167,8 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
     template = DB.tenant_aware_get_and_delete(session_template_id, tenant)
     if template is None:
         if tenant:
-            LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
+            LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
+                           session_template_id)
         else:
             LOGGER.warning("Session template not found: %s", session_template_id)
         return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
@@ -170,7 +176,9 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
 
 
 @dbutils.redis_error_handler
-def patch_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate, Literal[200]] | CxResponse:
+def patch_v2_sessiontemplate(
+    session_template_id: str
+) -> tuple[SessionTemplate, Literal[200]] | CxResponse:
     """
     PATCH /v2/sessiontemplates
 
@@ -182,7 +190,8 @@ def patch_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate,
     tenant = get_tenant_from_header()
     if not DB.has_tenanted_entry(session_template_id, tenant):
         if tenant:
-            LOGGER.warning("Session template not found for tenant '%s': %s", tenant, session_template_id)
+            LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
+                           session_template_id)
         else:
             LOGGER.warning("Session template not found: %s", session_template_id)
         return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
@@ -205,7 +214,9 @@ def patch_v2_sessiontemplate(session_template_id: str) -> tuple[SessionTemplate,
 
 
 @dbutils.redis_error_handler
-def validate_v2_sessiontemplate(session_template_id: str) -> tuple[str, Literal[200]] | CxResponse:
+def validate_v2_sessiontemplate(
+    session_template_id: str
+) -> tuple[str, Literal[200]] | CxResponse:
     """
     Validate a V2 session template. Look for missing elements or errors that would prevent
     a session from being launched using this template.

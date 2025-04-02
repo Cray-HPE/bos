@@ -320,7 +320,9 @@ def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str
         except Exception as e:
             LOGGER.warning('Unable to parse max_age: %s', max_age)
             raise ParsingException(e) from e
-    return DB.get_all_filtered(filter_func=partial(_matches_filter, tenant=tenant, min_start=min_start, max_start=max_start, status=status))
+    return DB.get_all_filtered(filter_func=partial(_matches_filter, tenant=tenant,
+                                                   min_start=min_start, max_start=max_start,
+                                                   status=status))
 
 
 def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime | None,
@@ -341,7 +343,8 @@ def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime
     return data
 
 
-def _get_v2_session_status(session_id: str, tenant_id: str | None, session: SessionRecord) -> SessionExtendedStatus:
+def _get_v2_session_status(session_id: str, tenant_id: str | None,
+                           session: SessionRecord) -> SessionExtendedStatus:
     components = get_v2_components_data(session=session_id, tenant=tenant_id)
     staged_components = get_v2_components_data(staged_session=session_id,
                                                tenant=tenant_id)

@@ -94,6 +94,11 @@ def get_tenant_data(tenant: str, session: requests.Session | None = None) -> Jso
 
 
 def get_tenant_component_set(tenant: str) -> set[str]:
+    """
+    Returns set of component IDs that are assigned to the specified tenant
+    """
+    if not tenant:
+        return set()
     components = []
     data = get_tenant_data(tenant)
     status = data.get("status", {})

@@ -50,10 +50,10 @@ BOOT_SET_DEFAULT_ARCH: BootSetArch = 'X86'
 # Valid boot sets are required to have at least one of these fields
 BootSetHardwareSpecifierFields = Literal['node_list', 'node_roles_groups', 'node_groups']
 
-# This fancy footwork lets us construct a tuple of the string values from the previous definition,
-# allowing us to avoid duplicating it.
-BOOT_SET_HARDWARE_SPECIFIER_FIELDS: tuple[BootSetHardwareSpecifierFields] = \
-    get_args(BootSetHardwareSpecifierFields)
+# This fancy footwork lets us construct a frozenset of the string values from the previous
+# definition, allowing us to avoid duplicating it.
+BOOT_SET_HARDWARE_SPECIFIER_FIELDS: frozenset[BootSetHardwareSpecifierFields] = \
+    frozenset(get_args(BootSetHardwareSpecifierFields))
 
 class BootSet(TypedDict, total=False):
     """
