@@ -28,13 +28,13 @@ from typing import Literal, cast
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
 
-from bos.common.utils import exc_type_msg, get_current_timestamp
-from bos.common.tenant_utils import (get_tenant_aware_key,
-                                     get_tenant_component_set,
+from bos.common.tenant_utils import (get_tenant_component_set,
                                      get_tenant_from_header,
+                                     is_valid_tenant_component,
                                      tenant_error_handler)
 from bos.common.types.components import ComponentRecord
 from bos.common.types.general import JsonDict
+from bos.common.utils import components_by_id, exc_type_msg, get_current_timestamp
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
@@ -232,15 +232,13 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
         LOGGER.error("Error parsing PUT request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    components = []
-    for component_data in data:
-        try:
-            component_id = component_data['id']
-        except KeyError:
-            return _400_bad_request("At least one component is missing the required 'id' field")
-        components.append((component_id, component_data))
+    try:
+        components = components_by_id(data)
+    except KeyError:
+        return _400_bad_request("At least one component is missing the required 'id' field")
     response = []
-    for component_id, component_data in components:
+
+    for component_id, component_data in components.items():
         component_data = _set_auto_fields(component_data)
         response.append(DB.put(component_id, component_data))
     return response, 200
@@ -267,15 +265,16 @@ def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResp
 
 
 def patch_v2_components_list(
-        data: list[ComponentRecord]) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
+    data: list[ComponentRecord]
+) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
+
+    LOGGER.debug("patch_v2_components_list: %d components specified", len(data))
     try:
-        LOGGER.debug("patch_v2_components_list: %d components specified",
-                     len(data))
         components = []
         for component_data in data:
             component_id = component_data['id']
-            if component_id not in DB or not _is_valid_tenant_component(
-                    component_id):
+            if component_id not in DB or not is_valid_tenant_component(
+                    component_id, get_tenant_from_header()):
                 LOGGER.warning("Component %s could not be found", component_id)
                 return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
             components.append((component_id, component_data))
@@ -300,6 +299,9 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
     if ids and session:
         LOGGER.warning("Multiple filters provided")
         return _400_bad_request("Multiple filters provided")
+    if not ids and not session:
+        LOGGER.warning("No filter provided")
+        return _400_bad_request("No filter provided.")
     if ids:
         try:
             id_list = ids.split(',')
@@ -311,10 +313,11 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
         LOGGER.debug("patch_v2_components_dict: %d IDs specified",
                      len(id_list))
         for component_id in id_list:
-            if component_id not in DB or not _is_valid_tenant_component(
-                    component_id):
+            if component_id not in DB or not is_valid_tenant_component(
+                    component_id, get_tenant_from_header()):
                 return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-    elif session:
+    else:
+        # session
         id_list = [
             component["id"] for component in get_v2_components_data(
                 session=session, tenant=get_tenant_from_header())
@@ -322,9 +325,6 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
         LOGGER.debug(
             "patch_v2_components_dict: %d IDs found for specified session",
             len(id_list))
-    else:
-        LOGGER.warning("No filter provided")
-        return _400_bad_request("No filter provided.")
     response = []
     patch = data.get("patch")
     if "id" in patch:
@@ -341,7 +341,8 @@ def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /v2/components/%s invoked get_v2_component",
                  component_id)
-    if component_id not in DB or not _is_valid_tenant_component(component_id):
+    if component_id not in DB or not is_valid_tenant_component(component_id,
+                                                               get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     component = DB.get(component_id)
@@ -380,7 +381,8 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
                      exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    if component_id not in DB or not _is_valid_tenant_component(component_id):
+    if component_id not in DB or not is_valid_tenant_component(component_id,
+                                                               get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     if "actual_state" in data and not validate_actual_state_change_is_allowed(
@@ -421,7 +423,8 @@ def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResp
     """Used by the DELETE /components/{component_id} API operation"""
     LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component",
                  component_id)
-    if component_id not in DB or not _is_valid_tenant_component(component_id):
+    if component_id not in DB or not is_valid_tenant_component(component_id,
+                                                               get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     return DB.delete(component_id), 204
@@ -475,15 +478,6 @@ def _apply_tenant_limit(component_list: list[str]) -> tuple[list[str], list[str]
     return list(allowed_components), list(rejected_components)
 
 
-def _is_valid_tenant_component(component_id: str) -> bool:
-    tenant = get_tenant_from_header()
-    if tenant:
-        tenant_components = get_tenant_component_set(tenant)
-        return component_id in tenant_components
-    # For an empty tenant, all components are valid
-    return True
-
-
 def _apply_staged(component_id: str, clear_staged: bool=False) -> Literal[False] | JsonDict:
     if component_id not in DB:
         return False
@@ -511,13 +505,14 @@ def _apply_staged(component_id: str, clear_staged: bool=False) -> Literal[False]
 
 def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
     staged_state = data.get("staged_state", {})
-    staged_session_id_sans_tenant = staged_state.get("session", "")
+    staged_session_name = staged_state.get("session", "")
     tenant = get_tenant_from_header()
-    staged_session_id = get_tenant_aware_key(staged_session_id_sans_tenant,
-                                             tenant)
-    if staged_session_id not in SESSIONS_DB:
-        raise Exception("Staged session no longer exists")
-    session = SESSIONS_DB.get(staged_session_id)
+    session = SESSIONS_DB.tenant_aware_get(staged_session_name, tenant)
+    if session is None:
+        raise Exception(
+            "Staged session no longer exists "
+            f"(session: {staged_session_name}, tenant: {tenant})"
+        )
     operation = session["operation"]
     if operation == "shutdown":
         if any(staged_state.get("boot_artifacts", {}).values()):
