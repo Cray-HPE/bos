@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -22,37 +22,21 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 """
-OptionsDBWrapper class
+DB-related exceptions
 """
 
-from bos.common.types.options import OptionsDict
-
-from .dbwrapper import DBWrapper
-from .defs import Databases
-
-# We store all options as json under this key so that the data format is
-# similar to other data stored in the database, and to make retrieval of all
-# options simpler
-OPTIONS_KEY = 'options'
-
-class OptionsDBWrapper(DBWrapper[OptionsDict]):
+class BosDBException(Exception):
     """
-    Options database wrapper
+    Parent class for any exceptions originating from BOS DB classes
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.OPTIONS
 
-    @property
-    def options_exist(self) -> bool:
-        return OPTIONS_KEY in self
+class BosDBEntryException(BosDBException):
+    """
+    Parent class for exceptions related to specific DB entries
+    """
 
-    def get_options(self) -> OptionsDict | None:
-        return self.get(OPTIONS_KEY)
-
-    def put_options(self, data: OptionsDict) -> None:
-        self.put(OPTIONS_KEY, data)
-
-    def patch_options(self, data: OptionsDict) -> OptionsDict | None:
-        return self._patch(OPTIONS_KEY, data)
+class NotFoundInDB(BosDBEntryException):
+    """
+    Raised when a requested entry is not there
+    """

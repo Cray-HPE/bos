@@ -23,7 +23,7 @@
 #
 from functools import partial
 import logging
-from typing import Literal, cast
+from typing import Iterable, Literal, cast
 
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
@@ -271,19 +271,19 @@ def patch_v2_components_list(
 
     LOGGER.debug("patch_v2_components_list: %d components specified", len(data))
     try:
-        components = []
-        for component_data in data:
-            component_id = component_data['id']
-            if component_id not in DB or not is_valid_tenant_component(
-                    component_id, get_tenant_from_header()):
-                LOGGER.warning("Component %s could not be found", component_id)
-                return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-            components.append((component_id, component_data))
+        patch_data = components_by_id(data)
     except Exception as err:
-        LOGGER.error("Error loading component data: %s", exc_type_msg(err))
+        LOGGER.error("Error parsing patch data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
+
+    try:
+        _load_comps_from_id_list(list(patch_data))
+    except KeyError as exc:
+        LOGGER.warning("Component %s could not be found", exc)
+        return _404_component_not_found(resource_id=str(exc))  # pylint: disable=redundant-keyword-arg
+
     response = []
-    for component_id, component_data in components:
+    for component_id, component_data in patch_data.items():
         if "id" in component_data:
             del component_data["id"]
         component_data = _set_auto_fields(component_data)
@@ -310,13 +310,13 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
             LOGGER.error("Error parsing the IDs provided: %s",
                          exc_type_msg(err))
             return _400_bad_request(f"Error parsing the ids provided: {err}")
-        # Make sure all of the components exist and belong to this tenant (if any)
-        LOGGER.debug("patch_v2_components_dict: %d IDs specified",
-                     len(id_list))
-        for component_id in id_list:
-            if component_id not in DB or not is_valid_tenant_component(
-                    component_id, get_tenant_from_header()):
-                return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
+
+        try:
+            components = _load_comps_from_id_list(id_list)
+        except KeyError as exc:
+            LOGGER.warning("Component %s could not be found", exc)
+            return _404_component_not_found(resource_id=str(exc))  # pylint: disable=redundant-keyword-arg
+        id_list = list(components)
     else:
         # session
         id_list = [
@@ -333,6 +333,39 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
     for component_id in id_list:
         response.append(DB.patch(component_id, patch, _update_handler))
     return response, 200
+
+
+def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
+    # Make sure all of the components exist and belong to this tenant (if any)
+    LOGGER.debug("patch_v2_components: %d IDs specified", len(id_list))
+    invalid_comp_id = _get_invalid_comp_id_for_tenant(id_list, get_tenant_from_header())
+    if invalid_comp_id is not None:
+        raise KeyError(invalid_comp_id)
+
+    components: dict[str, ComponentRecord] = {}
+    for comp_id in id_list:
+        comp_data = DB.get(comp_id)
+        if comp_data is None:
+            raise KeyError(comp_id)
+        components[comp_id] = comp_data
+
+    return components
+
+
+def _get_invalid_comp_id_for_tenant(comp_id_list: Iterable[str], tenant: str | None) -> str | None:
+    """
+    If no tenant is specified, return None.
+    If any of the listed component IDs are not valid for the specified tenant, return one of the
+    invalid IDs.
+    Otherwise return None.
+    """
+    if not tenant:
+        return None
+    legal_component_ids = get_tenant_component_set(tenant)
+    for comp_id in comp_id_list:
+        if comp_id not in legal_component_ids:
+            return comp_id
+    return None
 
 
 @tenant_error_handler

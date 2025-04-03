@@ -41,7 +41,7 @@ from .defs import DB_HOST, DB_PORT, Databases
 
 LOGGER = logging.getLogger(__name__)
 
-class DBWrapper[DataType: BosDataRecord](ABC):
+class DBWrapper[DataT: BosDataRecord](ABC):
     """A wrapper around a Redis database connection
 
     This handles creating the Redis client and provides REST-like methods for
@@ -95,14 +95,14 @@ class DBWrapper[DataType: BosDataRecord](ABC):
         return True
 
     @classmethod
-    def _load_data(cls, datastr: str) -> DataType | None:
+    def _load_data(cls, datastr: str) -> DataT | None:
         if not datastr:
             return None
         data = json.loads(datastr)
-        return cast(DataType, data)
+        return cast(DataT, data)
 
     # The following methods act like REST calls for single items
-    def get(self, key: str) -> DataType | None:
+    def get(self, key: str) -> DataT | None:
         """Get the data for the given key."""
         datastr = self.client.get(key)
         if not datastr:
@@ -110,12 +110,12 @@ class DBWrapper[DataType: BosDataRecord](ABC):
         data = json.loads(datastr)
         return data
 
-    def get_and_delete(self, key: str) -> DataType | None:
+    def get_and_delete(self, key: str) -> DataT | None:
         """Get the data for the given key and delete it from the DB."""
         datastr = self.client.getdel(key)
         return self._load_data(datastr)
 
-    def get_all(self) -> list[DataType | None]:
+    def get_all(self) -> list[DataT | None]:
         """Get an array of data for all keys."""
         data = []
         for key in self.client.scan_iter():
@@ -125,9 +125,9 @@ class DBWrapper[DataType: BosDataRecord](ABC):
         return data
 
     def get_all_filtered(self,
-                         filter_func: Callable[[DataType], DataType | None],
+                         filter_func: Callable[[DataT], DataT | None],
                          start_after_key: str | None = None,
-                         page_size: int = 0) -> list[DataType]:
+                         page_size: int = 0) -> list[DataT]:
         """
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)
@@ -145,7 +145,7 @@ class DBWrapper[DataType: BosDataRecord](ABC):
                     break
         return data
 
-    def _iter_values(self, start_after_key: str | None = None) -> Generator[DataType, None, None]:
+    def _iter_values(self, start_after_key: str | None = None) -> Generator[DataT, None, None]:
         """
         Iterate through every item in the database. Parse each item as JSON and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
@@ -159,7 +159,7 @@ class DBWrapper[DataType: BosDataRecord](ABC):
                 if data is not None:
                     yield data
 
-    def get_all_as_dict(self) -> dict[str, DataType]:
+    def get_all_as_dict(self) -> dict[str, DataT]:
         """Return a mapping from all keys to their corresponding data
            Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
         """
@@ -175,18 +175,17 @@ class DBWrapper[DataType: BosDataRecord](ABC):
             data.update(dict(zip(keys, values)))
         return data
 
-    def put(self, key: str, new_data: DataType) -> DataType | None:
+    def put(self, key: str, new_data: DataT) -> None:
         """Put data in to the database, replacing any old data."""
         datastr = json.dumps(new_data)
         self.client.set(key, datastr)
-        return self.get(key)
 
     @classmethod
-    def _patch_data(cls, data: DataType, new_data: DataType) -> None:
+    def _patch_data(cls, data: DataT, new_data: DataT) -> None:
         data.update(new_data)
 
-    def _patch(self, key: str, new_data: DataType,
-               data_handler: Callable[[DataType],DataType] | None=None) -> DataType | None:
+    def _patch(self, key: str, new_data: DataT,
+               data_handler: Callable[[DataT],DataT] | None=None) -> DataT | None:
         """Patch data in the database.
            data_handler provides a way to operate on the full patched data.
 

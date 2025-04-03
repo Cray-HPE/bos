@@ -33,7 +33,7 @@ from bos.common.types.general import BosDataRecord
 
 from .dbwrapper import DBWrapper
 
-class TenantAwareDBWrapper[DataType: BosDataRecord](DBWrapper[DataType], ABC):
+class TenantAwareDBWrapper[DataT: BosDataRecord](DBWrapper[DataT], ABC):
     """A wrapper around a Redis database connection, for a database
     with tenant-aware keys
     """
@@ -43,20 +43,20 @@ class TenantAwareDBWrapper[DataType: BosDataRecord](DBWrapper[DataType], ABC):
         """
         return get_tenant_aware_key(name, tenant) in self
 
-    def tenant_aware_get(self, name: str, tenant: str | None) -> DataType | None:
+    def tenant_aware_get(self, name: str, tenant: str | None) -> DataT | None:
         """Get the data for the given name/tenant."""
         return self.get(get_tenant_aware_key(name, tenant))
 
-    def tenant_aware_get_and_delete(self, name: str, tenant: str | None) -> DataType | None:
+    def tenant_aware_get_and_delete(self, name: str, tenant: str | None) -> DataT | None:
         """Get the data for the given name/tenant and delete it from the DB."""
         return self.get_and_delete(get_tenant_aware_key(name, tenant))
 
-    def tenant_aware_put(self, name: str, tenant: str | None, new_data: DataType) -> DataType | None:
+    def tenant_aware_put(self, name: str, tenant: str | None, new_data: DataT) -> None:
         """Put data in to the database, replacing any old data."""
-        return self.put(get_tenant_aware_key(name, tenant), new_data)
+        self.put(get_tenant_aware_key(name, tenant), new_data)
 
-    def _tenant_aware_patch(self, name: str, tenant: str | None, new_data: DataType,
-              data_handler: Callable[[DataType],DataType] | None=None) -> DataType | None:
+    def _tenant_aware_patch(self, name: str, tenant: str | None, new_data: DataT,
+              data_handler: Callable[[DataT],DataT] | None=None) -> DataT | None:
         """Patch data in the database.
            data_handler provides a way to operate on the full patched data
 

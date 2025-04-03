@@ -25,6 +25,7 @@
 from .boot_artifacts_dbwrapper import BootArtifactsDBWrapper
 from .component_dbwrapper import ComponentDBWrapper
 from .dbwrapper import DBWrapper
+from .exceptions import NotFoundInDB
 from .options_dbwrapper import OptionsDBWrapper
 from .redis_error_handler import redis_error_handler
 from .session_dbwrapper import SessionDBWrapper
