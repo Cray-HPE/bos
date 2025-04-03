@@ -21,9 +21,10 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from collections.abc import Iterable
 from functools import partial
 import logging
-from typing import Iterable, Literal, cast
+from typing import Literal, cast
 
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
