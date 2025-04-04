@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CASMCMS-9340: Created Redis DB wrapper methods to allow reading/writing multiple entries in
+  a single call; updated components controller to make use of this.
+
 ### Changes
 - CASMCMS-9331: When a requested item is missing from a BOS DB, signal this by raising an
   exception instead of returning None.

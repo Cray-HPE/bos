@@ -57,3 +57,8 @@ class TenantAwareDBWrapper[DataT: BosDataRecord](DBWrapper[DataT], ABC):
     def tenanted_delete(self, name: str, tenant: str | None, /) -> None:
         """Deletes data from the database."""
         return self.delete(get_tenant_aware_key(name, tenant))
+
+    def tenanted_mput(self, name_tenant_data_map: dict[tuple[str, str|None], DataT], /) -> None:
+        """Put data in to the database, replacing any old data."""
+        self.mput({ get_tenant_aware_key(*name_tenant_tuple): data
+                    for name_tenant_tuple, data in name_tenant_data_map.items() })
