@@ -69,6 +69,9 @@ def _init() -> None:
         try:
             data = DB.get_options()
             break
+        except dbutils.NotFoundInDB:
+            # No old options to clean up
+            return
         except Exception as err:
             LOGGER.info('Database is not yet available (%s)',
                         exc_type_msg(err))
@@ -101,7 +104,11 @@ def _clean_options_data(data: JsonDict) -> OptionsDict:
 
 
 def get_v2_options_data() -> OptionsDict:
-    return _check_defaults(DB.get_options())
+    try:
+        option_data = DB.get_options()
+    except dbutils.NotFoundInDB:
+        option_data = None
+    return _check_defaults(option_data)
 
 
 def _check_defaults(data: OptionsDict | None) -> OptionsDict:
