@@ -23,9 +23,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+from collections.abc import Callable, Iterable
 import copy
 import logging
-from typing import Callable, Iterable
 from botocore.exceptions import ClientError
 
 from bos.common.clients.bos import BOSClient

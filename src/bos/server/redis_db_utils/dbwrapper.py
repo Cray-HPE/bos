@@ -26,11 +26,11 @@ DBWrapper class
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Generator, Iterable
 from itertools import batched
 import json
 import logging
-from typing import Any, ClassVar, Generator, Iterable, Protocol, cast
+from typing import Any, ClassVar, Protocol, cast
 
 import redis
 
