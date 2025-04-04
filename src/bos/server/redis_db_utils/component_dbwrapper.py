@@ -25,7 +25,7 @@
 ComponentDBWrapper class
 """
 
-from bos.common.types.components import ComponentRecord, update_component_record
+from bos.common.types.components import ComponentRecord
 
 from .dbwrapper import DBWrapper
 from .defs import Databases
@@ -34,15 +34,6 @@ class ComponentDBWrapper(DBWrapper[ComponentRecord]):
     """
     Components database wrapper
     """
-
-    def __init__(self) -> None:
-        super().__init__()
-        self.patch = self._patch
-
     @property
     def db_id(self) -> Databases:
         return Databases.COMPONENTS
-
-    @classmethod
-    def _patch_data(cls, data: ComponentRecord, new_data: ComponentRecord) -> None:
-        update_component_record(data, new_data)

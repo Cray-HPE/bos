@@ -29,7 +29,9 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
-from bos.common.types.templates import SessionTemplate, remove_empty_cfs_field
+from bos.common.types.templates import (SessionTemplate,
+                                        remove_empty_cfs_field,
+                                        update_template_record)
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
@@ -189,7 +191,8 @@ def patch_v2_sessiontemplate(
         "PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
         session_template_id)
     tenant = get_tenant_from_header()
-    if not DB.has_tenanted_entry(session_template_id, tenant):
+    template = DB.tenant_aware_get(session_template_id, tenant)
+    if template is None:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
                            session_template_id)
@@ -198,20 +201,22 @@ def patch_v2_sessiontemplate(
         return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
 
     try:
-        template_data = cast(SessionTemplate, get_request_json())
+        template_patch_data = cast(SessionTemplate, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s",
                      session_template_id, exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
-        validate_sanitize_session_template(session_template_id, template_data)
+        update_template_record(template, template_patch_data)
+        validate_sanitize_session_template(session_template_id, template)
     except Exception as err:
         LOGGER.error("Error patching session template '%s': %s",
                      session_template_id, exc_type_msg(err))
         return _400_bad_request(f"The session template could not be patched: {err}")
 
-    return DB.tenant_aware_patch(session_template_id, tenant, template_data), 200
+    DB.tenant_aware_put(session_template_id, tenant, template)
+    return template, 200
 
 
 @dbutils.redis_error_handler

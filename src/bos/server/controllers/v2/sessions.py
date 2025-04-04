@@ -37,6 +37,7 @@ from bos.common.tenant_utils import (get_tenant_from_header,
 from bos.common.types.general import JsonDict
 from bos.common.types.session_extended_status import SessionExtendedStatus
 from bos.common.types.sessions import Session as SessionRecord
+from bos.common.types.sessions import update_session_record
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
 from bos.server import redis_db_utils as dbutils
@@ -168,11 +169,20 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | Cx
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     tenant = get_tenant_from_header()
-    if not DB.has_tenanted_entry(session_id, tenant):
+    session_data = DB.tenant_aware_get(session_id, tenant)
+    if session_data is None:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
 
-    return DB.tenant_aware_patch(session_id, tenant, patch_data_json), 200
+    try:
+        update_session_record(session_data, patch_data_json)
+    except Exception as err:
+        LOGGER.error("Error parsing PATCH '%s' request with data: %s", session_id,
+                     exc_type_msg(err))
+        return _400_bad_request(f"Error patching with the data provided: {err}")
+
+    DB.tenant_aware_put(session_id, tenant, session_data)
+    return session_data, 200
 
 
 @dbutils.redis_error_handler
@@ -333,14 +343,13 @@ def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime
     session_status = data.get('status', {})
     if status and status != session_status.get('status'):
         return None
-    start_time = session_status['start_time']
-    session_start = None
-    if start_time:
-        session_start = load_timestamp(start_time)
-    if min_start and (not session_start or session_start < min_start):
-        return None
-    if max_start and (not session_start or session_start > max_start):
-        return None
+    if min_start or max_start:
+        start_time = session_status['start_time']
+        session_start = load_timestamp(start_time) if start_time else None
+        if min_start and (not session_start or session_start < min_start):
+            return None
+        if max_start and (not session_start or session_start > max_start):
+            return None
     return data
 
 

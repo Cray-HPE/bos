@@ -53,6 +53,3 @@ class OptionsDBWrapper(DBWrapper[OptionsDict]):
 
     def put_options(self, data: OptionsDict) -> None:
         self.put(OPTIONS_KEY, data)
-
-    def patch_options(self, data: OptionsDict) -> OptionsDict | None:
-        return self._patch(OPTIONS_KEY, data)

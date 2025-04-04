@@ -25,7 +25,7 @@
 SessionDBWrapper class
 """
 
-from bos.common.types.sessions import Session, update_session_record
+from bos.common.types.sessions import Session
 
 from .defs import Databases
 from .tenant_aware_dbwrapper import TenantAwareDBWrapper
@@ -35,14 +35,6 @@ class SessionDBWrapper(TenantAwareDBWrapper[Session]):
     Session database wrapper
     """
 
-    def __init__(self) -> None:
-        super().__init__()
-        self.tenant_aware_patch = self._tenant_aware_patch
-
     @property
     def db_id(self) -> Databases:
         return Databases.SESSIONS
-
-    @classmethod
-    def _patch_data(cls, data: Session, new_data: Session) -> None:
-        update_session_record(data, new_data)

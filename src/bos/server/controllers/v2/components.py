@@ -33,7 +33,7 @@ from bos.common.tenant_utils import (get_tenant_component_set,
                                      get_tenant_from_header,
                                      is_valid_tenant_component,
                                      tenant_error_handler)
-from bos.common.types.components import ComponentRecord
+from bos.common.types.components import ComponentRecord, update_component_record
 from bos.common.types.general import JsonDict
 from bos.common.utils import components_by_id, exc_type_msg, get_current_timestamp
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
@@ -237,13 +237,12 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
         components = components_by_id(data)
     except KeyError:
         return _400_bad_request("At least one component is missing the required 'id' field")
-    response = []
 
-    for component_id, component_data in components.items():
-        component_data = _set_auto_fields(component_data)
-        DB.put(component_id, component_data)
-        response.append(component_data)
-    return response, 200
+    for comp_id in components:
+        components[comp_id] = _set_auto_fields(components[comp_id])
+
+    _mput(components)
+    return list(components.values()), 200
 
 
 @tenant_error_handler
@@ -278,19 +277,20 @@ def patch_v2_components_list(
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
-        _load_comps_from_id_list(list(patch_data))
+        components = _load_comps_from_id_list(list(patch_data))
     except KeyError as exc:
         LOGGER.warning("Component %s could not be found", exc)
         return _404_component_not_found(resource_id=str(exc))  # pylint: disable=redundant-keyword-arg
 
-    response = []
-    for component_id, component_data in patch_data.items():
-        if "id" in component_data:
-            del component_data["id"]
-        component_data = _set_auto_fields(component_data)
-        response.append(DB.patch(component_id, component_data,
-                                 _update_handler))
-    return response, 200
+    try:
+        for comp_id, patch_comp in patch_data.items():
+            update_component_record(components[comp_id], _set_auto_fields(patch_comp))
+    except Exception as err:
+        LOGGER.error("Error patching component data: %s", exc_type_msg(err))
+        return _400_bad_request(f"Error patching the data provided: {err}")
+
+    _mput(components)
+    return list(components.values()), 200
 
 
 def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
@@ -317,23 +317,25 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
         except KeyError as exc:
             LOGGER.warning("Component %s could not be found", exc)
             return _404_component_not_found(resource_id=str(exc))  # pylint: disable=redundant-keyword-arg
-        id_list = list(components)
     else:
         # session
-        id_list = [
-            component["id"] for component in get_v2_components_data(
-                session=session, tenant=get_tenant_from_header())
-        ]
+        components = components_by_id(get_v2_components_data(session=session,
+                                                             tenant=get_tenant_from_header()))
         LOGGER.debug(
             "patch_v2_components_dict: %d IDs found for specified session",
-            len(id_list))
-    response = []
+            len(components))
     patch = data.get("patch")
     patch.pop("id", None)
     patch = _set_auto_fields(patch)
-    for component_id in id_list:
-        response.append(DB.patch(component_id, patch, _update_handler))
-    return response, 200
+    try:
+        for comp in components.values():
+            update_component_record(comp, patch)
+    except Exception as err:
+        LOGGER.error("Error patching component data: %s", exc_type_msg(err))
+        return _400_bad_request(f"Error patching the data provided: {err}")
+
+    _mput(components)
+    return list(components.values()), 200
 
 
 def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
@@ -410,32 +412,34 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component",
                  component_id)
     try:
-        data = cast(ComponentRecord, get_request_json())
+        patch_data = cast(ComponentRecord, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id,
                      exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    if component_id not in DB or not is_valid_tenant_component(component_id,
-                                                               get_tenant_from_header()):
+    if not is_valid_tenant_component(component_id, get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-    if "actual_state" in data and not validate_actual_state_change_is_allowed(
-            component_id):
+    component = DB.get(component_id)
+    if component is None:
+        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
+
+    if "actual_state" in patch_data and not _validate_actual_state_change_is_allowed(component):
         LOGGER.warning("Not able to update actual state")
         return connexion.problem(
             status=409,
             title="Actual state can not be updated.",
             detail="BOS is currently changing the state of the node,"
             " and the actual state can not be accurately recorded")
-    if "id" in data:
-        del data["id"]
-    data = _set_auto_fields(data)
-    return DB.patch(component_id, data, _update_handler), 200
+    patch_data.pop("id", None)
+    patch_data = _set_auto_fields(patch_data)
+    update_component_record(component, patch_data)
+    DB.put(component_id, component)
+    return component, 200
 
 
-def validate_actual_state_change_is_allowed(component_id: str) -> bool:
-    current_data = DB.get(component_id)
+def _validate_actual_state_change_is_allowed(current_data: ComponentRecord) -> bool:
     if not current_data["enabled"]:
         # This component is not being managed on by BOS
         return True
@@ -503,6 +507,14 @@ def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | CxResponse:
     return response, 200
 
 
+def _mput(components_by_id: dict[str, ComponentRecord]) -> None:
+    """
+    Add all components to the DB
+    """
+    for component_id, component_data in components_by_id.items():
+        DB.put(component_id, component_data)
+
+
 def _apply_tenant_limit(component_list: list[str]) -> tuple[list[str], list[str]]:
     tenant = get_tenant_from_header()
     if not tenant:
@@ -514,10 +526,10 @@ def _apply_tenant_limit(component_list: list[str]) -> tuple[list[str], list[str]
     return list(allowed_components), list(rejected_components)
 
 
-def _apply_staged(component_id: str, clear_staged: bool=False) -> Literal[False] | JsonDict:
-    if component_id not in DB:
-        return False
+def _apply_staged(component_id: str, clear_staged: bool=False) -> bool:
     data = DB.get(component_id)
+    if data is None:
+        return False
     staged_state = data.get("staged_state", {})
     staged_session_id = staged_state.get("session", "")
     if not staged_session_id:
@@ -553,19 +565,22 @@ def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
     if operation == "shutdown":
         if any(staged_state.get("boot_artifacts", {}).values()):
             raise Exception(
-                "Staged operation is shutdown but boot artifact have been specified"
+                "Staged operation is shutdown but boot artifacts have been specified "
+                f"(session: {staged_session_name}, tenant: {tenant})"
             )
         _copy_staged_to_desired(data)
     elif operation == "boot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception(
-                "Staged operation is boot but some boot artifacts have not been specified"
+                "Staged operation is boot but some boot artifacts have not been specified "
+                f"(session: {staged_session_name}, tenant: {tenant})"
             )
         _copy_staged_to_desired(data)
     elif operation == "reboot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception(
-                "Staged operation is reboot but some boot artifacts have not been specified"
+                "Staged operation is reboot but some boot artifacts have not been specified "
+                f"(session: {staged_session_name}, tenant: {tenant})"
             )
         _copy_staged_to_desired(data)
         data["actual_state"] = {
@@ -573,7 +588,10 @@ def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
             "bss_token": ""
         }
     else:
-        raise Exception("Invalid operation in staged session")
+        raise Exception(
+            f"Invalid operation ({operation}) in staged session "
+            f"(session: {staged_session_name}, tenant: {tenant})"
+        )
     data["enabled"] = True
     return True
 
@@ -681,9 +699,5 @@ def _clear_event_stats_when_desired_state_changes(data: ComponentRecord) -> Comp
         }
     return data
 
-
-def _update_handler(data: ComponentRecord) -> ComponentRecord:
-    # Allows processing of data during common patch operation
-    return data
 
 _404_component_not_found = partial(_404_resource_not_found, resource_type="Component")

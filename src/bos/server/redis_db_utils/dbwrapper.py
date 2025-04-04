@@ -177,31 +177,6 @@ class DBWrapper[DataT: BosDataRecord](ABC):
         datastr = json.dumps(new_data)
         self.client.set(key, datastr)
 
-    @classmethod
-    def _patch_data(cls, data: DataT, new_data: DataT) -> None:
-        data.update(new_data)
-
-    def _patch(self, key: str, new_data: DataT,
-               data_handler: Callable[[DataT],DataT] | None=None) -> DataT | None:
-        """Patch data in the database.
-           data_handler provides a way to operate on the full patched data.
-
-           Not all BOS databases support patch operations. Subclasses that do support them
-           are expected to provide a patch method (that can optionally call this method, if
-           appropriate)
-        """
-        datastr = self.client.get(key)
-        data = self._load_data(datastr)
-        if data:
-            self._patch_data(data, new_data)
-        else:
-            data = new_data
-        if data_handler:
-            data = data_handler(data)
-        datastr = json.dumps(data)
-        self.client.set(key, datastr)
-        return self.get(key)
-
     def delete(self, key: str) -> None:
         """Deletes data from the database."""
         self.client.delete(key)
