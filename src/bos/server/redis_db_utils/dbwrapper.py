@@ -105,10 +105,7 @@ class DBWrapper[DataT: BosDataRecord](ABC):
     def get(self, key: str) -> DataT | None:
         """Get the data for the given key."""
         datastr = self.client.get(key)
-        if not datastr:
-            return None
-        data = json.loads(datastr)
-        return data
+        return self._load_data(datastr)
 
     def get_and_delete(self, key: str) -> DataT | None:
         """Get the data for the given key and delete it from the DB."""
