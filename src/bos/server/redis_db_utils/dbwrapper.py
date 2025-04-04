@@ -30,7 +30,7 @@ from collections.abc import Callable
 from itertools import batched
 import json
 import logging
-from typing import Any, Generator, cast
+from typing import Any, Generator, Iterable, cast
 
 import redis
 
@@ -171,6 +171,32 @@ class DBWrapper[DataT: BosDataRecord](ABC):
                 if page_size and len(data) == page_size:
                     break
         return data
+
+    def mget(self, keys: Iterable[str], /) -> dict[str, DataT]:
+        """
+        Returns a mapping from the specified keys to the corresponding BOS data records.
+        Raises exception if any are not found.
+        """
+        raw_data_list: list[Any] = []
+        for key_sublist in batched(keys, 500):
+            raw_data_sublist = cast(list[Any], self.client.mget(key_sublist))
+            try:
+                none_index = raw_data_sublist.index(None)
+            except ValueError:
+                # This means we got back no None values from the mget call,
+                # meaning that all of the keys exist in the database.
+                raw_data_list.extend(raw_data_sublist)
+            else:
+                # No ValueError was raised -- meaning none_index is set to the
+                # first index with a None value
+                raise NotFoundInDB(db=self.db_id, key=key_sublist[none_index])
+        return { key: self._load_entry(key, data) for key, data in zip(keys, raw_data_list) }
+
+    def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
+        """
+        JSON-encode all data and then write each item to the database under its respective key
+        """
+        self.client.mset({ key: json.dumps(data) for key, data in key_data_map.items()})
 
     def _iter_values(self, /, *,
                     start_after_key: str | None = None) -> Generator[DataT, None, None]:

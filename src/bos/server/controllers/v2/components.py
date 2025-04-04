@@ -241,7 +241,7 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
     for comp_id in components:
         components[comp_id] = _set_auto_fields(components[comp_id])
 
-    _mput(components)
+    DB.mput(components)
     return list(components.values()), 200
 
 
@@ -289,7 +289,7 @@ def patch_v2_components_list(
         LOGGER.error("Error patching component data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error patching the data provided: {err}")
 
-    _mput(components)
+    DB.mput(components)
     return list(components.values()), 200
 
 
@@ -334,7 +334,7 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
         LOGGER.error("Error patching component data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error patching the data provided: {err}")
 
-    _mput(components)
+    DB.mput(components)
     return list(components.values()), 200
 
 
@@ -346,7 +346,7 @@ def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
         raise KeyError(invalid_comp_id)
 
     try:
-        return { comp_id: DB.get(comp_id) for comp_id in id_list }
+        return DB.mget(id_list)
     except dbutils.NotFoundInDB as exc:
         raise KeyError(exc.key) from exc
 
@@ -510,14 +510,6 @@ def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | CxResponse:
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     return response, 200
-
-
-def _mput(components_by_id: dict[str, ComponentRecord]) -> None:
-    """
-    Add all components to the DB
-    """
-    for component_id, component_data in components_by_id.items():
-        DB.put(component_id, component_data)
 
 
 def _apply_tenant_limit(component_list: list[str]) -> tuple[list[str], list[str]]:
