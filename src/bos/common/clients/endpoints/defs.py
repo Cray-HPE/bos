@@ -21,11 +21,13 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from typing import Any, Callable, ContextManager, NamedTuple
+from collections.abc import Callable
+from contextlib import AbstractContextManager
+from typing import Any, NamedTuple
 
 import requests
 
-type RequestsMethod = Callable[..., ContextManager[requests.Response]]
+type RequestsMethod = Callable[..., AbstractContextManager[requests.Response]]
 
 class RequestData(NamedTuple):
     """
