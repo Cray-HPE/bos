@@ -96,7 +96,7 @@ def put_v2_sessiontemplate(
 
     tenant = get_tenant_from_header() or None
     template_data['tenant'] = tenant
-    DB.tenant_aware_put(session_template_id, tenant, template_data)
+    DB.tenanted_put(session_template_id, tenant, template_data)
     return template_data, 200
 
 
@@ -133,7 +133,7 @@ def get_v2_sessiontemplate(
                  session_template_id)
     tenant = get_tenant_from_header()
     try:
-        template = DB.tenant_aware_get(session_template_id, tenant)
+        template = DB.tenanted_get(session_template_id, tenant)
     except dbutils.NotFoundInDB:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
@@ -169,7 +169,7 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
         session_template_id)
     tenant = get_tenant_from_header()
     try:
-        template = DB.tenant_aware_get_and_delete(session_template_id, tenant)
+        template = DB.tenanted_get_and_delete(session_template_id, tenant)
     except dbutils.NotFoundInDB:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
@@ -194,7 +194,7 @@ def patch_v2_sessiontemplate(
         session_template_id)
     tenant = get_tenant_from_header()
     try:
-        template = DB.tenant_aware_get(session_template_id, tenant)
+        template = DB.tenanted_get(session_template_id, tenant)
     except dbutils.NotFoundInDB: 
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
@@ -218,7 +218,7 @@ def patch_v2_sessiontemplate(
                      session_template_id, exc_type_msg(err))
         return _400_bad_request(f"The session template could not be patched: {err}")
 
-    DB.tenant_aware_put(session_template_id, tenant, template)
+    DB.tenanted_put(session_template_id, tenant, template)
     return template, 200
 
 

@@ -66,17 +66,17 @@ def main() -> None:
         sys.exit(1)
 
     LOGGER.info("Sanitizing session templates")
-    for key, data in TEMP_DB.get_all_as_dict().items():
+    for key, data in TEMP_DB.get_all_as_raw_dict().items():
         sanitize_session_template(key, data)
     LOGGER.info("Done sanitizing session templates")
 
     LOGGER.info("Sanitizing sessions")
-    for key, data in SESS_DB.get_all_as_dict().items():
+    for key, data in SESS_DB.get_all_as_raw_dict().items():
         sanitize_session(key, data)
     LOGGER.info("Done sanitizing sessions")
 
     LOGGER.info("Sanitizing components")
-    for key, data in COMP_DB.get_all_as_dict().items():
+    for key, data in COMP_DB.get_all_as_raw_dict().items():
         sanitize_component(key, data)
     LOGGER.info("Done sanitizing components")
 

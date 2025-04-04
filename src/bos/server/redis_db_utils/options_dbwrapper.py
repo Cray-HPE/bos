@@ -48,7 +48,7 @@ class OptionsDBWrapper(DBWrapper[OptionsDict]):
     def options_exist(self) -> bool:
         return OPTIONS_KEY in self
 
-    def get_options(self) -> OptionsDict | None:
+    def get_options(self) -> OptionsDict:
         return self.get(OPTIONS_KEY)
 
     def put_options(self, data: OptionsDict) -> None:

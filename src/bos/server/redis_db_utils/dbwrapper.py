@@ -34,7 +34,7 @@ from typing import Any, Generator, cast
 
 import redis
 
-from bos.common.types.general import BosDataRecord
+from bos.common.types.general import BosDataRecord, JsonDict
 from bos.common.utils import exc_type_msg
 
 from .defs import DB_HOST, DB_PORT, Databases
@@ -52,17 +52,18 @@ class DBWrapper[DataT: BosDataRecord](ABC):
     and can be safely shared by multiple threads.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.client = self._get_client()
 
-    def __contains__(self, key: str) -> bool:
-        return self.client.exists(key)
+    def __contains__(self, key: str, /) -> bool:
+        # The redis type annotations are not ideal, so we need to use cast here
+        return cast(bool, self.client.exists(key))
 
     # @property has to be listed before @abstractmethod, or you get runtime errors
     @property
     @abstractmethod
     def db_id(self) -> Databases:
-        """Return the integer database ID"""
+        """Return the database identifier"""
 
     def _get_client(self) -> redis.Redis:
         """Create a connection with the database."""
@@ -80,6 +81,11 @@ class DBWrapper[DataT: BosDataRecord](ABC):
     def db_string(self) -> str:
         """Returns the string name of the database"""
         return self.db_id.name
+
+    def info(self) -> dict:
+        """Returns the database info."""
+        # The redis type annotations are not ideal, so we need to use cast here
+        return cast(dict, self.client.info())
 
     @property
     def ready(self) -> bool:
@@ -100,13 +106,27 @@ class DBWrapper[DataT: BosDataRecord](ABC):
             raise NotFoundInDB(db=self.db_id, key=key)
         return cast(DataT, json.loads(data))
 
-    # The following methods act like REST calls for single items
-    def get(self, key: str) -> DataT:
+    def get(self, key: str, /) -> DataT:
         """Get the data for the given key."""
         data = self.client.get(key)
         return self._load_entry(key, data)
 
-    def get_and_delete(self, key: str) -> DataT:
+    def delete(self, key: str, /) -> None:
+        """
+        Deletes data from the database. No need to make this data-type specific, since we don't
+        actually return the data.
+        """
+        # Use get_and_delete so we can raise a Not Found exception if appropriate
+        if self.client.getdel(key) is None:
+            raise NotFoundInDB(db=self.db_id, key=key)
+
+    def put(self, key: str, data: DataT | JsonDict, /) -> None:
+        """
+        JSON-encode the specified data and write it to the database under the specified key
+        """
+        self.client.set(key, json.dumps(data))
+
+    def get_and_delete(self, key: str, /) -> DataT:
         """Get the data for the given key and delete it from the DB."""
         data = self.client.getdel(key)
         return self._load_entry(key, data)
@@ -115,24 +135,24 @@ class DBWrapper[DataT: BosDataRecord](ABC):
         """Get an array of data for all keys."""
         return list(self._iter_values())
 
-    def get_all_as_dict(self) -> dict[str, DataT]:
-        """Return a mapping from all keys to their corresponding data
+    def get_all_as_raw_dict(self) -> dict[str, JsonDict]:
+        """Return a mapping from all keys to their corresponding data, only JSON
+           decoding and not otherwise parsing the data
            Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
         """
-        data = {}
+        datadict: dict[str, JsonDict] = {}
         cursor = '0'
         while cursor != 0:
             cursor, keys = self.client.scan(cursor=cursor, count=1000)
-            values = [
-                None if datastr is None else self._load_entry(key, datastr)
-                for key, datastr in zip(keys, self.client.mget(keys))
-            ]
-            keys = [k.decode() for k in keys]
-            data.update(dict(zip(keys, values)))
-        return data
+            datadict.update({
+                key.decode(): json.loads(data)
+                for key, data in zip(keys, self.client.mget(keys))
+                if data is not None
+            })
+        return datadict
 
     def get_all_filtered(self,
-                         filter_func: Callable[[DataT], DataT | None],
+                         filter_func: Callable[[DataT], DataT | None], *,
                          start_after_key: str | None = None,
                          page_size: int = 0) -> list[DataT]:
         """
@@ -144,7 +164,7 @@ class DBWrapper[DataT: BosDataRecord](ABC):
         More elements may remain and additional queries will be needed to acquire them.
         """
         data = []
-        for value in self._iter_values(start_after_key):
+        for value in self._iter_values(start_after_key=start_after_key):
             filtered_value = filter_func(value)
             if filtered_value is not None:
                 data.append(filtered_value)
@@ -152,7 +172,8 @@ class DBWrapper[DataT: BosDataRecord](ABC):
                     break
         return data
 
-    def _iter_values(self, start_after_key: str | None = None) -> Generator[DataT, None, None]:
+    def _iter_values(self, /, *,
+                    start_after_key: str | None = None) -> Generator[DataT, None, None]:
         """
         Iterate through every item in the database. Parse each item as JSON and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
@@ -164,18 +185,3 @@ class DBWrapper[DataT: BosDataRecord](ABC):
             for key, data in zip(next_keys, self.client.mget(next_keys)):
                 if data is not None:
                     yield self._load_entry(key, data)
-
-    def put(self, key: str, new_data: DataT) -> None:
-        """Put data in to the database, replacing any old data."""
-        datastr = json.dumps(new_data)
-        self.client.set(key, datastr)
-
-    def delete(self, key: str) -> None:
-        """Deletes data from the database."""
-        # Use get_and_delete so we can raise a Not Found exception if appropriate
-        if self.client.getdel(key) is None:
-            raise NotFoundInDB(db=self.db_id, key=key)
-
-    def info(self) -> dict:
-        """Returns the database info."""
-        return self.client.info()

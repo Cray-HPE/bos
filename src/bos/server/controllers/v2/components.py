@@ -562,7 +562,7 @@ def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
     staged_session_name = staged_state.get("session", "")
     tenant = get_tenant_from_header()
     try:
-        session = SESSIONS_DB.tenant_aware_get(staged_session_name, tenant)
+        session = SESSIONS_DB.tenanted_get(staged_session_name, tenant)
     except dbutils.NotFoundInDB as exc:
         raise Exception(
             "Staged session no longer exists "

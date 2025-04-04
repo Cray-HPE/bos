@@ -22,7 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 """
-DBWrapper class
+TenantAwareDBWrapper class
 """
 
 from abc import ABC
@@ -36,24 +36,24 @@ class TenantAwareDBWrapper[DataT: BosDataRecord](DBWrapper[DataT], ABC):
     """A wrapper around a Redis database connection, for a database
     with tenant-aware keys
     """
-    def has_tenanted_entry(self, name: str, tenant: str | None) -> bool:
+    def has_tenanted_entry(self, name: str, tenant: str | None, /) -> bool:
         """
         Checks if data exists for given name/tenant
         """
         return get_tenant_aware_key(name, tenant) in self
 
-    def tenant_aware_get(self, name: str, tenant: str | None) -> DataT | None:
+    def tenanted_get(self, name: str, tenant: str | None, /) -> DataT:
         """Get the data for the given name/tenant."""
         return self.get(get_tenant_aware_key(name, tenant))
 
-    def tenant_aware_get_and_delete(self, name: str, tenant: str | None) -> DataT | None:
+    def tenanted_get_and_delete(self, name: str, tenant: str | None, /) -> DataT:
         """Get the data for the given name/tenant and delete it from the DB."""
         return self.get_and_delete(get_tenant_aware_key(name, tenant))
 
-    def tenant_aware_put(self, name: str, tenant: str | None, new_data: DataT) -> None:
+    def tenanted_put(self, name: str, tenant: str | None, new_data: DataT, /) -> None:
         """Put data in to the database, replacing any old data."""
         self.put(get_tenant_aware_key(name, tenant), new_data)
 
-    def tenant_aware_delete(self, name: str, tenant: str | None) -> None:
+    def tenanted_delete(self, name: str, tenant: str | None, /) -> None:
         """Deletes data from the database."""
         return self.delete(get_tenant_aware_key(name, tenant))

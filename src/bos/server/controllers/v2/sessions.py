@@ -126,7 +126,7 @@ def post_v2_session() -> tuple[SessionRecord, Literal[201]] | CxResponse:  # noq
         LOGGER.warning("v2 session named %s already exists (tenant = '%s')", session.name, tenant)
         return _409_session_already_exists(session.name, tenant)
     session_data = session.to_dict()
-    DB.tenant_aware_put(session.name, tenant, session_data)
+    DB.tenanted_put(session.name, tenant, session_data)
     return session_data, 201
 
 
@@ -169,7 +169,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | Cx
 
     tenant = get_tenant_from_header()
     try:
-        session_data = DB.tenant_aware_get(session_id, tenant)
+        session_data = DB.tenanted_get(session_id, tenant)
     except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
@@ -181,7 +181,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | Cx
                      exc_type_msg(err))
         return _400_bad_request(f"Error patching with the data provided: {err}")
 
-    DB.tenant_aware_put(session_id, tenant, session_data)
+    DB.tenanted_put(session_id, tenant, session_data)
     return session_data, 200
 
 
@@ -198,7 +198,7 @@ def get_v2_session(
     LOGGER.debug("GET /v2/sessions/%s invoked get_v2_session", session_id)
     tenant = get_tenant_from_header()
     try:
-        session = DB.tenant_aware_get(session_id, tenant)
+        session = DB.tenanted_get(session_id, tenant)
     except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
@@ -235,7 +235,7 @@ def delete_v2_session(
                  session_id)
     tenant = get_tenant_from_header()
     try:
-        DB.tenant_aware_delete(session_id, tenant)
+        DB.tenanted_delete(session_id, tenant)
     except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
@@ -275,7 +275,7 @@ def _tenanted_delete_if_present(db: dbutils.TenantAwareDBWrapper, session_id: st
     logging a debug entry if it is not found.
     """
     try:
-        db.tenant_aware_delete(session_id, tenant)
+        db.tenanted_delete(session_id, tenant)
     except dbutils.NotFoundInDB:
         LOGGER.debug("No %s DB entry to delete for session %s (tenant = '%s')", db.db_string,
                      session_id, tenant)
@@ -295,13 +295,13 @@ def get_v2_session_status(
                  session_id)
     tenant = get_tenant_from_header()
     try:
-        session = DB.tenant_aware_get(session_id, tenant)
+        session = DB.tenanted_get(session_id, tenant)
     except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     if session.get("status",{}).get("status") == "complete":
         try:
-            session_status = STATUS_DB.tenant_aware_get(session_id, tenant)
+            session_status = STATUS_DB.tenanted_get(session_id, tenant)
         except dbutils.NotFoundInDB:
             pass
         else: # No exception raised by DB get --> session status exists
@@ -325,12 +325,12 @@ def save_v2_session_status(
                  session_id)
     tenant = get_tenant_from_header()
     try:
-        session = DB.tenant_aware_get(session_id, tenant)
+        session = DB.tenanted_get(session_id, tenant)
     except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
     extended_status = _get_v2_session_status(session_id, tenant, session)
-    STATUS_DB.tenant_aware_put(session_id, tenant, extended_status)
+    STATUS_DB.tenanted_put(session_id, tenant, extended_status)
     return extended_status, 200
 
 
