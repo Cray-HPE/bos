@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changes
+- CASMCMS-9331: When a requested item is missing from a BOS DB, signal this by raising an
+  exception instead of returning None.
+
 ### Dependencies
 - Bump redis Python client version from 5.0 to 5.2
 

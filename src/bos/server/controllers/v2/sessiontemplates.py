@@ -132,8 +132,9 @@ def get_v2_sessiontemplate(
     LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate",
                  session_template_id)
     tenant = get_tenant_from_header()
-    template = DB.tenant_aware_get(session_template_id, tenant)
-    if template is None:
+    try:
+        template = DB.tenant_aware_get(session_template_id, tenant)
+    except dbutils.NotFoundInDB:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
                            session_template_id)
@@ -167,8 +168,9 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
         "DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate",
         session_template_id)
     tenant = get_tenant_from_header()
-    template = DB.tenant_aware_get_and_delete(session_template_id, tenant)
-    if template is None:
+    try:
+        template = DB.tenant_aware_get_and_delete(session_template_id, tenant)
+    except dbutils.NotFoundInDB:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
                            session_template_id)
@@ -191,8 +193,9 @@ def patch_v2_sessiontemplate(
         "PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
         session_template_id)
     tenant = get_tenant_from_header()
-    template = DB.tenant_aware_get(session_template_id, tenant)
-    if template is None:
+    try:
+        template = DB.tenant_aware_get(session_template_id, tenant)
+    except dbutils.NotFoundInDB: 
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
                            session_template_id)

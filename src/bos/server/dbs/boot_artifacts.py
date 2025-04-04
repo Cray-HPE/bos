@@ -25,7 +25,7 @@ import logging
 
 from bos.common.types.components import TimestampedBootArtifacts
 from bos.common.utils import get_current_timestamp
-from bos.server.redis_db_utils import BootArtifactsDBWrapper
+from bos.server.redis_db_utils import BootArtifactsDBWrapper, NotFoundInDB
 
 LOGGER = logging.getLogger(__name__)
 TOKENS_DB = BootArtifactsDBWrapper()
@@ -70,9 +70,7 @@ def get_boot_artifacts(token: str) -> TimestampedBootArtifacts:
     Raises:
       BssTokenUnknown
     """
-    if token not in TOKENS_DB:
-        raise BssTokenUnknown
-    boot_artifacts = TOKENS_DB.get(token)
-    if boot_artifacts is None:
-        raise BssTokenUnknown
-    return boot_artifacts
+    try:
+        return TOKENS_DB.get(token)
+    except NotFoundInDB as exc:
+        raise BssTokenUnknown from exc

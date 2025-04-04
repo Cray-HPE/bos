@@ -30,7 +30,7 @@ from collections.abc import Callable
 from itertools import batched
 import json
 import logging
-from typing import Generator, cast
+from typing import Any, Generator, cast
 
 import redis
 
@@ -38,6 +38,7 @@ from bos.common.types.general import BosDataRecord
 from bos.common.utils import exc_type_msg
 
 from .defs import DB_HOST, DB_PORT, Databases
+from .exceptions import NotFoundInDB
 
 LOGGER = logging.getLogger(__name__)
 
@@ -94,31 +95,40 @@ class DBWrapper[DataT: BosDataRecord](ABC):
             return False
         return True
 
-    @classmethod
-    def _load_data(cls, datastr: str) -> DataT | None:
-        if not datastr:
-            return None
-        data = json.loads(datastr)
-        return cast(DataT, data)
+    def _load_entry(self, key: str, data: Any, /) -> DataT:
+        if data is None:
+            raise NotFoundInDB(db=self.db_id, key=key)
+        return cast(DataT, json.loads(data))
 
     # The following methods act like REST calls for single items
-    def get(self, key: str) -> DataT | None:
+    def get(self, key: str) -> DataT:
         """Get the data for the given key."""
-        datastr = self.client.get(key)
-        return self._load_data(datastr)
+        data = self.client.get(key)
+        return self._load_entry(key, data)
 
-    def get_and_delete(self, key: str) -> DataT | None:
+    def get_and_delete(self, key: str) -> DataT:
         """Get the data for the given key and delete it from the DB."""
-        datastr = self.client.getdel(key)
-        return self._load_data(datastr)
+        data = self.client.getdel(key)
+        return self._load_entry(key, data)
 
-    def get_all(self) -> list[DataT | None]:
+    def get_all(self) -> list[DataT]:
         """Get an array of data for all keys."""
-        data = []
-        for key in self.client.scan_iter():
-            datastr = self.client.get(key)
-            single_data = self._load_data(datastr)
-            data.append(single_data)
+        return list(self._iter_values())
+
+    def get_all_as_dict(self) -> dict[str, DataT]:
+        """Return a mapping from all keys to their corresponding data
+           Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
+        """
+        data = {}
+        cursor = '0'
+        while cursor != 0:
+            cursor, keys = self.client.scan(cursor=cursor, count=1000)
+            values = [
+                None if datastr is None else self._load_entry(key, datastr)
+                for key, datastr in zip(keys, self.client.mget(keys))
+            ]
+            keys = [k.decode() for k in keys]
+            data.update(dict(zip(keys, values)))
         return data
 
     def get_all_filtered(self,
@@ -151,26 +161,9 @@ class DBWrapper[DataT: BosDataRecord](ABC):
         if start_after_key is not None:
             all_keys = [k for k in all_keys if k > start_after_key]
         for next_keys in batched(all_keys, 500):
-            for datastr in self.client.mget(next_keys):
-                data = self._load_data(datastr)
+            for key, data in zip(next_keys, self.client.mget(next_keys)):
                 if data is not None:
-                    yield data
-
-    def get_all_as_dict(self) -> dict[str, DataT]:
-        """Return a mapping from all keys to their corresponding data
-           Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
-        """
-        data = {}
-        cursor = '0'
-        while cursor != 0:
-            cursor, keys = self.client.scan(cursor=cursor, count=1000)
-            values = [
-                self._load_data(datastr)
-                for datastr in self.client.mget(keys)
-            ]
-            keys = [k.decode() for k in keys]
-            data.update(dict(zip(keys, values)))
-        return data
+                    yield self._load_entry(key, data)
 
     def put(self, key: str, new_data: DataT) -> None:
         """Put data in to the database, replacing any old data."""
@@ -179,7 +172,9 @@ class DBWrapper[DataT: BosDataRecord](ABC):
 
     def delete(self, key: str) -> None:
         """Deletes data from the database."""
-        self.client.delete(key)
+        # Use get_and_delete so we can raise a Not Found exception if appropriate
+        if self.client.getdel(key) is None:
+            raise NotFoundInDB(db=self.db_id, key=key)
 
     def info(self) -> dict:
         """Returns the database info."""

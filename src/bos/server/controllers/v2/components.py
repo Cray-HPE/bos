@@ -345,14 +345,10 @@ def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
     if invalid_comp_id is not None:
         raise KeyError(invalid_comp_id)
 
-    components: dict[str, ComponentRecord] = {}
-    for comp_id in id_list:
-        comp_data = DB.get(comp_id)
-        if comp_data is None:
-            raise KeyError(comp_id)
-        components[comp_id] = comp_data
-
-    return components
+    try:
+        return { comp_id: DB.get(comp_id) for comp_id in id_list }
+    except dbutils.NotFoundInDB as exc:
+        raise KeyError(exc.key) from exc
 
 
 def _get_invalid_comp_id_for_tenant(comp_id_list: Iterable[str], tenant: str | None) -> str | None:
@@ -377,11 +373,14 @@ def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     """Used by the GET /components/{component_id} API operation"""
     LOGGER.debug("GET /v2/components/%s invoked get_v2_component",
                  component_id)
-    if component_id not in DB or not is_valid_tenant_component(component_id,
-                                                               get_tenant_from_header()):
+    if not is_valid_tenant_component(component_id, get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-    component = DB.get(component_id)
+    try:
+        component = DB.get(component_id)
+    except dbutils.NotFoundInDB:
+        LOGGER.warning("Component %s could not be found", component_id)
+        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
     component = _set_status(component)
     del_timestamp(component)
     return component, 200
@@ -421,8 +420,10 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
     if not is_valid_tenant_component(component_id, get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-    component = DB.get(component_id)
-    if component is None:
+    try:
+        component = DB.get(component_id)
+    except dbutils.NotFoundInDB:
+        LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
 
     if "actual_state" in patch_data and not _validate_actual_state_change_is_allowed(component):
@@ -462,11 +463,15 @@ def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResp
     """Used by the DELETE /components/{component_id} API operation"""
     LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component",
                  component_id)
-    if component_id not in DB or not is_valid_tenant_component(component_id,
-                                                               get_tenant_from_header()):
+    if not is_valid_tenant_component(component_id, get_tenant_from_header()):
         LOGGER.warning("Component %s could not be found", component_id)
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-    DB.delete(component_id)
+    try:
+        DB.delete(component_id)
+    except dbutils.NotFoundInDB:
+        LOGGER.warning("Component %s could not be found", component_id)
+        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
+
     return None, 204
 
 
@@ -527,8 +532,9 @@ def _apply_tenant_limit(component_list: list[str]) -> tuple[list[str], list[str]
 
 
 def _apply_staged(component_id: str, clear_staged: bool=False) -> bool:
-    data = DB.get(component_id)
-    if data is None:
+    try:
+        data = DB.get(component_id)
+    except dbutils.NotFoundInDB:
         return False
     staged_state = data.get("staged_state", {})
     staged_session_id = staged_state.get("session", "")
@@ -555,12 +561,13 @@ def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
     staged_state = data.get("staged_state", {})
     staged_session_name = staged_state.get("session", "")
     tenant = get_tenant_from_header()
-    session = SESSIONS_DB.tenant_aware_get(staged_session_name, tenant)
-    if session is None:
+    try:
+        session = SESSIONS_DB.tenant_aware_get(staged_session_name, tenant)
+    except dbutils.NotFoundInDB as exc:
         raise Exception(
             "Staged session no longer exists "
             f"(session: {staged_session_name}, tenant: {tenant})"
-        )
+        ) from exc
     operation = session["operation"]
     if operation == "shutdown":
         if any(staged_state.get("boot_artifacts", {}).values()):

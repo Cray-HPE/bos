@@ -31,3 +31,4 @@ from .redis_error_handler import redis_error_handler
 from .session_dbwrapper import SessionDBWrapper
 from .session_status_dbwrapper import SessionStatusDBWrapper
 from .session_template_dbwrapper import SessionTemplateDBWrapper
+from .tenant_aware_dbwrapper import TenantAwareDBWrapper

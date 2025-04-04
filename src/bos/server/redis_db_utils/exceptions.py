@@ -25,18 +25,49 @@
 DB-related exceptions
 """
 
+from .defs import Databases
+
 class BosDBException(Exception):
     """
     Parent class for any exceptions originating from BOS DB classes
     """
+    DEFAULT_MSG = "Database error"
+
+    def __init__(self, db: Databases, **kwargs: str|None) -> None:
+        kwargs['db'] = db.name
+        if not kwargs.get('msg'):
+            kwargs['msg'] = self.DEFAULT_MSG
+        self.err_info: dict[str, str] = { k: v for k, v in kwargs.items() if v is not None }
+        super().__init__(self.__str__())
+
+    def __str__(self) -> str:
+        err_info_list = [
+            f"{k}={v}" for k, v in self.err_info.items() if k != "msg"
+        ]
+        msg = self.err_info.get("msg")
+        if msg is not None:
+            err_info_list.append(msg)
+        return " ".join(err_info_list)
 
 
 class BosDBEntryException(BosDBException):
     """
     Parent class for exceptions related to specific DB entries
     """
+    DEFAULT_MSG = "Database entry error"
+
+    def __init__(self, db: Databases, key: str, **kwargs) -> None:
+        super().__init__(db=db, key=key, **kwargs)
+
+    @property
+    def key(self) -> str:
+        return self.err_info["key"]
 
 class NotFoundInDB(BosDBEntryException):
     """
     Raised when a requested entry is not there
     """
+    DEFAULT_MSG = "Key not found in database"
+
+    def __init__(self, db: Databases, key: str, **kwargs) -> None:
+        super().__init__(db=db, key=key, **kwargs)
