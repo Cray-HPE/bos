@@ -169,7 +169,7 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
         session_template_id)
     tenant = get_tenant_from_header()
     try:
-        DB.tenanted_get_and_delete(session_template_id, tenant)
+        DB.tenanted_delete(session_template_id, tenant)
     except dbutils.NotFoundInDB:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
