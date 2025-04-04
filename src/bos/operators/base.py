@@ -28,6 +28,7 @@ BOS Operator - A Python operator for the Boot Orchestration Service.
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Generator
 from contextlib import ExitStack
 import itertools
 import logging
@@ -35,7 +36,7 @@ import threading
 import os
 import time
 from types import TracebackType
-from typing import Generator, NoReturn, Self
+from typing import NoReturn, Self
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
