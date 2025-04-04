@@ -24,8 +24,10 @@
 """
 ComponentDBWrapper class
 """
+from typing import cast
 
 from bos.common.types.components import ComponentRecord
+from bos.common.types.general import JsonDict
 
 from .dbwrapper import DBWrapper
 from .defs import Databases
@@ -36,3 +38,10 @@ class ComponentDBWrapper(DBWrapper[ComponentRecord]):
     """
 
     _Database = Databases.COMPONENTS
+
+    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> ComponentRecord:
+        """
+        Eventually this should probably actually make sure that the record being returned is in the
+        correct format. But for now, we'll just satisfy mypy
+        """
+        return cast(ComponentRecord, jsondict)

@@ -24,7 +24,9 @@
 """
 OptionsDBWrapper class
 """
+from typing import cast
 
+from bos.common.types.general import JsonDict
 from bos.common.types.options import OptionsDict
 
 from .dbwrapper import DBWrapper
@@ -51,3 +53,10 @@ class OptionsDBWrapper(DBWrapper[OptionsDict]):
 
     def put_options(self, data: OptionsDict) -> None:
         self.put(OPTIONS_KEY, data)
+
+    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> OptionsDict:
+        """
+        Eventually this should probably actually make sure that the record being returned is in the
+        correct format. But for now, we'll just satisfy mypy
+        """
+        return cast(OptionsDict, jsondict)
