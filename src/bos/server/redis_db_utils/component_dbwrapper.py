@@ -34,6 +34,5 @@ class ComponentDBWrapper(DBWrapper[ComponentRecord]):
     """
     Components database wrapper
     """
-    @property
-    def db_id(self) -> Databases:
-        return Databases.COMPONENTS
+
+    _Database = Databases.COMPONENTS

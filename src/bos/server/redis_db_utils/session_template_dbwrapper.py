@@ -35,6 +35,4 @@ class SessionTemplateDBWrapper(TenantAwareDBWrapper[SessionTemplate]):
     Wrapper for session templates database
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.SESSION_TEMPLATES
+    _Database = Databases.SESSION_TEMPLATES

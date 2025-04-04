@@ -40,9 +40,7 @@ class OptionsDBWrapper(DBWrapper[OptionsDict]):
     Options database wrapper
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.OPTIONS
+    _Database = Databases.OPTIONS
 
     @property
     def options_exist(self) -> bool:

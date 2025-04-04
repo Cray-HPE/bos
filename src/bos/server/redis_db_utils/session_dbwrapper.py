@@ -35,6 +35,4 @@ class SessionDBWrapper(TenantAwareDBWrapper[Session]):
     Session database wrapper
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.SESSIONS
+    _Database = Databases.SESSIONS

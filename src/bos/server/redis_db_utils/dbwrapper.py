@@ -30,7 +30,7 @@ from collections.abc import Callable
 from itertools import batched
 import json
 import logging
-from typing import Any, Generator, Iterable, cast
+from typing import Any, ClassVar, Generator, Iterable, Protocol, cast
 
 import redis
 
@@ -38,11 +38,15 @@ from bos.common.types.general import BosDataRecord, JsonDict
 from bos.common.utils import exc_type_msg
 
 from .defs import DB_HOST, DB_PORT, Databases
-from .exceptions import NotFoundInDB
+from .exceptions import BosDBException, NotFoundInDB
 
 LOGGER = logging.getLogger(__name__)
 
-class DBWrapper[DataT: BosDataRecord](ABC):
+class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
+    """ Require that some classes set the _Database class variable """
+    _Database: ClassVar[Databases]
+
+class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
     """A wrapper around a Redis database connection
 
     This handles creating the Redis client and provides REST-like methods for
@@ -53,34 +57,16 @@ class DBWrapper[DataT: BosDataRecord](ABC):
     """
 
     def __init__(self) -> None:
-        self.client = self._get_client()
-
-    def __contains__(self, key: str, /) -> bool:
-        # The redis type annotations are not ideal, so we need to use cast here
-        return cast(bool, self.client.exists(key))
-
-    # @property has to be listed before @abstractmethod, or you get runtime errors
-    @property
-    @abstractmethod
-    def db_id(self) -> Databases:
-        """Return the database identifier"""
-
-    def _get_client(self) -> redis.Redis:
-        """Create a connection with the database."""
-        try:
-            LOGGER.debug(
-                "Creating database connection"
-                "host: %s port: %s database: %d", DB_HOST, DB_PORT, self.db_id)
-            return redis.Redis(host=DB_HOST, port=DB_PORT, db=int(self.db_id))
-        except Exception as err:
-            LOGGER.error("Failed to connect to database %d : %s", self.db_id,
-                         exc_type_msg(err))
-            raise
+        self._client = _get_redis_client(self.db)
 
     @property
-    def db_string(self) -> str:
-        """Returns the string name of the database"""
-        return self.db_id.name
+    def db(self) -> Databases:
+        """Return the database identifer"""
+        return self._Database
+
+    @property
+    def client(self) -> redis.Redis:
+        return self._client
 
     def info(self) -> dict:
         """Returns the database info."""
@@ -97,13 +83,17 @@ class DBWrapper[DataT: BosDataRecord](ABC):
         try:
             self.client.get('')
         except Exception as err:
-            LOGGER.warning("Failed to query database %s : %s", self.db_string, exc_type_msg(err))
+            LOGGER.warning("Failed to query database %s : %s", self.db.name, exc_type_msg(err))
             return False
         return True
 
+    def __contains__(self, key: str, /) -> bool:
+        # The redis type annotations are not ideal, so we need to use cast here
+        return cast(bool, self.client.exists(key))
+
     def _load_entry(self, key: str, data: Any, /) -> DataT:
         if data is None:
-            raise NotFoundInDB(db=self.db_id, key=key)
+            raise NotFoundInDB(db=self.db, key=key)
         return cast(DataT, json.loads(data))
 
     def get(self, key: str, /) -> DataT:
@@ -118,7 +108,7 @@ class DBWrapper[DataT: BosDataRecord](ABC):
         """
         # Use get_and_delete so we can raise a Not Found exception if appropriate
         if self.client.getdel(key) is None:
-            raise NotFoundInDB(db=self.db_id, key=key)
+            raise NotFoundInDB(db=self.db, key=key)
 
     def put(self, key: str, data: DataT | JsonDict, /) -> None:
         """
@@ -189,7 +179,7 @@ class DBWrapper[DataT: BosDataRecord](ABC):
             else:
                 # No ValueError was raised -- meaning none_index is set to the
                 # first index with a None value
-                raise NotFoundInDB(db=self.db_id, key=key_sublist[none_index])
+                raise NotFoundInDB(db=self.db, key=key_sublist[none_index])
         return { key: self._load_entry(key, data) for key, data in zip(keys, raw_data_list) }
 
     def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
@@ -211,3 +201,15 @@ class DBWrapper[DataT: BosDataRecord](ABC):
             for key, data in zip(next_keys, self.client.mget(next_keys)):
                 if data is not None:
                     yield self._load_entry(key, data)
+
+def _get_redis_client(db: Databases) -> redis.Redis:
+    """Create a connection with the database."""
+    LOGGER.debug("Creating database connection host: %s port: %s database: %d (%s)",
+                 DB_HOST, DB_PORT, db.value, db.name)
+    try:
+        return redis.Redis(host=DB_HOST, port=DB_PORT, db=db.value)
+    except Exception as err:
+        LOGGER.error("Failed to connect to database %d (%s) : %s", db.value, db.name,
+                     exc_type_msg(err))
+        raise BosDBException(db=db, msg="Failed to connect to database",
+                             exc=exc_type_msg(err)) from err

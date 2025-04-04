@@ -35,6 +35,4 @@ class SessionStatusDBWrapper(TenantAwareDBWrapper[SessionExtendedStatus]):
     Wrapper for session status database
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.SESSION_STATUS
+    _Database = Databases.SESSION_STATUS

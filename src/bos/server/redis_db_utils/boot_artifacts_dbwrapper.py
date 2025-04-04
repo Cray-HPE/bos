@@ -35,6 +35,4 @@ class BootArtifactsDBWrapper(DBWrapper[TimestampedBootArtifacts]):
     Boot artifacts database wrapper
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.BSS_TOKENS_BOOT_ARTIFACTS
+    _Database = Databases.BSS_TOKENS_BOOT_ARTIFACTS

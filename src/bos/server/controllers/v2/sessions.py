@@ -277,7 +277,7 @@ def _tenanted_delete_if_present(db: dbutils.TenantAwareDBWrapper, session_id: st
     try:
         db.tenanted_delete(session_id, tenant)
     except dbutils.NotFoundInDB:
-        LOGGER.debug("No %s DB entry to delete for session %s (tenant = '%s')", db.db_string,
+        LOGGER.debug("No %s DB entry to delete for session %s (tenant = '%s')", db.db.name,
                      session_id, tenant)
 
 
