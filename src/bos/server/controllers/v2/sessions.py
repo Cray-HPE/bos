@@ -35,7 +35,7 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
 from bos.common.types.session_extended_status import SessionExtendedStatus
-from bos.common.types.sessions import Session as SessionRecord
+from bos.common.types.sessions import Session as SessionRecordT
 from bos.common.types.sessions import update_session_record
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
@@ -59,7 +59,7 @@ LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
-def post_v2_session() -> tuple[SessionRecord, Literal[201]] | CxResponse:  # noqa: E501
+def post_v2_session() -> tuple[SessionRecordT, Literal[201]] | CxResponse:  # noqa: E501
     """POST /v2/session
     Creates a new session. # noqa: E501
     :param session: A JSON object for creating sessions
@@ -71,7 +71,7 @@ def post_v2_session() -> tuple[SessionRecord, Literal[201]] | CxResponse:  # noq
     # -- Validation --
     try:
         session_create = SessionCreate.from_dict(
-            cast(SessionRecord, get_request_json()))  # noqa: E501
+            cast(SessionRecordT, get_request_json()))  # noqa: E501
     except Exception as err:
         LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
@@ -151,7 +151,7 @@ def _create_session(session_create: SessionCreate, tenant: str | None) -> Sessio
 
 
 @dbutils.redis_error_handler
-def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | CxResponse:
+def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | CxResponse:
     """PATCH /v2/session
     Patch the session identified by session_id
     Args:
@@ -161,7 +161,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | Cx
     """
     LOGGER.debug("PATCH /v2/sessions/%s invoked patch_v2_session", session_id)
     try:
-        patch_data_json = cast(SessionRecord, get_request_json())
+        patch_data_json = cast(SessionRecordT, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", session_id,
                      exc_type_msg(err))
@@ -187,7 +187,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecord, Literal[200]] | Cx
 
 @dbutils.redis_error_handler
 def get_v2_session(
-        session_id: str) -> tuple[SessionRecord, Literal[200]] | CxResponse:  # noqa: E501
+        session_id: str) -> tuple[SessionRecordT, Literal[200]] | CxResponse:  # noqa: E501
     """GET /v2/session
     Get the session by session ID
     Args:
@@ -207,7 +207,7 @@ def get_v2_session(
 
 @dbutils.redis_error_handler
 def get_v2_sessions(min_age: str | None=None, max_age: str | None=None,
-                    status: str | None=None) -> tuple[list[SessionRecord],
+                    status: str | None=None) -> tuple[list[SessionRecordT],
                                                          Literal[200]]:  # noqa: E501
     """GET /v2/session
 
@@ -335,7 +335,7 @@ def save_v2_session_status(
 
 
 def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str | None,
-                           status: str | None) -> list[SessionRecord]:
+                           status: str | None) -> list[SessionRecordT]:
     if not any([tenant, min_age, max_age, status]):
         return DB.get_all()
     min_start = None
@@ -357,8 +357,8 @@ def _get_filtered_sessions(tenant: str | None, min_age: str | None, max_age: str
                                                    status=status))
 
 
-def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime | None,
-                    max_start: datetime | None, status: str | None) -> SessionRecord | None:
+def _matches_filter(data: SessionRecordT, tenant: str | None, min_start: datetime | None,
+                    max_start: datetime | None, status: str | None) -> SessionRecordT | None:
     if tenant and tenant != data.get("tenant"):
         return None
     session_status = data.get('status', {})
@@ -375,7 +375,7 @@ def _matches_filter(data: SessionRecord, tenant: str | None, min_start: datetime
 
 
 def _get_v2_session_status(session_id: str, tenant_id: str | None,
-                           session: SessionRecord) -> SessionExtendedStatus:
+                           session: SessionRecordT) -> SessionExtendedStatus:
     components = get_v2_components_data(session=session_id, tenant=tenant_id)
     staged_components = get_v2_components_data(staged_session=session_id,
                                                tenant=tenant_id)
