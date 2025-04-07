@@ -25,6 +25,10 @@
 DB-related exceptions
 """
 
+from typing import Any
+
+from bos.common.types.general import JsonData
+
 from .defs import Databases
 
 class BosDBException(Exception):
@@ -71,3 +75,45 @@ class NotFoundInDB(BosDBEntryException):
 
     def __init__(self, db: Databases, key: str, **kwargs) -> None:
         super().__init__(db=db, key=key, **kwargs)
+
+class InvalidDBData(BosDBEntryException):
+    """
+    Parent class for invalid DB data errors
+    """
+    DEFAULT_MSG = "Invalid data in database entry"
+
+    def __init__(self, db: Databases, key: str, entry_data: Any, **kwargs) -> None:
+        super().__init__(db=db, entry_data=str(entry_data), key=key, **kwargs)
+
+class InvalidDBDataType(InvalidDBData):
+    """
+    Raised when a DB lookup retrieves an item that is not JSON-deserializable
+    (not a string-like object)
+    """
+    DEFAULT_MSG = "Invalid data type in database entry"
+
+    def __init__(self, db: Databases, entry_data: Any, key: str, **kwargs) -> None:
+        super().__init__(db=db, entry_data=entry_data, key=key,
+                         expected_type="byte | bytearray | str",
+                         actual_type=type(entry_data).__name__, **kwargs)
+
+class InvalidDBJsonDataType(InvalidDBData):
+    """
+    Raised when a DB lookup retrieves an item that decodes to JSON of the wrong type.
+    In BOS DB, we always expect the entries to be dicts.
+    """
+    DEFAULT_MSG = "Invalid JSON data type in database entry"
+
+    def __init__(self, db: Databases, entry_data: JsonData, key: str, **kwargs) -> None:
+        super().__init__(db=db, entry_data=entry_data, key=key, expected_type="dict",
+                         actual_type=type(entry_data).__name__, **kwargs)
+
+class NonJsonDBData(InvalidDBData):
+    """
+    Raised when JSON decode fails
+    """
+    DEFAULT_MSG = "Invalid JSON in database entry"
+
+    def __init__(self, db: Databases, entry_data: bytes | bytearray | str, key: str,
+                 **kwargs) -> None:
+        super().__init__(db=db, key=key, entry_data=entry_data, **kwargs)
