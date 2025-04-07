@@ -25,6 +25,7 @@
 """
 Type annotation definitions for BOS sessions
 """
+
 import copy
 from typing import Literal, Required, TypedDict
 
