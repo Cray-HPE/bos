@@ -36,6 +36,8 @@ from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
 from bos.common.types.session_extended_status import SessionExtendedStatus
 from bos.common.types.sessions import Session as SessionRecordT
+from bos.common.types.sessions import SessionCreate as SessionCreateT
+from bos.common.types.sessions import SessionUpdate as SessionUpdateT
 from bos.common.types.sessions import update_session_record
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
 from bos.common.values import Phase, Status
@@ -71,7 +73,7 @@ def post_v2_session() -> tuple[SessionRecordT, Literal[201]] | CxResponse:  # no
     # -- Validation --
     try:
         session_create = SessionCreate.from_dict(
-            cast(SessionRecordT, get_request_json()))  # noqa: E501
+            cast(SessionCreateT, get_request_json()))  # noqa: E501
     except Exception as err:
         LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
@@ -125,7 +127,7 @@ def post_v2_session() -> tuple[SessionRecordT, Literal[201]] | CxResponse:  # no
     if DB.has_tenanted_entry(session.name, tenant):
         LOGGER.warning("v2 session named %s already exists (tenant = '%s')", session.name, tenant)
         return _409_session_already_exists(session.name, tenant)
-    session_data = session.to_dict()
+    session_data: SessionRecordT = session.to_dict()
     DB.tenanted_put(session.name, tenant, session_data)
     return session_data, 201
 
@@ -161,7 +163,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | C
     """
     LOGGER.debug("PATCH /v2/sessions/%s invoked patch_v2_session", session_id)
     try:
-        patch_data_json = cast(SessionRecordT, get_request_json())
+        patch_data = cast(SessionUpdateT, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", session_id,
                      exc_type_msg(err))
@@ -175,7 +177,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | C
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
 
     try:
-        update_session_record(session_data, patch_data_json)
+        update_session_record(session_data, patch_data)
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request with data: %s", session_id,
                      exc_type_msg(err))
