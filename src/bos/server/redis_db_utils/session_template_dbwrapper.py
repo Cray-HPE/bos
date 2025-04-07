@@ -24,7 +24,9 @@
 """
 SessionTemplateDBWrapper class
 """
+from typing import cast
 
+from bos.common.types.general import JsonDict
 from bos.common.types.templates import SessionTemplate
 
 from .defs import Databases
@@ -36,3 +38,10 @@ class SessionTemplateDBWrapper(TenantAwareDBWrapper[SessionTemplate]):
     """
 
     _Database = Databases.SESSION_TEMPLATES
+
+    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> SessionTemplate:
+        """
+        Eventually this should probably actually make sure that the record being returned is in the
+        correct format. But for now, we'll just satisfy mypy
+        """
+        return cast(SessionTemplate, jsondict)

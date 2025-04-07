@@ -27,18 +27,28 @@ DBWrapper class
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable
-from itertools import batched
+from functools import partialmethod
+from itertools import batched, islice
 import json
 import logging
-from typing import Any, ClassVar, Protocol, cast
+from typing import (Any,
+                    ClassVar,
+                    Literal,
+                    Protocol,
+                    cast,
+                    overload)
 
 import redis
 
-from bos.common.types.general import BosDataRecord, JsonDict
+from bos.common.types.general import BosDataRecord, JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 
 from .defs import DB_HOST, DB_PORT, Databases
-from .exceptions import BosDBException, NotFoundInDB
+from .exceptions import (BosDBException,
+                         InvalidDBDataType,
+                         InvalidDBJsonDataType,
+                         NonJsonDBData,
+                         NotFoundInDB)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -49,13 +59,9 @@ class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
 class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
     """A wrapper around a Redis database connection
 
-    This handles creating the Redis client and provides REST-like methods for
-    modifying json data in the database.
-
     Because the underlying Redis client is threadsafe, this class is as well,
     and can be safely shared by multiple threads.
     """
-
     def __init__(self) -> None:
         self._client = _get_redis_client(self.db)
 
@@ -81,7 +87,7 @@ class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
         Return True otherwise.
         """
         try:
-            self.client.get('')
+            self.info()
         except Exception as err:
             LOGGER.warning("Failed to query database %s : %s", self.db.name, exc_type_msg(err))
             return False
@@ -91,15 +97,61 @@ class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
         # The redis type annotations are not ideal, so we need to use cast here
         return cast(bool, self.client.exists(key))
 
-    def _load_entry(self, key: str, data: Any, /) -> DataT:
+    @abstractmethod
+    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> DataT: ...
+
+    @overload
+    def _load_entry(self, key: str, data: Any, /, *,
+                    return_json: Literal[False]) -> DataT: ...
+
+    @overload
+    def _load_entry(self, key: str, data: Any, /, *,
+                    return_json: Literal[True]) -> JsonDict: ...
+
+    @overload
+    def _load_entry(self, key: str, data: Any, /, *,
+                    return_json: bool) -> DataT | JsonDict: ...
+
+    def _load_entry(
+        self, key: str, data: Any, /, *,
+        return_json: bool
+    ) -> DataT | JsonDict:
+        """
+        Parses entry as JSON and verifies it is a dict, or raises an appropriate exception.
+        If return_json is not True, converts result to DataT before returning it.
+        """
         if data is None:
             raise NotFoundInDB(db=self.db, key=key)
-        return cast(DataT, json.loads(data))
+
+        # Make sure the data is str, bytes, or bytearray (the valid inputs for JSON decoding)
+        if not isinstance(data, (bytes, bytearray, str)):
+            raise InvalidDBDataType(db=self.db, entry_data=data, key=key)
+
+        try:
+            jsondata = json.loads(data)
+        except json.decoder.JSONDecodeError as exc:
+            raise NonJsonDBData(self.db, key=key, entry_data=data,
+                                exc=exc_type_msg(exc)) from exc
+
+        # Because we just loaded the data using json.load, we know the format is JSON
+        # The only thing we really need to make sure of is that it's a dict
+        if not isinstance(jsondata, dict):
+            # Cast the entry data for poor mypy, since we know it is JsonData
+            raise InvalidDBJsonDataType(db=self.db, key=key, entry_data=cast(JsonData, jsondata))
+
+        # Cast the type as JsonDict, so mypy has no doubts
+        jsondict = cast(JsonDict, jsondata)
+
+        return jsondict if return_json else self._jsondict_to_bosdata(key, jsondict)
+
+    _load_bosdata = partialmethod(_load_entry, return_json=False)
+    _load_jsondict = partialmethod(_load_entry, return_json=True)
 
     def get(self, key: str, /) -> DataT:
         """Get the data for the given key."""
-        data = self.client.get(key)
-        return self._load_entry(key, data)
+        # The redis type annotations are not ideal, so we need to use cast here
+        data = cast(Any, self.client.get(key))
+        return self._load_bosdata(key, data)
 
     def delete(self, key: str, /) -> None:
         """
@@ -116,30 +168,28 @@ class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
         """
         self.client.set(key, json.dumps(data))
 
-    def get_and_delete(self, key: str, /) -> DataT:
+    def _get_and_delete[DataFormat](self, key: str, /, *,
+                                    load_func: Callable[[str, Any], DataFormat]) -> DataFormat:
         """Get the data for the given key and delete it from the DB."""
-        data = self.client.getdel(key)
-        return self._load_entry(key, data)
+        # The redis type annotations are not ideal, so we need to use cast here
+        data = cast(Any, self.client.getdel(key))
+        return load_func(key, data)
+
+    def get_and_delete(self, key: str, /) -> DataT:
+        return self._get_and_delete(key, load_func=self._load_bosdata)
+
+    def get_and_delete_raw(self, key: str, /) -> JsonDict:
+        return self._get_and_delete(key, load_func=self._load_jsondict)
 
     def get_all(self) -> list[DataT]:
         """Get an array of data for all keys."""
-        return list(self._iter_values())
+        return list(self.iter_values())
 
     def get_all_as_raw_dict(self) -> dict[str, JsonDict]:
         """Return a mapping from all keys to their corresponding data, only JSON
            decoding and not otherwise parsing the data
-           Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
         """
-        datadict: dict[str, JsonDict] = {}
-        cursor = '0'
-        while cursor != 0:
-            cursor, keys = self.client.scan(cursor=cursor, count=1000)
-            datadict.update({
-                key.decode(): json.loads(data)
-                for key, data in zip(keys, self.client.mget(keys))
-                if data is not None
-            })
-        return datadict
+        return dict(self.iter_items_raw())
 
     def get_all_filtered(self,
                          filter_func: Callable[[DataT], DataT | None], *,
@@ -153,14 +203,12 @@ class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
         to or less than the page_size.
         More elements may remain and additional queries will be needed to acquire them.
         """
-        data = []
-        for value in self._iter_values(start_after_key=start_after_key):
-            filtered_value = filter_func(value)
-            if filtered_value is not None:
-                data.append(filtered_value)
-                if page_size and len(data) == page_size:
-                    break
-        return data
+        filtered_values_including_nones = map(filter_func,
+                                              self.iter_values(start_after_key=start_after_key))
+        filtered_values = (data for data in filtered_values_including_nones if data is not None)
+        if page_size:
+            return list(islice(filtered_values, page_size))
+        return list(filtered_values)
 
     def mget(self, keys: Iterable[str], /) -> dict[str, DataT]:
         """
@@ -180,7 +228,7 @@ class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
                 # No ValueError was raised -- meaning none_index is set to the
                 # first index with a None value
                 raise NotFoundInDB(db=self.db, key=key_sublist[none_index])
-        return { key: self._load_entry(key, data) for key, data in zip(keys, raw_data_list) }
+        return { key: self._load_bosdata(key, data) for key, data in zip(keys, raw_data_list) }
 
     def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
         """
@@ -188,19 +236,55 @@ class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
         """
         self.client.mset({ key: json.dumps(data) for key, data in key_data_map.items()})
 
-    def _iter_values(self, /, *,
+    def iter_values(self, /, *,
                     start_after_key: str | None = None) -> Generator[DataT, None, None]:
         """
-        Iterate through every item in the database. Parse each item as JSON and yield it.
+        Iterate through every item in the database. Parse each item as a string and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
         """
-        all_keys = sorted({k.decode() for k in self.client.scan_iter()})
-        if start_after_key is not None:
-            all_keys = [k for k in all_keys if k > start_after_key]
-        for next_keys in batched(all_keys, 500):
-            for key, data in zip(next_keys, self.client.mget(next_keys)):
+        for _, data in self.iter_items(start_after_key=start_after_key):
+            yield data
+
+    def iter_keys(self, /, *, start_after_key: str | None = None) -> Generator[str, None, None]:
+        """
+        Sorted list of all current keys in DB
+        """
+        all_keys_list = sorted({k.decode() for k in self.client.scan_iter()})
+        if start_after_key is None:
+            yield from all_keys_list
+        else:
+            yield from filter(lambda k: k > start_after_key, all_keys_list)
+
+    def _iter_items[DataFormat](
+        self, /, *, start_after_key: str | None,
+        load_func: Callable[[str, Any], DataFormat]
+    ) -> Generator[tuple[str, DataFormat], None, None]:
+        """
+        Iterate through every item in the database. Parse each item using the specified function
+        and yield it.
+        If start_after_key is specified, skip any keys that are lexically <= the specified key.
+        """
+        for next_keys in batched(self.iter_keys(start_after_key=start_after_key), 500):
+            data_list = cast(Iterable[Any], self.client.mget(next_keys))
+            for key, data in zip(next_keys, data_list):
                 if data is not None:
-                    yield self._load_entry(key, data)
+                    yield key, load_func(key, data)
+
+    def iter_items(
+        self, /, *, start_after_key: str | None = None
+    ) -> Generator[tuple[str, DataT], None, None]:
+        """
+        Wrapper for _iter_items that specified the appropriate BOS data type loading function,
+        and defaults start_after_key to None.
+        """
+        yield from self._iter_items(start_after_key=start_after_key, load_func=self._load_bosdata)
+
+    def iter_items_raw(self) -> Generator[tuple[str, JsonDict], None, None]:
+        """
+        Intended for use by the BOS migration job. Wrapper for _iter_items that only does JSON
+        decoding, not any further data processing.
+        """
+        yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict)
 
 def _get_redis_client(db: Databases) -> redis.Redis:
     """Create a connection with the database."""
