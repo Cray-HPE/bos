@@ -30,11 +30,10 @@ from connexion.lifecycle import ConnexionResponse
 
 from bos.common.options import DEFAULTS, OptionsCache
 from bos.common.types.general import JsonDict
-from bos.common.types.options import OptionsDict
+from bos.common.types.options import is_option_name, OptionsDict
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request
-from bos.server.models.v2_options import V2Options as Options
 from bos.server.utils import get_request_json
 
 LOGGER = logging.getLogger(__name__)
@@ -70,11 +69,15 @@ def _init() -> None:
         try:
             data = DB.get_options()
             break
+        except dbutils.NotFoundInDB:
+            # No old options to clean up
+            return
         except Exception as err:
             LOGGER.info('Database is not yet available (%s)',
                         exc_type_msg(err))
             time.sleep(1)
     if not data:
+        # No old options to clean up
         return
     data = _clean_options_data(data)
     DB.put_options(data)
@@ -95,20 +98,17 @@ def _get_v2_options() -> OptionsDict:
     return _clean_options_data(data)
 
 
-def _clean_options_data(data: OptionsDict) -> OptionsDict:
+def _clean_options_data(data: JsonDict) -> OptionsDict:
     """Removes keys that are not in the options spec"""
-    to_delete = []
-    all_options = set(Options().attribute_map.values())
-    for key in data:
-        if key not in all_options:
-            to_delete.append(key)
-    for key in to_delete:
-        del data[key]
-    return data
+    return { key: value for key, value in data.items() if is_option_name(key) }
 
 
 def get_v2_options_data() -> OptionsDict:
-    return _check_defaults(DB.get_options())
+    try:
+        option_data = DB.get_options()
+    except dbutils.NotFoundInDB:
+        option_data = None
+    return _check_defaults(option_data)
 
 
 def _check_defaults(data: OptionsDict | None) -> OptionsDict:
@@ -122,7 +122,7 @@ def _check_defaults(data: OptionsDict | None) -> OptionsDict:
             data[key] = default_value
             put = True
     if put:
-        return DB.put_options(data)
+        DB.put_options(data)
     return data
 
 
@@ -136,9 +136,10 @@ def patch_v2_options() -> tuple[OptionsDict, Literal[200]] | ConnexionResponse:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    if not DB.options_exist:
-        DB.put_options({})
-    return DB.patch_options(data), 200
+    options = get_v2_options_data()
+    options.update(data)
+    DB.put_options(data)
+    return data, 200
 
 
 def update_log_level(new_level_str: str) -> None:

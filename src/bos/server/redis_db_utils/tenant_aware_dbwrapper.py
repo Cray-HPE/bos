@@ -22,49 +22,43 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 """
-DBWrapper class
+TenantAwareDBWrapper class
 """
 
 from abc import ABC
-from collections.abc import Callable
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.types.general import BosDataRecord
 
 from .dbwrapper import DBWrapper
 
-class TenantAwareDBWrapper[DataType: BosDataRecord](DBWrapper[DataType], ABC):
+class TenantAwareDBWrapper[DataT: BosDataRecord](DBWrapper[DataT], ABC):
     """A wrapper around a Redis database connection, for a database
     with tenant-aware keys
     """
-    def has_tenanted_entry(self, name: str, tenant: str | None) -> bool:
+    def has_tenanted_entry(self, name: str, tenant: str | None, /) -> bool:
         """
         Checks if data exists for given name/tenant
         """
         return get_tenant_aware_key(name, tenant) in self
 
-    def tenant_aware_get(self, name: str, tenant: str | None) -> DataType | None:
+    def tenanted_get(self, name: str, tenant: str | None, /) -> DataT:
         """Get the data for the given name/tenant."""
         return self.get(get_tenant_aware_key(name, tenant))
 
-    def tenant_aware_get_and_delete(self, name: str, tenant: str | None) -> DataType | None:
+    def tenanted_get_and_delete(self, name: str, tenant: str | None, /) -> DataT:
         """Get the data for the given name/tenant and delete it from the DB."""
         return self.get_and_delete(get_tenant_aware_key(name, tenant))
 
-    def tenant_aware_put(self, name: str, tenant: str | None, new_data: DataType) -> DataType | None:
+    def tenanted_put(self, name: str, tenant: str | None, new_data: DataT, /) -> None:
         """Put data in to the database, replacing any old data."""
-        return self.put(get_tenant_aware_key(name, tenant), new_data)
+        self.put(get_tenant_aware_key(name, tenant), new_data)
 
-    def _tenant_aware_patch(self, name: str, tenant: str | None, new_data: DataType,
-              data_handler: Callable[[DataType],DataType] | None=None) -> DataType | None:
-        """Patch data in the database.
-           data_handler provides a way to operate on the full patched data
-
-           Not all BOS databases support patching. Subclasses which do support patch
-           operations should provide a tenant_aware_patch method.
-           """
-        return self._patch(get_tenant_aware_key(name, tenant), new_data, data_handler)
-
-    def tenant_aware_delete(self, name: str, tenant: str | None) -> None:
+    def tenanted_delete(self, name: str, tenant: str | None, /) -> None:
         """Deletes data from the database."""
         return self.delete(get_tenant_aware_key(name, tenant))
+
+    def tenanted_mput(self, name_tenant_data_map: dict[tuple[str, str|None], DataT], /) -> None:
+        """Put data in to the database, replacing any old data."""
+        self.mput({ get_tenant_aware_key(*name_tenant_tuple): data
+                    for name_tenant_tuple, data in name_tenant_data_map.items() })

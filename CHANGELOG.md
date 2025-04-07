@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.37.0] - 2025-04-07
+
+### Added
+- CASMCMS-9340: Created Redis DB wrapper methods to allow reading/writing multiple entries in
+  a single call; updated components controller to make use of this.
+
+### Changes
+- CASMCMS-9331: When a requested item is missing from a BOS DB, signal this by raising an
+  exception instead of returning None.
+- CASMCMS-9339: Make more precise type annotations for session create and patch requests
+
+### Dependencies
+- Bump redis Python client version from 5.0 to 5.2
+
 ## [2.36.0] - 2025-03-26
 
 ### Changed

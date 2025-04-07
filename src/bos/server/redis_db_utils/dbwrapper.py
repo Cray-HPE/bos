@@ -26,59 +26,58 @@ DBWrapper class
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
-from itertools import batched
+from collections.abc import Callable, Generator, Iterable
+from functools import partialmethod
+from itertools import batched, islice
 import json
 import logging
-from typing import Generator, cast
+from typing import (Any,
+                    ClassVar,
+                    Literal,
+                    Protocol,
+                    cast,
+                    overload)
 
 import redis
 
-from bos.common.types.general import BosDataRecord
+from bos.common.types.general import BosDataRecord, JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 
 from .defs import DB_HOST, DB_PORT, Databases
+from .exceptions import (BosDBException,
+                         InvalidDBDataType,
+                         InvalidDBJsonDataType,
+                         NonJsonDBData,
+                         NotFoundInDB)
 
 LOGGER = logging.getLogger(__name__)
 
-class DBWrapper[DataType: BosDataRecord](ABC):
-    """A wrapper around a Redis database connection
+class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
+    """ Require that some classes set the _Database class variable """
+    _Database: ClassVar[Databases]
 
-    This handles creating the Redis client and provides REST-like methods for
-    modifying json data in the database.
+class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
+    """A wrapper around a Redis database connection
 
     Because the underlying Redis client is threadsafe, this class is as well,
     and can be safely shared by multiple threads.
     """
-
-    def __init__(self):
-        self.client = self._get_client()
-
-    def __contains__(self, key: str) -> bool:
-        return self.client.exists(key)
-
-    # @property has to be listed before @abstractmethod, or you get runtime errors
-    @property
-    @abstractmethod
-    def db_id(self) -> Databases:
-        """Return the integer database ID"""
-
-    def _get_client(self) -> redis.Redis:
-        """Create a connection with the database."""
-        try:
-            LOGGER.debug(
-                "Creating database connection"
-                "host: %s port: %s database: %d", DB_HOST, DB_PORT, self.db_id)
-            return redis.Redis(host=DB_HOST, port=DB_PORT, db=int(self.db_id))
-        except Exception as err:
-            LOGGER.error("Failed to connect to database %d : %s", self.db_id,
-                         exc_type_msg(err))
-            raise
+    def __init__(self) -> None:
+        self._client = _get_redis_client(self.db)
 
     @property
-    def db_string(self) -> str:
-        """Returns the string name of the database"""
-        return self.db_id.name
+    def db(self) -> Databases:
+        """Return the database identifer"""
+        return self._Database
+
+    @property
+    def client(self) -> redis.Redis:
+        return self._client
+
+    def info(self) -> dict:
+        """Returns the database info."""
+        # The redis type annotations are not ideal, so we need to use cast here
+        return cast(dict, self.client.info())
 
     @property
     def ready(self) -> bool:
@@ -88,46 +87,114 @@ class DBWrapper[DataType: BosDataRecord](ABC):
         Return True otherwise.
         """
         try:
-            self.client.get('')
+            self.info()
         except Exception as err:
-            LOGGER.warning("Failed to query database %s : %s", self.db_string, exc_type_msg(err))
+            LOGGER.warning("Failed to query database %s : %s", self.db.name, exc_type_msg(err))
             return False
         return True
 
-    @classmethod
-    def _load_data(cls, datastr: str) -> DataType | None:
-        if not datastr:
-            return None
-        data = json.loads(datastr)
-        return cast(DataType, data)
+    def __contains__(self, key: str, /) -> bool:
+        # The redis type annotations are not ideal, so we need to use cast here
+        return cast(bool, self.client.exists(key))
 
-    # The following methods act like REST calls for single items
-    def get(self, key: str) -> DataType | None:
+    @abstractmethod
+    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> DataT: ...
+
+    @overload
+    def _load_entry(self, key: str, data: Any, /, *,
+                    return_json: Literal[False]) -> DataT: ...
+
+    @overload
+    def _load_entry(self, key: str, data: Any, /, *,
+                    return_json: Literal[True]) -> JsonDict: ...
+
+    @overload
+    def _load_entry(self, key: str, data: Any, /, *,
+                    return_json: bool) -> DataT | JsonDict: ...
+
+    def _load_entry(
+        self, key: str, data: Any, /, *,
+        return_json: bool
+    ) -> DataT | JsonDict:
+        """
+        Parses entry as JSON and verifies it is a dict, or raises an appropriate exception.
+        If return_json is not True, converts result to DataT before returning it.
+        """
+        if data is None:
+            raise NotFoundInDB(db=self.db, key=key)
+
+        # Make sure the data is str, bytes, or bytearray (the valid inputs for JSON decoding)
+        if not isinstance(data, (bytes, bytearray, str)):
+            raise InvalidDBDataType(db=self.db, entry_data=data, key=key)
+
+        try:
+            jsondata = json.loads(data)
+        except json.decoder.JSONDecodeError as exc:
+            raise NonJsonDBData(self.db, key=key, entry_data=data,
+                                exc=exc_type_msg(exc)) from exc
+
+        # Because we just loaded the data using json.load, we know the format is JSON
+        # The only thing we really need to make sure of is that it's a dict
+        if not isinstance(jsondata, dict):
+            # Cast the entry data for poor mypy, since we know it is JsonData
+            raise InvalidDBJsonDataType(db=self.db, key=key, entry_data=cast(JsonData, jsondata))
+
+        # Cast the type as JsonDict, so mypy has no doubts
+        jsondict = cast(JsonDict, jsondata)
+
+        return jsondict if return_json else self._jsondict_to_bosdata(key, jsondict)
+
+    _load_bosdata = partialmethod(_load_entry, return_json=False)
+    _load_jsondict = partialmethod(_load_entry, return_json=True)
+
+    def get(self, key: str, /) -> DataT:
         """Get the data for the given key."""
-        datastr = self.client.get(key)
-        if not datastr:
-            return None
-        data = json.loads(datastr)
-        return data
+        # The redis type annotations are not ideal, so we need to use cast here
+        data = cast(Any, self.client.get(key))
+        return self._load_bosdata(key, data)
 
-    def get_and_delete(self, key: str) -> DataType | None:
+    def delete(self, key: str, /) -> None:
+        """
+        Deletes data from the database. No need to make this data-type specific, since we don't
+        actually return the data.
+        """
+        # Use get_and_delete so we can raise a Not Found exception if appropriate
+        if self.client.getdel(key) is None:
+            raise NotFoundInDB(db=self.db, key=key)
+
+    def put(self, key: str, data: DataT | JsonDict, /) -> None:
+        """
+        JSON-encode the specified data and write it to the database under the specified key
+        """
+        self.client.set(key, json.dumps(data))
+
+    def _get_and_delete[DataFormat](self, key: str, /, *,
+                                    load_func: Callable[[str, Any], DataFormat]) -> DataFormat:
         """Get the data for the given key and delete it from the DB."""
-        datastr = self.client.getdel(key)
-        return self._load_data(datastr)
+        # The redis type annotations are not ideal, so we need to use cast here
+        data = cast(Any, self.client.getdel(key))
+        return load_func(key, data)
 
-    def get_all(self) -> list[DataType | None]:
+    def get_and_delete(self, key: str, /) -> DataT:
+        return self._get_and_delete(key, load_func=self._load_bosdata)
+
+    def get_and_delete_raw(self, key: str, /) -> JsonDict:
+        return self._get_and_delete(key, load_func=self._load_jsondict)
+
+    def get_all(self) -> list[DataT]:
         """Get an array of data for all keys."""
-        data = []
-        for key in self.client.scan_iter():
-            datastr = self.client.get(key)
-            single_data = self._load_data(datastr)
-            data.append(single_data)
-        return data
+        return list(self.iter_values())
+
+    def get_all_as_raw_dict(self) -> dict[str, JsonDict]:
+        """Return a mapping from all keys to their corresponding data, only JSON
+           decoding and not otherwise parsing the data
+        """
+        return dict(self.iter_items_raw())
 
     def get_all_filtered(self,
-                         filter_func: Callable[[DataType], DataType | None],
+                         filter_func: Callable[[DataT], DataT | None], *,
                          start_after_key: str | None = None,
-                         page_size: int = 0) -> list[DataType]:
+                         page_size: int = 0) -> list[DataT]:
         """
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)
@@ -136,80 +203,97 @@ class DBWrapper[DataType: BosDataRecord](ABC):
         to or less than the page_size.
         More elements may remain and additional queries will be needed to acquire them.
         """
-        data = []
-        for value in self._iter_values(start_after_key):
-            filtered_value = filter_func(value)
-            if filtered_value is not None:
-                data.append(filtered_value)
-                if page_size and len(data) == page_size:
-                    break
-        return data
+        filtered_values_including_nones = map(filter_func,
+                                              self.iter_values(start_after_key=start_after_key))
+        filtered_values = (data for data in filtered_values_including_nones if data is not None)
+        if page_size:
+            return list(islice(filtered_values, page_size))
+        return list(filtered_values)
 
-    def _iter_values(self, start_after_key: str | None = None) -> Generator[DataType, None, None]:
+    def mget(self, keys: Iterable[str], /) -> dict[str, DataT]:
         """
-        Iterate through every item in the database. Parse each item as JSON and yield it.
+        Returns a mapping from the specified keys to the corresponding BOS data records.
+        Raises exception if any are not found.
+        """
+        raw_data_list: list[Any] = []
+        for key_sublist in batched(keys, 500):
+            raw_data_sublist = cast(list[Any], self.client.mget(key_sublist))
+            try:
+                none_index = raw_data_sublist.index(None)
+            except ValueError:
+                # This means we got back no None values from the mget call,
+                # meaning that all of the keys exist in the database.
+                raw_data_list.extend(raw_data_sublist)
+            else:
+                # No ValueError was raised -- meaning none_index is set to the
+                # first index with a None value
+                raise NotFoundInDB(db=self.db, key=key_sublist[none_index])
+        return { key: self._load_bosdata(key, data) for key, data in zip(keys, raw_data_list) }
+
+    def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
+        """
+        JSON-encode all data and then write each item to the database under its respective key
+        """
+        self.client.mset({ key: json.dumps(data) for key, data in key_data_map.items()})
+
+    def iter_values(self, /, *,
+                    start_after_key: str | None = None) -> Generator[DataT, None, None]:
+        """
+        Iterate through every item in the database. Parse each item as a string and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
         """
-        all_keys = sorted({k.decode() for k in self.client.scan_iter()})
-        if start_after_key is not None:
-            all_keys = [k for k in all_keys if k > start_after_key]
-        for next_keys in batched(all_keys, 500):
-            for datastr in self.client.mget(next_keys):
-                data = self._load_data(datastr)
-                if data is not None:
-                    yield data
+        for _, data in self.iter_items(start_after_key=start_after_key):
+            yield data
 
-    def get_all_as_dict(self) -> dict[str, DataType]:
-        """Return a mapping from all keys to their corresponding data
-           Based on https://github.com/redis/redis-py/issues/984#issuecomment-391404875
+    def iter_keys(self, /, *, start_after_key: str | None = None) -> Generator[str, None, None]:
         """
-        data = {}
-        cursor = '0'
-        while cursor != 0:
-            cursor, keys = self.client.scan(cursor=cursor, count=1000)
-            values = [
-                self._load_data(datastr)
-                for datastr in self.client.mget(keys)
-            ]
-            keys = [k.decode() for k in keys]
-            data.update(dict(zip(keys, values)))
-        return data
-
-    def put(self, key: str, new_data: DataType) -> DataType | None:
-        """Put data in to the database, replacing any old data."""
-        datastr = json.dumps(new_data)
-        self.client.set(key, datastr)
-        return self.get(key)
-
-    @classmethod
-    def _patch_data(cls, data: DataType, new_data: DataType) -> None:
-        data.update(new_data)
-
-    def _patch(self, key: str, new_data: DataType,
-               data_handler: Callable[[DataType],DataType] | None=None) -> DataType | None:
-        """Patch data in the database.
-           data_handler provides a way to operate on the full patched data.
-
-           Not all BOS databases support patch operations. Subclasses that do support them
-           are expected to provide a patch method (that can optionally call this method, if
-           appropriate)
+        Sorted list of all current keys in DB
         """
-        datastr = self.client.get(key)
-        data = self._load_data(datastr)
-        if data:
-            self._patch_data(data, new_data)
+        all_keys_list = sorted({k.decode() for k in self.client.scan_iter()})
+        if start_after_key is None:
+            yield from all_keys_list
         else:
-            data = new_data
-        if data_handler:
-            data = data_handler(data)
-        datastr = json.dumps(data)
-        self.client.set(key, datastr)
-        return self.get(key)
+            yield from filter(lambda k: k > start_after_key, all_keys_list)
 
-    def delete(self, key: str) -> None:
-        """Deletes data from the database."""
-        self.client.delete(key)
+    def _iter_items[DataFormat](
+        self, /, *, start_after_key: str | None,
+        load_func: Callable[[str, Any], DataFormat]
+    ) -> Generator[tuple[str, DataFormat], None, None]:
+        """
+        Iterate through every item in the database. Parse each item using the specified function
+        and yield it.
+        If start_after_key is specified, skip any keys that are lexically <= the specified key.
+        """
+        for next_keys in batched(self.iter_keys(start_after_key=start_after_key), 500):
+            data_list = cast(Iterable[Any], self.client.mget(next_keys))
+            for key, data in zip(next_keys, data_list):
+                if data is not None:
+                    yield key, load_func(key, data)
 
-    def info(self) -> dict:
-        """Returns the database info."""
-        return self.client.info()
+    def iter_items(
+        self, /, *, start_after_key: str | None = None
+    ) -> Generator[tuple[str, DataT], None, None]:
+        """
+        Wrapper for _iter_items that specified the appropriate BOS data type loading function,
+        and defaults start_after_key to None.
+        """
+        yield from self._iter_items(start_after_key=start_after_key, load_func=self._load_bosdata)
+
+    def iter_items_raw(self) -> Generator[tuple[str, JsonDict], None, None]:
+        """
+        Intended for use by the BOS migration job. Wrapper for _iter_items that only does JSON
+        decoding, not any further data processing.
+        """
+        yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict)
+
+def _get_redis_client(db: Databases) -> redis.Redis:
+    """Create a connection with the database."""
+    LOGGER.debug("Creating database connection host: %s port: %s database: %d (%s)",
+                 DB_HOST, DB_PORT, db.value, db.name)
+    try:
+        return redis.Redis(host=DB_HOST, port=DB_PORT, db=db.value)
+    except Exception as err:
+        LOGGER.error("Failed to connect to database %d (%s) : %s", db.value, db.name,
+                     exc_type_msg(err))
+        raise BosDBException(db=db, msg="Failed to connect to database",
+                             exc=exc_type_msg(err)) from err

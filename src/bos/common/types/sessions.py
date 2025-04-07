@@ -25,7 +25,7 @@
 """
 Type annotation definitions for BOS sessions
 """
-import copy
+
 from typing import Literal, Required, TypedDict
 
 from .general import BosDataRecord
@@ -57,20 +57,30 @@ class Session(BosDataRecord, total=False):
     template_name: Required[str]
     tenant: str | None
 
-def update_session_record(record: Session, new_record: Session) -> None:
+class SessionCreate(TypedDict, total=False):
     """
-    Patch 'record' in-place with the data from 'new_record'.
+    #/components/schemas/V2SessionCreate
     """
-    # Make a copy, to avoid changing new_record in place
-    new_record_copy = copy.deepcopy(new_record)
+    include_disabled: bool
+    limit: str
+    name: str
+    operation: Required[SessionOperation]
+    stage: bool
+    template_name: Required[str]
 
-    # First, merge the status sub-dict
-    if "status" in new_record_copy:
-        if "status" in record:
-            record["status"].update(new_record_copy["status"])
-            new_record_copy["status"] = record["status"]
-        else:
-            record["status"] = new_record_copy["status"]
+class SessionUpdate(TypedDict, total=False):
+    """
+    #/components/schemas/V2SessionUpdate
+    """
+    components: str
+    status: SessionStatus
 
-    # The remaining fields can be merged the old-fashioned way
-    record.update(new_record_copy)
+def update_session_record(record: Session, patch_data: SessionUpdate) -> None:
+    """
+    Patch 'record' in-place with the data from 'patch_data'.
+    """
+    if "status" in patch_data:
+        record["status"].update(patch_data["status"])
+
+    if "components" in patch_data:
+        record["components"] = patch_data["components"]

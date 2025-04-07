@@ -50,7 +50,7 @@ def get_provider(boot_set: BootSet, artifact_info: BootImageArtifactSummary) -> 
     """
     try:
         provider_name = boot_set['rootfs_provider']
-    except KeyError as exc:
+    except KeyError:
         # Default to RootfsProvider
         return RootfsProvider(boot_set, artifact_info)
     if provider_name == 'cpss3':

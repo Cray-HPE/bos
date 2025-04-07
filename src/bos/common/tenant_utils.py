@@ -94,6 +94,11 @@ def get_tenant_data(tenant: str, session: requests.Session | None = None) -> Jso
 
 
 def get_tenant_component_set(tenant: str) -> set[str]:
+    """
+    Returns set of component IDs that are assigned to the specified tenant
+    """
+    if not tenant:
+        return set()
     components = []
     data = get_tenant_data(tenant)
     status = data.get("status", {})
@@ -145,3 +150,9 @@ def reject_invalid_tenant(func: Callable[P2, R2]) -> Callable[P2, R2]:
         return func(*args, **kwargs)
 
     return wrapper
+
+def is_valid_tenant_component(component_id: str, tenant: str | None) -> bool:
+    if tenant:
+        return component_id in get_tenant_component_set(tenant)
+    # For an empty tenant, all components are valid
+    return True

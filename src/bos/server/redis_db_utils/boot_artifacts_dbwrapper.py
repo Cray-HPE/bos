@@ -25,7 +25,10 @@
 BootArtifactsDBWrapper class
 """
 
+from typing import cast
+
 from bos.common.types.components import TimestampedBootArtifacts
+from bos.common.types.general import JsonDict
 
 from .dbwrapper import DBWrapper
 from .defs import Databases
@@ -35,6 +38,11 @@ class BootArtifactsDBWrapper(DBWrapper[TimestampedBootArtifacts]):
     Boot artifacts database wrapper
     """
 
-    @property
-    def db_id(self) -> Databases:
-        return Databases.BSS_TOKENS_BOOT_ARTIFACTS
+    _Database = Databases.BSS_TOKENS_BOOT_ARTIFACTS
+
+    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> TimestampedBootArtifacts:
+        """
+        Eventually this should probably actually make sure that the record being returned is in the
+        correct format. But for now, we'll just satisfy mypy
+        """
+        return cast(TimestampedBootArtifacts, jsondict)

@@ -68,16 +68,17 @@ def delete_from_db(db: dbutils.DBWrapper,
                    key: str,
                    err_msg: str | None = None) -> None:
     if err_msg is None:
-        LOGGER.warning("Deleting %s under DB key '%s'", db.db_string, key)
+        LOGGER.warning("Deleting %s under DB key '%s'", db.db.name, key)
     else:
         LOGGER.error("%s; Deleting %s under DB key '%s'", err_msg,
-                     db.db_string, key)
-    data = db.get_and_delete(key)
-    if data:
-        LOGGER.info("Deleted %s '%s': %s", db.db_string, key, data)
-    else:
+                     db.db.name, key)
+    try:
+        data = db.get_and_delete_raw(key)
+    except dbutils.NotFoundInDB:
         LOGGER.warning("Could not delete %s '%s' -- does not exist",
-                       db.db_string, key)
+                       db.db.name, key)
+    else: # No exception raised by DB call
+        LOGGER.info("Deleted %s '%s': %s", db.db.name, key, data)
 
 
 def delete_component(key: str, err_msg: str | None = None) -> None:
