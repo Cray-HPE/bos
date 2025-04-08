@@ -39,6 +39,9 @@ LOGGER = logging.getLogger(__name__)
 # This lock is used to serialize it.
 boto3_client_lock = threading.Lock()
 
+# Limit the size of manifest files we will attempt to load, in order to avoid
+# OOM errors. Any files this big are almost certainly not actually manifest files.
+MAX_MANIFEST_SIZE_BYTES = 1048576
 
 class ArtifactNotFound(Exception):
     """
@@ -51,6 +54,12 @@ class ManifestNotFound(Exception):
     The manifest could not be found.
     """
 
+
+class ManifestTooBig(Exception):
+    """
+    The manifest is larger than MAX_MANIFEST_SIZE_BYTES
+    (almost certainly meaning it is not actually a manifest file)
+    """
 
 class TooManyArtifacts(Exception):
     """
@@ -236,12 +245,18 @@ class S3BootArtifacts(S3Object):
 
         try:
             s3_manifest_obj = self.object
+            if s3_manifest_obj["ContentLength"] > MAX_MANIFEST_SIZE_BYTES:
+                raise ManifestTooBig(
+                    f"{self.path} is supposed to be an image manifest, but "
+                    f"{s3_manifest_obj['ContentLength']} bytes is too big for a manifest")
             s3_manifest_data = s3_manifest_obj['Body'].read().decode('utf-8')
         # Typical exceptions are ClientError, ParamValidationError
         except Exception as error:
             msg = f"Unable to read manifest file '{self.path}'."
             LOGGER.error(msg)
             LOGGER.debug(exc_type_msg(error))
+            if isinstance(error, ManifestTooBig):
+                raise
             raise ManifestNotFound(msg) from error
 
         # Cache the manifest.json file
