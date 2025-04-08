@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CASMCMS-8666: Remove `name` field from `/sessiontemplatetemplate` response.
+
 ## [2.37.0] - 2025-04-07
 
 ### Added
