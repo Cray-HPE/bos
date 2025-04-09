@@ -131,15 +131,15 @@ def patch_v2_options() -> tuple[OptionsDict, Literal[200]] | ConnexionResponse:
     """Used by the PATCH /options API operation"""
     LOGGER.debug("PATCH /v2/options invoked patch_v2_options")
     try:
-        data = cast(OptionsDict, get_request_json())
+        patch_data = cast(OptionsDict, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     options = get_v2_options_data()
-    options.update(data)
-    DB.put_options(data)
-    return data, 200
+    options.update(patch_data)
+    DB.put_options(options)
+    return options, 200
 
 
 def update_log_level(new_level_str: str) -> None:
