@@ -32,7 +32,7 @@ from bos.common.options import DEFAULTS, OptionsCache
 from bos.common.types.general import JsonDict
 from bos.common.types.options import OptionsDict, remove_invalid_keys
 from bos.common.utils import exc_type_msg, hlog, update_log_level
-import .redis_db_utils as dbutils
+import bos.server.redis_db_utils as dbutils
 
 LOGGER = logging.getLogger(__name__)
 
