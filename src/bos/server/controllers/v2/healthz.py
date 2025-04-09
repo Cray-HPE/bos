@@ -26,6 +26,7 @@ from typing import Literal
 
 from bos.common.utils import exc_type_msg
 from bos.server.models.healthz import Healthz
+from bos.server.options import handle_log_level
 from bos.server import redis_db_utils
 
 DB = redis_db_utils.OptionsDBWrapper()
@@ -46,6 +47,7 @@ def _get_db_status() -> str:
     return 'not_available'
 
 
+@handle_log_level
 def get_v2_healthz() -> tuple[Healthz, Literal[200]]:
     """GET /v2/healthz
 

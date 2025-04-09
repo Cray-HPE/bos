@@ -31,7 +31,7 @@ import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 
-from bos.common.utils import exc_type_msg
+from bos.common.utils import exc_type_msg, hlog
 
 LOGGER = logging.getLogger(__name__)
 
@@ -175,6 +175,7 @@ class S3Object:
             msg = f"s3 object {self.path} was not found."
             LOGGER.error(msg)
             LOGGER.debug(exc_type_msg(error))
+            hlog(f"{msg}: {exc_type_msg(error)}")
             raise S3ObjectNotFound(msg) from error
 
         if self.etag and self.etag != s3_obj["ETag"].strip('\"'):
@@ -210,6 +211,7 @@ class S3Object:
             msg = f"Unable to download object {self.path}."
             LOGGER.error(msg)
             LOGGER.debug(exc_type_msg(error))
+            hlog(f"{msg}: {exc_type_msg(error)}")
             raise S3ObjectNotFound(msg) from error
 
 
@@ -255,6 +257,7 @@ class S3BootArtifacts(S3Object):
             msg = f"Unable to read manifest file '{self.path}'."
             LOGGER.error(msg)
             LOGGER.debug(exc_type_msg(error))
+            hlog(f"{msg}: {exc_type_msg(error)}")
             if isinstance(error, ManifestTooBig):
                 raise
             raise ManifestNotFound(msg) from error

@@ -27,7 +27,11 @@ from contextlib import nullcontext, AbstractContextManager
 import copy
 import datetime
 from functools import partial
+import logging
+import os
 import re
+import sys
+import threading
 import traceback
 from typing import Unpack
 
@@ -38,15 +42,42 @@ import requests_retry_session as rrs
 
 from bos.common.types.components import ComponentRecord
 
+LOGGER = logging.getLogger(__name__)
+
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
 
+
+def hlog(msg: str) -> None:
+    """
+    log it
+    """
+    log1 = LOGGER.getEffectiveLevel()
+    log2 = logging.getLevelName(log1)
+    sys.stderr.write(f"pid={os.getpid()} tid={threading.get_native_id()} loglevel={log1}/{log2} {msg}\n")
+    sys.stderr.flush()
 
 class InvalidDurationTimestamp(Exception):
     """
     Raised by duration_to_timedelta if it is asked to parse a timestamp
     that does not fit its expected pattern
     """
+
+
+def update_log_level(new_level_str: str) -> None:
+    new_level_str = new_level_str.upper()
+    new_level_int = logging.getLevelName(new_level_str)
+    current_level_int = LOGGER.getEffectiveLevel()
+    if current_level_int != new_level_int:
+        current_level_str = logging.getLevelName(current_level_int)
+        hlog("Changing logging level")
+        LOGGER.log(current_level_int, 'Changing logging level from %s to %s',
+                   current_level_str, new_level_str)
+        logger = logging.getLogger()
+        logger.setLevel(new_level)
+        LOGGER.log(new_level_int, 'Logging level changed from %s to %s',
+                   current_level_str, new_level_str)
+        hlog("Changed logging level")
 
 
 # Common date and timestamps functions so that timezones and formats are handled consistently.

@@ -29,6 +29,7 @@ import yaml
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.utils import url_for
 from bos.server.models import Version, Link
+from bos.server.options import handle_log_level
 
 LOGGER = logging.getLogger(__name__)
 
@@ -62,11 +63,13 @@ def calc_version(details: bool) -> Version:
         raise
 
 
+@handle_log_level
 def get_v2() -> tuple[Version, Literal[200]]:
     LOGGER.debug("GET /v2 invoked get_v2")
     return calc_version(details=True), 200
 
 
+@handle_log_level
 def get_version_v2() -> tuple[Version, Literal[200]]:
     LOGGER.debug("GET /v2/version invoked get_version_v2")
     return calc_version(details=True), 200

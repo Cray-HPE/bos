@@ -30,7 +30,7 @@ from typing import get_args, Literal
 
 from typing_extensions import TypeIs
 
-from .general import BosDataRecord
+from .general import BosDataRecord, JsonDict
 
 # To help with type hints
 type OptionValue = int | bool | str
@@ -97,3 +97,7 @@ class OptionsDict(BosDataRecord, total=False):
     polling_frequency: int
     reject_nids: bool
     session_limit_required: bool
+
+def remove_invalid_keys(data: JsonDict) -> OptionsDict:
+    """Removes keys that are not in the options spec"""
+    return { key: value for key, value in data.items() if is_option_name(key) }

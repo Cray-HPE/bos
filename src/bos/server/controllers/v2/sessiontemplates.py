@@ -35,6 +35,7 @@ from bos.common.types.templates import (SessionTemplate,
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
+from bos.server.options import handle_log_level
 from bos.server.schema import validator
 from bos.server.utils import get_request_json
 from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
@@ -67,6 +68,7 @@ EXAMPLE_SESSION_TEMPLATE = {
 }
 
 
+@handle_log_level
 @reject_invalid_tenant
 @dbutils.redis_error_handler
 def put_v2_sessiontemplate(
@@ -99,6 +101,7 @@ def put_v2_sessiontemplate(
     return template_data, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def get_v2_sessiontemplates() -> tuple[list[SessionTemplate], Literal[200]]:  # noqa: E501
     """
@@ -119,6 +122,7 @@ def get_v2_sessiontemplates() -> tuple[list[SessionTemplate], Literal[200]]:  # 
     return response, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def get_v2_sessiontemplate(
     session_template_id: str
@@ -143,7 +147,7 @@ def get_v2_sessiontemplate(
     return template, 200
 
 
-@dbutils.redis_error_handler
+@handle_log_level
 def get_v2_sessiontemplatetemplate() -> tuple[SessionTemplate, Literal[200]]:
     """
     GET /v2/sessiontemplatetemplate
@@ -156,6 +160,7 @@ def get_v2_sessiontemplatetemplate() -> tuple[SessionTemplate, Literal[200]]:
     return EXAMPLE_SESSION_TEMPLATE, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[204]] | CxResponse:
     """
@@ -179,6 +184,7 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
     return None, 204
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def patch_v2_sessiontemplate(
     session_template_id: str
@@ -221,6 +227,7 @@ def patch_v2_sessiontemplate(
     return template, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def validate_v2_sessiontemplate(
     session_template_id: str

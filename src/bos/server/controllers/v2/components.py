@@ -41,6 +41,7 @@ from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
 from bos.server.controllers.v2.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
+from bos.server.options import handle_log_level
 from bos.server.utils import get_request_json
 
 LOGGER = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ DB = dbutils.ComponentDBWrapper()
 SESSIONS_DB = dbutils.SessionDBWrapper()
 
 
+@handle_log_level
 @tenant_error_handler
 @dbutils.redis_error_handler
 def get_v2_components(
@@ -223,6 +225,7 @@ def _calculate_status(data: ComponentRecord) -> str:
     return status
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PUT /components API operation"""
@@ -245,6 +248,7 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
     return list(components.values()), 200
 
 
+@handle_log_level
 @tenant_error_handler
 @dbutils.redis_error_handler
 def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
@@ -367,6 +371,7 @@ def _get_invalid_comp_id_for_tenant(comp_id_list: Iterable[str], tenant: str | N
     return None
 
 
+@handle_log_level
 @tenant_error_handler
 @dbutils.redis_error_handler
 def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
@@ -386,6 +391,7 @@ def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     return component, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the PUT /components/{component_id} API operation"""
@@ -404,6 +410,7 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     return data, 200
 
 
+@handle_log_level
 @tenant_error_handler
 @dbutils.redis_error_handler
 def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
@@ -457,6 +464,7 @@ def _validate_actual_state_change_is_allowed(current_data: ComponentRecord) -> b
     return False
 
 
+@handle_log_level
 @tenant_error_handler
 @dbutils.redis_error_handler
 def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResponse:
@@ -475,6 +483,7 @@ def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResp
     return None, 204
 
 
+@handle_log_level
 @tenant_error_handler
 @dbutils.redis_error_handler
 def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | CxResponse:

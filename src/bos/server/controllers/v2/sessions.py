@@ -49,6 +49,7 @@ from bos.server.controllers.v2.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
+from bos.server.options import handle_log_level
 from bos.server.utils import get_request_json, ParsingException
 
 LOGGER = logging.getLogger(__name__)
@@ -59,6 +60,7 @@ MAX_COMPONENTS_IN_ERROR_DETAILS = 10
 LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 
+@handle_log_level
 @reject_invalid_tenant
 @dbutils.redis_error_handler
 def post_v2_session() -> tuple[SessionRecordT, Literal[201]] | CxResponse:  # noqa: E501
@@ -152,6 +154,7 @@ def _create_session(session_create: SessionCreate, tenant: str | None) -> Sessio
     return Session.from_dict(body)
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | CxResponse:
     """PATCH /v2/session
@@ -187,6 +190,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | C
     return session_data, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def get_v2_session(
         session_id: str) -> tuple[SessionRecordT, Literal[200]] | CxResponse:  # noqa: E501
@@ -207,6 +211,7 @@ def get_v2_session(
     return session, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def get_v2_sessions(min_age: str | None=None, max_age: str | None=None,
                     status: str | None=None) -> tuple[list[SessionRecordT],
@@ -226,6 +231,7 @@ def get_v2_sessions(min_age: str | None=None, max_age: str | None=None,
     return response, 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def delete_v2_session(
         session_id: str) -> tuple[None, Literal[204]] | CxResponse:  # noqa: E501
@@ -246,6 +252,7 @@ def delete_v2_session(
     return None, 204
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def delete_v2_sessions(
         min_age: str | None=None, max_age: str | None=None,
@@ -283,6 +290,7 @@ def _tenanted_delete_if_present(db: dbutils.TenantAwareDBWrapper, session_id: st
                      session_id, tenant)
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def get_v2_session_status(
         session_id: str) -> tuple[SessionExtendedStatus, Literal[200]] | CxResponse:  # noqa: E501
@@ -313,6 +321,7 @@ def get_v2_session_status(
     return _get_v2_session_status(session_id, tenant, session), 200
 
 
+@handle_log_level
 @dbutils.redis_error_handler
 def save_v2_session_status(
         session_id: str) -> tuple[SessionExtendedStatus, Literal[200]] | CxResponse:  # noqa: E501
