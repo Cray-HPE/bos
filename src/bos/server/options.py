@@ -26,12 +26,13 @@ import functools
 import logging
 import threading
 import time
-from typing import ParamSpec, TypeVar
+from typing import NoReturn, ParamSpec, TypeVar
 
 from bos.common.options import DEFAULTS, OptionsCache
 from bos.common.types.general import JsonDict
-from bos.common.types.options import OptionsDict
-from bos.common.utils import exc_type_msg, hlog
+from bos.common.types.options import OptionsDict, remove_invalid_keys
+from bos.common.utils import exc_type_msg, hlog, update_log_level
+import .redis_db_utils as dbutils
 
 LOGGER = logging.getLogger(__name__)
 
@@ -52,7 +53,7 @@ class OptionsData(OptionsCache):
         """Retrieves the current options from the BOS DB"""
         LOGGER.debug("Retrieving options data from BOS DB")
         try:
-            return _get_options()
+            return get_options()
         except Exception as err:
             LOGGER.error("Error retrieving BOS options: %s", exc_type_msg(err))
         return {}
@@ -121,6 +122,7 @@ def _check_defaults(data: OptionsDict | None) -> OptionsDict:
         DB.put_options(data)
     return data
 
+
 def _check_logging_level() -> NoReturn:
     hlog("Starting check_logging_level")
     while True:
@@ -137,6 +139,9 @@ def _check_logging_level() -> NoReturn:
         time.sleep(5)
 
 
+P = ParamSpec('P')
+R = TypeVar('R')
+
 def handle_log_level(func: Callable[P, R]) -> Callable[P, R]:
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
@@ -146,7 +151,7 @@ def handle_log_level(func: Callable[P, R]) -> Callable[P, R]:
             with LogLevelUpdateLock:
                 if LogLevelUpdateThread is None:
                     hlog("LogLevelUpdateThread is still None -> starting updater thread")
-                    log_level_updater = threading.Thread(target=_check_v2_logging_level, args=())
+                    log_level_updater = threading.Thread(target=_check_logging_level, args=())
                     log_level_updater.start()
                     LogLevelUpdateThread = log_level_updater
                 else:

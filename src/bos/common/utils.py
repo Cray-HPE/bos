@@ -74,7 +74,7 @@ def update_log_level(new_level_str: str) -> None:
         LOGGER.log(current_level_int, 'Changing logging level from %s to %s',
                    current_level_str, new_level_str)
         logger = logging.getLogger()
-        logger.setLevel(new_level)
+        logger.setLevel(new_level_int)
         LOGGER.log(new_level_int, 'Logging level changed from %s to %s',
                    current_level_str, new_level_str)
         hlog("Changed logging level")
