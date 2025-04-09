@@ -29,7 +29,7 @@ from .general import BosDataRecord
 type OptionValue = int | bool | str
 
 # This should match all of the data structures defined in bos.common.options
-type OptionName = Literal[
+OptionName = Literal[
     'bss_read_timeout',
     'cfs_read_timeout',
     'cleanup_completed_session_ttl',
