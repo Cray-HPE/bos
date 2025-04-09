@@ -63,8 +63,7 @@ EXAMPLE_SESSION_TEMPLATE = {
     "cfs": {
         "configuration": "default-sessiontemplate-cfs-config"
     },
-    "enable_cfs": True,
-    "name": "name-your-template"
+    "enable_cfs": True
 }
 
 
