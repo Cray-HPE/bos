@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Fix bug with type alias definition causing BOS options endpoint to return no values
+
 ## [2.37.0] - 2025-04-07
 
 ### Added
