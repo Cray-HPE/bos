@@ -39,7 +39,7 @@ from bos.common.utils import components_by_id, exc_type_msg, get_current_timesta
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
-from bos.server.controllers.v2.options import get_v2_options_data
+from bos.server.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 from bos.server.options import handle_log_level
 from bos.server.utils import get_request_json

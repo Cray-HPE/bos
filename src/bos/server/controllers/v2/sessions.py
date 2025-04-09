@@ -45,7 +45,7 @@ from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
 from bos.server.controllers.v2.components import get_v2_components_data
-from bos.server.controllers.v2.options import OptionsData
+from bos.server.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501

@@ -29,7 +29,7 @@ from bos.common.clients.ims import (get_arch_from_image_data,
 from bos.common.clients.s3 import S3Url
 from bos.common.types.general import JsonDict
 from bos.common.utils import exc_type_msg
-from bos.server.controllers.v2.options import OptionsData
+from bos.server.options import OptionsData
 
 from .defs import DEFAULT_ARCH
 from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
