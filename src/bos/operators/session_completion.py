@@ -80,15 +80,15 @@ def mark_session_complete(session_id: str, tenant: str | None, bos_client: BOSCl
     include that as well.
     Save the session status to the database.
     """
-    comp_patch_data = {
+    patch_data = {
         'status': {
             'status': 'complete',
             'end_time': get_current_timestamp()
         }
     }
     if err is not None:
-        comp_patch_data["status"]["error"] = err
-    bos_client.sessions.update_session(session_id, tenant, comp_patch_data)
+        patch_data["status"]["error"] = err
+    bos_client.sessions.update_session(session_id, tenant, patch_data)
     # This call causes the session status to saved in the database.
     bos_client.sessions.post_session_status(session_id, tenant)
     LOGGER.info('Session %s is complete', session_id)

@@ -4,7 +4,7 @@
 --extra-index-url http://artifactory.algol60.net/artifactory/csm-python-modules/simple
 -c constraints.txt
 -r requirements.txt
-boto3-stubs
+boto3-stubs[essential]
 botocore-stubs
 mypy
 types-jsonschema

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -39,6 +39,9 @@ LOGGER = logging.getLogger(__name__)
 # This lock is used to serialize it.
 boto3_client_lock = threading.Lock()
 
+# Limit the size of manifest files we will attempt to load, in order to avoid
+# OOM errors. Any files this big are almost certainly not actually manifest files.
+MAX_MANIFEST_SIZE_BYTES = 1048576
 
 class ArtifactNotFound(Exception):
     """
@@ -52,6 +55,12 @@ class ManifestNotFound(Exception):
     """
 
 
+class ManifestTooBig(Exception):
+    """
+    The manifest is larger than MAX_MANIFEST_SIZE_BYTES
+    (almost certainly meaning it is not actually a manifest file)
+    """
+
 class TooManyArtifacts(Exception):
     """
     One and only one artifact was expected to be found. More than one artifact
@@ -61,7 +70,7 @@ class TooManyArtifacts(Exception):
 
 class S3MissingConfiguration(Exception):
     """
-    We were missing configuration information need to contact S3.
+    We were missing configuration information needed to contact S3.
     """
 
 
@@ -236,12 +245,18 @@ class S3BootArtifacts(S3Object):
 
         try:
             s3_manifest_obj = self.object
+            if s3_manifest_obj["ContentLength"] > MAX_MANIFEST_SIZE_BYTES:
+                raise ManifestTooBig(
+                    f"{self.path} is supposed to be an image manifest, but "
+                    f"{s3_manifest_obj['ContentLength']} bytes is too big for a manifest")
             s3_manifest_data = s3_manifest_obj['Body'].read().decode('utf-8')
         # Typical exceptions are ClientError, ParamValidationError
         except Exception as error:
             msg = f"Unable to read manifest file '{self.path}'."
             LOGGER.error(msg)
             LOGGER.debug(exc_type_msg(error))
+            if isinstance(error, ManifestTooBig):
+                raise
             raise ManifestNotFound(msg) from error
 
         # Cache the manifest.json file

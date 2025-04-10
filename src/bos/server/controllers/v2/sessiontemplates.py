@@ -35,6 +35,7 @@ from bos.common.types.templates import (SessionTemplate,
 from bos.common.utils import exc_type_msg
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
+from bos.server.options import update_server_log_level
 from bos.server.schema import validator
 from bos.server.utils import get_request_json
 from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
@@ -63,8 +64,7 @@ EXAMPLE_SESSION_TEMPLATE = {
     "cfs": {
         "configuration": "default-sessiontemplate-cfs-config"
     },
-    "enable_cfs": True,
-    "name": "name-your-template"
+    "enable_cfs": True
 }
 
 
@@ -77,6 +77,9 @@ def put_v2_sessiontemplate(
 
     Creates a new session template. # noqa: E501
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("PUT /v2/sessiontemplates/%s invoked put_v2_sessiontemplate",
                  session_template_id)
     try:
@@ -107,6 +110,9 @@ def get_v2_sessiontemplates() -> tuple[list[SessionTemplate], Literal[200]]:  # 
 
     List all sessiontemplates
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2/sessiontemplates invoked get_v2_sessiontemplates")
     tenant=get_tenant_from_header()
     if tenant:
@@ -129,6 +135,9 @@ def get_v2_sessiontemplate(
 
     Get the session template by session template ID
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2/sessiontemplates/%s invoked get_v2_sessiontemplate",
                  session_template_id)
     tenant = get_tenant_from_header()
@@ -144,13 +153,15 @@ def get_v2_sessiontemplate(
     return template, 200
 
 
-@dbutils.redis_error_handler
 def get_v2_sessiontemplatetemplate() -> tuple[SessionTemplate, Literal[200]]:
     """
     GET /v2/sessiontemplatetemplate
 
     Get the example session template
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug(
         "GET /v2/sessiontemplatetemplate invoked get_v2_sessiontemplatetemplate"
     )
@@ -164,6 +175,9 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
 
     Delete the session template by session template ID
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug(
         "DELETE /v2/sessiontemplates/%s invoked delete_v2_sessiontemplate",
         session_template_id)
@@ -189,6 +203,9 @@ def patch_v2_sessiontemplate(
 
     Patch the session template by session template ID
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug(
         "PATCH /v2/sessiontemplates/%s invoked patch_v2_sessiontemplate",
         session_template_id)
@@ -230,6 +247,9 @@ def validate_v2_sessiontemplate(
     Validate a V2 session template. Look for missing elements or errors that would prevent
     a session from being launched using this template.
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug(
         "GET /v2/sessiontemplatesvalid/%s invoked validate_v2_sessiontemplate",
         session_template_id)

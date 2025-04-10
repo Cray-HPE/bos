@@ -29,6 +29,7 @@ import yaml
 from bos.common.utils import exc_type_msg
 from bos.server.controllers.utils import url_for
 from bos.server.models import Version, Link
+from bos.server.options import update_server_log_level
 
 LOGGER = logging.getLogger(__name__)
 
@@ -63,10 +64,16 @@ def calc_version(details: bool) -> Version:
 
 
 def get_v2() -> tuple[Version, Literal[200]]:
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2 invoked get_v2")
     return calc_version(details=True), 200
 
 
 def get_version_v2() -> tuple[Version, Literal[200]]:
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2/version invoked get_version_v2")
     return calc_version(details=True), 200
