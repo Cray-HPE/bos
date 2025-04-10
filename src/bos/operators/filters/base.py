@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -26,6 +26,7 @@ from abc import ABC, abstractmethod
 import logging
 from typing import List
 
+from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger('bos.operators.filters.base')
 
@@ -47,7 +48,7 @@ class BaseFilter(ABC):
             if components or self.INITIAL:
                 results = self._filter(components)
         except Exception as e:
-            LOGGER.exception(e)
+            LOGGER.exception(exc_type_msg(e))
         return results
 
     @abstractmethod
