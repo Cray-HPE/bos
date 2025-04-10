@@ -11,6 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-8666: Remove `name` field from `/sessiontemplatetemplate` response.
 - CASMCMS-7902: Check size before loading image manifest to avoid OOM issues.
 
+### Fixed
+- CASMCMS-9351: Fixed two logging bugs:
+  - When updating log level, BOS operators were logging the new log level as its
+    integer value, rather than its string value.
+  - The server was not properly updating its log level when it changed, because it
+    runs in separate processes.
+
 ## [2.37.2] - 2025-04-09
 
 ### Fixed

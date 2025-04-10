@@ -29,7 +29,7 @@ import os
 
 import connexion
 
-from bos.server.controllers.v2 import options
+from bos.server import options
 from bos.server.encoder import JSONEncoder
 
 LOGGER = logging.getLogger(__name__)

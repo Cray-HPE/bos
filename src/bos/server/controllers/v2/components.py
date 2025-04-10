@@ -39,8 +39,9 @@ from bos.common.utils import components_by_id, exc_type_msg, get_current_timesta
 from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
-from bos.server.controllers.v2.options import get_v2_options_data
+from bos.server.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
+from bos.server.options import update_server_log_level
 from bos.server.utils import get_request_json
 
 LOGGER = logging.getLogger(__name__)
@@ -63,6 +64,9 @@ def get_v2_components(
 
     Allows filtering using a comma separated list of ids.
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug(
         "GET /v2/components invoked get_v2_components with ids=%s enabled=%s session=%s "
         "staged_session=%s phase=%s status=%s start_after_id=%s page_size=%d", ids,
@@ -226,6 +230,9 @@ def _calculate_status(data: ComponentRecord) -> str:
 @dbutils.redis_error_handler
 def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PUT /components API operation"""
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("PUT /v2/components invoked put_v2_components")
     try:
         data = cast(list[ComponentRecord], get_request_json())
@@ -249,6 +256,9 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
 @dbutils.redis_error_handler
 def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PATCH /components API operation"""
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("PATCH /v2/components invoked patch_v2_components")
     try:
         data = get_request_json()
@@ -371,6 +381,9 @@ def _get_invalid_comp_id_for_tenant(comp_id_list: Iterable[str], tenant: str | N
 @dbutils.redis_error_handler
 def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the GET /components/{component_id} API operation"""
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2/components/%s invoked get_v2_component",
                  component_id)
     if not is_valid_tenant_component(component_id, get_tenant_from_header()):
@@ -389,6 +402,9 @@ def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
 @dbutils.redis_error_handler
 def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the PUT /components/{component_id} API operation"""
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("PUT /v2/components/%s invoked put_v2_component",
                  component_id)
     try:
@@ -408,6 +424,9 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
 @dbutils.redis_error_handler
 def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the PATCH /components/{component_id} API operation"""
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component",
                  component_id)
     try:
@@ -461,6 +480,9 @@ def _validate_actual_state_change_is_allowed(current_data: ComponentRecord) -> b
 @dbutils.redis_error_handler
 def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResponse:
     """Used by the DELETE /components/{component_id} API operation"""
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("DELETE /v2/components/%s invoked delete_v2_component",
                  component_id)
     if not is_valid_tenant_component(component_id, get_tenant_from_header()):
@@ -479,6 +501,9 @@ def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResp
 @dbutils.redis_error_handler
 def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | CxResponse:
     """Used by the POST /applystaged API operation"""
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("POST /v2/applystaged invoked post_v2_apply_staged")
     try:
         data = get_request_json()

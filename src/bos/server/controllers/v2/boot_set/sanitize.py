@@ -24,7 +24,7 @@
 
 from bos.common.utils import exc_type_msg
 from bos.common.types.templates import BootSet, SessionTemplate, remove_empty_cfs_field
-from bos.server.controllers.v2.options import OptionsData
+from bos.server.options import OptionsData
 from bos.server.utils import canonize_xname
 
 from .artifacts import validate_boot_artifacts
