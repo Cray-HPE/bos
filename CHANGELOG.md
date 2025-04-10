@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.38.0] - 2025-04-10
+
 ### Changed
 - CASMCMS-8666: Remove `name` field from `/sessiontemplatetemplate` response.
 - CASMCMS-7902: Check size before loading image manifest to avoid OOM issues.
