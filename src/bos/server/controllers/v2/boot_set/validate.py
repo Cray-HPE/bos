@@ -26,7 +26,7 @@ from functools import partial
 
 from bos.common.utils import exc_type_msg
 from bos.common.types.general import JsonDict
-from bos.server.controllers.v2.options import OptionsData
+from bos.server.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
 from .defs import HARDWARE_SPECIFIER_FIELDS, LOGGER, BootSetStatus

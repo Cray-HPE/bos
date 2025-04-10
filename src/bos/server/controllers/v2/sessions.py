@@ -45,10 +45,11 @@ from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
 from bos.server.controllers.v2.components import get_v2_components_data
-from bos.server.controllers.v2.options import OptionsData
+from bos.server.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
 from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate  # noqa: E501
+from bos.server.options import update_server_log_level
 from bos.server.utils import get_request_json, ParsingException
 
 LOGGER = logging.getLogger(__name__)
@@ -69,6 +70,9 @@ def post_v2_session() -> tuple[SessionRecordT, Literal[201]] | CxResponse:  # no
 
     :rtype: Session
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("POST /v2/sessions invoked post_v2_session")
     # -- Validation --
     try:
@@ -161,6 +165,9 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | C
     Returns:
       Session Dictionary, Status Code
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("PATCH /v2/sessions/%s invoked patch_v2_session", session_id)
     try:
         patch_data = cast(SessionUpdateT, get_request_json())
@@ -197,6 +204,9 @@ def get_v2_session(
     Return:
       Session Dictionary, Status Code
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2/sessions/%s invoked get_v2_session", session_id)
     tenant = get_tenant_from_header()
     try:
@@ -215,6 +225,9 @@ def get_v2_sessions(min_age: str | None=None, max_age: str | None=None,
 
     List all sessions
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug(
         "GET /v2/sessions invoked get_v2_sessions with min_age=%s max_age=%s status=%s",
         min_age, max_age, status)
@@ -233,6 +246,9 @@ def delete_v2_session(
 
     Delete the session by session id
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("DELETE /v2/sessions/%s invoked delete_v2_session",
                  session_id)
     tenant = get_tenant_from_header()
@@ -250,6 +266,9 @@ def delete_v2_session(
 def delete_v2_sessions(
         min_age: str | None=None, max_age: str | None=None,
         status: str | None=None) -> tuple[None, Literal[204]] | CxResponse:  # noqa: E501
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug(
         "DELETE /v2/sessions invoked delete_v2_sessions with min_age=%s max_age=%s status=%s",
         min_age, max_age, status)
@@ -293,6 +312,9 @@ def get_v2_session_status(
     Return:
       Session Status Dictionary, Status Code
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2/sessions/status/%s invoked get_v2_session_status",
                  session_id)
     tenant = get_tenant_from_header()
@@ -323,6 +345,9 @@ def save_v2_session_status(
     Return:
       Session Status Dictionary, Status Code
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("POST /v2/sessions/status/%s invoked save_v2_session_status",
                  session_id)
     tenant = get_tenant_from_header()

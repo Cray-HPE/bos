@@ -26,6 +26,7 @@ from typing import Literal
 
 from bos.common.utils import exc_type_msg
 from bos.server.models.healthz import Healthz
+from bos.server.options import update_server_log_level
 from bos.server import redis_db_utils
 
 DB = redis_db_utils.OptionsDBWrapper()
@@ -53,6 +54,9 @@ def get_v2_healthz() -> tuple[Healthz, Literal[200]]:
 
     :rtype: Healthz
     """
+    # For all entry points into the server, first refresh options and update log level if needed
+    update_server_log_level()
+
     LOGGER.debug("GET /v2/healthz invoked get_v2_healthz")
     return Healthz(
         db_status=_get_db_status(),
