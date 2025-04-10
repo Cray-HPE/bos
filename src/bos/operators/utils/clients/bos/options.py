@@ -21,6 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from functools import partial
 import logging
 import json
 from requests.exceptions import HTTPError, ConnectionError
@@ -30,9 +31,12 @@ from bos.operators.utils import requests_retry_session
 from bos.common.utils import exc_type_msg
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
+from .base import check_bos_response as _check_bos_response
+
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
 ENDPOINT = "%s/%s" % (BASE_ENDPOINT, __name__.lower().split('.')[-1])
 
+check_bos_response = partial(_check_bos_response, logger=LOGGER)
 
 class Options:
     """
@@ -54,7 +58,7 @@ class Options:
         LOGGER.debug("GET %s", ENDPOINT)
         try:
             response = session.get(ENDPOINT)
-            response.raise_for_status()
+            check_bos_response(response)
             return json.loads(response.text)
         except (ConnectionError, MaxRetryError) as e:
             LOGGER.error("Unable to connect to BOS: %s", exc_type_msg(e))
