@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,6 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from functools import partial
 import logging
 import json
 
@@ -31,10 +32,13 @@ from bos.common.options import OptionsCache
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.bos.base import BASE_ENDPOINT
 
+from .base import check_bos_response as _check_bos_response
+
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.options')
 __name = __name__.lower().rsplit('.', maxsplit=1)[-1]
 ENDPOINT = f"{BASE_ENDPOINT}/{__name}"
 
+check_bos_response = partial(_check_bos_response, logger=LOGGER)
 
 class Options(OptionsCache):
     """
@@ -49,7 +53,7 @@ class Options(OptionsCache):
         LOGGER.debug("GET %s", ENDPOINT)
         try:
             response = session.get(ENDPOINT)
-            response.raise_for_status()
+            check_bos_response(response)
             return json.loads(response.text)
         except (ConnectionError, MaxRetryError) as e:
             LOGGER.error("Unable to connect to BOS: %s", exc_type_msg(e))
