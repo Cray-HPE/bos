@@ -33,6 +33,8 @@ from typing import ParamSpec, TypeVar
 import connexion
 import redis
 
+from bos.common.utils import exc_type_msg
+
 LOGGER = logging.getLogger(__name__)
 
 P = ParamSpec('P')
@@ -50,7 +52,7 @@ def redis_error_handler(func: Callable[P, R]) -> Callable[P, R]:
                 del kwargs['body']
             return func(*args, **kwargs)
         except redis.exceptions.ConnectionError as e:
-            LOGGER.error('Unable to connect to the Redis database: %s', e)
+            LOGGER.error('Unable to connect to the Redis database: %s', exc_type_msg(e))
             return connexion.problem(
                 status=503,
                 title='Unable to connect to the Redis database',

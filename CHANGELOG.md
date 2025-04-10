@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CASMCMS-9353: Improve exception logging
+
 ## [2.38.0] - 2025-04-10
 
 ### Changed
