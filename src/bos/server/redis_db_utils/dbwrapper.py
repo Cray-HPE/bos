@@ -83,13 +83,13 @@ class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
     def ready(self) -> bool:
         """
         Attempt a database query.
-        Return False if an exception is raised (and log a warning)
+        Return False if an exception is raised
         Return True otherwise.
         """
         try:
             self.info()
         except Exception as err:
-            LOGGER.warning("Failed to query database %s : %s", self.db.name, exc_type_msg(err))
+            LOGGER.debug("Failed to query database %s : %s", self.db.name, exc_type_msg(err))
             return False
         return True
 

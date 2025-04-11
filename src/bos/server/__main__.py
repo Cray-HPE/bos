@@ -29,7 +29,7 @@ import os
 
 import connexion
 
-from bos.server import options
+from bos.server.options import init_options
 from bos.server.encoder import JSONEncoder
 
 LOGGER = logging.getLogger(__name__)
@@ -41,7 +41,7 @@ def create_app() -> connexion.App:
     logging.basicConfig(level=log_level)
     LOGGER.info("BOS server starting.")
 
-    options._init()
+    init_options()
 
     app = connexion.App(__name__, specification_dir='./openapi/')
     app.app.json_encoder = JSONEncoder

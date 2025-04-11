@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.38.1] - 2025-04-11
+
+### Fixed
+- CASMCMS-9356: Fix how OptionsData class handles initialization when the DB is unavailable
+
 ## [2.38.0] - 2025-04-10
 
 ### Changed
