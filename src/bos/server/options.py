@@ -67,32 +67,66 @@ class OptionsData(OptionsCache):
         if _initialize:
             super().__init__()
 
+
     def _get_options(self) -> OptionsDict:
         """Retrieves the current options from the BOS DB"""
         LOGGER.debug("Retrieving options data from BOS DB")
-        try:
-            return get_options()
-        except Exception as err:
-            LOGGER.error("Error retrieving BOS options: %s", exc_type_msg(err))
-        # Continue using current option values
-        return self.options
+        if DB.ready:
+            try:
+                return get_options()
+            except Exception as err:
+                LOGGER.info("Could not retrieve BOS options: %s", exc_type_msg(err))
+        else:
+            LOGGER.info("BOS DB is not ready -- cannot retrieve options")
+
+        # Continue using current option values, if we have them
+        if hasattr(self, "options"):
+            LOGGER.info("Unable to retrieve options from DB. Using previously retrieved options")
+            return self.options
+
+        # This means that the options attribute has not yet been set, which should only be the
+        # case when this is called by __init__
+        # Retry briefly to see if we can get the options from the DB. Otherwise, return defaults
+        options = get_db_options_with_retries()
+        if options is not None:
+            LOGGER.info("Retrieved options from DB after retrying")
+            return options
+        LOGGER.warning("Unable to retrieve options from DB. Using default values")
+        return dict(DEFAULTS)
+
+
+def get_db_options_with_retries(max_attempts=10, sleep_seconds=1) -> OptionsDict | None:
+    """
+    Try to get the BOS options from the DB. If not successful after retries, return None.
+    """
+    attempt=1
+    while attempt <= max_attempts:
+        if attempt > 1:
+            time.sleep(sleep_seconds)
+        LOGGER.debug("Retrieving options data from BOS DB (attempt %d/%d)", attempt, max_attempts)
+        if DB.ready:
+            try:
+                return get_options()
+            except Exception as err:
+                LOGGER.debug("Could not retrieve BOS options: %s", exc_type_msg(err))
+        else:
+            LOGGER.debug("BOS DB is not ready -- cannot retrieve options")
+        attempt+=1
+    return None
 
 
 def _cleanup_old_options() -> None:
     """
     Cleanup old options
     """
-    while True:
-        try:
-            data = DB.get_options()
-            break
-        except dbutils.NotFoundInDB:
-            # No old options to clean up
-            return
-        except Exception as err:
-            LOGGER.info('Database is not yet available (%s)',
-                        exc_type_msg(err))
-            time.sleep(1)
+    # Wait until the DB is ready
+    while not DB.ready:
+        time.sleep(1)
+    try:
+        data = DB.get_options()
+    except dbutils.NotFoundInDB:
+        # No old options to clean up
+        return
     if not data:
         # No old options to clean up
         return
@@ -100,7 +134,7 @@ def _cleanup_old_options() -> None:
     DB.put_options(data)
 
 
-def _init() -> None:
+def init_options() -> None:
     """
     Called by bos.server.__main__ on server startup
     """
@@ -152,6 +186,7 @@ def update_server_log_level() -> None:
     """
     Refresh BOS options and update the log level for this process, if needed
     """
+    options_data = OptionsData()
     options_data.update()
     desired_level_str = options_data.logging_level.upper()
     desired_level_int = logging.getLevelName(desired_level_str)
@@ -163,7 +198,3 @@ def update_server_log_level() -> None:
     with LogLevelUpdateLock:
         if current_level_int != desired_level_int:
             do_update_log_level(current_level_int, desired_level_int, desired_level_str)
-
-
-# Other server code which needs to read BOS options should import and use this dict
-options_data = OptionsData()
