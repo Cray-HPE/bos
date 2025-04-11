@@ -6,8 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Changed
 - CASMCMS-9274: Prevent [`SNYK-PYTHON-WERKZEUG-6808933`](https://security.snyk.io/vuln/SNYK-PYTHON-WERKZEUG-6808933) from causing builds to fail.
+- CASMCMS-9357: Made compact_response_text more memory efficient by using iterators. Made
+  it more processor efficient by converting it into a class with a __str__ method, so that
+  when it is used with logging functions, its code does not get executed unless the associated
+  log entry is actually going to be recorded.
 
 ## [2.0.51] - 2025-02-05
 ### Fixed
