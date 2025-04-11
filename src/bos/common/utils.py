@@ -148,8 +148,6 @@ def retry_session(
     return retry_session_manager(**kwargs)
 
 
-
-
 def retry_session_get(*get_args,
                       session: requests.Session | None = None,
                       protocol: str | None = None,
@@ -161,15 +159,48 @@ def retry_session_get(*get_args,
         return _session.get(*get_args, **get_kwargs)
 
 
-def compact_response_text(response_text: str) -> str:
+class compact_response_text:
     """
     Often JSON is "pretty printed" in response text, which is undesirable for our logging.
-    This function transforms the response text into a single line, stripping leading and
-    trailing whitespace from each line, and then returns it.
+    This callable class transforms the response text into a single line, stripping leading and
+    trailing whitespace from each line, and then returns it. It uses iterators for this,
+    to limit memory use when handling large responses. It is implemented as a class because
+    this is used with logging, and by implementing the logic in the __str__ method, this
+    prevents it from being run at all when the logging level would not require it.
     """
-    if response_text:
-        return ' '.join([line.strip() for line in response_text.split('\n')])
-    return str(response_text)
+    _SPLIT_PAT = re.compile(r'([^\n]+)(?:$|\n)')
+
+    def __init__(self, response_text: str | None) -> None:
+        self._response_text = response_text
+
+    @property
+    def response_text(self) -> str:
+        return self._response_text if self._response_text is not None else "None"
+
+    @classmethod
+    def _match_group_one(cls, match_object: re.Match) -> str:
+        """
+        Helper function for map iterator inside compact_response_text.
+        This gets the first match group, strips the leading and trailing whitespace,
+        and returns it
+        """
+        return match_object.group(1).strip()
+
+    def __str__(self) -> str:
+        """
+        finditer returns an iterator of match objects -- returning each instance matching
+        the _SPLIT_PAT pattern.
+        Creating a map of the _match_group_one method onto this iterator
+        acts like an iterable version of the string split() method, called with \n as its
+        argument. The one difference is that the _match_group_one method also does a strip()
+        on the result.
+        Any non-empty lines that come out of the above pipeline are joined by whitespace
+        and returned.
+        """
+        return ' '.join(
+            line for line in map(self._match_group_one,
+                                 self._SPLIT_PAT.finditer(self.response_text)) if line
+        )
 
 
 def exc_type_msg(exc: Exception) -> str:
