@@ -27,7 +27,7 @@ import datetime
 from functools import partial
 import re
 import traceback
-from typing import List
+from typing import List, Optional
 
 # Third party imports
 from dateutil.parser import parse
@@ -82,7 +82,7 @@ class compact_response_text:
     """
     _SPLIT_PAT = re.compile(r'([^\n]+)(?:$|\n)')
 
-    def __init__(self, response_text: str | None) -> None:
+    def __init__(self, response_text: Optional[str]) -> None:
         self._response_text = response_text
 
     @property
