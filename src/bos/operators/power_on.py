@@ -75,25 +75,25 @@ class PowerOnOperator(BaseOperator):
         try:
             self._tag_images(boot_artifacts, components)
         except Exception as e:
-            raise Exception(f"Error encountered tagging images {e}.") from e
+            raise Exception(f"Error encountered tagging images {exc_type_msg(e)}.") from e
         try:
             self._set_bss(boot_artifacts, bos_sessions=sessions)
         except Exception as e:
             raise Exception(
-                f"Error encountered setting BSS information: {e}") from e
+                f"Error encountered setting BSS information: {exc_type_msg(e)}") from e
         try:
             self.client.cfs.components.set_cfs(components,
                                                enabled=False,
                                                clear_state=True)
         except Exception as e:
             raise Exception(
-                f"Error encountered setting CFS information: {e}") from e
+                f"Error encountered setting CFS information: {exc_type_msg(e)}") from e
         component_ids = [component['id'] for component in components]
         try:
             self.client.pcs.transitions.power_on(component_ids)
         except Exception as e:
             raise Exception(
-                f"Error encountered calling CAPMC to power on: {e}") from e
+                f"Error encountered calling CAPMC to power on: {exc_type_msg(e)}") from e
         return components
 
     def _sort_components_by_boot_artifacts(
@@ -278,7 +278,7 @@ class PowerOnOperator(BaseOperator):
                                                  "true")
             except Exception as e:
                 self._record_component_errors(my_components_by_id, image_id_to_nodes[image],
-                                              str(e))
+                                              exc_type_msg(e))
 
     def _record_component_errors(self, my_components_by_id: dict[str, ComponentRecord],
                                  component_set: set[str], err_msg: str) -> None:
