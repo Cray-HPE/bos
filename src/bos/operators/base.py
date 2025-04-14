@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -100,14 +100,15 @@ class BaseOperator(ABC):
                 _update_log_level()
                 self._run()
             except Exception as e:
-                LOGGER.exception('Unhandled exception detected: %s', e)
+                LOGGER.exception('Unhandled exception detected: %s', exc_type_msg(e))
 
             try:
                 sleep_time = getattr(options, self.frequency_option) - (time.time() - start_time)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
             except Exception as e:
-                LOGGER.exception('Unhandled exception getting polling frequency: %s', e)
+                LOGGER.exception(
+                    'Unhandled exception getting polling frequency: %s', exc_type_msg(e))
                 time.sleep(5)  # A small sleep for when exceptions getting the polling frequency
 
     @property
@@ -153,8 +154,10 @@ class BaseOperator(ABC):
         try:
             components = self._act(components)
         except Exception as e:
-            LOGGER.error("An unhandled exception was caught while trying to act on components: %s",
-                         e, exc_info=True)
+            LOGGER.error(
+                "An unhandled exception was caught while trying to act on components: %s",
+                exc_type_msg(e),
+                exc_info=True)
             for component in components:
                 component["error"] = str(e)
         self._update_database(components)

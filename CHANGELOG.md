@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it more processor efficient by converting it into a class with a __str__ method, so that
   when it is used with logging functions, its code does not get executed unless the associated
   log entry is actually going to be recorded.
+- CASMCMS-9353: Improve exception logging
 
 ## [2.30.13] - 2025-03-20
 
