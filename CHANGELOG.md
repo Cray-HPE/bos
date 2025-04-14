@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CASMCMS-9353: Improve exception logging
+- CASMCMS-9353: Improve response logging for calls to BOS API from BOS operators
 - CASMCMS-9274: Prevent [`SNYK-PYTHON-WERKZEUG-6808933`](https://security.snyk.io/vuln/SNYK-PYTHON-WERKZEUG-6808933) from causing builds to fail.
 - CASMCMS-9357: Made compact_response_text more memory efficient by using iterators. Made
   it more processor efficient by converting it into a class with a __str__ method, so that

@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,11 +23,12 @@
 #
 import json
 import logging
+from requests import Response
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.operators.utils import PROTOCOL, requests_retry_session
-from bos.common.utils import exc_type_msg
+from bos.common.utils import compact_response_text, exc_type_msg
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
 
@@ -55,6 +56,18 @@ def log_call_errors(func):
     return wrap
 
 
+def check_bos_response(resp: Response, logger: logging.Logger = LOGGER) -> None:
+    try:
+        resp.raise_for_status()
+    except Exception:
+        logger.warning("Response status code=%d, reason=%s, body=%s", resp.status_code,
+                       resp.reason, compact_response_text(resp.text))
+        raise
+    # No exception raised
+    logger.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
+                 resp.reason, compact_response_text(resp.text))
+
+
 class BaseBosEndpoint(object):
     """
     This base class provides generic access to the BOS API.
@@ -72,7 +85,7 @@ class BaseBosEndpoint(object):
         session = requests_retry_session()
         LOGGER.debug("GET %s", url)
         response = session.get(url)
-        response.raise_for_status()
+        check_bos_response(response)
         item = json.loads(response.text)
         return item
 
@@ -82,7 +95,7 @@ class BaseBosEndpoint(object):
         session = requests_retry_session()
         LOGGER.debug("GET %s with params=%s", self.base_url, kwargs)
         response = session.get(self.base_url, params=kwargs)
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -93,7 +106,7 @@ class BaseBosEndpoint(object):
         session = requests_retry_session()
         LOGGER.debug("PATCH %s with body=%s", url, data)
         response = session.patch(url, json=data)
-        response.raise_for_status()
+        check_bos_response(response)
         item = json.loads(response.text)
         return item
 
@@ -103,7 +116,7 @@ class BaseBosEndpoint(object):
         session = requests_retry_session()
         LOGGER.debug("PATCH %s with body=%s", self.base_url, data)
         response = session.patch(self.base_url, json=data)
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -113,7 +126,7 @@ class BaseBosEndpoint(object):
         session = requests_retry_session()
         LOGGER.debug("PUT %s with body=%s", self.base_url, data)
         response = session.put(self.base_url, json=data)
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -123,7 +136,7 @@ class BaseBosEndpoint(object):
         session = requests_retry_session()
         LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = session.delete(self.base_url, params=kwargs)
-        response.raise_for_status()
+        check_bos_response(response)
         if response.text:
             return json.loads(response.text)
         else:
