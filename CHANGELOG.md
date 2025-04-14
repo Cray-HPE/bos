@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.39.0] - 2025-04-14
+
 ### Changed
 - CASMCMS-9357: Made compact_response_text more memory efficient by using iterators. Made
   it more processor efficient by converting it into a class with a __str__ method, so that
