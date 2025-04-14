@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.52] - 2025-04-14
 ### Changed
 - CASMCMS-9353: Improve exception logging
 - CASMCMS-9353: Improve response logging for calls to BOS API from BOS operators
