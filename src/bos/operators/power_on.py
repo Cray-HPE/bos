@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -66,16 +66,16 @@ class PowerOnOperator(BaseOperator):
         try:
             self._set_bss(components)
         except Exception as e:
-            raise Exception("An error was encountered while setting BSS information: {}".format(e)) from e
+            raise Exception("An error was encountered while setting BSS information: {}".format(exc_type_msg(e))) from e
         try:
             set_cfs(components, enabled=False, clear_state=True)
         except Exception as e:
-            raise Exception("An error was encountered while setting CFS information: {}".format(e)) from e
+            raise Exception("An error was encountered while setting CFS information: {}".format(exc_type_msg(e))) from e
         component_ids = [component['id'] for component in components]
         try:
             pcs.power_on(component_ids)
         except Exception as e:
-            raise Exception("An error was encountered while calling CAPMC to power on: {}".format(e)) from e
+            raise Exception("An error was encountered while calling CAPMC to power on: {}".format(exc_type_msg(e))) from e
         return components
 
     def _set_bss(self, components, retries=5):

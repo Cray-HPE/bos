@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -23,11 +23,12 @@
 #
 import json
 import logging
+from requests import Response
 from requests.exceptions import HTTPError, ConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.tenant_utils import get_new_tenant_header
-from bos.common.utils import PROTOCOL, exc_type_msg, requests_retry_session
+from bos.common.utils import PROTOCOL, compact_response_text, exc_type_msg, requests_retry_session
 
 LOGGER = logging.getLogger('bos.operators.utils.clients.bos.base')
 
@@ -55,6 +56,18 @@ def log_call_errors(func):
     return wrap
 
 
+def check_bos_response(resp: Response, logger: logging.Logger = LOGGER) -> None:
+    try:
+        resp.raise_for_status()
+    except Exception:
+        logger.warning("Response status code=%d, reason=%s, body=%s", resp.status_code,
+                       resp.reason, compact_response_text(resp.text))
+        raise
+    # No exception raised
+    logger.debug("Response status code=%d, reason=%s, body=%s", resp.status_code,
+                 resp.reason, compact_response_text(resp.text))
+
+
 class BaseBosEndpoint(object):
     """
     This base class provides generic access to the BOS API.
@@ -72,7 +85,7 @@ class BaseBosEndpoint(object):
         url = self.base_url + '/' + item_id
         LOGGER.debug("GET %s", url)
         response = self.session.get(url)
-        response.raise_for_status()
+        check_bos_response(response)
         item = json.loads(response.text)
         return item
 
@@ -81,7 +94,7 @@ class BaseBosEndpoint(object):
         """Get information for all BOS items"""
         LOGGER.debug("GET %s with params=%s", self.base_url, kwargs)
         response = self.session.get(self.base_url, params=kwargs)
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -91,7 +104,7 @@ class BaseBosEndpoint(object):
         url = self.base_url + '/' + item_id
         LOGGER.debug("PATCH %s with body=%s", url, data)
         response = self.session.patch(url, json=data)
-        response.raise_for_status()
+        check_bos_response(response)
         item = json.loads(response.text)
         return item
 
@@ -100,7 +113,7 @@ class BaseBosEndpoint(object):
         """Update information for multiple BOS items"""
         LOGGER.debug("PATCH %s with body=%s", self.base_url, data)
         response = self.session.patch(self.base_url, json=data)
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -109,7 +122,7 @@ class BaseBosEndpoint(object):
         """Put information for multiple BOS Items"""
         LOGGER.debug("PUT %s with body=%s", self.base_url, data)
         response = self.session.put(self.base_url, json=data)
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -118,7 +131,7 @@ class BaseBosEndpoint(object):
         """Delete information for multiple BOS items"""
         LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs)
-        response.raise_for_status()
+        check_bos_response(response)
         if response.text:
             return json.loads(response.text)
         else:
@@ -137,7 +150,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         url = self.base_url + '/' + item_id
         LOGGER.debug("GET %s for tenant=%s", url, tenant)
         response = self.session.get(url, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
+        check_bos_response(response)
         item = json.loads(response.text)
         return item
 
@@ -152,7 +165,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         else:
             LOGGER.debug("GET %s with params=%s", self.base_url, kwargs)
         response = self.session.get(self.base_url, params=kwargs, headers=headers)
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -162,7 +175,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         url = self.base_url + '/' + item_id
         LOGGER.debug("PATCH %s for tenant=%s with body=%s", url, tenant, data)
         response = self.session.patch(url, json=data, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
+        check_bos_response(response)
         item = json.loads(response.text)
         return item
 
@@ -171,7 +184,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         """Update information for multiple BOS items"""
         LOGGER.debug("PATCH %s for tenant=%s with body=%s", self.base_url, tenant, data)
         response = self.session.patch(self.base_url, json=data, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -180,7 +193,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         """Put information for multiple BOS items"""
         LOGGER.debug("PUT %s for tenant=%s with body=%s", self.base_url, tenant, data)
         response = self.session.put(self.base_url, json=data, headers=get_new_tenant_header(tenant))
-        response.raise_for_status()
+        check_bos_response(response)
         items = json.loads(response.text)
         return items
 
@@ -195,7 +208,7 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint):
         else:
             LOGGER.debug("DELETE %s with params=%s", self.base_url, kwargs)
         response = self.session.delete(self.base_url, params=kwargs, headers=headers)
-        response.raise_for_status()
+        check_bos_response(response)
         if response.text:
             return json.loads(response.text)
         else:
