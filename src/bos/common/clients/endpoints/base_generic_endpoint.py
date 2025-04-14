@@ -26,6 +26,8 @@ import logging
 
 import requests
 
+from bos.common.utils import compact_response_text
+
 from .defs import RequestData, RequestsMethod
 from .exceptions import ApiResponseError
 from .request_error_handler import BaseRequestErrorHandler, RequestErrorHandler
@@ -93,6 +95,8 @@ class BaseGenericEndpoint[RequestReturnT](ABC):
                  **kwargs) -> RequestReturnT:
         """Make API request"""
         with method(url, **kwargs) as response:
+            LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
+                 response.reason, compact_response_text(response.text))
             if not response.ok:
                 raise ApiResponseError(response=response)
             return cls.format_response(response)

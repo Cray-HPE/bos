@@ -144,6 +144,7 @@ class Session:
             if not all_component_ids:
                 raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
+            self._log(LOGGER.debug, exc_type_msg(err))
             raise SessionSetupException(err) from err
         # No exception raised by previous block
         self._log(LOGGER.info, 'Found %d components that require updates',

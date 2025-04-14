@@ -180,7 +180,7 @@ class BaseOperator(ABC):
                     self._client = _client
                     self._run()
             except Exception as e:
-                LOGGER.exception('Unhandled exception detected: %s', e)
+                LOGGER.exception('Unhandled exception detected: %s', exc_type_msg(e))
             finally:
                 # We have exited the context manager, so make sure to reset the client
                 # value for this operator
@@ -193,7 +193,7 @@ class BaseOperator(ABC):
                     time.sleep(sleep_time)
             except Exception as e:
                 LOGGER.exception(
-                    'Unhandled exception getting polling frequency: %s', e)
+                    'Unhandled exception getting polling frequency: %s', exc_type_msg(e))
                 time.sleep(
                     5
                 )  # A small sleep for when exceptions getting the polling frequency
@@ -247,7 +247,7 @@ class BaseOperator(ABC):
         except Exception as e:
             LOGGER.error(
                 "An unhandled exception was caught while trying to act on components: %s",
-                e,
+                exc_type_msg(e),
                 exc_info=True)
             for component in components:
                 component["error"] = str(e)

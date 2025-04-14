@@ -58,11 +58,9 @@ class RequestErrorHandler(BaseRequestErrorHandler):
     @classmethod
     def handle_api_response_error(cls, err: ApiResponseError,
                                   request_data: RequestData) -> NoReturn:
-        msg = (f"Non-2XX response ({err.response_data.status_code}) to "
-               f"{request_data.method_name} {request_data.url}; "
-               f"{err.response_data.reason} "
-               f"{compact_response_text(err.response_data.text)}")
-        LOGGER.error(msg)
+        LOGGER.error("Non-2XX response (%d) to %s %s; %s %s",
+                     err.response_data.status_code, request_data.method_name, request_data.url,
+                     err.response_data.reason, compact_response_text(err.response_data.text))
         raise err
 
     @classmethod

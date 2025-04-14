@@ -26,6 +26,7 @@ from abc import ABC, abstractmethod
 import logging
 
 from bos.common.types.components import ComponentRecord
+from bos.common.utils import exc_type_msg
 
 LOGGER = logging.getLogger(__name__)
 
@@ -51,7 +52,7 @@ class BaseFilter[T](ABC):
             if components or self.INITIAL:
                 results = self.filter_components(components)
         except Exception as e:
-            LOGGER.exception(e)
+            LOGGER.exception(exc_type_msg(e))
         LOGGER.debug('%s filter found the following components: %s', type(self).__name__,
                      ','.join(self.component_list_to_id_list(results)))
         return results
