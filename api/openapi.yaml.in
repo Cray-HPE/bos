@@ -1845,6 +1845,19 @@ paths:
           $ref: '#/components/responses/BadRequest'
     patch:
       summary: Update a collection of Components
+      parameters:
+        - name: skip_bad_ids
+          schema:
+            type: boolean
+            default: false
+          in: query
+          description: |-
+            If false, if the patch request explicitly lists a BOS component ID that
+            does not exist, it will be considered a fatal error. The patch operation
+            will fail and return a 404 status.
+            If true, the patch request will skip any IDs that do not exist, and
+            patch the remaining items. The response will only include the components
+            that were actually updated.
       description: Update the state for a collection of Components in the BOS database
       tags:
         - v2
