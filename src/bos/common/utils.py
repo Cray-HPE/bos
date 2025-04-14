@@ -24,6 +24,8 @@
 import datetime
 import re
 import traceback
+from typing import Optional
+
 from dateutil.parser import parse
 
 TIME_DURATION_PATTERN = re.compile("^(\d+?)(\D+?)$", re.M|re.S)
@@ -68,7 +70,7 @@ class compact_response_text:
     """
     _SPLIT_PAT = re.compile(r'([^\n]+)(?:$|\n)')
 
-    def __init__(self, response_text: str | None) -> None:
+    def __init__(self, response_text: Optional[str]) -> None:
         self._response_text = response_text
 
     @property
