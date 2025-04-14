@@ -21,6 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+import logging
 
 from bos.common.utils import exc_type_msg, requests_retry_session
 from bos.operators.utils.clients.ims import get_arch_from_image_data, get_image, \
@@ -31,6 +32,10 @@ from bos.server.controllers.v2.options import OptionsData
 from .defs import DEFAULT_ARCH
 from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
                         CannotValidateBootSetArch, NonImsImage
+
+
+LOGGER = logging.getLogger(__name__)
+
 
 # Mapping from BOS boot set arch values to expected IMS image arch values
 # Omits BOS Other value, since there is no corresponding IMS image arch value
@@ -65,6 +70,7 @@ def validate_ims_boot_image(bs: dict, options_data: OptionsData) -> None:
             raise BootSetError(str(err)) from err
         raise BootSetWarning(str(err)) from err
     except Exception as err:
+        LOGGER.debug(exc_type_msg(err))
         if options_data.ims_errors_fatal:
             raise BootSetError(exc_type_msg(err)) from err
         if bs_arch != 'Other':
@@ -82,6 +88,7 @@ def validate_ims_boot_image(bs: dict, options_data: OptionsData) -> None:
         ims_image_arch = get_arch_from_image_data(image_data)
     except Exception as err:
         # This most likely indicates that the IMS image data we got wasn't even a dict
+        LOGGER.debug(exc_type_msg(err))
         if options_data.ims_errors_fatal:
             raise BootSetError(exc_type_msg(err)) from err
         raise BootSetWarning(str(err)) from err
