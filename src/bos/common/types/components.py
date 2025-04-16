@@ -138,11 +138,6 @@ class ComponentRecord[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseCompone
     #/components/schemas/V2ComponentWithId
     """
 
-class ComponentDbData(ComponentRecord[TimestampedBootArtifacts]):
-    """
-    Format of the component DB entries
-    """
-
 class ComponentUpdateIdFilter(TypedDict, total=False):
     """
     #/components/schemas/V2ComponentsFilterByIds
@@ -170,8 +165,10 @@ def update_component_record(
     """
     Perform in-place update of current record using data from new record.
     """
-    # Make a copy, to avoid changing new_record in place
-    new_record_copy = copy.deepcopy(new_record)
+    # Make a copy, to avoid changing new_record in place, but omit the "id" field if it is present
+    new_record_copy = ComponentData(
+        { k:v for k, v in copy.deepcopy(new_record).items() if k != "id" }
+    )
 
     # Merge the state dicts -- this is not done in a loop because mypy gets confused keeping track
     # of string literal values in loops

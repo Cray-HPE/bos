@@ -24,8 +24,7 @@
 from collections.abc import Iterable
 from functools import partial
 import logging
-from typing import Any, Callable, Literal, cast
-from typing import TYPE_CHECKING, reveal_type
+from typing import Any, Callable, Literal, cast, overload
 from typing_extensions import TypeIs
 
 import connexion
@@ -43,6 +42,7 @@ from bos.common.types.components import (ApplyStagedComponents,
                                          ComponentRecord,
                                          ComponentStagedState,
                                          ComponentUpdateFilter,
+                                         TimestampedBootArtifacts,
                                          update_component_record)
 from bos.common.types.general import JsonDict
 from bos.common.utils import components_by_id, exc_type_msg, get_current_timestamp
@@ -186,15 +186,44 @@ def _get_component_filter_func(
                        delete_timestamp=delete_timestamp)
     return partial(_set_status, delete_timestamp=delete_timestamp)
 
+@overload
+def _filter_component(data: ComponentRecord[TimestampedBootArtifacts],
+                      id_set: set[str] | None,
+                      enabled: bool | None,
+                      session: str | None,
+                      staged_session: str | None,
+                      phase: str | None,
+                      status: str | None,
+                      delete_timestamp: Literal[False]) -> ComponentRecord[TimestampedBootArtifacts] | None: ...
 
-def _filter_component(data: ComponentRecord,
-                      id_set: set[str] | None=None,
-                      enabled: bool | None=None,
-                      session: str | None=None,
-                      staged_session: str | None=None,
-                      phase: str | None=None,
-                      status: str | None=None,
-                      delete_timestamp: bool=False) -> ComponentRecord | None:
+@overload
+def _filter_component(data: ComponentRecord[TimestampedBootArtifacts],
+                      id_set: set[str] | None,
+                      enabled: bool | None,
+                      session: str | None,
+                      staged_session: str | None,
+                      phase: str | None,
+                      status: str | None,
+                      delete_timestamp: Literal[True]) -> ComponentRecord[BootArtifacts] | None: ...
+
+@overload
+def _filter_component(data: ComponentRecord[TimestampedBootArtifacts],
+                      id_set: set[str] | None,
+                      enabled: bool | None,
+                      session: str | None,
+                      staged_session: str | None,
+                      phase: str | None,
+                      status: str | None,
+                      delete_timestamp: bool) -> ComponentRecord | None: ...
+
+def _filter_component(data: ComponentRecord[TimestampedBootArtifacts],
+                      id_set: set[str] | None,
+                      enabled: bool | None,
+                      session: str | None,
+                      staged_session: str | None,
+                      phase: str | None,
+                      status: str | None,
+                      delete_timestamp: bool) -> ComponentRecord | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None

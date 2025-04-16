@@ -49,4 +49,5 @@ DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
 
 # The decoded data formats for the different BOS databases
-BosDataRecord = TypeVar("BosDataRecord", ComponentRecord, OptionsDict, Session, SessionExtendedStatus, SessionTemplate, TimestampedBootArtifacts)
+BosDataRecord = TypeVar("BosDataRecord", ComponentRecord[TimestampedBootArtifacts], OptionsDict,
+                        Session, SessionExtendedStatus, SessionTemplate, TimestampedBootArtifacts)
