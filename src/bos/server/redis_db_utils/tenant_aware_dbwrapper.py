@@ -27,12 +27,14 @@ TenantAwareDBWrapper class
 
 from abc import ABC
 
+from typing import Generic
+
 from bos.common.tenant_utils import get_tenant_aware_key
-from bos.common.types.general import BosDataRecord
 
 from .dbwrapper import DBWrapper
+from .defs import BosDataRecord as DataT
 
-class TenantAwareDBWrapper[DataT: BosDataRecord](DBWrapper[DataT], ABC):
+class TenantAwareDBWrapper(DBWrapper[DataT], Generic[DataT], ABC):
     """A wrapper around a Redis database connection, for a database
     with tenant-aware keys
     """

@@ -33,6 +33,7 @@ import json
 import logging
 from typing import (Any,
                     ClassVar,
+                    Generic,
                     Literal,
                     Protocol,
                     cast,
@@ -40,10 +41,11 @@ from typing import (Any,
 
 import redis
 
-from bos.common.types.general import BosDataRecord, JsonData, JsonDict
+from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 
 from .defs import DB_HOST, DB_PORT, Databases
+from .defs import BosDataRecord as DataT
 from .exceptions import (BosDBException,
                          InvalidDBDataType,
                          InvalidDBJsonDataType,
@@ -56,7 +58,8 @@ class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
     """ Require that some classes set the _Database class variable """
     _Database: ClassVar[Databases]
 
-class DBWrapper[DataT: BosDataRecord](SpecificDatabase, ABC):
+# If you list Generic[DataT] before SpecificDatabase, you get a MRO TypeError at runtime
+class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     """A wrapper around a Redis database connection
 
     Because the underlying Redis client is threadsafe, this class is as well,
