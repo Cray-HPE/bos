@@ -26,7 +26,7 @@
 Type annotation definitions for BOS components
 """
 import copy
-from typing import Required, TypedDict
+from typing import Literal, Required, TypedDict
 
 class ComponentStatus(TypedDict, total=False):
     """
@@ -66,27 +66,27 @@ class ComponentEventStats(TypedDict, total=False):
     power_off_graceful_attempts: int
     power_off_forceful_attempts: int
 
-class BaseComponentState(TypedDict, total=False):
+class BaseComponentState[BA: (BootArtifacts, TimestampedBootArtifacts)](TypedDict, total=False):
     """
     Common fields found in actual state, desired state, and staged state
     """
-    boot_artifacts: BootArtifacts
+    boot_artifacts: BA
     last_updated: str
 
-class ComponentActualState(BaseComponentState, TypedDict, total=False):
+class ComponentActualState[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentState[BA], TypedDict, total=False):
     """
     #/components/schemas/V2ComponentActualState
     """
     bss_token: str
 
-class ComponentDesiredState(BaseComponentState, TypedDict, total=False):
+class ComponentDesiredState[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentState[BA], TypedDict, total=False):
     """
     #/components/schemas/V2ComponentDesiredState
     """
     bss_token: str
     configuration: str
 
-class ComponentStagedState(BaseComponentState, TypedDict, total=False):
+class ComponentStagedState[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentState[BA], TypedDict, total=False):
     """
     #/components/schemas/V2ComponentStagedState
     """
@@ -110,23 +110,63 @@ def _update_component_state[C: (ComponentActualState,
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
 
-class ComponentRecord(TypedDict, total=False):
-    """
-    #/components/schemas/V2Component
-    """
-    actual_state: ComponentActualState
-    desired_state: ComponentDesiredState
+class RequiredIdField(TypedDict, total=True):
+    id: str
+
+class OptionalIdField(TypedDict, total=False):
+    id: str
+
+class BaseComponentData[BA: (BootArtifacts, TimestampedBootArtifacts)](TypedDict, total=False):
+    actual_state: ComponentActualState[BA]
+    desired_state: ComponentDesiredState[BA]
     enabled: bool
     error: str
     event_stats: ComponentEventStats
-    id: Required[str]
     last_action: ComponentLastAction
     retry_policy: int
     session: str
-    staged_state: ComponentStagedState
+    staged_state: ComponentStagedState[BA]
     status: ComponentStatus
 
-def update_component_record(record: ComponentRecord, new_record: ComponentRecord) -> None:
+class ComponentData[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentData[BA], OptionalIdField):
+    """
+    #/components/schemas/V2Component
+    """
+
+class ComponentRecord[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentData[BA], RequiredIdField):
+    """
+    #/components/schemas/V2ComponentWithId
+    """
+
+class ComponentDbData(ComponentRecord[TimestampedBootArtifacts]):
+    """
+    Format of the component DB entries
+    """
+
+class ComponentUpdateIdFilter(TypedDict, total=False):
+    """
+    #/components/schemas/V2ComponentsFilterByIds
+    """
+    ids: Required[str]
+    session: Literal[""] | None
+
+class ComponentUpdateSessionFilter(TypedDict, total=True):
+    """
+    #/components/schemas/V2ComponentsFilterBySession
+    """
+    ids: Literal[""] | None
+    session: Required[str]
+
+class ComponentUpdateFilter(TypedDict, total=True):
+    """
+    #/components/schemas/V2ComponentsUpdate
+    """
+    patch: ComponentData
+    filters: ComponentUpdateIdFilter | ComponentUpdateSessionFilter
+
+def update_component_record(
+    record: ComponentRecord, new_record: ComponentData | ComponentRecord
+) -> None:
     """
     Perform in-place update of current record using data from new record.
     """
@@ -174,3 +214,17 @@ def update_component_record(record: ComponentRecord, new_record: ComponentRecord
 
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
+
+class ApplyStagedComponents(TypedDict, total=False):
+    """
+    #/components/schemas/V2ApplyStagedComponents
+    """
+    xnames: list[str]
+
+class ApplyStagedStatus(TypedDict, total=False):
+    """
+    #/components/schemas/V2ApplyStagedStatus
+    """
+    failed: list[str]
+    ignored: list[str]
+    succeeded: list[str]
