@@ -28,8 +28,6 @@ Type annotation definitions for BOS components
 import copy
 from typing import Required, TypedDict
 
-from .general import BosDataRecord
-
 class ComponentStatus(TypedDict, total=False):
     """
     #/components/schemas/V2ComponentStatus
@@ -46,7 +44,7 @@ class BootArtifacts(TypedDict, total=True):
     kernel_parameters: str
     initrd: str
 
-class TimestampedBootArtifacts(BosDataRecord, BootArtifacts, total=True):
+class TimestampedBootArtifacts(BootArtifacts, TypedDict, total=True):
     """
     When storing the boot artifacts in the database, there is an additional timestamp field
     """
@@ -75,20 +73,20 @@ class BaseComponentState(TypedDict, total=False):
     boot_artifacts: BootArtifacts
     last_updated: str
 
-class ComponentActualState(BaseComponentState, total=False):
+class ComponentActualState(BaseComponentState, TypedDict, total=False):
     """
     #/components/schemas/V2ComponentActualState
     """
     bss_token: str
 
-class ComponentDesiredState(BaseComponentState, total=False):
+class ComponentDesiredState(BaseComponentState, TypedDict, total=False):
     """
     #/components/schemas/V2ComponentDesiredState
     """
     bss_token: str
     configuration: str
 
-class ComponentStagedState(BaseComponentState, total=False):
+class ComponentStagedState(BaseComponentState, TypedDict, total=False):
     """
     #/components/schemas/V2ComponentStagedState
     """
@@ -112,7 +110,7 @@ def _update_component_state[C: (ComponentActualState,
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
 
-class ComponentRecord(BosDataRecord, total=False):
+class ComponentRecord(TypedDict, total=False):
     """
     #/components/schemas/V2Component
     """

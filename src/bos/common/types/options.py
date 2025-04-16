@@ -26,11 +26,9 @@
 Type annotation definitions for BOS options
 """
 
-from typing import get_args, Literal
+from typing import get_args, Literal, TypedDict
 
 from typing_extensions import TypeIs
-
-from .general import BosDataRecord
 
 # To help with type hints
 type OptionValue = int | bool | str
@@ -70,7 +68,7 @@ def is_option_name(string: str) -> TypeIs[OptionName]:
     """
     return string in OPTION_NAMES
 
-class OptionsDict(BosDataRecord, total=False):
+class OptionsDict(TypedDict, total=False):
     """
     This should match all of the data structures defined in bos.common.options
 

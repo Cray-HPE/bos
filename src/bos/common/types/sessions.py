@@ -28,8 +28,6 @@ Type annotation definitions for BOS sessions
 
 from typing import Literal, Required, TypedDict
 
-from .general import BosDataRecord
-
 SessionStatusLabel = Literal['complete', 'pending', 'running']
 
 class SessionStatus(TypedDict, total=False):
@@ -43,7 +41,7 @@ class SessionStatus(TypedDict, total=False):
 
 SessionOperation = Literal['boot', 'reboot', 'shutdown']
 
-class Session(BosDataRecord, total=False):
+class Session(TypedDict, total=False):
     """
     #/components/schemas/V2Session
     """

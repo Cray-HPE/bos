@@ -27,7 +27,6 @@ Type annotation definitions for BOS extended session statuses
 """
 from typing import TypedDict
 
-from .general import BosDataRecord
 from .sessions import SessionStatusLabel
 
 class SessionExtendedStatusPhases(TypedDict, total=True):
@@ -54,7 +53,7 @@ class SessionExtendedStatusTiming(TypedDict, total=True):
     start_time: str
     duration: str
 
-class SessionExtendedStatus(BosDataRecord, total=False):
+class SessionExtendedStatus(TypedDict, total=False):
     """
     #/components/schemas/V2SessionExtendedStatus
     """

@@ -28,8 +28,6 @@ Type annotation definitions for BOS session templates
 import copy
 from typing import get_args, Literal, Required, TypedDict
 
-from .general import BosDataRecord
-
 class Link(TypedDict, total=False):
     """
     #/components/schemas/Link
@@ -88,7 +86,7 @@ def _update_boot_set(record: BootSet, new_record_copy: BootSet) -> None:
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
 
-class SessionTemplate(BosDataRecord, total=False):
+class SessionTemplate(TypedDict, total=False):
     """
     #/components/schemas/V2SessionTemplate
     """

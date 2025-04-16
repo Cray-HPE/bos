@@ -30,8 +30,3 @@ from typing import TypedDict
 type JsonData = bool | str | None | int | float | list[JsonData] | dict[str, JsonData]
 type JsonDict = dict[str, JsonData]
 type JsonList = list[JsonData]
-
-class BosDataRecord(TypedDict):
-    """
-    Parent class for BOS database records
-    """
