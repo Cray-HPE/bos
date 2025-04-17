@@ -26,7 +26,7 @@
 Type annotation definitions for BOS components
 """
 import copy
-from typing import Literal, Required, TypedDict
+from typing import Generic, Literal, Required, TypedDict, TypeVar, overload
 
 class ComponentStatus(TypedDict, total=False):
     """
@@ -35,6 +35,13 @@ class ComponentStatus(TypedDict, total=False):
     phase: str
     status: str
     status_override: str
+
+# Boot artifact dicts show up in 3 flavors in BOS:
+# 1. In the BootArtifacts database, they are always recorded with a 'timestamp' field
+# 2. When a component is being returned via the API, the 'timestamp' field is never present in its boot artifacts (it is always removed, if it is there)
+# 3. In the components database, the actual state boot artifacts may or may not include a timestamp. When it is initially populated with an empty actual state, there will
+#    be no timestamp. Later, if the actual state is updated with a BSS token, and there is data in the BootArtifacts database for that token, then the timestamp will be loaded
+#    from the BA database into the components database
 
 class BootArtifacts(TypedDict, total=True):
     """
@@ -49,6 +56,9 @@ class TimestampedBootArtifacts(BootArtifacts, TypedDict, total=True):
     When storing the boot artifacts in the database, there is an additional timestamp field
     """
     timestamp: str
+
+# For the sake of brevity
+BA = TypeVar("BA", BootArtifacts, TimestampedBootArtifacts)
 
 class ComponentLastAction(TypedDict, total=False):
     """
@@ -66,29 +76,33 @@ class ComponentEventStats(TypedDict, total=False):
     power_off_graceful_attempts: int
     power_off_forceful_attempts: int
 
-class BaseComponentState[BA: (BootArtifacts, TimestampedBootArtifacts)](TypedDict, total=False):
+class BaseComponentState(TypedDict, Generic[BA], total=False):
     """
     Common fields found in actual state, desired state, and staged state
     """
     boot_artifacts: BA
     last_updated: str
 
-class ComponentActualState[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentState[BA], TypedDict, total=False):
+class ComponentActualState(BaseComponentState[BA], TypedDict, Generic[BA], total=False):
     """
     #/components/schemas/V2ComponentActualState
     """
     bss_token: str
 
-class ComponentDesiredState[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentState[BA], TypedDict, total=False):
+class ComponentDesiredState(BaseComponentState[BootArtifacts], TypedDict, total=False):
     """
     #/components/schemas/V2ComponentDesiredState
+
+    Desired state boot artifacts never have a timestamp
     """
     bss_token: str
     configuration: str
 
-class ComponentStagedState[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentState[BA], TypedDict, total=False):
+class ComponentStagedState(BaseComponentState[BootArtifacts], TypedDict, total=False):
     """
     #/components/schemas/V2ComponentStagedState
+    
+    Staged state boot artifacts never have a timestamp
     """
     configuration: str
     session: str
@@ -116,24 +130,24 @@ class RequiredIdField(TypedDict, total=True):
 class OptionalIdField(TypedDict, total=False):
     id: str
 
-class BaseComponentData[BA: (BootArtifacts, TimestampedBootArtifacts)](TypedDict, total=False):
+class BaseComponentData(TypedDict, Generic[BA], total=False):
     actual_state: ComponentActualState[BA]
-    desired_state: ComponentDesiredState[BA]
+    desired_state: ComponentDesiredState
     enabled: bool
     error: str
     event_stats: ComponentEventStats
     last_action: ComponentLastAction
     retry_policy: int
     session: str
-    staged_state: ComponentStagedState[BA]
+    staged_state: ComponentStagedState
     status: ComponentStatus
 
-class ComponentData[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentData[BA], OptionalIdField):
+class ComponentData(BaseComponentData[BA], OptionalIdField, Generic[BA]):
     """
     #/components/schemas/V2Component
     """
 
-class ComponentRecord[BA: (BootArtifacts, TimestampedBootArtifacts)](BaseComponentData[BA], RequiredIdField):
+class ComponentRecord(BaseComponentData[BA], RequiredIdField, Generic[BA]):
     """
     #/components/schemas/V2ComponentWithId
     """
@@ -156,12 +170,27 @@ class ComponentUpdateFilter(TypedDict, total=True):
     """
     #/components/schemas/V2ComponentsUpdate
     """
-    patch: ComponentData
+    patch: ComponentData[BootArtifacts]
     filters: ComponentUpdateIdFilter | ComponentUpdateSessionFilter
+
+@overload
+def update_component_record(
+    record: ComponentRecord, new_record: ComponentData[TimestampedBootArtifacts] | ComponentRecord[TimestampedBootArtifacts]
+) -> ComponentRecord[TimestampedBootArtifacts]: ...
+
+@overload
+def update_component_record(
+    record: ComponentRecord[TimestampedBootArtifacts], new_record: ComponentData | ComponentRecord
+) -> ComponentRecord[TimestampedBootArtifacts]: ...
+
+@overload
+def update_component_record(
+    record: ComponentRecord[BootArtifacts], new_record: ComponentData[BootArtifacts] | ComponentRecord[BootArtifacts]
+) -> ComponentRecord[BootArtifacts]: ...
 
 def update_component_record(
     record: ComponentRecord, new_record: ComponentData | ComponentRecord
-) -> None:
+) -> ComponentRecord[BootArtifacts] | ComponentRecord[TimestampedBootArtifacts]:
     """
     Perform in-place update of current record using data from new record.
     """
@@ -211,6 +240,7 @@ def update_component_record(
 
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
+    return record
 
 class ApplyStagedComponents(TypedDict, total=False):
     """
