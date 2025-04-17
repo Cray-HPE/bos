@@ -48,6 +48,8 @@ class Databases(IntEnum):
 DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
 
+type ComponentDbRecord = ComponentRecord[TimestampedBootArtifacts]
+
 # The decoded data formats for the different BOS databases
-BosDataRecord = TypeVar("BosDataRecord", ComponentRecord[TimestampedBootArtifacts], OptionsDict,
+BosDataRecord = TypeVar("BosDataRecord", ComponentDbRecord, OptionsDict,
                         Session, SessionExtendedStatus, SessionTemplate, TimestampedBootArtifacts)

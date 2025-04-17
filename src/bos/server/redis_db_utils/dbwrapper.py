@@ -194,10 +194,10 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         """
         return dict(self.iter_items_raw())
 
-    def get_all_filtered(self,
-                         filter_func: Callable[[DataT], DataT | None], *,
+    def get_all_filtered[OutDataT](self,
+                         filter_func: Callable[[DataT], OutDataT | None], *,
                          start_after_key: str | None = None,
-                         page_size: int = 0) -> list[DataT]:
+                         page_size: int = 0) -> list[OutDataT]:
         """
         Get an array of data for all keys after passing them through the specified filter
         (discarding any for which the filter returns None)

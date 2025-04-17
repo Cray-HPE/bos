@@ -62,14 +62,15 @@ SESSIONS_DB = dbutils.SessionDBWrapper()
 @tenant_error_handler
 @dbutils.redis_error_handler
 def get_v2_components(
-        ids: str | None=None,
-        enabled: bool | None=None,
-        session: str | None=None,
-        staged_session: str | None=None,
-        phase: str | None=None,
-        status: str | None=None,
-        start_after_id: str | None=None,
-        page_size: int=0) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
+    ids: str | None=None,
+    enabled: bool | None=None,
+    session: str | None=None,
+    staged_session: str | None=None,
+    phase: str | None=None,
+    status: str | None=None,
+    start_after_id: str | None=None,
+    page_size: int=0
+) -> tuple[list[ComponentRecord[BootArtifacts]], Literal[200]] | CxResponse:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -107,6 +108,48 @@ def get_v2_components(
         tenant, len(response))
     return response, 200
 
+
+@overload
+def get_v2_components_data(
+    id_list: list[str] | None=...,
+    enabled: bool | None=...,
+    session: str | None=...,
+    staged_session: str | None=...,
+    phase: str | None=...,
+    status: str | None=...,
+    tenant: str | None=...,
+    start_after_id: str | None=...,
+    page_size: int=...,
+    delete_timestamp: bool=...
+) -> list[ComponentRecord[BootArtifacts]] | list[ComponentRecord[TimestampedBootArtifacts]]:
+
+@overload
+def get_v2_components_data(
+    id_list: list[str] | None=...,
+    enabled: bool | None=...,
+    session: str | None=...,
+    staged_session: str | None=...,
+    phase: str | None=...,
+    status: str | None=...,
+    tenant: str | None=...,
+    start_after_id: str | None=...,
+    page_size: int=...,
+    delete_timestamp: Literal[True]=...
+) -> list[ComponentRecord[BootArtifacts]]:
+
+@overload
+def get_v2_components_data(
+    id_list: list[str] | None=...,
+    enabled: bool | None=...,
+    session: str | None=...,
+    staged_session: str | None=...,
+    phase: str | None=...,
+    status: str | None=...,
+    tenant: str | None=...,
+    start_after_id: str | None=...,
+    page_size: int=...,
+    delete_timestamp: Literal[False]=...
+) -> list[ComponentRecord[TimestampedBootArtifacts]]:
 
 def get_v2_components_data(id_list: list[str] | None=None,
                            enabled: bool | None=None,
