@@ -51,21 +51,17 @@ class BootArtifacts(TypedDict, total=True):
     kernel_parameters: str
     initrd: str
 
-class OptionalTimestampField(TypedDict, total=False):
-    timestamp: str
-
-class RequiredTimestampField(TypedDict, total=True):
-    timestamp: str
-
-class TimestampedBootArtifacts(BootArtifacts, RequiredTimestampField):
+class TimestampedBootArtifacts(BootArtifacts, TypedDict, total=True):
     """
     When storing the boot artifacts in the database, there is an additional timestamp field
     """
+    timestamp: str
 
-class ActualBootArtifacts(BootArtifacts, OptionalTimestampField):
+class ActualBootArtifacts(BootArtifacts, TypedDict, total=False):
     """
     actual_state boot artifacts sometimes have the timestamp field, internally
     """
+    timestamp: str
 
 class ComponentLastAction(TypedDict, total=False):
     """
@@ -83,14 +79,14 @@ class ComponentEventStats(TypedDict, total=False):
     power_off_graceful_attempts: int
     power_off_forceful_attempts: int
 
-class BaseComponentState[BA:(BootArtifacts, ActualBootArtifacts)](TypedDict, total=False):
+class BaseComponentState[BA:(BootArtifacts, ActualBootArtifacts | TimestampedBootArtifacts)](TypedDict, total=False):
     """
     Common fields found in actual state, desired state, and staged state
     """
     boot_artifacts: BA
     last_updated: str
 
-class ComponentActualState(BaseComponentState[ActualBootArtifacts], TypedDict, total=False):
+class ComponentActualState(BaseComponentState[ActualBootArtifacts | TimestampedBootArtifacts], TypedDict, total=False):
     """
     #/components/schemas/V2ComponentActualState
     """
@@ -177,7 +173,7 @@ class ComponentUpdateFilter(TypedDict, total=True):
     """
     #/components/schemas/V2ComponentsUpdate
     """
-    patch: ComponentData[BootArtifacts]
+    patch: ComponentData
     filters: ComponentUpdateIdFilter | ComponentUpdateSessionFilter
 
 def update_component_record(
@@ -186,10 +182,12 @@ def update_component_record(
     """
     Perform in-place update of current record using data from new record.
     """
-    # Make a copy, to avoid changing new_record in place, but omit the "id" field if it is present
-    new_record_copy = ComponentData(
-        { k:v for k, v in copy.deepcopy(new_record).items() if k != "id" }
-    )
+    # Make a copy, to avoid changing new_record in place
+    # Cast it as ComponentData, since that will just have the effect of making the 'id' field optional
+    new_record_copy = cast(ComponentData, copy.deepcopy(new_record))
+
+    # Pop the 'id' field, if present
+    new_record_copy.pop("id", None)
 
     # Merge the state dicts -- this is not done in a loop because mypy gets confused keeping track
     # of string literal values in loops

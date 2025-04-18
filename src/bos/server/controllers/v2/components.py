@@ -24,7 +24,7 @@
 from collections.abc import Iterable
 from functools import partial
 import logging
-from typing import Any, Callable, Literal, TypeVar, cast, overload
+from typing import Any, Callable, Literal, cast
 from typing_extensions import TypeIs
 
 import connexion
@@ -60,7 +60,6 @@ SESSIONS_DB = dbutils.SessionDBWrapper()
 
 # Need to shorten some of these unwieldy type annotations
 type CompAny = ComponentData | ComponentRecord
-CompAnyT = TypeVar("CompAnyT", ComponentData, ComponentRecord)
 
 @tenant_error_handler
 @dbutils.redis_error_handler
@@ -167,7 +166,7 @@ def _get_id_set(id_list: list[str] | None, tenant: str | None) -> set[str] | Non
         id_set.intersection_update(tenant_components)
     return id_set
 
-def _get_component_filter_func(
+def _get_component_filter_func[CompAnyT: (ComponentData, ComponentRecord)](
     id_set: set[str] | None,
     enabled: bool | None,
     session: str | None,
@@ -190,14 +189,16 @@ def _get_component_filter_func(
                        delete_timestamp=delete_timestamp)
     return partial(_set_status, delete_timestamp=delete_timestamp)
 
-def _filter_component(data: CompAnyT,
-                      id_set: set[str] | None,
-                      enabled: bool | None,
-                      session: str | None,
-                      staged_session: str | None,
-                      phase: str | None,
-                      status: str | None,
-                      delete_timestamp: bool) -> CompAnyT | None:
+def _filter_component[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT,
+    id_set: set[str] | None,
+    enabled: bool | None,
+    session: str | None,
+    staged_session: str | None,
+    phase: str | None,
+    status: str | None,
+    delete_timestamp: bool
+) -> CompAnyT | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None
@@ -217,7 +218,10 @@ def _filter_component(data: CompAnyT,
             return None
     return updated_data
 
-def _set_status(data: CompAnyT, *, delete_timestamp: bool=False) -> CompAnyT:
+def _set_status[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT, *,
+    delete_timestamp: bool=False
+) -> CompAnyT:
     """
     This sets the status field of the overall status.
     """
@@ -699,7 +703,7 @@ def _copy_staged_to_desired(data: CompAny) -> None:
         configuration=staged_state.get("configuration", "")
     )
 
-def _set_auto_fields(data: CompAnyT) -> CompAnyT:
+def _set_auto_fields[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     data = _set_on_hold_when_enabled(data)
@@ -707,7 +711,9 @@ def _set_auto_fields(data: CompAnyT) -> CompAnyT:
     data = _clear_event_stats_when_desired_state_changes(data)
     return data
 
-def _populate_boot_artifacts(data: CompAnyT) -> CompAnyT:
+def _populate_boot_artifacts[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     """
     If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the
@@ -749,7 +755,7 @@ def del_timestamp(data: CompAny) -> None:
         pass
 
 
-def _set_last_updated(data: CompAnyT) -> CompAnyT:
+def _set_last_updated[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
     timestamp = get_current_timestamp()
     for section in [
             'actual_state', 'desired_state', 'staged_state', 'last_action'
@@ -760,7 +766,9 @@ def _set_last_updated(data: CompAnyT) -> CompAnyT:
     return data
 
 
-def _set_on_hold_when_enabled(data: CompAnyT) -> CompAnyT:
+def _set_on_hold_when_enabled[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     """
     The status operator doesn't monitor disabled components, so this causes a delay until it can
     revaluate the component so that other operators don't act on old phase information.
@@ -773,7 +781,9 @@ def _set_on_hold_when_enabled(data: CompAnyT) -> CompAnyT:
     return data
 
 
-def _clear_session_when_manually_updated(data: CompAnyT) -> CompAnyT:
+def _clear_session_when_manually_updated[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     """
     If the desired state for a component is updated outside of the setup operator, that component
     should no longer be considered part of it's original session.
@@ -783,7 +793,9 @@ def _clear_session_when_manually_updated(data: CompAnyT) -> CompAnyT:
     return data
 
 
-def _clear_event_stats_when_desired_state_changes(data: CompAnyT) -> CompAnyT:
+def _clear_event_stats_when_desired_state_changes[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     desired_state = data.get("desired_state", {})
     if "boot_artifacts" in desired_state or "configuration" in desired_state:
         data["event_stats"] = {
