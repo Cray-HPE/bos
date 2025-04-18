@@ -26,7 +26,7 @@
 Type annotation definitions for BOS components
 """
 import copy
-from typing import Literal, Required, TypedDict, overload
+from typing import Literal, Required, TypedDict, cast
 
 class ComponentStatus(TypedDict, total=False):
     """
