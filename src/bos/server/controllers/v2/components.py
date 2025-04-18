@@ -59,22 +59,8 @@ DB = dbutils.ComponentDBWrapper()
 SESSIONS_DB = dbutils.SessionDBWrapper()
 
 # Need to shorten some of these unwieldy type annotations
-type CompRecWithTimestamps = ComponentRecord[TimestampedBootArtifacts]
-type CompRecWithoutTimestamps = ComponentRecord[dBootArtifacts]
-type CompRecAny = CompRecWithTimestamps | CompRecWithoutTimestamps
-
-type CompDataWithTimestamps = ComponentData[TimestampedBootArtifacts]
-type CompDataWithoutTimestamps = ComponentData[dBootArtifacts]
-type CompDataAny = CompDataWithTimestamps | CompDataWithoutTimestamps
-
-type CompAny = CompRecWithTimestamps | CompRecWithoutTimestamps | CompDataWithTimestamps | CompDataWithoutTimestamps
-
-CompDataT = TypeVar("CompDataT", CompDataWithTimestamps, CompDataWithoutTimestamps)
-CompRecT = TypeVar("CompRecT", CompRecWithTimestamps, CompRecWithoutTimestamps)
-CompAnyT = TypeVar("CompAnyT", CompDataWithTimestamps, CompDataWithoutTimestamps,
-                  CompRecWithTimestamps, CompRecWithoutTimestamps)
-
-TimestampedCompT = TypeVar["TimestampedCompT", CompDataWithTimestamps, CompRecWithTimestamps]
+type CompAny = ComponentData | ComponentRecord
+CompAnyT = TypeVar("CompAnyT", ComponentData, ComponentRecord)
 
 @tenant_error_handler
 @dbutils.redis_error_handler
@@ -87,7 +73,7 @@ def get_v2_components(
     status: str | None=None,
     start_after_id: str | None=None,
     page_size: int=0
-) -> tuple[list[CompRecWithoutTimestamps], Literal[200]] | CxResponse:
+) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -125,64 +111,6 @@ def get_v2_components(
         tenant, len(response))
     return response, 200
 
-@overload
-def get_v2_components_data(
-    id_list: list[str] | None=...,
-    enabled: bool | None=...,
-    session: str | None=...,
-    staged_session: str | None=...,
-    phase: str | None=...,
-    status: str | None=...,
-    tenant: str | None=...,
-    start_after_id: str | None=...,
-    page_size: int=...,
-    *,
-    delete_timestamp: Literal[True]
-) -> list[CompRecWithoutTimestamps]: ...
-
-@overload
-def get_v2_components_data(
-    id_list: list[str] | None=...,
-    enabled: bool | None=...,
-    session: str | None=...,
-    staged_session: str | None=...,
-    phase: str | None=...,
-    status: str | None=...,
-    tenant: str | None=...,
-    start_after_id: str | None=...,
-    page_size: int=...,
-    *,
-    delete_timestamp: Literal[False]
-) -> list[CompRecWithTimestamps]: ...
-
-@overload
-def get_v2_components_data(
-    id_list: list[str] | None=...,
-    enabled: bool | None=...,
-    session: str | None=...,
-    staged_session: str | None=...,
-    phase: str | None=...,
-    status: str | None=...,
-    tenant: str | None=...,
-    start_after_id: str | None=...,
-    page_size: int=...
-) -> list[CompRecWithTimestamps]: ...
-
-@overload
-def get_v2_components_data(
-    id_list: list[str] | None=...,
-    enabled: bool | None=...,
-    session: str | None=...,
-    staged_session: str | None=...,
-    phase: str | None=...,
-    status: str | None=...,
-    tenant: str | None=...,
-    start_after_id: str | None=...,
-    page_size: int=...,
-    *,
-    delete_timestamp: bool=...
-) -> list[CompRecWithoutTimestamps] | list[CompRecWithTimestamps]: ...
-
 def get_v2_components_data(
     id_list: list[str] | None=None,
     enabled: bool | None=None,
@@ -195,7 +123,7 @@ def get_v2_components_data(
     page_size: int=0,
     *,
     delete_timestamp: bool=False
-) -> list[CompRecWithoutTimestamps] | list[CompRecWithTimestamps]:
+) -> list[ComponentRecord]:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -219,7 +147,6 @@ def get_v2_components_data(
                                start_after_key=start_after_id,
                                page_size=page_size)
 
-
 def _get_id_set(id_list: list[str] | None, tenant: str | None) -> set[str] | None:
     """
     Return the intersection of the IDs specified in id_list and the component IDs
@@ -240,33 +167,6 @@ def _get_id_set(id_list: list[str] | None, tenant: str | None) -> set[str] | Non
         id_set.intersection_update(tenant_components)
     return id_set
 
-type CompFilterStripTimestamp = Callable[[CompRecWithTimestamps], CompRecWithoutTimestamps | None]
-type CompFilter = Callable[[CompRecWithTimestamps], CompRecWithTimestamps | None]
-
-@overload
-def _get_component_filter_func(
-    id_set: set[str] | None,
-    enabled: bool | None,
-    session: str | None,
-    staged_session: str | None,
-    phase: str | None,
-    status: str | None,
-    delete_timestamp: Literal[True]
-) -> CompFilterStripTimestamp: ...
-
-
-@overload
-def _get_component_filter_func(
-    id_set: set[str] | None,
-    enabled: bool | None,
-    session: str | None,
-    staged_session: str | None,
-    phase: str | None,
-    status: str | None,
-    delete_timestamp: Literal[False]
-) -> CompFilter: ...
-
-@overload
 def _get_component_filter_func(
     id_set: set[str] | None,
     enabled: bool | None,
@@ -275,17 +175,7 @@ def _get_component_filter_func(
     phase: str | None,
     status: str | None,
     delete_timestamp: bool
-) -> CompFilterStripTimestamp | CompFilter: ...
-
-def _get_component_filter_func(
-    id_set: set[str] | None,
-    enabled: bool | None,
-    session: str | None,
-    staged_session: str | None,
-    phase: str | None,
-    status: str | None,
-    delete_timestamp: bool
-) -> CompFilterStripTimestamp | CompFilter:
+) -> Callable[[CompAnyT], CompAnyT | None]:
     """
     Return the filter function to be used by get_v2_components_data
     """
@@ -300,44 +190,14 @@ def _get_component_filter_func(
                        delete_timestamp=delete_timestamp)
     return partial(_set_status, delete_timestamp=delete_timestamp)
 
-@overload
-def _filter_component(data: CompRecWithTimestamps,
+def _filter_component(data: CompAnyT,
                       id_set: set[str] | None,
                       enabled: bool | None,
                       session: str | None,
                       staged_session: str | None,
                       phase: str | None,
                       status: str | None,
-                      delete_timestamp: Literal[False]) -> CompRecWithTimestamps | None: ...
-
-@overload
-def _filter_component(data: CompRecWithTimestamps,
-                      id_set: set[str] | None,
-                      enabled: bool | None,
-                      session: str | None,
-                      staged_session: str | None,
-                      phase: str | None,
-                      status: str | None,
-                      delete_timestamp: Literal[True]) -> CompRecWithoutTimestamps | None: ...
-
-@overload
-def _filter_component(data: CompRecWithTimestamps,
-                      id_set: set[str] | None,
-                      enabled: bool | None,
-                      session: str | None,
-                      staged_session: str | None,
-                      phase: str | None,
-                      status: str | None,
-                      delete_timestamp: bool) -> CompRecWithTimestamps | CompRecWithoutTimestamps | None: ...
-
-def _filter_component(data: CompRecWithTimestamps,
-                      id_set: set[str] | None,
-                      enabled: bool | None,
-                      session: str | None,
-                      staged_session: str | None,
-                      phase: str | None,
-                      status: str | None,
-                      delete_timestamp: bool) -> CompRecWithoutTimestamps | CompRecWithTimestamps | None:
+                      delete_timestamp: bool) -> CompAnyT | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None
@@ -357,21 +217,7 @@ def _filter_component(data: CompRecWithTimestamps,
             return None
     return updated_data
 
-@verload
-def _set_status(data: CompRecT, delete_timestamp: Literal[True]) -> CompRecWithoutTimestamps: ...
-
-@verload
-def _set_status(data: CompRecT, delete_timestamp: Literal[False]) -> CompRecT: ...
-
-@verload
-def _set_status(data: CompRecT) -> CompRecT: ...
-
-@verload
-def _set_status(data: CompRecT, *,
-                delete_timestamp: bool=...) -> CompRecT | CompRecWithoutTimestamps: ...
-
-def _set_status(data: CompRecT, *,
-                delete_timestamp: bool=False) -> CompRecT | CompRecWithoutTimestamps:
+def _set_status(data: CompAnyT, *, delete_timestamp: bool=False) -> CompAnyT:
     """
     This sets the status field of the overall status.
     """
@@ -424,14 +270,14 @@ def _calculate_status(data: CompAny) -> str:
 
 
 @dbutils.redis_error_handler
-def put_v2_components() -> tuple[list[CompRecWithoutTimestamps], Literal[200]] | CxResponse:
+def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PUT /components API operation"""
     # For all entry points into the server, first refresh options and update log level if needed
     update_server_log_level()
 
     LOGGER.debug("PUT /v2/components invoked put_v2_components")
     try:
-        data = cast(list[CompRecWithoutTimestamps], get_request_json())
+        data = cast(list[ComponentRecord], get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PUT request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
@@ -450,7 +296,7 @@ def put_v2_components() -> tuple[list[CompRecWithoutTimestamps], Literal[200]] |
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def patch_v2_components() -> tuple[list[CompRecWithoutTimestamps], Literal[200]] | CxResponse:
+def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PATCH /components API operation"""
     # For all entry points into the server, first refresh options and update log level if needed
     update_server_log_level()
@@ -471,7 +317,7 @@ def patch_v2_components() -> tuple[list[CompRecWithoutTimestamps], Literal[200]]
     return _400_bad_request(f"Unexpected data type {type(data).__name__}")
 
 
-def _is_bulk_patch_list(data: Any) -> TypeIs[list[CompRecWithoutTimestamps]]:
+def _is_bulk_patch_list(data: Any) -> TypeIs[list[ComponentRecord]]:
     """
     We are relying on the fact that connexion has enforced the API spec, so all
     we need to do here is determine if what we got is a list or a dict, and that
@@ -490,7 +336,7 @@ def _is_bulk_patch_dict(data: Any) -> TypeIs[ComponentUpdateFilter]:
 
 
 def patch_v2_components_list(
-    data: list[CompRecWithoutTimestamps]
+    data: list[ComponentRecord]
 ) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
 
     LOGGER.debug("patch_v2_components_list: %d components specified", len(data))
@@ -599,7 +445,7 @@ def _get_invalid_comp_id_for_tenant(comp_id_list: Iterable[str], tenant: str | N
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def get_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Literal[200]] | CxResponse:
+def get_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the GET /components/{component_id} API operation"""
     # For all entry points into the server, first refresh options and update log level if needed
     update_server_log_level()
@@ -620,7 +466,7 @@ def get_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Liter
 
 
 @dbutils.redis_error_handler
-def put_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Literal[200]] | CxResponse:
+def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the PUT /components/{component_id} API operation"""
     # For all entry points into the server, first refresh options and update log level if needed
     update_server_log_level()
@@ -628,7 +474,7 @@ def put_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Liter
     LOGGER.debug("PUT /v2/components/%s invoked put_v2_component",
                  component_id)
     try:
-        data = cast(CompDataWithoutTimestamps, get_request_json())
+        data = cast(ComponentData, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PUT '%s' request data: %s", component_id,
                      exc_type_msg(err))
@@ -637,7 +483,7 @@ def put_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Liter
     # Strip the ID from the incoming data, if one was specified
     data.pop("id", None)
     # Create a new component and set the ID field
-    new_component: CompRecWithoutTimestamps = { "id": component_id }
+    new_component: ComponentRecord = { "id": component_id }
     # Fill in the other fields with the request body
     new_component.update(data)
 
@@ -648,7 +494,7 @@ def put_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Liter
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def patch_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Literal[200]] | CxResponse:
+def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
     """Used by the PATCH /components/{component_id} API operation"""
     # For all entry points into the server, first refresh options and update log level if needed
     update_server_log_level()
@@ -656,7 +502,7 @@ def patch_v2_component(component_id: str) -> tuple[CompRecWithoutTimestamps, Lit
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component",
                  component_id)
     try:
-        patch_data = cast(CompDataWithoutTimestamps, get_request_json())
+        patch_data = cast(ComponentData, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id,
                      exc_type_msg(err))
@@ -853,20 +699,7 @@ def _copy_staged_to_desired(data: CompAny) -> None:
         configuration=staged_state.get("configuration", "")
     )
 
-# These overloads for _set_auto_fields just show that it can only ever add
-# timestamps to the boot artifact fields -- it can never remove them -- and
-# it will never touch the 'id' field (so no changing between CompRec and CompData)
-
-@overload
-def _set_auto_fields(data: TimestampedCompT) -> TimestampedCompT: ...
-
-@overload
-def _set_auto_fields(data: CompRecWithoutTimestamps) -> CompRecAny: ...
-
-@overload
-def _set_auto_fields(data: CompDataWithoutTimestamps) -> CompDataAny: ...
-
-def _set_auto_fields(data: CompAny) -> CompAny:
+def _set_auto_fields(data: CompAnyT) -> CompAnyT:
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     data = _set_on_hold_when_enabled(data)
@@ -874,19 +707,7 @@ def _set_auto_fields(data: CompAny) -> CompAny:
     data = _clear_event_stats_when_desired_state_changes(data)
     return data
 
-# These overloads for _populate_boot_artifacts are showing the same thing as the
-# ones for _set_auto_fields
-
-@overload
-def _populate_boot_artifacts(data: TimestampedCompT) -> TimestampedCompT: ...
-
-@overload
-def _populate_boot_artifacts(data: CompRecWithoutTimestamps) -> CompRecAny: ...
-
-@overload
-def _populate_boot_artifacts(data: CompDataWithoutTimestamps) -> CompDataAny: ...
-
-def _populate_boot_artifacts(data: CompAny) -> CompAny:
+def _populate_boot_artifacts(data: CompAnyT) -> CompAnyT:
     """
     If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the

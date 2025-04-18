@@ -26,7 +26,7 @@
 Type annotation definitions for BOS components
 """
 import copy
-from typing import Generic, Literal, Required, TypedDict, TypeVar, overload
+from typing import Literal, Required, TypedDict, overload
 
 class ComponentStatus(TypedDict, total=False):
     """
@@ -51,14 +51,21 @@ class BootArtifacts(TypedDict, total=True):
     kernel_parameters: str
     initrd: str
 
-class TimestampedBootArtifacts(BootArtifacts, TypedDict, total=True):
+class OptionalTimestampField(TypedDict, total=False):
+    timestamp: str
+
+class RequiredTimestampField(TypedDict, total=True):
+    timestamp: str
+
+class TimestampedBootArtifacts(BootArtifacts, RequiredTimestampField):
     """
     When storing the boot artifacts in the database, there is an additional timestamp field
     """
-    timestamp: str
 
-# For the sake of brevity
-BA = TypeVar("BA", BootArtifacts, TimestampedBootArtifacts)
+class ActualBootArtifacts(BootArtifacts, OptionalTimestampField):
+    """
+    actual_state boot artifacts sometimes have the timestamp field, internally
+    """
 
 class ComponentLastAction(TypedDict, total=False):
     """
@@ -76,14 +83,14 @@ class ComponentEventStats(TypedDict, total=False):
     power_off_graceful_attempts: int
     power_off_forceful_attempts: int
 
-class BaseComponentState(TypedDict, Generic[BA], total=False):
+class BaseComponentState[BA:(BootArtifacts, ActualBootArtifacts)](TypedDict, total=False):
     """
     Common fields found in actual state, desired state, and staged state
     """
     boot_artifacts: BA
     last_updated: str
 
-class ComponentActualState(BaseComponentState[BA], TypedDict, Generic[BA], total=False):
+class ComponentActualState(BaseComponentState[ActualBootArtifacts], TypedDict, total=False):
     """
     #/components/schemas/V2ComponentActualState
     """
@@ -130,8 +137,8 @@ class RequiredIdField(TypedDict, total=True):
 class OptionalIdField(TypedDict, total=False):
     id: str
 
-class BaseComponentData(TypedDict, Generic[BA], total=False):
-    actual_state: ComponentActualState[BA]
+class BaseComponentData(TypedDict, total=False):
+    actual_state: ComponentActualState
     desired_state: ComponentDesiredState
     enabled: bool
     error: str
@@ -142,12 +149,12 @@ class BaseComponentData(TypedDict, Generic[BA], total=False):
     staged_state: ComponentStagedState
     status: ComponentStatus
 
-class ComponentData(BaseComponentData[BA], OptionalIdField, Generic[BA]):
+class ComponentData(BaseComponentData, OptionalIdField):
     """
     #/components/schemas/V2Component
     """
 
-class ComponentRecord(BaseComponentData[BA], RequiredIdField, Generic[BA]):
+class ComponentRecord(BaseComponentData, RequiredIdField):
     """
     #/components/schemas/V2ComponentWithId
     """
@@ -173,24 +180,9 @@ class ComponentUpdateFilter(TypedDict, total=True):
     patch: ComponentData[BootArtifacts]
     filters: ComponentUpdateIdFilter | ComponentUpdateSessionFilter
 
-@overload
-def update_component_record(
-    record: ComponentRecord, new_record: ComponentData[TimestampedBootArtifacts] | ComponentRecord[TimestampedBootArtifacts]
-) -> ComponentRecord[TimestampedBootArtifacts]: ...
-
-@overload
-def update_component_record(
-    record: ComponentRecord[TimestampedBootArtifacts], new_record: ComponentData | ComponentRecord
-) -> ComponentRecord[TimestampedBootArtifacts]: ...
-
-@overload
-def update_component_record(
-    record: ComponentRecord[BootArtifacts], new_record: ComponentData[BootArtifacts] | ComponentRecord[BootArtifacts]
-) -> ComponentRecord[BootArtifacts]: ...
-
 def update_component_record(
     record: ComponentRecord, new_record: ComponentData | ComponentRecord
-) -> ComponentRecord[BootArtifacts] | ComponentRecord[TimestampedBootArtifacts]:
+) -> None:
     """
     Perform in-place update of current record using data from new record.
     """
@@ -240,7 +232,6 @@ def update_component_record(
 
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
-    return record
 
 class ApplyStagedComponents(TypedDict, total=False):
     """
