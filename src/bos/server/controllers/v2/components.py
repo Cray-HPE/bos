@@ -757,14 +757,15 @@ def del_timestamp(data: CompAny) -> None:
 
 def _set_last_updated[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
     timestamp = get_current_timestamp()
-    for section in [
-            'actual_state', 'desired_state', 'staged_state', 'last_action'
-    ]:
-        if section in data and isinstance(
-                data[section], dict) and data[section].keys() != {"bss_token"}:
-            data[section]['last_updated'] = timestamp
+    if 'actual_state' in data and isinstance(data['actual_state'], dict) and data['actual_state'].keys() != {"bss_token"}:
+        data['actual_state']['last_updated'] = timestamp
+    if 'desired_state' in data and isinstance(data['desired_state'], dict) and data['desired_state'].keys() != {"bss_token"}:
+        data['desired_state']['last_updated'] = timestamp
+    if 'staged_state' in data and isinstance(data['staged_state'], dict):
+        data['staged_state']['last_updated'] = timestamp
+    if 'last_action' in data and isinstance(data['last_action'], dict):
+        data['last_action']['last_updated'] = timestamp
     return data
-
 
 def _set_on_hold_when_enabled[CompAnyT: (ComponentData, ComponentRecord)](
     data: CompAnyT

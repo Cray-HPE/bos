@@ -22,7 +22,8 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from bos.common.types.components import (BootArtifacts,
+from bos.common.types.components import (ActualBootArtifacts,
+                                         BootArtifacts,
                                          ComponentActualState,
                                          ComponentDesiredState,
                                          ComponentStagedState)
