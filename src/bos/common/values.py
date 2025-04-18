@@ -65,7 +65,7 @@ EMPTY_BOOT_ARTIFACTS: BootArtifacts = {
 }
 
 EMPTY_ACTUAL_STATE: ComponentActualState = {
-    "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
+    "boot_artifacts": ActualBootArtifacts(EMPTY_BOOT_ARTIFACTS),
     "bss_token": ""
 }
 

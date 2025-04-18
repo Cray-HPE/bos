@@ -166,7 +166,7 @@ def _get_id_set(id_list: list[str] | None, tenant: str | None) -> set[str] | Non
         id_set.intersection_update(tenant_components)
     return id_set
 
-def _get_component_filter_func[CompAnyT: (ComponentData, ComponentRecord)](
+def _get_component_filter_func(
     id_set: set[str] | None,
     enabled: bool | None,
     session: str | None,
@@ -174,7 +174,7 @@ def _get_component_filter_func[CompAnyT: (ComponentData, ComponentRecord)](
     phase: str | None,
     status: str | None,
     delete_timestamp: bool
-) -> Callable[[CompAnyT], CompAnyT | None]:
+) -> Callable[[ComponentRecord], ComponentRecord | None]:
     """
     Return the filter function to be used by get_v2_components_data
     """
@@ -189,8 +189,8 @@ def _get_component_filter_func[CompAnyT: (ComponentData, ComponentRecord)](
                        delete_timestamp=delete_timestamp)
     return partial(_set_status, delete_timestamp=delete_timestamp)
 
-def _filter_component[CompAnyT: (ComponentData, ComponentRecord)](
-    data: CompAnyT,
+def _filter_component(
+    data: ComponentRecord,
     id_set: set[str] | None,
     enabled: bool | None,
     session: str | None,
@@ -198,7 +198,7 @@ def _filter_component[CompAnyT: (ComponentData, ComponentRecord)](
     phase: str | None,
     status: str | None,
     delete_timestamp: bool
-) -> CompAnyT | None:
+) -> ComponentRecord | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None
