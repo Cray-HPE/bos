@@ -72,7 +72,7 @@ class DiscoveryOperator(BaseOperator):
         """
         A single iteration of discovery.
         """
-        components_to_add = []
+        components_to_add: list[ComponentRecord] = []
         for component in sorted(self.missing_components):
             LOGGER.debug("Processing new xname entity '%s'", component)
             new_component = copy(NEW_COMPONENT)

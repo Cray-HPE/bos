@@ -125,7 +125,7 @@ class Session:
             self._mark_running(component_ids)
 
     def _setup_components(self, max_batch_size: int) -> list[str]:
-        all_component_ids = []
+        all_component_ids: list[str] = []
         data = []
         stage = self.session_data.get("stage", False)
         try:

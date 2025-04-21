@@ -255,7 +255,7 @@ class BaseOperator(ABC):
 
     def _get_components(self) -> list[ComponentRecord]:
         """ Gets the list of all components that require actions  """
-        components = []
+        components: list[ComponentRecord] = []
         for f in self.filters:
             components = f.filter(components)
         return components
