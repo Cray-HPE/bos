@@ -34,7 +34,10 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
-from bos.common.types.session_extended_status import SessionExtendedStatus
+from bos.common.types.session_extended_status import (SessionExtendedStatus,
+                                                      SessionExtendedStatusErrorComponents,
+                                                      SessionExtendedStatusPhases,
+                                                      SessionExtendedStatusTiming)
 from bos.common.types.sessions import Session as SessionRecordT
 from bos.common.types.sessions import SessionCreate as SessionCreateT
 from bos.common.types.sessions import SessionUpdate as SessionUpdateT
@@ -435,15 +438,13 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
             component_errors_data[component.get('error')].add(
                 component.get('id'))
     component_errors = {}
-    for error, components in component_errors_data.items():
+    for error, component_ids in component_errors_data.items():
         component_list = ','.join(
-            list(components)[:MAX_COMPONENTS_IN_ERROR_DETAILS])
-        if len(components) > MAX_COMPONENTS_IN_ERROR_DETAILS:
+            list(component_ids)[:MAX_COMPONENTS_IN_ERROR_DETAILS])
+        if len(component_ids) > MAX_COMPONENTS_IN_ERROR_DETAILS:
             component_list += '...'
-        component_errors[error] = {
-            'count': len(components),
-            'list': component_list
-        }
+        component_errors[error] = SessionExtendedStatusErrorComponents(count=len(component_ids),
+                                                                       list=component_list)
     session_status = session.get('status', {})
     start_time = session_status.get('start_time')
     end_time = session_status.get('end_time')
@@ -451,38 +452,24 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
         duration = str(load_timestamp(end_time) - load_timestamp(start_time))
     else:
         duration = str(get_current_time() - load_timestamp(start_time))
-    status = {
-        'status':
-        session_status.get('status', ''),
-        'managed_components_count':
-        num_managed_components,
-        'phases': {
-            'percent_complete':
-            round(
-                component_phase_percents.get('successful', 0) +
-                component_phase_percents.get('failed', 0), 2),
-            'percent_powering_on':
-            round(component_phase_percents.get(Phase.powering_on, 0), 2),
-            'percent_powering_off':
-            round(component_phase_percents.get(Phase.powering_off, 0), 2),
-            'percent_configuring':
-            round(component_phase_percents.get(Phase.configuring, 0), 2),
-        },
-        'percent_staged':
-        round(component_phase_percents.get('staged', 0), 2),
-        'percent_successful':
-        round(component_phase_percents.get('successful', 0), 2),
-        'percent_failed':
-        round(component_phase_percents.get('failed', 0), 2),
-        'error_summary':
-        component_errors,
-        'timing': {
-            'start_time': start_time,
-            'end_time': end_time,
-            'duration': duration
-        }
-    }
-    return status
+    phases = SessionExtendedStatusPhases(
+        percent_complete=round(component_phase_percents.get('successful', 0) +
+                               component_phase_percents.get('failed', 0), 2),
+        percent_powering_on=round(component_phase_percents.get(Phase.powering_on, 0), 2),
+        percent_powering_off=round(component_phase_percents.get(Phase.powering_off, 0), 2),
+        percent_configuring=round(component_phase_percents.get(Phase.configuring, 0), 2)
+    )
+    timing = SessionExtendedStatusTiming(start_time=start_time, end_time=end_time, duration=duration)
+    return SessionExtendedStatus(
+        status=session_status.get('status', ''),
+        managed_components_count=num_managed_components,
+        phases=phases,
+        percent_staged=round(component_phase_percents.get('staged', 0), 2),
+        percent_successful=round(component_phase_percents.get('successful', 0), 2),
+        percent_failed=round(component_phase_percents.get('failed', 0), 2),
+        error_summary=component_errors,
+        timing=timing
+    )
 
 
 def _age_to_timestamp(age: str) -> datetime:
