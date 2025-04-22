@@ -28,7 +28,7 @@ Definitions for redis_db_utils modules
 from enum import IntEnum
 from typing import TypeVar
 
-from bos.common.types.components import ComponentRecord, TimestampedBootArtifacts
+from bos.common.types.components import BootArtifacts, ComponentRecord
 from bos.common.types.options import OptionsDict
 from bos.common.types.sessions import Session
 from bos.common.types.session_extended_status import SessionExtendedStatus
@@ -49,4 +49,5 @@ DB_HOST = 'cray-bos-db'
 DB_PORT = 6379
 
 # The decoded data formats for the different BOS databases
-BosDataRecord = TypeVar("BosDataRecord", ComponentRecord, OptionsDict, Session, SessionExtendedStatus, SessionTemplate, TimestampedBootArtifacts)
+BosDataRecord = TypeVar("BosDataRecord", BootArtifacts, ComponentRecord, OptionsDict,
+                        Session, SessionExtendedStatus, SessionTemplate)

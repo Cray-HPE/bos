@@ -25,7 +25,8 @@ import copy
 from collections.abc import Iterable
 from functools import partial
 import logging
-from typing import Literal, cast
+from typing import Any, Callable, Literal, cast
+from typing_extensions import TypeIs
 
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
@@ -34,10 +35,14 @@ from bos.common.tenant_utils import (get_tenant_component_set,
                                      get_tenant_from_header,
                                      is_valid_tenant_component,
                                      tenant_error_handler)
-from bos.common.types.components import (ComponentData,
+from bos.common.types.components import (ApplyStagedComponents,
+                                         ApplyStagedStatus,
+                                         ComponentData,
+                                         ComponentDesiredState,
                                          ComponentRecord,
+                                         ComponentStagedState,
+                                         ComponentUpdateFilter,
                                          update_component_record)
-from bos.common.types.general import JsonDict
 from bos.common.utils import components_by_id, exc_type_msg, get_current_timestamp
 from bos.common.values import (Phase,
                                Action,
@@ -108,7 +113,6 @@ def get_v2_components(
         tenant, len(response))
     return response, 200
 
-
 def get_v2_components_data(
     id_list: list[str] | None=None,
     enabled: bool | None=None,
@@ -119,43 +123,74 @@ def get_v2_components_data(
     tenant: str | None=None,
     start_after_id: str | None=None,
     page_size: int=0,
+    *,
     delete_timestamp: bool=False
 ) -> list[ComponentRecord]:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
     """
-    tenant_components = get_tenant_component_set(tenant) if tenant else None
-
-    if id_list is not None:
-        id_set = set(id_list)
-        if tenant_components is not None:
-            id_set.intersection_update(tenant_components)
-    else:
-        id_set = tenant_components
+    id_set = _get_id_set(id_list, tenant)
 
     # If id_set is not None but is empty, that means no components in the system
     # will match our filter, so we can return an empty list immediately.
     if id_set is not None and not id_set:
         return []
 
-    if any([id_set, enabled, session, staged_session, phase, status]):
-        _component_filter_func = partial(_filter_component,
-                                         id_set=id_set,
-                                         enabled=enabled,
-                                         session=session or None,
-                                         staged_session=staged_session or None,
-                                         phase=phase or None,
-                                         status=status or None,
-                                         delete_timestamp=delete_timestamp)
-    else:
-        _component_filter_func = partial(_set_status,
-                                         delete_timestamp=delete_timestamp)
+    _component_filter_func = _get_component_filter_func(id_set=id_set,
+                                                        enabled=enabled,
+                                                        session=session,
+                                                        staged_session=staged_session,
+                                                        phase=phase,
+                                                        status=status,
+                                                        delete_timestamp=delete_timestamp)
 
     return DB.get_all_filtered(filter_func=_component_filter_func,
                                start_after_key=start_after_id,
                                page_size=page_size)
 
+def _get_id_set(id_list: list[str] | None, tenant: str | None) -> set[str] | None:
+    """
+    Return the intersection of the IDs specified in id_list and the component IDs
+    accessible to the specified tenant.
+    If there are IDs in id_list and tenant is specified, and the intersection is empty,
+    then return an empty set.
+    If no IDs are in id_list, just return the IDs accessible to the specified tenant.
+    If no tenant is specified, just return the IDs listed in id_list.
+    If neither is specified, return None, which signals that any ID is valid.
+    """
+    tenant_components = get_tenant_component_set(tenant) if tenant else None
+
+    if id_list is None:
+        return tenant_components
+
+    id_set = set(id_list)
+    if tenant_components is not None:
+        id_set.intersection_update(tenant_components)
+    return id_set
+
+def _get_component_filter_func(
+    id_set: set[str] | None,
+    enabled: bool | None,
+    session: str | None,
+    staged_session: str | None,
+    phase: str | None,
+    status: str | None,
+    delete_timestamp: bool
+) -> Callable[[ComponentRecord], ComponentRecord | None]:
+    """
+    Return the filter function to be used by get_v2_components_data
+    """
+    if any([id_set, enabled, session, staged_session, phase, status]):
+        return partial(_filter_component,
+                       id_set=id_set,
+                       enabled=enabled,
+                       session=session or None,
+                       staged_session=staged_session or None,
+                       phase=phase or None,
+                       status=status or None,
+                       delete_timestamp=delete_timestamp)
+    return partial(_set_status, delete_timestamp=delete_timestamp)
 
 def _filter_component(
     data: ComponentRecord,
@@ -184,7 +219,6 @@ def _filter_component(
         if status is not None and status_data.get('status') not in status.split(','):
             return None
     return updated_data
-
 
 def _set_status(data: ComponentRecord, *, delete_timestamp: bool=False) -> ComponentRecord:
     """
@@ -277,13 +311,31 @@ def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResp
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    if isinstance(data, list):
+    if _is_bulk_patch_list(data):
         return patch_v2_components_list(data)
-    if isinstance(data, dict):
+    if _is_bulk_patch_dict(data):
         return patch_v2_components_dict(data)
 
     LOGGER.error("Unexpected data type %s", str(type(data)))
     return _400_bad_request(f"Unexpected data type {type(data).__name__}")
+
+
+def _is_bulk_patch_list(data: Any) -> TypeIs[list[ComponentRecord]]:
+    """
+    We are relying on the fact that connexion has enforced the API spec, so all
+    we need to do here is determine if what we got is a list or a dict, and that
+    will tell us whether it is list[ComponentRecord] or ComponentUpdateFilter
+    """
+    return isinstance(data, list)
+
+
+def _is_bulk_patch_dict(data: Any) -> TypeIs[ComponentUpdateFilter]:
+    """
+    We are relying on the fact that connexion has enforced the API spec, so all
+    we need to do here is determine if what we got is a list or a dict, and that
+    will tell us whether it is list[] or ComponentUpdateFilter
+    """
+    return isinstance(data, list)
 
 
 def patch_v2_components_list(
@@ -314,8 +366,8 @@ def patch_v2_components_list(
     return list(components.values()), 200
 
 
-def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
-                                                      Literal[200]] | CxResponse:
+def patch_v2_components_dict(data: ComponentUpdateFilter) -> tuple[list[ComponentRecord],
+                                                                   Literal[200]] | CxResponse:
     try:
         filters = data["filters"]
     except KeyError:
@@ -425,16 +477,22 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     LOGGER.debug("PUT /v2/components/%s invoked put_v2_component",
                  component_id)
     try:
-        data = cast(ComponentRecord, get_request_json())
+        data = cast(ComponentData, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PUT '%s' request data: %s", component_id,
                      exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    data['id'] = component_id
-    data = _set_auto_fields(data)
-    DB.put(component_id, data)
-    return data, 200
+    # Strip the ID from the incoming data, if one was specified
+    data.pop("id", None)
+    # Create a new component and set the ID field
+    new_component: ComponentRecord = { "id": component_id }
+    # Fill in the other fields with the request body
+    new_component.update(data)
+
+    new_component = _set_auto_fields(new_component)
+    DB.put(component_id, new_component)
+    return new_component, 200
 
 
 @tenant_error_handler
@@ -447,7 +505,7 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
     LOGGER.debug("PATCH /v2/components/%s invoked patch_v2_component",
                  component_id)
     try:
-        patch_data = cast(ComponentRecord, get_request_json())
+        patch_data = cast(ComponentData, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s", component_id,
                      exc_type_msg(err))
@@ -516,19 +574,19 @@ def delete_v2_component(component_id: str) -> tuple[None, Literal[204]] | CxResp
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def post_v2_apply_staged() -> tuple[JsonDict, Literal[200]] | CxResponse:
+def post_v2_apply_staged() -> tuple[ApplyStagedStatus, Literal[200]] | CxResponse:
     """Used by the POST /applystaged API operation"""
     # For all entry points into the server, first refresh options and update log level if needed
     update_server_log_level()
 
     LOGGER.debug("POST /v2/applystaged invoked post_v2_apply_staged")
     try:
-        data = get_request_json()
+        data = cast(ApplyStagedComponents, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing POST request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    response = {"succeeded": [], "failed": [], "ignored": []}
+    response: ApplyStagedStatus = {"succeeded": [], "failed": [], "ignored": []}
     # Obtain latest desired behavior for how to clear staging information
     # for all components
     clear_staged = get_v2_options_data().get('clear_stage', False)
@@ -570,12 +628,12 @@ def _apply_staged(component_id: str, clear_staged: bool=False) -> bool:
         data = DB.get(component_id)
     except dbutils.NotFoundInDB:
         return False
-    staged_state = data.get("staged_state", {})
+    staged_state = data.get("staged_state", EMPTY_STAGED_STATE)
     staged_session_id = staged_state.get("session", "")
     if not staged_session_id:
         return False
     try:
-        response = _set_state_from_staged(data)
+        _set_state_from_staged(data, staged_state, staged_session_id)
     except Exception as e:
         data["error"] = str(e)
         data["enabled"] = False
@@ -585,15 +643,13 @@ def _apply_staged(component_id: str, clear_staged: bool=False) -> bool:
         data["session"] = staged_session_id
         data["last_action"]["action"] = Action.apply_staged
         if clear_staged:
-            data["staged_state"] = EMPTY_STAGED_STATE
+            data["staged_state"] = copy.deepcopy(EMPTY_STAGED_STATE)
         _set_auto_fields(data)
         DB.put(component_id, data)
-    return response
+    return True
 
 
-def _set_state_from_staged(data: CompAny) -> Literal[True]:
-    staged_state = data.get("staged_state", {})
-    staged_session_name = staged_state.get("session", "")
+def _set_state_from_staged(data: CompAny, staged_state: ComponentStagedState, staged_session_name: str) -> None:
     tenant = get_tenant_from_header()
     try:
         session = SESSIONS_DB.tenanted_get(staged_session_name, tenant)
@@ -609,37 +665,29 @@ def _set_state_from_staged(data: CompAny) -> Literal[True]:
                 "Staged operation is shutdown but boot artifacts have been specified "
                 f"(session: {staged_session_name}, tenant: {tenant})"
             )
-        _copy_staged_to_desired(data)
     elif operation == "boot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception(
                 "Staged operation is boot but some boot artifacts have not been specified "
                 f"(session: {staged_session_name}, tenant: {tenant})"
             )
-        _copy_staged_to_desired(data)
     elif operation == "reboot":
         if not all(staged_state.get("boot_artifacts", {}).values()):
             raise Exception(
                 "Staged operation is reboot but some boot artifacts have not been specified "
                 f"(session: {staged_session_name}, tenant: {tenant})"
             )
-        _copy_staged_to_desired(data)
         data["actual_state"] = copy.deepcopy(EMPTY_ACTUAL_STATE)
     else:
         raise Exception(
             f"Invalid operation ({operation}) in staged session "
             f"(session: {staged_session_name}, tenant: {tenant})"
         )
+    data["desired_state"] = ComponentDesiredState(
+        boot_artifacts=copy.deepcopy(staged_state.get("boot_artifacts", EMPTY_BOOT_ARTIFACTS)),
+        configuration=staged_state.get("configuration", "")
+    )
     data["enabled"] = True
-    return True
-
-
-def _copy_staged_to_desired(data: ComponentRecord) -> None:
-    staged_state = data.get("staged_state", {})
-    data["desired_state"] = {
-        "boot_artifacts": staged_state.get("boot_artifacts", {}),
-        "configuration": staged_state.get("configuration", "")
-    }
 
 
 def _set_auto_fields[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
@@ -649,7 +697,6 @@ def _set_auto_fields[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT)
     data = _clear_session_when_manually_updated(data)
     data = _clear_event_stats_when_desired_state_changes(data)
     return data
-
 
 def _populate_boot_artifacts[CompAnyT: (ComponentData, ComponentRecord)](
     data: CompAnyT
@@ -697,14 +744,15 @@ def del_timestamp(data: CompAny) -> None:
 
 def _set_last_updated[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
     timestamp = get_current_timestamp()
-    for section in [
-            'actual_state', 'desired_state', 'staged_state', 'last_action'
-    ]:
-        if section in data and isinstance(
-                data[section], dict) and data[section].keys() != {"bss_token"}:
-            data[section]['last_updated'] = timestamp
+    if 'actual_state' in data and isinstance(data['actual_state'], dict) and data['actual_state'].keys() != {"bss_token"}:
+        data['actual_state']['last_updated'] = timestamp
+    if 'desired_state' in data and isinstance(data['desired_state'], dict) and data['desired_state'].keys() != {"bss_token"}:
+        data['desired_state']['last_updated'] = timestamp
+    if 'staged_state' in data and isinstance(data['staged_state'], dict):
+        data['staged_state']['last_updated'] = timestamp
+    if 'last_action' in data and isinstance(data['last_action'], dict):
+        data['last_action']['last_updated'] = timestamp
     return data
-
 
 def _set_on_hold_when_enabled[CompAnyT: (ComponentData, ComponentRecord)](
     data: CompAnyT
@@ -726,7 +774,7 @@ def _clear_session_when_manually_updated[CompAnyT: (ComponentData, ComponentReco
 ) -> CompAnyT:
     """
     If the desired state for a component is updated outside of the setup operator, that component
-    should no longer be considered part of it's original session.
+    should no longer be considered part of its original session.
     """
     if data.get("desired_state") and not data.get("session"):
         data["session"] = ""

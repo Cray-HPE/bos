@@ -23,7 +23,7 @@
 #
 import logging
 
-from bos.common.types.components import TimestampedBootArtifacts
+from bos.common.types.components import BootArtifacts
 from bos.common.utils import get_current_timestamp
 from bos.server.redis_db_utils import BootArtifactsDBWrapper, NotFoundInDB
 
@@ -51,16 +51,11 @@ def record_boot_artifacts(token: str, kernel: str, kernel_parameters: str,
         "Logging BSS token and boot artifacts: token='%s' kernel='%s' "
         "kernel_parameters='%s' initrd='%s'", token, kernel, kernel_parameters,
         initrd)
-    TOKENS_DB.put(
-        token, {
-            "kernel": kernel,
-            "kernel_parameters": kernel_parameters,
-            "initrd": initrd,
-            "timestamp": get_current_timestamp()
-        })
+    boot_artifacts = BootArtifacts(kernel=kernel, kernel_parameters=kernel_parameters, initrd=initrd, timestamp=get_current_timestamp())
+    TOKENS_DB.put(token, boot_artifacts)
 
 
-def get_boot_artifacts(token: str) -> TimestampedBootArtifacts:
+def get_boot_artifacts(token: str) -> BootArtifacts:
     """
     Get the boot artifacts associated with a BSS token.
 

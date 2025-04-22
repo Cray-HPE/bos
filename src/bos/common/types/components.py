@@ -36,18 +36,13 @@ class ComponentStatus(TypedDict, total=False):
     status: str
     status_override: str
 
-class BootArtifacts(TypedDict, total=True):
+class BootArtifacts(TypedDict, total=False):
     """
     #/components/schemas/V2BootArtifacts
     """
-    kernel: str
-    kernel_parameters: str
-    initrd: str
-
-class TimestampedBootArtifacts(BootArtifacts, TypedDict, total=True):
-    """
-    When storing the boot artifacts in the database, there is an additional timestamp field
-    """
+    kernel: Required[str]
+    kernel_parameters: Required[str]
+    initrd: Required[str]
     timestamp: str
 
 class ComponentLastAction(TypedDict, total=False):
@@ -168,6 +163,9 @@ def update_component_record(
     # Make a copy, to avoid changing new_record in place
     # Cast it as ComponentData, since that will just have the effect of making the 'id' field optional
     new_record_copy = cast(ComponentData, copy.deepcopy(new_record))
+
+    # Pop the 'id' field, if present
+    new_record_copy.pop("id", None)
 
     # Merge the state dicts -- this is not done in a loop because mypy gets confused keeping track
     # of string literal values in loops
