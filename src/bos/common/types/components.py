@@ -26,7 +26,7 @@
 Type annotation definitions for BOS components
 """
 import copy
-from typing import Required, TypedDict
+from typing import Literal, Required, TypedDict, cast
 
 class ComponentStatus(TypedDict, total=False):
     """
@@ -110,28 +110,64 @@ def _update_component_state[C: (ComponentActualState,
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
 
-class ComponentRecord(TypedDict, total=False):
-    """
-    #/components/schemas/V2Component
-    """
+class RequiredIdField(TypedDict, total=True):
+    id: str
+
+class OptionalIdField(TypedDict, total=False):
+    id: str
+
+class BaseComponentData(TypedDict, total=False):
     actual_state: ComponentActualState
     desired_state: ComponentDesiredState
     enabled: bool
     error: str
     event_stats: ComponentEventStats
-    id: Required[str]
     last_action: ComponentLastAction
     retry_policy: int
     session: str
     staged_state: ComponentStagedState
     status: ComponentStatus
 
-def update_component_record(record: ComponentRecord, new_record: ComponentRecord) -> None:
+class ComponentData(BaseComponentData, OptionalIdField):
+    """
+    #/components/schemas/V2Component
+    """
+
+class ComponentRecord(BaseComponentData, RequiredIdField):
+    """
+    #/components/schemas/V2ComponentWithId
+    """
+
+class ComponentUpdateIdFilter(TypedDict, total=False):
+    """
+    #/components/schemas/V2ComponentsFilterByIds
+    """
+    ids: Required[str]
+    session: Literal[""] | None
+
+class ComponentUpdateSessionFilter(TypedDict, total=True):
+    """
+    #/components/schemas/V2ComponentsFilterBySession
+    """
+    ids: Literal[""] | None
+    session: Required[str]
+
+class ComponentUpdateFilter(TypedDict, total=True):
+    """
+    #/components/schemas/V2ComponentsUpdate
+    """
+    patch: ComponentData
+    filters: ComponentUpdateIdFilter | ComponentUpdateSessionFilter
+
+def update_component_record(
+    record: ComponentRecord, new_record: ComponentData | ComponentRecord
+) -> None:
     """
     Perform in-place update of current record using data from new record.
     """
     # Make a copy, to avoid changing new_record in place
-    new_record_copy = copy.deepcopy(new_record)
+    # Cast it as ComponentData, since that will just have the effect of making the 'id' field optional
+    new_record_copy = cast(ComponentData, copy.deepcopy(new_record))
 
     # Merge the state dicts -- this is not done in a loop because mypy gets confused keeping track
     # of string literal values in loops
@@ -174,3 +210,17 @@ def update_component_record(record: ComponentRecord, new_record: ComponentRecord
 
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
+
+class ApplyStagedComponents(TypedDict, total=False):
+    """
+    #/components/schemas/V2ApplyStagedComponents
+    """
+    xnames: list[str]
+
+class ApplyStagedStatus(TypedDict, total=False):
+    """
+    #/components/schemas/V2ApplyStagedStatus
+    """
+    failed: list[str]
+    ignored: list[str]
+    succeeded: list[str]

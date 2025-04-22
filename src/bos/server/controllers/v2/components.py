@@ -21,6 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+import copy
 from collections.abc import Iterable
 from functools import partial
 import logging
@@ -33,10 +34,17 @@ from bos.common.tenant_utils import (get_tenant_component_set,
                                      get_tenant_from_header,
                                      is_valid_tenant_component,
                                      tenant_error_handler)
-from bos.common.types.components import ComponentRecord, update_component_record
+from bos.common.types.components import (ComponentData,
+                                         ComponentRecord,
+                                         update_component_record)
 from bos.common.types.general import JsonDict
 from bos.common.utils import components_by_id, exc_type_msg, get_current_timestamp
-from bos.common.values import Phase, Action, Status, EMPTY_STAGED_STATE, EMPTY_BOOT_ARTIFACTS
+from bos.common.values import (Phase,
+                               Action,
+                               Status,
+                               EMPTY_ACTUAL_STATE,
+                               EMPTY_BOOT_ARTIFACTS,
+                               EMPTY_STAGED_STATE)
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
 from bos.server.options import get_v2_options_data
@@ -48,18 +56,21 @@ LOGGER = logging.getLogger(__name__)
 DB = dbutils.ComponentDBWrapper()
 SESSIONS_DB = dbutils.SessionDBWrapper()
 
+# Need to shorten some of these unwieldy type annotations
+type CompAny = ComponentData | ComponentRecord
 
 @tenant_error_handler
 @dbutils.redis_error_handler
 def get_v2_components(
-        ids: str | None=None,
-        enabled: bool | None=None,
-        session: str | None=None,
-        staged_session: str | None=None,
-        phase: str | None=None,
-        status: str | None=None,
-        start_after_id: str | None=None,
-        page_size: int=0) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
+    ids: str | None=None,
+    enabled: bool | None=None,
+    session: str | None=None,
+    staged_session: str | None=None,
+    phase: str | None=None,
+    status: str | None=None,
+    start_after_id: str | None=None,
+    page_size: int=0
+) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -98,16 +109,18 @@ def get_v2_components(
     return response, 200
 
 
-def get_v2_components_data(id_list: list[str] | None=None,
-                           enabled: bool | None=None,
-                           session: str | None=None,
-                           staged_session: str | None=None,
-                           phase: str | None=None,
-                           status: str | None=None,
-                           tenant: str | None=None,
-                           start_after_id: str | None=None,
-                           page_size: int=0,
-                           delete_timestamp: bool=False) -> list[ComponentRecord]:
+def get_v2_components_data(
+    id_list: list[str] | None=None,
+    enabled: bool | None=None,
+    session: str | None=None,
+    staged_session: str | None=None,
+    phase: str | None=None,
+    status: str | None=None,
+    tenant: str | None=None,
+    start_after_id: str | None=None,
+    page_size: int=0,
+    delete_timestamp: bool=False
+) -> list[ComponentRecord]:
     """Used by the GET /components API operation
 
     Allows filtering using a comma separated list of ids.
@@ -144,14 +157,16 @@ def get_v2_components_data(id_list: list[str] | None=None,
                                page_size=page_size)
 
 
-def _filter_component(data: ComponentRecord,
-                      id_set: set[str] | None=None,
-                      enabled: bool | None=None,
-                      session: str | None=None,
-                      staged_session: str | None=None,
-                      phase: str | None=None,
-                      status: str | None=None,
-                      delete_timestamp: bool=False) -> ComponentRecord | None:
+def _filter_component(
+    data: ComponentRecord,
+    id_set: set[str] | None,
+    enabled: bool | None,
+    session: str | None,
+    staged_session: str | None,
+    phase: str | None,
+    status: str | None,
+    delete_timestamp: bool
+) -> ComponentRecord | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
     if id_set is not None and data["id"] not in id_set:
         return None
@@ -162,20 +177,16 @@ def _filter_component(data: ComponentRecord,
     if staged_session is not None and \
        data.get('staged_state', {}).get('session', None) != staged_session:
         return None
-    updated_data = _set_status(data)
-
-    status_data = updated_data.get('status')
-    if phase is not None and status_data.get('phase') != phase:
-        return None
-    if status is not None and status_data.get('status') not in status.split(
-            ','):
-        return None
-    if delete_timestamp:
-        del_timestamp(updated_data)
+    updated_data = _set_status(data, delete_timestamp=delete_timestamp)
+    if (status_data := updated_data.get('status')) is not None:
+        if phase is not None and status_data.get('phase') != phase:
+            return None
+        if status is not None and status_data.get('status') not in status.split(','):
+            return None
     return updated_data
 
 
-def _set_status(data: ComponentRecord, delete_timestamp: bool = False) -> ComponentRecord:
+def _set_status(data: ComponentRecord, *, delete_timestamp: bool=False) -> ComponentRecord:
     """
     This sets the status field of the overall status.
     """
@@ -187,7 +198,7 @@ def _set_status(data: ComponentRecord, delete_timestamp: bool = False) -> Compon
     return data
 
 
-def _calculate_status(data: ComponentRecord) -> str:
+def _calculate_status(data: CompAny) -> str:
     """
     Calculates and returns the status of a component
     """
@@ -305,7 +316,10 @@ def patch_v2_components_list(
 
 def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
                                                       Literal[200]] | CxResponse:
-    filters = data.get("filters", {})
+    try:
+        filters = data["filters"]
+    except KeyError:
+        return _400_bad_request("Request missing required 'filters' field")
     ids = filters.get("ids", None)
     session = filters.get("session", None)
     if ids and session:
@@ -314,6 +328,10 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
     if not ids and not session:
         LOGGER.warning("No filter provided")
         return _400_bad_request("No filter provided.")
+    try:
+        patch = data["patch"]
+    except KeyError:
+        return _400_bad_request("Request missing required 'patch' field")
     if ids:
         try:
             id_list = ids.split(',')
@@ -334,7 +352,6 @@ def patch_v2_components_dict(data: JsonDict) -> tuple[list[ComponentRecord],
         LOGGER.debug(
             "patch_v2_components_dict: %d IDs found for specified session",
             len(components))
-    patch = data.get("patch")
     patch.pop("id", None)
     patch = _set_auto_fields(patch)
     try:
@@ -459,7 +476,7 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
     return component, 200
 
 
-def _validate_actual_state_change_is_allowed(current_data: ComponentRecord) -> bool:
+def _validate_actual_state_change_is_allowed(current_data: CompAny) -> bool:
     if not current_data["enabled"]:
         # This component is not being managed on by BOS
         return True
@@ -574,7 +591,7 @@ def _apply_staged(component_id: str, clear_staged: bool=False) -> bool:
     return response
 
 
-def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
+def _set_state_from_staged(data: CompAny) -> Literal[True]:
     staged_state = data.get("staged_state", {})
     staged_session_name = staged_state.get("session", "")
     tenant = get_tenant_from_header()
@@ -607,10 +624,7 @@ def _set_state_from_staged(data: ComponentRecord) -> Literal[True]:
                 f"(session: {staged_session_name}, tenant: {tenant})"
             )
         _copy_staged_to_desired(data)
-        data["actual_state"] = {
-            "boot_artifacts": EMPTY_BOOT_ARTIFACTS,
-            "bss_token": ""
-        }
+        data["actual_state"] = copy.deepcopy(EMPTY_ACTUAL_STATE)
     else:
         raise Exception(
             f"Invalid operation ({operation}) in staged session "
@@ -628,7 +642,7 @@ def _copy_staged_to_desired(data: ComponentRecord) -> None:
     }
 
 
-def _set_auto_fields(data: ComponentRecord) -> ComponentRecord:
+def _set_auto_fields[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     data = _set_on_hold_when_enabled(data)
@@ -637,7 +651,9 @@ def _set_auto_fields(data: ComponentRecord) -> ComponentRecord:
     return data
 
 
-def _populate_boot_artifacts(data: ComponentRecord) -> ComponentRecord:
+def _populate_boot_artifacts[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     """
     If there is a BSS Token present in the actual_state,
     then look up the boot artifacts and add them to the
@@ -666,7 +682,7 @@ def _populate_boot_artifacts(data: ComponentRecord) -> ComponentRecord:
     return data
 
 
-def del_timestamp(data: ComponentRecord) -> None:
+def del_timestamp(data: CompAny) -> None:
     """
     # The actual state boot artifacts dictionary contains a timestamp
     # that is used for internal references only; we should strip it
@@ -679,7 +695,7 @@ def del_timestamp(data: ComponentRecord) -> None:
         pass
 
 
-def _set_last_updated(data: ComponentRecord) -> ComponentRecord:
+def _set_last_updated[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
     timestamp = get_current_timestamp()
     for section in [
             'actual_state', 'desired_state', 'staged_state', 'last_action'
@@ -690,7 +706,9 @@ def _set_last_updated(data: ComponentRecord) -> ComponentRecord:
     return data
 
 
-def _set_on_hold_when_enabled(data: ComponentRecord) -> ComponentRecord:
+def _set_on_hold_when_enabled[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     """
     The status operator doesn't monitor disabled components, so this causes a delay until it can
     revaluate the component so that other operators don't act on old phase information.
@@ -703,7 +721,9 @@ def _set_on_hold_when_enabled(data: ComponentRecord) -> ComponentRecord:
     return data
 
 
-def _clear_session_when_manually_updated(data: ComponentRecord) -> ComponentRecord:
+def _clear_session_when_manually_updated[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     """
     If the desired state for a component is updated outside of the setup operator, that component
     should no longer be considered part of it's original session.
@@ -713,7 +733,9 @@ def _clear_session_when_manually_updated(data: ComponentRecord) -> ComponentReco
     return data
 
 
-def _clear_event_stats_when_desired_state_changes(data: ComponentRecord) -> ComponentRecord:
+def _clear_event_stats_when_desired_state_changes[CompAnyT: (ComponentData, ComponentRecord)](
+    data: CompAnyT
+) -> CompAnyT:
     desired_state = data.get("desired_state", {})
     if "boot_artifacts" in desired_state or "configuration" in desired_state:
         data["event_stats"] = {
