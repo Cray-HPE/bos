@@ -25,7 +25,6 @@
 """
 General type annotation definitions
 """
-from typing import TypedDict
 
 type JsonData = bool | str | None | int | float | list[JsonData] | dict[str, JsonData]
 type JsonDict = dict[str, JsonData]
