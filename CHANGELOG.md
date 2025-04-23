@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- CASMCMS-9381: Add `skip_bad_ids` parameter to bulk components patch endpoint.
+
 ### Changed
 - CASMCMS-9346: Improved type annotations for BOS components controller
 - CASMCMS-9362: Refactor components bulk patch functions
