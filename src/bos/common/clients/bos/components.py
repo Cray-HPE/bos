@@ -52,8 +52,9 @@ class ComponentEndpoint(BaseBosNonTenantAwareEndpoint):
     def update_component(self, component_id, data):
         return self.update_item(component_id, data)
 
-    def update_components(self, data):
-        return self.update_items(data)
+    def update_components(self, data, skip_bad_ids: bool | None=None):
+        params = {} if skip_bad_ids is None else { "skip_bad_ids": skip_bad_ids }
+        return self.update_items(data, **params)
 
     def put_components(self, data):
         return self.put_items(data)

@@ -125,7 +125,7 @@ class Session:
             self._mark_running(component_ids)
 
     def _setup_components(self, max_batch_size: int) -> list[str]:
-        all_component_ids: list[str] = []
+        all_component_ids: set[str] = set()
         data = []
         stage = self.session_data.get("stage", False)
         try:
@@ -140,7 +140,7 @@ class Session:
                 for component_id in components:
                     data.append(
                         self._operate(component_id, copy.deepcopy(state)))
-                all_component_ids += components
+                all_component_ids.update(components)
             if not all_component_ids:
                 raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
@@ -151,8 +151,17 @@ class Session:
                   len(data))
         for chunk in chunk_components(data, max_batch_size):
             self._log(LOGGER.debug, f'Updated components: {chunk}')
-            self.bos_client.components.update_components(chunk)
-        return list(set(all_component_ids))
+            patched_comps = self.bos_client.components.update_components(chunk, skip_bad_ids=True)
+            chunk_comp_ids = set(comp["id"] for comp in chunk)
+            patched_comp_ids = set(comp["id"] for comp in patched_comps)
+            unpatched_comp_ids = chunk_comp_ids - patched_comp_ids
+            if not unpatched_comp_ids:
+                continue
+            self._log(LOGGER.warning, '%d components not found in BOS: %s', len(unpatched_comp_ids), unpatched_comp_ids)
+            all_component_ids.difference_update(unpatched_comp_ids)
+        if all_component_ids:
+            return all_component_ids
+        raise SessionSetupException("All nodes found to act upon do not exist as BOS components")
 
     def _get_boot_set_component_list(self, boot_set) -> set[str]:
         nodes = set()
