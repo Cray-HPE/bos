@@ -27,22 +27,22 @@ BootArtifactsDBWrapper class
 
 from typing import cast
 
-from bos.common.types.components import TimestampedBootArtifacts
+from bos.common.types.components import BootArtifacts
 from bos.common.types.general import JsonDict
 
 from .dbwrapper import DBWrapper
 from .defs import Databases
 
-class BootArtifactsDBWrapper(DBWrapper[TimestampedBootArtifacts]):
+class BootArtifactsDBWrapper(DBWrapper[BootArtifacts]):
     """
     Boot artifacts database wrapper
     """
 
     _Database = Databases.BSS_TOKENS_BOOT_ARTIFACTS
 
-    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> TimestampedBootArtifacts:
+    def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> BootArtifacts:
         """
         Eventually this should probably actually make sure that the record being returned is in the
         correct format. But for now, we'll just satisfy mypy
         """
-        return cast(TimestampedBootArtifacts, jsondict)
+        return cast(BootArtifacts, jsondict)

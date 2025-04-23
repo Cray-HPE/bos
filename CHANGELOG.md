@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CASMCMS-9346: Improved type annotations for BOS components controller
+
 ## [2.39.0] - 2025-04-14
 
 ### Changed
