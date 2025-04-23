@@ -233,6 +233,14 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                 raise NotFoundInDB(db=self.db, key=key_sublist[none_index])
         return { key: self._load_bosdata(key, data) for key, data in zip(keys, raw_data_list) }
 
+    def mget_skip_bad_keys(self, keys: Iterable[str], /) -> dict[str, DataT]:
+        """
+        Returns a mapping from the specified keys to the corresponding BOS data records.
+        Omits from the mapping any keys which do not exist in the DB.
+        """
+        raw_data_list: list[Any] = cast(list[Any], self.client.mget(keys))
+        return { key: self._load_bosdata(key, data) for key, data in zip(keys, raw_data_list) if data is not None }
+
     def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
         """
         JSON-encode all data and then write each item to the database under its respective key

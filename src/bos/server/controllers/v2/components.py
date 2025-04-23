@@ -309,12 +309,14 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
 
 @tenant_error_handler
 @dbutils.redis_error_handler
-def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
+def patch_v2_components(
+    skip_bad_ids: bool=False
+) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
     """Used by the PATCH /components API operation"""
     # For all entry points into the server, first refresh options and update log level if needed
     update_server_log_level()
 
-    LOGGER.debug("PATCH /v2/components invoked patch_v2_components")
+    LOGGER.debug("PATCH /v2/components invoked patch_v2_components (skip_bad_ids=%s)", skip_bad_ids)
     try:
         data = get_request_json()
     except Exception as err:
@@ -322,7 +324,7 @@ def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResp
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
-        current_component_data, component_patch_data = _parse_v2_components_bulk_patch(data)
+        current_component_data, component_patch_data = _parse_v2_components_bulk_patch(data, skip_bad_ids=skip_bad_ids)
     except ComponentNotFound as err:
         LOGGER.warning(err)
         return _404_component_not_found(resource_id=err.resource_id)  # pylint: disable=redundant-keyword-arg
@@ -332,6 +334,10 @@ def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResp
     except Exception as err:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
+
+    if not current_component_data:
+        LOGGER.debug("patch_v2_components: No components to patch")
+        return [], 200
 
     try:
         for comp_id, comp in current_component_data.items():
@@ -346,7 +352,7 @@ def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResp
 
 @singledispatch
 def _parse_v2_components_bulk_patch(
-    data: Any
+    data: Any, /, *, skip_bad_ids: bool
 ) -> tuple[dict[str, ComponentRecord],
            Mapping[str, ComponentData] | Mapping[str, ComponentRecord]]:
     """
@@ -359,8 +365,9 @@ def _parse_v2_components_bulk_patch(
 
 
 @_parse_v2_components_bulk_patch.register(list)
-def _(data: list[ComponentRecord]) -> tuple[dict[str, ComponentRecord],
-                                            dict[str, ComponentRecord]]:
+def _(
+    data: list[ComponentRecord], /, *, skip_bad_ids: bool
+) -> tuple[dict[str, ComponentRecord], dict[str, ComponentRecord]]:
     """
     Set the automatic component fields for the specified patch data
     Extract the IDs from the specified list of component records, and get the current data for them
@@ -372,15 +379,16 @@ def _(data: list[ComponentRecord]) -> tuple[dict[str, ComponentRecord],
     except Exception as err:
         raise BadRequest(f"Error parsing the data provided: {exc_type_msg(err)}") from err
 
-    components = _load_comps_from_id_list(list(patch_data))
+    components = _load_comps_from_id_list(list(patch_data), skip_bad_ids=skip_bad_ids)
 
     LOGGER.debug("_parse_v2_components_bulk_patch(list): %d components to be patched", len(components))
     return components, patch_data
 
 
 @_parse_v2_components_bulk_patch.register(dict)
-def _(data: ComponentUpdateFilter) -> tuple[dict[str, ComponentRecord],
-                                            defaultdict[str, ComponentData]]:
+def _(
+    data: ComponentUpdateFilter, /, *, skip_bad_ids: bool
+) -> tuple[dict[str, ComponentRecord], defaultdict[str, ComponentData]]:
     """
     Set the automatic component fields for the specified patch data.
     Remove its ID field, if present.
@@ -404,7 +412,7 @@ def _(data: ComponentUpdateFilter) -> tuple[dict[str, ComponentRecord],
     # can just use a defaultdict that always returns our patch data
     patch_data: defaultdict[str, ComponentData] = defaultdict(lambda: patch)
     if ids:
-        components = _update_filter_ids_to_components(ids)
+        components = _update_filter_ids_to_components(ids,skip_bad_ids=skip_bad_ids)
     else:
         # session
         tenant = get_tenant_from_header()
@@ -414,22 +422,33 @@ def _(data: ComponentUpdateFilter) -> tuple[dict[str, ComponentRecord],
     return components, patch_data
 
 
-def _update_filter_ids_to_components(ids: str) -> dict[str, ComponentRecord]:
+def _update_filter_ids_to_components(ids: str, skip_bad_ids: bool) -> dict[str, ComponentRecord]:
     try:
         id_list = ids.split(',')
     except Exception as err:
-        LOGGER.error("Error parsing the IDs provided: %s", exc_type_msg(err))
-        return _400_bad_request(f"Error parsing the ids provided: {err}")
+        raise BadRequest(f"Error parsing the IDs provided: {exc_type_msg(err)}") from err
 
-    return _load_comps_from_id_list(id_list)
+    return _load_comps_from_id_list(id_list, skip_bad_ids=skip_bad_ids)
 
 
-def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
-    # Make sure all of the components exist and belong to this tenant (if any)
-    LOGGER.debug("patch_v2_components: %d IDs specified", len(id_list))
-    invalid_comp_id = _get_invalid_comp_id_for_tenant(id_list, get_tenant_from_header())
-    if invalid_comp_id is not None:
-        raise ComponentNotFound(invalid_comp_id)
+def _load_comps_from_id_list(id_list: list[str], skip_bad_ids: bool) -> dict[str, ComponentRecord]:
+    start_len = len(id_list)
+    LOGGER.debug("_load_comps_from_id_list: %d IDs specified", start_len)
+    tenant = get_tenant_from_header()
+
+    if skip_bad_ids:
+        if tenant:
+            legal_component_ids = get_tenant_component_set(tenant)
+            id_list = list(legal_component_ids.intersection(id_list))
+            if len(id_list) != start_len:
+                LOGGER.debug("After filtering out invalid IDs, %d IDs remain", len(id_list))
+            if not id_list:
+                return {}
+
+        return DB.mget_skip_bad_keys(id_list)
+
+    if tenant:
+        _check_for_invalid_tenant_comp(id_list, tenant)
 
     try:
         return DB.mget(id_list)
@@ -437,20 +456,15 @@ def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
         raise ComponentNotFound(exc.key) from exc
 
 
-def _get_invalid_comp_id_for_tenant(comp_id_list: Iterable[str], tenant: str | None) -> str | None:
+def _check_for_invalid_tenant_comp(comp_id_list: Iterable[str], tenant: str) -> None:
     """
-    If no tenant is specified, return None.
-    If any of the listed component IDs are not valid for the specified tenant, return one of the
-    invalid IDs.
-    Otherwise return None.
+    If any of the listed component IDs are not valid for the specified tenant, raise
+    ComponentNotFound for one of the invalid IDs.
     """
-    if not tenant:
-        return None
     legal_component_ids = get_tenant_component_set(tenant)
     for comp_id in comp_id_list:
         if comp_id not in legal_component_ids:
-            return comp_id
-    return None
+            raise ComponentNotFound(comp_id)
 
 
 @tenant_error_handler
