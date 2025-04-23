@@ -61,9 +61,12 @@ class BaseBosNonTenantAwareEndpoint(BaseBosEndpoint, ABC):
         """Update information for a single BOS item"""
         return self.patch(uri=item_id, json=data)
 
-    def update_items(self, data):
+    def update_items(self, data, **params):
         """Update information for multiple BOS items"""
-        return self.patch(json=data)
+        kwargs = { "json": data }
+        if params:
+            kwargs["params"] = params
+        return self.patch(**kwargs)
 
     def put_items(self, data):
         """Put information for multiple BOS Items"""
@@ -100,11 +103,13 @@ class BaseBosTenantAwareEndpoint(BaseBosEndpoint, ABC):
             kwargs["headers"] = get_new_tenant_header(tenant)
         return self.patch(**kwargs)
 
-    def update_items(self, tenant, data):
+    def update_items(self, tenant, data, **params):
         """Update information for multiple BOS items"""
         kwargs = { "json": data }
         if tenant:
             kwargs["headers"] = get_new_tenant_header(tenant)
+        if params:
+            kwargs["params"] = params
         return self.patch(**kwargs)
 
     def post_item(self, item_id, tenant, data=None):
