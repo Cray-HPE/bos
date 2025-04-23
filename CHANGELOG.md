@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CASMCMS-9346: Improved type annotations for BOS components controller
+- CASMCMS-9362: Refactor components bulk patch functions
 
 ## [2.39.0] - 2025-04-14
 
