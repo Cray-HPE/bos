@@ -32,6 +32,28 @@ import flask
 LOGGER = logging.getLogger(__name__)
 
 
+class BadRequest(Exception):
+    """
+    Generic error to use for problems with API requests
+    """
+
+
+class ResourceNotFound(Exception):
+    """
+    A resource needed for an API request was not found.
+    """
+
+    RESOURCE_TYPE: str = "Resource"
+
+    def __init__(self, resource_id: str):
+        self._resource_id = resource_id
+        super().__init__(f"{self.RESOURCE_TYPE} not found: {resource_id}")
+
+    @property
+    def resource_id(self) -> str:
+        return self._resource_id
+
+
 def url_for(endpoint: str, **values) -> str:
     """Calculate the URL for an endpoint
 

@@ -22,11 +22,11 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import copy
-from collections.abc import Iterable
-from functools import partial
+from collections import defaultdict
+from collections.abc import Callable, Iterable, Mapping
+from functools import partial, singledispatch
 import logging
-from typing import Any, Callable, Literal, cast
-from typing_extensions import TypeIs
+from typing import Any, Literal, cast
 
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
@@ -51,7 +51,10 @@ from bos.common.values import (Phase,
                                EMPTY_BOOT_ARTIFACTS,
                                EMPTY_STAGED_STATE)
 from bos.server import redis_db_utils as dbutils
-from bos.server.controllers.utils import _400_bad_request, _404_resource_not_found
+from bos.server.controllers.utils import (_400_bad_request,
+                                          _404_resource_not_found,
+                                          BadRequest,
+                                          ResourceNotFound)
 from bos.server.options import get_v2_options_data
 from bos.server.dbs.boot_artifacts import get_boot_artifacts, BssTokenUnknown
 from bos.server.options import update_server_log_level
@@ -63,6 +66,13 @@ SESSIONS_DB = dbutils.SessionDBWrapper()
 
 # Need to shorten some of these unwieldy type annotations
 type CompAny = ComponentData | ComponentRecord
+
+class ComponentNotFound(ResourceNotFound):
+    """
+    A component needed for an API request was not found
+    """
+
+    RESOURCE_TYPE: str = "Component"
 
 @tenant_error_handler
 @dbutils.redis_error_handler
@@ -311,110 +321,107 @@ def patch_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxResp
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    if _is_bulk_patch_list(data):
-        return patch_v2_components_list(data)
-    if _is_bulk_patch_dict(data):
-        return patch_v2_components_dict(data)
-
-    LOGGER.error("Unexpected data type %s", str(type(data)))
-    return _400_bad_request(f"Unexpected data type {type(data).__name__}")
-
-
-def _is_bulk_patch_list(data: Any) -> TypeIs[list[ComponentRecord]]:
-    """
-    We are relying on the fact that connexion has enforced the API spec, so all
-    we need to do here is determine if what we got is a list or a dict, and that
-    will tell us whether it is list[ComponentRecord] or ComponentUpdateFilter
-    """
-    return isinstance(data, list)
-
-
-def _is_bulk_patch_dict(data: Any) -> TypeIs[ComponentUpdateFilter]:
-    """
-    We are relying on the fact that connexion has enforced the API spec, so all
-    we need to do here is determine if what we got is a list or a dict, and that
-    will tell us whether it is list[] or ComponentUpdateFilter
-    """
-    return isinstance(data, list)
-
-
-def patch_v2_components_list(
-    data: list[ComponentRecord]
-) -> tuple[list[ComponentRecord], Literal[200]] | CxResponse:
-
-    LOGGER.debug("patch_v2_components_list: %d components specified", len(data))
     try:
-        patch_data = components_by_id(data)
+        current_component_data, component_patch_data = _parse_v2_components_bulk_patch(data)
+    except ComponentNotFound as err:
+        LOGGER.warning(err)
+        return _404_component_not_found(resource_id=err.resource_id)  # pylint: disable=redundant-keyword-arg
+    except BadRequest as err:
+        LOGGER.warning(err)
+        return _400_bad_request(str(err))
     except Exception as err:
-        LOGGER.error("Error parsing patch data: %s", exc_type_msg(err))
+        LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
-        components = _load_comps_from_id_list(list(patch_data))
-    except KeyError as exc:
-        LOGGER.warning("Component %s could not be found", exc)
-        return _404_component_not_found(resource_id=str(exc))  # pylint: disable=redundant-keyword-arg
-
-    try:
-        for comp_id, patch_comp in patch_data.items():
-            update_component_record(components[comp_id], _set_auto_fields(patch_comp))
+        for comp_id, comp in current_component_data.items():
+            update_component_record(comp, component_patch_data[comp_id])
     except Exception as err:
         LOGGER.error("Error patching component data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error patching the data provided: {err}")
 
-    DB.mput(components)
-    return list(components.values()), 200
+    DB.mput(current_component_data)
+    return list(current_component_data.values()), 200
 
 
-def patch_v2_components_dict(data: ComponentUpdateFilter) -> tuple[list[ComponentRecord],
-                                                                   Literal[200]] | CxResponse:
+@singledispatch
+def _parse_v2_components_bulk_patch(
+    data: Any
+) -> tuple[dict[str, ComponentRecord],
+           Mapping[str, ComponentData] | Mapping[str, ComponentRecord]]:
+    """
+    This is the fallback function, for cases where data does not match one of the
+    later definitions. This will only happen if data is not a list or a dict.
+    In theory, this should never be the case, because connexion should reject
+    any such request before we get here.
+    """
+    raise BadRequest(f"Unexpected data type {type(data).__name__}")
+
+
+@_parse_v2_components_bulk_patch.register(list)
+def _(data: list[ComponentRecord]) -> tuple[dict[str, ComponentRecord],
+                                            dict[str, ComponentRecord]]:
+    """
+    Set the automatic component fields for the specified patch data
+    Extract the IDs from the specified list of component records, and get the current data for them
+    """
+    LOGGER.debug("_parse_v2_components_bulk_patch(list): %d components specified", len(data))
+    try:
+        patch_data = { comp_id: _set_auto_fields(patch_comp)
+                       for comp_id, patch_comp in components_by_id(data).items() }
+    except Exception as err:
+        raise BadRequest(f"Error parsing the data provided: {exc_type_msg(err)}") from err
+
+    components = _load_comps_from_id_list(list(patch_data))
+
+    LOGGER.debug("_parse_v2_components_bulk_patch(list): %d components to be patched", len(components))
+    return components, patch_data
+
+
+@_parse_v2_components_bulk_patch.register(dict)
+def _(data: ComponentUpdateFilter) -> tuple[dict[str, ComponentRecord],
+                                            defaultdict[str, ComponentData]]:
+    """
+    Set the automatic component fields for the specified patch data.
+    Remove its ID field, if present.
+    Determine whether this is a session filter or an id filter, and get the current component data
+    for the specified filter.    
+    """
     try:
         filters = data["filters"]
-    except KeyError:
-        return _400_bad_request("Request missing required 'filters' field")
+        patch = data["patch"]
+    except KeyError as err:
+        raise BadRequest(f"Request missing required '{err}' field") from err
     ids = filters.get("ids", None)
     session = filters.get("session", None)
     if ids and session:
-        LOGGER.warning("Multiple filters provided")
-        return _400_bad_request("Multiple filters provided")
+        raise BadRequest("Multiple filters provided")
     if not ids and not session:
-        LOGGER.warning("No filter provided")
-        return _400_bad_request("No filter provided.")
-    try:
-        patch = data["patch"]
-    except KeyError:
-        return _400_bad_request("Request missing required 'patch' field")
-    if ids:
-        try:
-            id_list = ids.split(',')
-        except Exception as err:
-            LOGGER.error("Error parsing the IDs provided: %s",
-                         exc_type_msg(err))
-            return _400_bad_request(f"Error parsing the ids provided: {err}")
-
-        try:
-            components = _load_comps_from_id_list(id_list)
-        except KeyError as exc:
-            LOGGER.warning("Component %s could not be found", exc)
-            return _404_component_not_found(resource_id=str(exc))  # pylint: disable=redundant-keyword-arg
-    else:
-        # session
-        components = components_by_id(get_v2_components_data(session=session,
-                                                             tenant=get_tenant_from_header()))
-        LOGGER.debug(
-            "patch_v2_components_dict: %d IDs found for specified session",
-            len(components))
+        raise BadRequest("No filter provided.")
     patch.pop("id", None)
     patch = _set_auto_fields(patch)
-    try:
-        for comp in components.values():
-            update_component_record(comp, patch)
-    except Exception as err:
-        LOGGER.error("Error patching component data: %s", exc_type_msg(err))
-        return _400_bad_request(f"Error patching the data provided: {err}")
+    # Because in this case we are applying the same patch data to every component, we
+    # can just use a defaultdict that always returns our patch data
+    patch_data: defaultdict[str, ComponentData] = defaultdict(lambda: patch)
+    if ids:
+        components = _update_filter_ids_to_components(ids)
+    else:
+        # session
+        tenant = get_tenant_from_header()
+        components = components_by_id(get_v2_components_data(session=session, tenant=tenant))
+    LOGGER.debug("_parse_v2_components_bulk_patch(dict): %d IDs found in specified %s",
+                 len(components), 'id list' if ids else 'session')
+    return components, patch_data
 
-    DB.mput(components)
-    return list(components.values()), 200
+
+def _update_filter_ids_to_components(ids: str) -> dict[str, ComponentRecord]:
+    try:
+        id_list = ids.split(',')
+    except Exception as err:
+        LOGGER.error("Error parsing the IDs provided: %s", exc_type_msg(err))
+        return _400_bad_request(f"Error parsing the ids provided: {err}")
+
+    return _load_comps_from_id_list(id_list)
 
 
 def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
@@ -422,12 +429,12 @@ def _load_comps_from_id_list(id_list: list[str]) -> dict[str, ComponentRecord]:
     LOGGER.debug("patch_v2_components: %d IDs specified", len(id_list))
     invalid_comp_id = _get_invalid_comp_id_for_tenant(id_list, get_tenant_from_header())
     if invalid_comp_id is not None:
-        raise KeyError(invalid_comp_id)
+        raise ComponentNotFound(invalid_comp_id)
 
     try:
         return DB.mget(id_list)
     except dbutils.NotFoundInDB as exc:
-        raise KeyError(exc.key) from exc
+        raise ComponentNotFound(exc.key) from exc
 
 
 def _get_invalid_comp_id_for_tenant(comp_id_list: Iterable[str], tenant: str | None) -> str | None:
