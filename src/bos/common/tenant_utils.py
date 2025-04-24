@@ -26,7 +26,7 @@ from collections.abc import Callable
 import functools
 import logging
 import hashlib
-from typing import ParamSpec, TypeVar
+from typing import ParamSpec, Required, TypedDict, TypeVar
 
 import connexion
 import requests
@@ -47,6 +47,42 @@ TENANT_ENDPOINT = f"{BASE_ENDPOINT}/tenants"  # CASMPET-6433 changed this from t
 
 class InvalidTenantException(Exception):
     pass
+
+
+class TenantResource(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/cray-tapms-operator/blob/main/docs/openapi.yaml
+    #/definitions/TenantResource
+    """
+    enforceexclusivehsmgroups: bool
+    hsmgrouplabel: str
+    hsmpartitionname: str
+    type: Required[str]
+    xnames: Required[list[str]]
+
+
+class TenantStatus(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/cray-tapms-operator/blob/main/docs/openapi.yaml
+    #/definitions/TenantStatus
+    """
+    childnamespaces: list[str]
+    # We do not care about the tenanthooks or tenantkms fields, so we do not precisely type
+    # annotate them
+    tenanthooks: list[JsonDict]
+    tenantkms: JsonDict
+    tenantresources: list[TenantResource]
+    uuid: str
+
+
+class Tenant(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/cray-tapms-operator/blob/main/docs/openapi.yaml
+    #/definitions/Tenant
+    """
+    # We do not care about the spec field, so we do not precisely type annotate it
+    spec: Required[JsonDict]
+    status: TenantStatus
 
 
 def get_tenant_from_header() -> str:
@@ -78,7 +114,7 @@ def get_tenant_aware_key(key: str, tenant: str | None) -> str:
     return f"{tenant_hash}-{key_hash}"
 
 
-def get_tenant_data(tenant: str, session: requests.Session | None = None) -> JsonDict:
+def get_tenant_data(tenant: str, session: requests.Session | None = None) -> Tenant:
     url = f"{TENANT_ENDPOINT}/{tenant}"
     with retry_session_get(url, session=session) as response:
         try:
@@ -97,14 +133,16 @@ def get_tenant_component_set(tenant: str) -> set[str]:
     """
     Returns set of component IDs that are assigned to the specified tenant
     """
+    components: set[str] = set()
     if not tenant:
-        return set()
-    components = []
+        return components
     data = get_tenant_data(tenant)
     status = data.get("status", {})
-    for resource in status.get("tenantresources", []):
-        components.append(resource.get("xnames", []))
-    return set().union(*components)
+    tenantresources: list[TenantResource] = status.get("tenantresources", [])
+    for resource in tenantresources:
+        xnames: list[str] = resource.get("xnames", [])
+        components.update(xnames)
+    return components
 
 
 def validate_tenant_exists(tenant: str) -> bool:
