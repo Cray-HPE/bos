@@ -21,29 +21,32 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
 import logging
+from typing import cast
 
 from bos.common.utils import exc_type_msg
 
 from .base import BaseHsmEndpoint
 from .exceptions import HWStateManagerException
+from .types import StateComponentsDataArray
 
 LOGGER = logging.getLogger(__name__)
 
 
-class StateComponentsEndpoint(BaseHsmEndpoint):
+class StateComponentsEndpoint(BaseHsmEndpoint[StateComponentsDataArray]):
     ENDPOINT = 'State/Components'
 
-    def read_all_node_xnames(self):
+    def read_all_node_xnames(self) -> set[str]:
         """
         Queries HSM for the full set of xname components that
         have been discovered; return these as a set.
         """
-        json_body = self.get()
+        component_array = self.get_list()
         try:
             return {
                 component['ID']
-                for component in json_body['Components']
+                for component in component_array['Components']
                 if component.get('Type', None) == 'Node'
             }
         except KeyError as ke:
@@ -51,7 +54,8 @@ class StateComponentsEndpoint(BaseHsmEndpoint):
                          exc_type_msg(ke))
             raise HWStateManagerException(ke) from ke
 
-    def get_components(self, node_list, enabled=None) -> dict[str, list[dict]]:
+    def get_components(self, node_list: list[str],
+                       enabled: bool|None=None) -> StateComponentsDataArray:
         """
         Get information for all list components HSM
 
@@ -96,4 +100,4 @@ class StateComponentsEndpoint(BaseHsmEndpoint):
         payload = {'ComponentIDs': node_list}
         if enabled is not None:
             payload['enabled'] = [str(enabled)]
-        return self.post(uri="Query", json=payload)
+        return cast(StateComponentsDataArray, self.post(uri="Query", json=payload))

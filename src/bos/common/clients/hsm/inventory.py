@@ -49,7 +49,7 @@ class Inventory:
     @property
     def groups(self):
         if self._groups is None:
-            data = self.hsm_client.groups.list()
+            data = self.hsm_client.groups.get_list()
             groups = {}
             for group in data:
                 groups[group['label']] = set(
@@ -60,7 +60,7 @@ class Inventory:
     @property
     def partitions(self):
         if self._partitions is None:
-            data = self.hsm_client.partitions.list()
+            data = self.hsm_client.partitions.get_list()
             partitions = {}
             for partition in data:
                 partitions[partition['name']] = set(
@@ -74,7 +74,7 @@ class Inventory:
             params = {}
             if self._partition:
                 params['partition'] = self._partition
-            data = self.hsm_client.state_components.list(params=params)
+            data = self.hsm_client.state_components.get_list(params=params)
             roles = defaultdict(set)
             for component in data['Components']:
                 role = ''
