@@ -29,7 +29,9 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
-from bos.common.types.templates import (SessionTemplate,
+from bos.common.types.templates import (BootSet,
+                                        SessionTemplate,
+                                        SessionTemplateCfsParameters,
                                         remove_empty_cfs_field,
                                         update_template_record)
 from bos.common.utils import exc_type_msg
@@ -43,30 +45,22 @@ from .boot_set import validate_boot_sets, validate_sanitize_boot_sets
 LOGGER = logging.getLogger(__name__)
 DB = dbutils.SessionTemplateDBWrapper()
 
-EXAMPLE_BOOT_SET = {
-    "type": "s3",
-    "etag": "boot-image-s3-etag",
-    "kernel_parameters": "your-kernel-parameters",
-    "cfs": {
-        "configuration": "bootset-specific-cfs-override"
-    },
-    "node_list": ["xname1", "xname2", "xname3"],
-    "path": "s3://boot-images/boot-image-ims-id/manifest.json",
-    "rootfs_provider": "cpss3",
-    "rootfs_provider_passthrough":
-    "dvs:api-gw-service-nmn.local:300:hsn0,nmn0:0"
-}
+EXAMPLE_BOOT_SET = BootSet(
+    type="s3",
+    etag="boot-image-s3-etag",
+    kernel_parameters="your-kernel-parameters",
+    cfs=SessionTemplateCfsParameters(configuration="bootset-specific-cfs-override"),
+    node_list=["xname1", "xname2", "xname3"],
+    path="s3://boot-images/boot-image-ims-id/manifest.json",
+    rootfs_provider="cpss3",
+    rootfs_provider_passthrough="dvs:api-gw-service-nmn.local:300:hsn0,nmn0:0",
+)
 
-EXAMPLE_SESSION_TEMPLATE = {
-    "boot_sets": {
-        "name_your_boot_set": EXAMPLE_BOOT_SET
-    },
-    "cfs": {
-        "configuration": "default-sessiontemplate-cfs-config"
-    },
-    "enable_cfs": True
-}
-
+EXAMPLE_SESSION_TEMPLATE = SessionTemplate(
+    boot_sets={"name_your_boot_set": EXAMPLE_BOOT_SET},
+    cfs=SessionTemplateCfsParameters(configuration="default-sessiontemplate-cfs-config"),
+    enable_cfs=True
+)
 
 @reject_invalid_tenant
 @dbutils.redis_error_handler
