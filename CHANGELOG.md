@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.41.0] - 2025-04-28
+
 ### Changed
 - CASMCMS-9382: Resolve mypy type complaints
   - CASMCMS-9383: tenant_utils
