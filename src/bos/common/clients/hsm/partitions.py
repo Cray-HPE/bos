@@ -21,8 +21,10 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
 from .base import BaseHsmEndpoint
+from .types import Partition
 
 
-class PartitionsEndpoint(BaseHsmEndpoint):
+class PartitionsEndpoint(BaseHsmEndpoint[list[Partition]]):
     ENDPOINT = 'partitions'

@@ -26,20 +26,23 @@ from bos.common.utils import exc_type_msg
 from bos.common.clients.s3 import S3Url
 
 from .defs import IMS_S3_KEY_RE_PROG, DEFAULT_IMS_IMAGE_ARCH, LOGGER
-
+from .images import ImageRecord
 
 def get_ims_id_from_s3_url(s3_url: S3Url) -> str | None:
     """
     If the s3_url matches the expected format of an IMS image path, then return the IMS image ID.
     Otherwise return None.
     """
+    match = IMS_S3_KEY_RE_PROG.match(s3_url.key)
+    if match is None:
+        return None
     try:
-        return IMS_S3_KEY_RE_PROG.match(s3_url.key).group(1)
-    except (AttributeError, IndexError):
+        return match.group(1)
+    except IndexError:
         return None
 
 
-def get_arch_from_image_data(image_data: dict) -> str:
+def get_arch_from_image_data(image_data: ImageRecord) -> str:
     """
     Returns the value of the 'arch' field in the image data
     If it is not present, logs a warning and returns the default value

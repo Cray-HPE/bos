@@ -29,7 +29,8 @@ import string
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.types.general import JsonDict
-from bos.server.controllers.v2.boot_set import DEFAULT_ARCH, HARDWARE_SPECIFIER_FIELDS
+from bos.common.types.templates import BOOT_SET_DEFAULT_ARCH as DEFAULT_ARCH
+from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
 
 from .db import TEMP_DB, delete_component, delete_session, delete_template

@@ -23,13 +23,14 @@
 #
 from abc import ABC
 from json import JSONDecodeError
+from typing import cast
 
 from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.clients.endpoints import ApiResponseError, BaseEndpoint, RequestsMethod
-from bos.common.types.general import JsonData
+from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import PROTOCOL
 
 from .exceptions import HWStateManagerException
@@ -38,7 +39,7 @@ SERVICE_NAME = 'cray-smd'
 ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2"
 
 
-class BaseHsmEndpoint(BaseEndpoint, ABC):
+class BaseHsmEndpoint[ListDataT](BaseEndpoint, ABC):
     """
     This base class provides generic access to the HSM API.
     The individual endpoint needs to be overridden for a specific endpoint.
@@ -57,5 +58,7 @@ class BaseHsmEndpoint(BaseEndpoint, ABC):
                 JSONDecodeError, MaxRetryError) as err:
             raise HWStateManagerException(err) from err
 
-    def list(self, params=None):
-        return self.get(params=params)
+    def get_list(
+        self, params: JsonDict|None=None
+    ) -> ListDataT:
+        return cast(ListDataT, self.get(params=params))

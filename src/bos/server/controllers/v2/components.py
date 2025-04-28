@@ -260,7 +260,7 @@ def _calculate_status(data: CompAny) -> str:
     last_action_dict = data.get('last_action', {})
     last_action = last_action_dict.get('action', '')
 
-    status = status = Status.stable
+    status = Status.stable
     if phase == Phase.powering_on:
         if last_action == Action.power_on and not last_action_dict.get(
                 'failed', False):

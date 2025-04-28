@@ -23,4 +23,5 @@
 #
 from .client import IMSClient
 from .exceptions import ImageNotFound, TagFailure
+from .images import ImageArch, ImageRecord
 from .utils import get_ims_id_from_s3_url, get_arch_from_image_data

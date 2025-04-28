@@ -26,16 +26,18 @@ from functools import partial
 
 from bos.common.utils import exc_type_msg
 from bos.common.types.general import JsonDict
+from bos.common.types.templates import BootSet, SessionTemplate
+from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
 from bos.server.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
-from .defs import HARDWARE_SPECIFIER_FIELDS, LOGGER, BootSetStatus
+from .defs import LOGGER, BootSetStatus
 from .exceptions import BootSetError, BootSetWarning
 from .ims import validate_ims_boot_image
 
 
 def validate_boot_sets(
-        session_template: JsonDict,
+        session_template: SessionTemplate,
         operation: str,
         template_name: str,
         options_data: OptionsData | None=None) -> tuple[BootSetStatus, str]:
@@ -100,7 +102,7 @@ def _bs_msg(msg: str, template_name: str, bs_name: str) -> str:
     return f"Session template: '{template_name}' boot set: '{bs_name}': {msg}"
 
 
-def validate_boot_set(bs: JsonDict, operation: str,
+def validate_boot_set(bs: BootSet, operation: str,
                       options_data: OptionsData) -> list[str]:
     """
     Helper function for validate_boot_sets that performs validation on a single boot set.
@@ -130,7 +132,7 @@ def validate_boot_set(bs: JsonDict, operation: str,
     return warning_msgs
 
 
-def verify_nonempty_hw_specifier_field(bs: JsonDict) -> None:
+def verify_nonempty_hw_specifier_field(bs: BootSet) -> None:
     """
     Raises an exception if there are no non-empty hardware specifier fields.
     """
@@ -147,7 +149,7 @@ def verify_nonempty_hw_specifier_field(bs: JsonDict) -> None:
         )
 
 
-def check_node_list_for_nids(bs: JsonDict, options_data: OptionsData) -> None:
+def check_node_list_for_nids(bs: BootSet, options_data: OptionsData) -> None:
     """
     If the node list contains no NIDs, return.
     Otherwise, raise BootSetError or BootSetWarning, depending on the value of the

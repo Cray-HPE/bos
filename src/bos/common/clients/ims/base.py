@@ -22,23 +22,24 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC
+from typing import cast
 
 from bos.common.clients.endpoints import BaseEndpoint
 
 from .defs import BASE_ENDPOINT as BASE_IMS_ENDPOINT
 
 
-class BaseImsEndpoint(BaseEndpoint, ABC):
+class BaseImsEndpoint[GetItemT, UpdateItemT](BaseEndpoint, ABC):
     """
     This base class provides generic access to the IMS API.
     The individual endpoint needs to be overridden for a specific endpoint.
     """
     BASE_ENDPOINT = BASE_IMS_ENDPOINT
 
-    def get_item(self, item_id: str):
+    def get_item(self, item_id: str) -> GetItemT:
         """Get information for a single IMS item"""
-        return self.get(uri=item_id)
+        return cast(GetItemT, self.get(uri=item_id))
 
-    def update_item(self, item_id: str, data):
+    def update_item(self, item_id: str, data: UpdateItemT) -> None:
         """Update information for a single IMS item"""
-        return self.patch(uri=item_id, json=data)
+        self.patch(uri=item_id, json=data)
