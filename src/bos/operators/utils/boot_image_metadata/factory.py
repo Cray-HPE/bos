@@ -24,7 +24,6 @@
 import logging
 
 from bos.common.types.templates import BootSet
-from bos.operators.utils.boot_image_metadata import BootImageMetaData
 from bos.operators.utils.boot_image_metadata.s3_boot_image_metadata import S3BootImageMetaData
 
 LOGGER = logging.getLogger(__name__)
@@ -45,7 +44,14 @@ class BootImageMetaDataFactory:
     def __init__(self, boot_set: BootSet):
         self.boot_set = boot_set
 
-    def __call__(self) -> BootImageMetaData:
+    def __call__(self) -> S3BootImageMetaData:
+        """
+        Technically, this method could return any BootImageMetaData subclass.
+        However, right now S3 is the only one that is supported.
+        So as a practical matter, this method always returns S3BootImageMetadata.
+        If we ever add additional supported types, the type annotation for this
+        method will need to be enhanced.
+        """
         path_type = self.boot_set.get('type', None)
         if not path_type:
             raise BootImageMetaDataUnknown(
