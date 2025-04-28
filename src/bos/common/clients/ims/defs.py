@@ -32,8 +32,6 @@ SERVICE_NAME = 'cray-ims'
 IMS_VERSION = 'v3'
 BASE_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/{IMS_VERSION}"
 
-IMS_TAG_OPERATIONS = ['set', 'remove']
-
 # Making minimal assumptions about the IMS ID itself, this pattern just makes sure that the
 # S3 key is some string, then a /, then at least one more character.
 IMS_S3_KEY_RE = r'^([^/]+)/.+'

@@ -21,12 +21,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from typing import NoReturn
+from typing import get_args, Literal, NoReturn, Required, TypedDict
 
 from bos.common.clients.endpoints import ApiResponseError, RequestData, RequestErrorHandler
 
 from .base import BaseImsEndpoint
-from .defs import IMS_TAG_OPERATIONS, LOGGER
+from .defs import LOGGER
 from .exceptions import ImageNotFound, TagFailure
 
 
@@ -45,22 +45,71 @@ class ImsImageRequestErrorHandler(RequestErrorHandler):
         super().handle_api_response_error(err, request_data)
 
 
-class ImagesEndpoint(BaseImsEndpoint):
+ImageArch = Literal['aarch64', 'x86_64']
+ImsTagOperations = Literal['set', 'remove']
+
+# This fancy footwork lets us construct a frozenset of the string values from the previous
+# definition, allowing us to avoid duplicating it.
+IMS_TAG_OPERATIONS: frozenset[ImsTagOperations] = frozenset(get_args(ImsTagOperations))
+
+class ArtifactLinkRecord(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/ims/blob/develop/api/openapi.yaml
+    '#/components/schemas/ArtifactLinkRecord'
+    """
+    path: Required[str]
+    etag: str
+    type: Required[str]
+
+class ImageRecord(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/ims/blob/develop/api/openapi.yaml
+    '#/components/schemas/ImageRecord'
+    """
+    id: str
+    created: str
+    name: Required[str]
+    link: ArtifactLinkRecord
+    arch: ImageArch
+    metadata: dict[str, str]
+
+
+class ImageMetadataPatch(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/ims/blob/develop/api/openapi.yaml
+    '#/components/schemas/ImagePatchRecord/metadata'
+    """
+    operation: Required[ImsTagOperations]
+    key: Required[str]
+    value: str
+
+
+class ImagePatchRecord(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/ims/blob/develop/api/openapi.yaml
+    '#/components/schemas/ImagePatchRecord'
+    """
+    link: ArtifactLinkRecord
+    arch: ImageArch
+    metadata: ImageMetadataPatch
+
+
+class ImagesEndpoint(BaseImsEndpoint[ImageRecord,ImagePatchRecord]):
     ENDPOINT = 'images'
 
     @property
     def error_handler(self) -> type[ImsImageRequestErrorHandler]:
         return ImsImageRequestErrorHandler
 
-    def get_image(self, image_id: str) -> dict:
+    def get_image(self, image_id: str) -> ImageRecord:
         return self.get_item(image_id)
 
-    def patch_image(self, image_id: str, data) -> None:
+    def patch_image(self, image_id: str, data: ImagePatchRecord) -> None:
         self.update_item(image_id, data)
 
     def tag_image(self,
                   image_id: str,
-                  operation: str,
+                  operation: ImsTagOperations,
                   key: str,
                   value: str | None = None) -> None:
         if operation not in IMS_TAG_OPERATIONS:
@@ -76,15 +125,10 @@ class ImagesEndpoint(BaseImsEndpoint):
         if value:
             LOGGER.debug("Patching image %s %sing key: %s value: %s", image_id,
                          operation, key, value)
+            metadata = ImageMetadataPatch(operation=operation, key=key, value=value)
         else:
             LOGGER.debug("Patching image %s %sing key: %s", image_id,
                          operation, key)
+            metadata = ImageMetadataPatch(operation=operation, key=key)
 
-        data = {
-            "metadata": {
-                "operation": operation,
-                "key": key,
-                "value": value
-            }
-        }
-        self.patch_image(image_id=image_id, data=data)
+        self.patch_image(image_id=image_id, data=ImagePatchRecord(metadata=metadata))

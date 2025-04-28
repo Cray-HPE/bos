@@ -22,9 +22,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from .defs import (DEFAULT_ARCH,
-                   HARDWARE_SPECIFIER_FIELDS,
-                   BootSetStatus)
+from .defs import BootSetStatus
 from .exceptions import (BootSetArchMismatch,
                          BootSetError,
                          BootSetWarning,
