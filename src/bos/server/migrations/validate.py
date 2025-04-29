@@ -23,6 +23,7 @@
 #
 
 import logging
+from typing import cast
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.types.general import JsonData, JsonDict
@@ -40,24 +41,26 @@ class ValidationError(Exception):
     """
 
 
-def check_session(key: str | bytes, data: JsonDict) -> None:
+def check_session(key: str, data: JsonDict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
     name = get_required_field("name", data)
     validate_against_schema(name, "V2SessionName")
     tenant = get_validate_tenant(data)
-    expected_db_key = get_tenant_aware_key(name, tenant)
+    # Having validated it against the schema, we now know that "name" is a string
+    expected_db_key = get_tenant_aware_key(cast(str, name), tenant)
     check_keys(key, expected_db_key)
 
 
-def check_component(key: str | bytes, data: JsonDict) -> None:
+def check_component(key: str, data: JsonDict) -> None:
     """
     Raises a ValidationError if the data contains fatal errors.
     """
     compid = get_required_field("id", data)
     validate_against_schema(compid, "V2ComponentId")
-    check_keys(key, compid)
+    # Having validated it against the schema, we now know that "compid" is a string
+    check_keys(key, cast(str, compid))
 
 
 def get_validate_tenant(data: JsonDict) -> str | None:
@@ -67,9 +70,11 @@ def get_validate_tenant(data: JsonDict) -> str | None:
     Otherwise, raise ValidationError
     """
     tenant = data.get("tenant", None)
-    if tenant is not None:
-        validate_against_schema(tenant, "V2TenantName")
-    return tenant
+    if tenant is None:
+        return None
+    validate_against_schema(tenant, "V2TenantName")
+    # Having validated it against the schema, we now know that "tenant" is a string
+    return cast(str, tenant)
 
 
 def validate_bootset_path(bsname: str, bsdata: JsonDict) -> None:
@@ -84,15 +89,10 @@ def validate_bootset_path(bsname: str, bsdata: JsonDict) -> None:
             f"Boot set '{bsname}' has invalid 'path' field: {exc}") from exc
 
 
-def check_keys(actual: str | bytes, expected: str | bytes) -> None:
+def check_keys(actual: str, expected: str) -> None:
     """
-    Converts both keys to strings.
     Raises ValidationError if the strings do not match
     """
-    if isinstance(actual, bytes):
-        actual = actual.decode()
-    if isinstance(expected, bytes):
-        expected = expected.decode()
     if actual != expected:
         raise ValidationError(
             f"Actual DB key ('{actual}') does not match expected key ('{expected}')"

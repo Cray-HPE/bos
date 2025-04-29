@@ -26,6 +26,7 @@ import copy
 import itertools
 import logging
 import string
+from typing import cast
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.types.general import JsonDict
@@ -50,7 +51,7 @@ ALPHANUMERIC = string.ascii_letters + string.digits
 TEMPLATE_NAME_CHARACTERS = ALPHANUMERIC + '-._'
 
 
-def sanitize_component(key: str | bytes, data: JsonDict) -> None:
+def sanitize_component(key: str, data: JsonDict) -> None:
     """
     If the id field is missing or invalid, delete the component
     """
@@ -60,7 +61,7 @@ def sanitize_component(key: str | bytes, data: JsonDict) -> None:
         delete_component(key, str(exc))
 
 
-def sanitize_session(key: str | bytes, data: JsonDict) -> None:
+def sanitize_session(key: str, data: JsonDict) -> None:
     """
     If the name field is missing, or if the name or tenant fields are invalid, delete the session.
     """
@@ -70,7 +71,7 @@ def sanitize_session(key: str | bytes, data: JsonDict) -> None:
         delete_session(key, str(exc))
 
 
-def sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
+def sanitize_session_template(key: str, data: JsonDict) -> None:
     """
     Session templates are the things most likely to run afoul of the API spec.
     This attempts to automatically fix them if at all possible, only deleting them
@@ -82,7 +83,7 @@ def sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
         delete_template(key, str(exc))
 
 
-def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
+def _sanitize_session_template(key: str, data: JsonDict) -> None:
     """
     Validates and tries to sanitize the session template.
     If there are correctable errors, the function will update the database
@@ -93,6 +94,10 @@ def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
     name = get_required_field("name", data)
     boot_sets = get_required_field("boot_sets", data)
 
+    # Validate that name field is a string
+    if not isinstance(name, str):
+        raise ValidationError("'name' field has non-string value")
+
     # Validate that if there is a non-None tenant field, it follows the schema
     tenant = get_validate_tenant(data)
 
@@ -101,6 +106,12 @@ def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
         raise ValidationError("'boot_sets' field value has invalid type")
     if not boot_sets:
         raise ValidationError("'boot_sets' field value is empty")
+    # And make sure that it maps from strings to dicts
+    for bs_key, bs_data in boot_sets.items():
+        if not isinstance(bs_key, str):
+            raise ValidationError("'boot_sets' dict has at least one non-string key")
+        if not isinstance(bs_data, dict):
+            raise ValidationError("'boot_sets' dict has at least one non-dict value")
 
     # Make a copy of the session template. If we identify problems, we will see if we can correct
     # them in the copy. While copying, remove any fields that are no longer in the spec
@@ -110,8 +121,15 @@ def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
     }
 
     # Check and sanitize each boot set
-    for bsname, bsdata in new_data["boot_sets"].items():
-        sanitize_bootset(bsname, bsdata)
+    # Above, we validated that data["boot_sets"] was a dict, and new_data is just a copy of
+    # data, with invalid fields removed. We know that boot_sets is a valid field, so we
+    # know that new_data["boot_sets"] is a dict. We also know that data overall is a JsonDict,
+    # which tells us that any dicts inside of it must also be JsonDicts.
+    # We use a cast in the following line to convince mypy of this
+    for bsname, bsdata in cast(JsonDict, new_data["boot_sets"]).items():
+        # Earlier we validated that bsname must be a string, and bsdata must be a dict, so
+        # again we use casts to convince mypy of this
+        sanitize_bootset(cast(str, bsname), cast(JsonDict, bsdata))
 
     sanitize_description_field(new_data)
     sanitize_cfs_field(new_data)
@@ -144,7 +162,7 @@ def _sanitize_session_template(key: str | bytes, data: JsonDict) -> None:
         LOGGER.warning("%s and updating it to comply with the BOS API schema",
                        base_msg)
 
-    delete_template(key, data)
+    delete_template(key)
 
     new_key = get_tenant_aware_key(new_name, tenant)
     LOGGER.info("Old DB key = '%s', new DB key = '%s'", key, new_key)
@@ -193,11 +211,10 @@ def sanitize_description_field(data: JsonDict) -> None:
         data["description"] = description[:1023]
 
 
-def sanitize_bootset(bsname: str, bsdata: JsonDict) -> str | None:
+def sanitize_bootset(bsname: str, bsdata: JsonDict) -> None:
     """
     Corrects in-place bsdata.
-    Returns an error message if this proves impossible.
-    Otherwise returns None.
+    Raises a ValidationError if this proves impossible.
     """
     # Every boot_set must have a valid path set
     validate_bootset_path(bsname, bsdata)

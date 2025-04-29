@@ -34,12 +34,15 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
+from bos.common.types.components import ComponentRecord, ComponentStatus
 from bos.common.types.session_extended_status import (SessionExtendedStatus,
                                                       SessionExtendedStatusErrorComponents,
                                                       SessionExtendedStatusPhases,
                                                       SessionExtendedStatusTiming)
 from bos.common.types.sessions import Session as SessionRecordT
 from bos.common.types.sessions import SessionCreate as SessionCreateT
+from bos.common.types.sessions import SessionOperation as SessionOperationT
+from bos.common.types.sessions import SessionStatus as SessionStatusT
 from bos.common.types.sessions import SessionUpdate as SessionUpdateT
 from bos.common.types.sessions import update_session_record
 from bos.common.utils import exc_type_msg, get_current_time, get_current_timestamp, load_timestamp
@@ -119,8 +122,11 @@ def post_v2_session() -> tuple[SessionRecordT, Literal[201]] | CxResponse:  # no
     session_template, _ = session_template_response
 
     # Validate health/validity of the sessiontemplate before creating a session
+    # The session_create object has already been validated by connexion, so we know
+    # in particular that session_create.operation will be a valid SessionOperation literal
+    # type. We use cast below to convince mypy of this.
     error_code, msg = validate_boot_sets(session_template,
-                                         session_create.operation,
+                                         cast(SessionOperationT, session_create.operation),
                                          template_name,
                                          options_data=options_data)
     if error_code >= BootSetStatus.ERROR:
@@ -412,17 +418,16 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
         component_phase_counts = Counter([
-            c.get('status', {}).get('phase') for c in components
-            if (c.get('enabled')
-                and c.get('status').get('status_override') != Status.on_hold)
+            c.get('status', cast(ComponentStatus, {})).get('phase') for c in components
+            if _component_enabled_and_not_on_hold(c)
         ])
         component_phase_counts['successful'] = len([
             c for c in components
-            if c.get('status', {}).get('status') == Status.stable
+            if c.get('status', cast(ComponentStatus, {})).get('status') == Status.stable
         ])
         component_phase_counts['failed'] = len([
             c for c in components
-            if c.get('status', {}).get('status') == Status.failed
+            if c.get('status', cast(ComponentStatus, {})).get('status') == Status.failed
         ])
         component_phase_counts['staged'] = len(staged_components)
         component_phase_percents = {
@@ -432,12 +437,11 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
         }
     else:
         component_phase_percents = {}
-    component_errors_data = defaultdict(set)
+    component_errors_data: defaultdict[str, set[str]] = defaultdict(set)
     for component in components:
-        if component.get('error'):
-            component_errors_data[component.get('error')].add(
-                component.get('id'))
-    component_errors = {}
+        if (error_str := component.get('error')):
+            component_errors_data[error_str].add(component['id'])
+    component_errors: dict[str, SessionExtendedStatusErrorComponents] = {}
     for error, component_ids in component_errors_data.items():
         component_list = ','.join(
             list(component_ids)[:MAX_COMPONENTS_IN_ERROR_DETAILS])
@@ -445,8 +449,8 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
             component_list += '...'
         component_errors[error] = SessionExtendedStatusErrorComponents(count=len(component_ids),
                                                                        list=component_list)
-    session_status = session.get('status', {})
-    start_time = session_status.get('start_time')
+    session_status = session.get('status', cast(SessionStatusT, {}))
+    start_time = session_status['start_time']
     end_time = session_status.get('end_time')
     if end_time:
         duration = str(load_timestamp(end_time) - load_timestamp(start_time))
@@ -460,25 +464,47 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
         percent_configuring=round(component_phase_percents.get(Phase.configuring, 0), 2)
     )
     timing = SessionExtendedStatusTiming(start_time=start_time, end_time=end_time, duration=duration)
-    return SessionExtendedStatus(
-        status=session_status.get('status', ''),
+    extended_status = SessionExtendedStatus(
         managed_components_count=num_managed_components,
         phases=phases,
         percent_staged=round(component_phase_percents.get('staged', 0), 2),
         percent_successful=round(component_phase_percents.get('successful', 0), 2),
         percent_failed=round(component_phase_percents.get('failed', 0), 2),
         error_summary=component_errors,
-        timing=timing
-    )
+        timing=timing)
+    try:
+        extended_status["status"] = session_status["status"]
+    except KeyError:
+        pass
+    return extended_status
+
+
+def _component_enabled_and_not_on_hold(comp: ComponentRecord) -> bool:
+    """
+    Returns True if component is enabled and either the status_override field is not set,
+    or if it is set, it is not set to on_hold
+    """
+    if not comp.get('enabled'):
+        return False
+    try:
+        status = comp["status"]
+    except KeyError:
+        # override field cannot be set if the status field itself is not set
+        return True
+    try:
+        return status["status_override"] != Status.on_hold
+    except KeyError:
+        # status_override field is not set
+        return True
 
 
 def _age_to_timestamp(age: str) -> datetime:
-    delta = {}
+    delta_kwargs = {}
     for interval in ['weeks', 'days', 'hours', 'minutes']:
         result = re.search(fr'(\d+)\w*{interval[0]}', age, re.IGNORECASE)
         if result:
-            delta[interval] = int(result.groups()[0])
-    delta = timedelta(**delta)
+            delta_kwargs[interval] = int(result.groups()[0])
+    delta = timedelta(**delta_kwargs)
     return get_current_time() - delta
 
 
