@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   type it can current return, to resolve `mypy` concerns.
 - CASMCMS-9391: Clean up type annotations in BOS server migration code (and fix minor bugs identified by mypy).
 - CASMCMS-9393: Fix type annotations for sessiontemplatetemplate endpoint controller
+- CASMCMS-9395: Fix type annotations for sessions controller
 
 ## [2.41.0] - 2025-04-28
 

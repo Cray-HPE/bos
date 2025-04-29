@@ -255,11 +255,10 @@ def validate_v2_sessiontemplate(
     # Otherwise it should be a tuple of data and 200 status code
     data, _ = response
 
-    # We assume boot because it and reboot are the most demanding from a validation
+    # We assume operation boot because it and reboot are the most demanding from a validation
     # standpoint.
-    operation = "boot"
+    _error_code, msg = validate_boot_sets(data, "boot", session_template_id)
 
-    _error_code, msg = validate_boot_sets(data, operation, session_template_id)
     # We return 200 because the request itself was successful even if the session template
     # is invalid.
     return msg, 200
