@@ -173,7 +173,7 @@ class OptionsCache(DefaultOptions, ABC):
     result in network/DB calls.
     """
 
-    def __init__(self, update_on_create: bool = True):
+    def __init__(self, update_on_create: bool = True) -> None:
         super().__init__()
         if update_on_create:
             self.update()
