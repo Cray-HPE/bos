@@ -26,7 +26,9 @@ import logging
 import re
 
 from bos.common.clients.bos.options import options
+from bos.common.types.components import ComponentRecord
 from bos.operators.base import BaseOperator, main
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,11 +40,11 @@ class SessionCleanupOperator(BaseOperator):
     """
 
     @property
-    def name(self):
+    def name(self) -> str:
         return 'SessionCleanup'
 
     @property
-    def disabled(self):
+    def disabled(self) -> bool:
         """
         When users set the cleanup time to 0, no cleanup behavior is desired.
         """
@@ -53,10 +55,10 @@ class SessionCleanupOperator(BaseOperator):
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return []
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         return components
 
     def _run(self) -> None:

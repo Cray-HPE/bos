@@ -25,9 +25,11 @@
 import logging
 
 from bos.common.clients.bos.options import options
+from bos.common.types.components import ComponentRecord
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import TimeSinceLastAction
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,12 +44,12 @@ class ForcefulPowerOffOperator(BaseOperator):
     retry_attempt_field = "power_off_forceful_attempts"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return Action.power_off_forcefully
 
     # Filters
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return [
             self.BOSQuery(enabled=True,
                           status=','.join([
@@ -58,7 +60,7 @@ class ForcefulPowerOffOperator(BaseOperator):
             self.HSMState(),
         ]
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         if components:
             component_ids = [component['id'] for component in components]
             self.client.pcs.transitions.force_off(nodes=component_ids)

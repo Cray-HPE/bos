@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9393: Fix type annotations for sessiontemplatetemplate endpoint controller
 - CASMCMS-9395: Fix type annotations for sessions controller
 - CASMCMS-9390: Fix type annotations for server options
+- CASMCMS-9394: Fix type annotations for operators
 
 ## [2.41.0] - 2025-04-28
 

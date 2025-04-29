@@ -26,6 +26,7 @@ import logging
 
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -39,12 +40,12 @@ class GracefulPowerOffOperator(BaseOperator):
     retry_attempt_field = "power_off_graceful_attempts"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return Action.power_off_gracefully
 
     # Filters
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return [
             self.BOSQuery(enabled=True, status=Status.power_off_pending),
             self.HSMState(),

@@ -25,8 +25,11 @@
 import logging
 
 from bos.common.clients.bos import BOSClient
+from bos.common.types.components import ComponentRecord
+from bos.common.types.sessions import Session
 from bos.common.utils import get_current_timestamp
 from bos.operators.base import BaseOperator, main
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,16 +41,16 @@ class SessionCompletionOperator(BaseOperator):
     """
 
     @property
-    def name(self):
+    def name(self) -> str:
         return 'SessionCompletion'
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return []
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         return components
 
     def _run(self) -> None:
@@ -60,10 +63,10 @@ class SessionCompletionOperator(BaseOperator):
                                       tenant=session.get("tenant"),
                                       bos_client=self.client.bos)
 
-    def _get_incomplete_sessions(self):
+    def _get_incomplete_sessions(self) -> list[Session]:
         return self.client.bos.sessions.get_sessions(status='running')
 
-    def _get_incomplete_components(self, session_id):
+    def _get_incomplete_components(self, session_id) -> list[ComponentRecord]:
         components = self.client.bos.components.get_components(
             session=session_id, enabled=True)
         components += self.client.bos.components.get_components(

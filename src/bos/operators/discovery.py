@@ -28,6 +28,7 @@ from copy import copy
 from bos.common.types.components import ComponentRecord
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
 from bos.operators.base import BaseOperator, main
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -56,13 +57,13 @@ class DiscoveryOperator(BaseOperator):
     frequency_option = "discovery_frequency"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return "Discovery"
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return []
 
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:

@@ -36,7 +36,7 @@ import threading
 import os
 import time
 from types import TracebackType
-from typing import NoReturn, Self
+from typing import cast, ClassVar, Literal, NoReturn, Self
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
@@ -46,7 +46,11 @@ from bos.common.clients.hsm import HSMClient
 from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg, update_log_level
-from bos.common.types.components import ComponentRecord
+from bos.common.types.components import (BaseComponentData,
+                                         ComponentEventStats,
+                                         ComponentEventStatsAttemptFields,
+                                         ComponentLastAction,
+                                         ComponentRecord)
 from bos.common.values import Status
 from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, HSMState
 from bos.operators.filters.base import BaseFilter
@@ -118,8 +122,9 @@ class BaseOperator(ABC):
     Any other method may also be overridden, but functionality such as error handling may be lost.
     """
 
-    retry_attempt_field = ""
-    frequency_option = "polling_frequency"
+    retry_attempt_field: ClassVar[ComponentEventStatsAttemptFields | None] = None
+    frequency_option: ClassVar[Literal["polling_frequency",
+                                       "discovery_frequency"]] = "polling_frequency"
 
     def __init__(self) -> None:
         self.__max_batch_size = 0
@@ -234,7 +239,7 @@ class BaseOperator(ABC):
         LOGGER.debug("Processing %d components", len(components))
         # Only check for failed components if we track retries for this operator
         if self.retry_attempt_field:
-            components = self._handle_failed_components(components)
+            components = self._handle_failed_components(components, self.retry_attempt_field)
             if not components:
                 LOGGER.debug(
                     'After removing components that exceeded their retry limit, 0 '
@@ -260,7 +265,10 @@ class BaseOperator(ABC):
             components = f.filter(components)
         return components
 
-    def _handle_failed_components(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
+    def _handle_failed_components(
+        self, components: list[ComponentRecord],
+        retry_attempt_field: ComponentEventStatsAttemptFields
+    ) -> list[ComponentRecord]:
         """ Marks components failed if the retry limits are exceeded """
         if not components:
             # If we have been passed an empty list, there is nothing to do.
@@ -271,7 +279,7 @@ class BaseOperator(ABC):
         ]  # Any component that isn't determined to be in a failed state
         for component in components:
             num_attempts = component.get('event_stats',
-                                         {}).get(self.retry_attempt_field, 0)
+                                         cast(ComponentEventStats, {})).get(retry_attempt_field, 0)
             retries = int(
                 component.get('retry_policy', options.default_retry_policy))
             if retries != -1 and num_attempts >= retries:
@@ -288,7 +296,7 @@ class BaseOperator(ABC):
 
     def _update_database(self,
                          components: list[ComponentRecord],
-                         additional_fields: dict | None = None) -> None:
+                         additional_fields: BaseComponentData | None = None) -> None:
         """
         Updates the BOS database for all components acted on by the operator
         Includes updating the last action, attempt count and error
@@ -298,20 +306,19 @@ class BaseOperator(ABC):
             LOGGER.debug(
                 "_update_database: No components require database updates")
             return
-        data = []
+        data: list[ComponentRecord] = []
         for component in components:
-            patch = {
+            patch: ComponentRecord = {
                 'id': component['id'],
                 'error':
                 component['error']  # New error, or clearing out old error
             }
             if self.name:
-                last_action_data = {'action': self.name, 'failed': False}
-                patch['last_action'] = last_action_data
+                patch['last_action'] = ComponentLastAction(action=self.name, failed=False)
             if self.retry_attempt_field:
-                event_stats_data = {
+                event_stats_data: ComponentEventStats = {
                     self.retry_attempt_field:
-                    component.get('event_stats', {}).get(
+                    component.get('event_stats', cast(ComponentEventStats, {})).get(
                         self.retry_attempt_field, 0) + 1
                 }
                 patch['event_stats'] = event_stats_data
@@ -342,12 +349,11 @@ class BaseOperator(ABC):
             LOGGER.debug(
                 "_preset_last_action: No components require database updates")
             return
-        data = []
+        data: list[ComponentRecord] = []
         for component in components:
-            patch = {'id': component['id'], 'error': component['error']}
+            patch: ComponentRecord = {'id': component['id'], 'error': component['error']}
             if self.name:
-                last_action_data = {'action': self.name, 'failed': False}
-                patch['last_action'] = last_action_data
+                patch['last_action'] = ComponentLastAction(action=self.name, failed=False)
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
@@ -363,9 +369,9 @@ class BaseOperator(ABC):
                 "_update_database_for_failure: No components require database updates"
             )
             return
-        data = []
+        data: list[ComponentRecord] = []
         for component in components:
-            patch = {
+            patch: ComponentRecord = {
                 'id': component['id'],
                 'status': {
                     'status_override': Status.failed
@@ -402,7 +408,7 @@ def _update_log_level() -> None:
         LOGGER.error('Error updating logging level: %s', exc_type_msg(e))
 
 
-def _liveliness_heartbeat() -> NoReturn:
+def _liveliness_heartbeat() -> None:
     """
     Periodically add a timestamp to disk; this allows for reporting of basic
     health at a minimum rate. This prevents the pod being marked as dead if
@@ -441,7 +447,3 @@ def main(operator: type[BaseOperator]):
 
     op = operator()
     op.run()
-
-
-if __name__ == '__main__':
-    main(BaseOperator)
