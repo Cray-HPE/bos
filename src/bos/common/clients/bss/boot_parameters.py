@@ -21,6 +21,7 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from collections.abc import Iterable
 import logging
 
 from .base import BaseBssEndpoint
@@ -31,7 +32,11 @@ LOGGER = logging.getLogger(__name__)
 class BootParametersEndpoint(BaseBssEndpoint):
     ENDPOINT = 'bootparameters'
 
-    def set_bss(self, node_set, kernel_params, kernel, initrd) -> str:
+    def set_bss(self,
+                node_set: Iterable[str],
+                kernel_params: str,
+                kernel: str,
+                initrd: str) -> str:
         '''
         Tell the Boot Script Service (BSS) which boot artifacts are associated
         with each node.
