@@ -23,9 +23,12 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+from typing import Literal
 
+from bos.common.types.components import ComponentRecord
 from bos.common.values import Status
 from bos.operators.base import BaseOperator, main
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -38,7 +41,7 @@ class ConfigurationOperator(BaseOperator):
     """
 
     @property
-    def name(self):
+    def name(self) -> Literal[""]:
         # The Configuration step can take place at any time before power-on.
         # This step is therefore outside the normal boot flow and the name is
         # left empty so this step is not recorded to the component data.
@@ -46,13 +49,13 @@ class ConfigurationOperator(BaseOperator):
 
     # Filters
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return [
             self.BOSQuery(enabled=True, status=Status.configuring),
             self.DesiredConfigurationSetInCFS(negate=True)
         ]
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         if components:
             self.client.cfs.components.set_cfs(components, enabled=True)
         return components

@@ -33,12 +33,16 @@ from bos.common.clients.bos.options import options
 from bos.common.clients.hsm import Inventory
 from bos.common.clients.s3 import S3Object, S3ObjectNotFound
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
-from bos.common.types.components import ComponentRecord
+from bos.common.types.components import (ComponentDesiredState,
+                                         ComponentRecord,
+                                         ComponentStagedState)
+from bos.common.types.sessions import Session as SessionRecord
 from bos.common.types.templates import BootSet
 from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseOperator, main, chunk_components
 from bos.operators.filters import HSMState
+from bos.operators.filters.base import BaseFilter
 from bos.operators.session_completion import mark_session_complete
 from bos.operators.utils.boot_image_metadata import BootImageArtifactSummary
 from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
@@ -58,13 +62,13 @@ class SessionSetupOperator(BaseOperator):
     """
 
     @property
-    def name(self):
+    def name(self) -> str:
         return 'SessionSetup'
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return []
 
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
@@ -82,14 +86,14 @@ class SessionSetupOperator(BaseOperator):
                               self.HSMState)
             session.setup(self.max_batch_size)
 
-    def _get_pending_sessions(self):
+    def _get_pending_sessions(self) -> list[SessionRecord]:
         return self.client.bos.sessions.get_sessions(status='pending')
 
 
 class Session:
 
-    def __init__(self, data, inventory_cache, bos_client: BOSClient,
-                 hsm_state: Callable[..., HSMState]):
+    def __init__(self, data: SessionRecord, inventory_cache: Inventory, bos_client: BOSClient,
+                 hsm_state: Callable[..., HSMState]) -> None:
         self.session_data = data
         self.inventory = inventory_cache
         self.bos_client = bos_client
@@ -163,7 +167,7 @@ class Session:
             return all_component_ids
         raise SessionSetupException("All nodes found to act upon do not exist as BOS components")
 
-    def _get_boot_set_component_list(self, boot_set) -> set[str]:
+    def _get_boot_set_component_list(self, boot_set: BootSet) -> set[str]:
         nodes = set()
         # Populate from nodelist
         for node_name in boot_set.get('node_list', []):
@@ -344,13 +348,15 @@ class Session:
         mark_session_complete(self.name, self.tenant, self.bos_client, err=err)
         self._log(LOGGER.info, 'Session %s has failed.', self.name)
 
-    def _log(self, logger, message, *xargs):
+    def _log(self, logger, message: str, *xargs):
         logger(f'Session {self.name}: {message}', *xargs)
 
     # Operations
-    def _operate(self, component_id, state):
+    def _operate(
+        self, component_id: str, state: ComponentDesiredState | ComponentStagedState
+    ) -> ComponentRecord:
         stage = self.session_data.get("stage", False)
-        data = {"id": component_id}
+        data: ComponentRecord = {"id": component_id}
         if stage:
             data["staged_state"] = state
             data["staged_state"]["session"] = self.name
@@ -365,13 +371,17 @@ class Session:
         data['error'] = ''
         return data
 
-    def _generate_desired_state(self, boot_set, staged=False):
+    def _generate_desired_state(
+        self, boot_set: BootSet, staged: bool=False
+    ) -> ComponentDesiredState | ComponentStagedState:
         if self.operation_type == "shutdown":
             return EMPTY_STAGED_STATE if staged else EMPTY_DESIRED_STATE
         state = self._get_state_from_boot_set(boot_set)
         return state
 
-    def _get_state_from_boot_set(self, boot_set):
+    def _get_state_from_boot_set(
+        self, boot_set: BootSet
+    ) -> ComponentDesiredState | ComponentStagedState:
         """
         Returns:
           state: A dictionary containing two keys 'boot_artifacts' and 'configuration'.
@@ -395,7 +405,7 @@ class Session:
             boot_set)
         return state
 
-    def _get_configuration_from_boot_set(self, boot_set: BootSet):
+    def _get_configuration_from_boot_set(self, boot_set: BootSet) -> str:
         """
         An abstraction method for determining the configuration to use
         in the event for any given <boot set> within a session. Boot Sets
@@ -412,7 +422,7 @@ class Session:
         # Otherwise, we take the configuration value from the session template itself
         return self.template.get('cfs', {}).get('configuration', '')
 
-    def assemble_kernel_boot_parameters(self, boot_set: BootSet, artifact_info: BootImageArtifactSummary):
+    def assemble_kernel_boot_parameters(self, boot_set: BootSet, artifact_info: BootImageArtifactSummary) -> str:
         """
         Assemble the kernel boot parameters that we want to set in the
         Boot Script Service (BSS).
