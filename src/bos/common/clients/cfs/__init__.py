@@ -22,3 +22,4 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from .client import CFSClient
+from .types import CfsComponentData

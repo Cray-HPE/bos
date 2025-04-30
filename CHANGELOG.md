@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9395: Fix type annotations for sessions controller
 - CASMCMS-9390: Fix type annotations for server options
 - CASMCMS-9394: Fix type annotations for operators
+- CASMCMS-9402: CFS client: Simplify and add type annotations
 
 ## [2.41.0] - 2025-04-28
 
