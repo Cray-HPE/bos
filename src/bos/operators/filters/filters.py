@@ -29,10 +29,9 @@ import logging
 import re
 
 from bos.common.clients.bos import BOSClient
-from bos.common.clients.cfs import CFSClient
+from bos.common.clients.cfs import CFSClient, CfsComponentData
 from bos.common.clients.hsm import HSMClient
 from bos.common.types.components import ComponentRecord
-from bos.common.types.general import JsonDict
 from bos.common.utils import get_current_time, load_timestamp
 from bos.operators.filters.base import BaseFilter, DetailsFilter, IDFilter, LocalFilter
 
@@ -202,7 +201,7 @@ class DesiredConfigurationSetInCFS(LocalFilter):
 
     def __init__(self, cfs_client: CFSClient, negate: bool = False) -> None:
         super().__init__(negate=negate)
-        self.cfs_components_dict: dict[str, JsonDict] = {}
+        self.cfs_components_dict: dict[str, CfsComponentData] = {}
         self.cfs_client = cfs_client
 
     def filter_components(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
@@ -218,7 +217,8 @@ class DesiredConfigurationSetInCFS(LocalFilter):
         self.cfs_components_dict = {}
         return matches
 
-    def component_match(self, component: ComponentRecord, cfs_component: JsonDict | None = None) -> bool:
+    def component_match(self, component: ComponentRecord,
+                        cfs_component: CfsComponentData | None = None) -> bool:
         # There are two ways to communicate the cfs_component to this method.
         # First: cfs_component input variable
         # Second: cfs_component_dict instance attribute

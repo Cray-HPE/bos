@@ -23,29 +23,48 @@
 #
 from collections import defaultdict
 import logging
+from typing import cast
 
-from .base import BasePagedCfsEndpoint
+from bos.common.clients.endpoints import BaseEndpoint
+from bos.common.types.components import ComponentRecord as BosComponentRecord
+from bos.common.types.general import JsonDict
+from bos.common.utils import PROTOCOL
+
+from .types import CfsComponentData, CfsGetComponentsPagedResponse, CfsComponentsUpdate
 
 LOGGER = logging.getLogger(__name__)
+
+SERVICE_NAME = 'cray-cfs-api'
+BASE_CFS_ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/v3"
 
 GET_BATCH_SIZE = 200
 PATCH_BATCH_SIZE = 1000
 
-
-class ComponentEndpoint(BasePagedCfsEndpoint):
+class ComponentEndpoint(BaseEndpoint):
+    """
+    This class provides access to the CFS API for the /v3/components endpoint, for GET and PATCH.
+    Because it is limited to a single endpoint, no CFS base classes are implemented.
+    """
+    BASE_ENDPOINT = BASE_CFS_ENDPOINT
     ENDPOINT = 'components'
 
-    @property
-    def ITEM_FIELD_NAME(self) -> str:
-        return 'components'
+    def get_components(self, ids: str|None=None) -> list[CfsComponentData]:
+        """
+        If 'ids' is not specified, query CFS for all components.
+        Otherwise, only query for the specified components.
+        """
+        kwargs: JsonDict | None = {} if ids is None else { "ids": ids }
+        item_list: list[CfsComponentData] = []
+        while kwargs is not None:
+            response_json = cast(CfsGetComponentsPagedResponse, super().get(params=kwargs))
+            new_items = cast(list[CfsComponentData], response_json.get("components", []))
+            LOGGER.debug("Query returned %d components", len(new_items))
+            item_list.extend(new_items)
+            kwargs = response_json.get("next")
+        LOGGER.debug("Returning %d components from CFS", len(item_list))
+        return item_list
 
-    def get_components(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def patch_components(self, data):
-        return self.update_items(data)
-
-    def get_components_from_id_list(self, id_list):
+    def get_components_from_id_list(self, id_list: list[str]) -> list[CfsComponentData]:
         if not id_list:
             LOGGER.warning(
                 "get_components_from_id_list called without IDs; returning without action."
@@ -65,11 +84,11 @@ class ComponentEndpoint(BasePagedCfsEndpoint):
         return component_list
 
     def patch_desired_config(self,
-                             node_ids,
-                             desired_config,
+                             node_ids: list[str],
+                             desired_config: str,
                              enabled: bool = False,
-                             tags=None,
-                             clear_state: bool = False):
+                             tags: dict[str, str]|None = None,
+                             clear_state: bool = False) -> None:
         if not node_ids:
             LOGGER.warning(
                 "patch_desired_config called without IDs; returning without action."
@@ -79,20 +98,21 @@ class ComponentEndpoint(BasePagedCfsEndpoint):
             "patch_desired_config called on %d IDs with desired_config=%s enabled=%s tags=%s"
             " clear_state=%s", len(node_ids), desired_config, enabled, tags,
             clear_state)
-        node_patch = {
+        node_patch: CfsComponentData = {
             'enabled': enabled,
             'desired_config': desired_config,
             'tags': tags if tags else {}
         }
-        data = {"patch": node_patch, "filters": {}}
         if clear_state:
             node_patch['state'] = []
+        data: CfsComponentsUpdate = {"patch": node_patch, "filters": {}}
         while node_ids:
             data["filters"]["ids"] = ','.join(node_ids[:PATCH_BATCH_SIZE])
-            self.patch_components(data)
+            self.patch(json=data)
             node_ids = node_ids[PATCH_BATCH_SIZE:]
 
-    def set_cfs(self, components, enabled: bool, clear_state: bool = False):
+    def set_cfs(self, components: list[BosComponentRecord], enabled: bool,
+                clear_state: bool = False) -> None:
         if not components:
             LOGGER.warning(
                 "set_cfs called without components; returning without action.")
@@ -104,7 +124,7 @@ class ComponentEndpoint(BasePagedCfsEndpoint):
         for component in components:
             config_name = component.get('desired_state',
                                         {}).get('configuration', '')
-            bos_session = component.get('session')
+            bos_session = component.get('session', '')
             key = (config_name, bos_session)
             configurations[key].append(component['id'])
         for key, ids in configurations.items():
