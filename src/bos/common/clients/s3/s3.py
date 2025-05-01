@@ -21,10 +21,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
 import json
 import logging
 import os
 import threading
+from typing import cast
 from urllib.parse import urlparse
 
 import boto3
@@ -32,6 +34,14 @@ from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 
 from bos.common.utils import exc_type_msg
+
+from .exceptions import (ArtifactNotFound,
+                         ManifestNotFound,
+                         ManifestTooBig,
+                         S3MissingConfiguration,
+                         S3ObjectNotFound,
+                         TooManyArtifacts)
+from .types import ImageArtifactManifest, ImageManifest
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,67 +53,35 @@ boto3_client_lock = threading.Lock()
 # OOM errors. Any files this big are almost certainly not actually manifest files.
 MAX_MANIFEST_SIZE_BYTES = 1048576
 
-class ArtifactNotFound(Exception):
-    """
-    A boot artifact could not be located.
-    """
-
-
-class ManifestNotFound(Exception):
-    """
-    The manifest could not be found.
-    """
-
-
-class ManifestTooBig(Exception):
-    """
-    The manifest is larger than MAX_MANIFEST_SIZE_BYTES
-    (almost certainly meaning it is not actually a manifest file)
-    """
-
-class TooManyArtifacts(Exception):
-    """
-    One and only one artifact was expected to be found. More than one artifact
-    was found.
-    """
-
-
-class S3MissingConfiguration(Exception):
-    """
-    We were missing configuration information needed to contact S3.
-    """
-
-
-class S3ObjectNotFound(Exception):
-    """
-    The S3 object could not be found.
-    """
-
 
 class S3Url:
     """
     https://stackoverflow.com/questions/42641315/s3-urls-get-bucket-name-and-path/42641363
     """
 
-    def __init__(self, url):
+    def __init__(self, url: str) -> None:
         self._parsed = urlparse(url, allow_fragments=False)
 
     @property
-    def bucket(self):
+    def bucket(self) -> str:
         return self._parsed.netloc
 
     @property
-    def key(self):
+    def key(self) -> str:
         if self._parsed.query:
             return self._parsed.path.lstrip('/') + '?' + self._parsed.query
         return self._parsed.path.lstrip('/')
 
     @property
-    def url(self):
+    def url(self) -> str:
         return self._parsed.geturl()
 
-
-def s3_client(connection_timeout=60, read_timeout=60):
+# For functions or methods which return S3/boto objects, we do not type annotate the return type,
+# because there's no easy way to do it. It uses some weird dynamic typing where the classes being
+# returned do not exist at the time that type checking happens. The boto3-stubs and
+# botocore-stubs packages allow mypy to handle these types, but you have to leave the
+# applicable types un-annotated, and let mypy infer them
+def s3_client(connection_timeout: int=60, read_timeout: int=60):
     """
     Return an s3 client
 
@@ -144,7 +122,7 @@ class S3Object:
     A generic S3 object. It provides a way to download the object.
     """
 
-    def __init__(self, path, etag=None):
+    def __init__(self, path: str, etag: str|None=None) -> None:
         """
         Args:
           path (string): S3 path to the S3 object
@@ -154,8 +132,9 @@ class S3Object:
         self.etag = etag
         self.s3url = S3Url(self.path)
 
+    # No return type annotation: see earlier comment above s3_client function for explanation
     @property
-    def object_header(self) -> dict:
+    def object_header(self):
         """
         Get the S3 object's header metadata.
 
@@ -184,6 +163,7 @@ class S3Object:
                 self.etag)
         return s3_obj
 
+    # No return type annotation: see earlier comment above s3_client function for explanation
     @property
     def object(self):
         """
@@ -212,20 +192,19 @@ class S3Object:
             LOGGER.debug(exc_type_msg(error))
             raise S3ObjectNotFound(msg) from error
 
-
 class S3BootArtifacts(S3Object):
 
-    def __init__(self, path, etag=None):
+    def __init__(self, path: str, etag: str|None=None) -> None:
         """
         Args:
           path (string): S3 path to the S3 object
           etag (string): S3 entity tag
           """
         S3Object.__init__(self, path, etag)
-        self._manifest_json = None
+        self._manifest_json: ImageManifest | None = None
 
     @property
-    def manifest_json(self):
+    def manifest_json(self) -> ImageManifest:
         """
         Read a manifest.json file from S3. If the object was not found, log it and return an error.
 
@@ -259,11 +238,16 @@ class S3BootArtifacts(S3Object):
                 raise
             raise ManifestNotFound(msg) from error
 
+        manifest_json = json.loads(s3_manifest_data)
+        if not isinstance(manifest_json, dict):
+            msg = f"Manifest should be dict. Invalid data type: {type(manifest_json).__name__}"
+            LOGGER.error(msg)
+            raise ManifestNotFound(msg)
         # Cache the manifest.json file
-        self._manifest_json = json.loads(s3_manifest_data)
+        self._manifest_json = cast(ImageManifest, manifest_json)
         return self._manifest_json
 
-    def _get_artifact(self, artifact_type):
+    def _get_artifact(self, artifact_type: str) -> ImageArtifactManifest:
         """
         Get the artifact_type artifact object out of the manifest.
 
@@ -306,7 +290,7 @@ class S3BootArtifacts(S3Object):
         return artifacts[0]
 
     @property
-    def initrd(self):
+    def initrd(self) -> ImageArtifactManifest:
         """
         Get the initrd artifact object out of the manifest.
 
@@ -316,7 +300,7 @@ class S3BootArtifacts(S3Object):
         return self._get_artifact('application/vnd.cray.image.initrd')
 
     @property
-    def kernel(self):
+    def kernel(self) -> ImageArtifactManifest:
         """
         Get the kernel artifact object out of the manifest.
 
@@ -326,23 +310,20 @@ class S3BootArtifacts(S3Object):
         return self._get_artifact('application/vnd.cray.image.kernel')
 
     @property
-    def boot_parameters(self):
+    def boot_parameters(self) -> ImageArtifactManifest | None:
         """
-        Get the kernel artifact object out of the manifest, if one exists.
+        Get the boot parameters artifact object out of the manifest, if one exists.
 
         Return:
            boot parameters object if one exists, else None
         """
         try:
-            bp = self._get_artifact(
-                'application/vnd.cray.image.parameters.boot')
+            return self._get_artifact('application/vnd.cray.image.parameters.boot')
         except ArtifactNotFound:
-            bp = None
-
-        return bp
+            return None
 
     @property
-    def rootfs(self):
+    def rootfs(self) -> ImageArtifactManifest:
         """
         Get the rootfs artifact object out of the manifest.
 
