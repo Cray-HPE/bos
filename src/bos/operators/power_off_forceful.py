@@ -63,7 +63,7 @@ class ForcefulPowerOffOperator(BaseOperator):
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         if components:
             component_ids = [component['id'] for component in components]
-            self.client.pcs.transitions.force_off(nodes=component_ids)
+            self.client.pcs.transitions.force_off(component_ids)
         return components
 
 

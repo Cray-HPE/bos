@@ -22,9 +22,12 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from collections import defaultdict
+from collections.abc import Iterable
 import logging
+from typing import cast
 
 from .base import BasePcsEndpoint
+from .types import PowerStatusAll, PowerStatusGet
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,9 +36,7 @@ class PowerStatusEndpoint(BasePcsEndpoint):
     ENDPOINT = 'power-status'
 
     def query(self,
-              xname=None,
-              power_state_filter=None,
-              management_state_filter=None):
+              xname: list[str]|None=None) -> PowerStatusAll:
         """
         This is the one to one implementation to the underlying power control get query.
         For reasons of compatibility with existing calls into older power control APIs,
@@ -43,27 +44,17 @@ class PowerStatusEndpoint(BasePcsEndpoint):
         already implemented.
 
         Users may specify one of three filters, and a power_status_all (PCS defined schema)
-        is returned. Users may elect to use a previously generated session in order to query
-        the results. If not, the default requests retry session will be generated.
+        is returned.
 
         Per the spec, a power_status_all is returned. power_status_all is an array of power
         statuses.
         """
-        params = {}
-        if xname:
-            params['xname'] = xname
-        if power_state_filter:
-            assert power_state_filter.lower() in set(
-                ['on', 'off', 'undefined'])
-            params['powerStateFilter'] = power_state_filter.lower()
-        if management_state_filter:
-            assert management_state_filter in set(['available', 'unavailable'])
-            params['managementStateFilter'] = management_state_filter.lower()
+        params: PowerStatusGet = { "xname": xname } if xname else {}
         # PCS added the POST option for this endpoint in app version 2.3.0
         # (chart versions 2.0.8 and 2.1.5)
-        return self.post(json=params)
+        return cast(PowerStatusAll, self.post(json=params))
 
-    def status(self, nodes, **kwargs):
+    def status(self, nodes: Iterable[str]) -> defaultdict[str, set[str]]:
         """
         For a given iterable of nodes, represented by xnames, query PCS for
         the power status. Return a dictionary of nodes that have
@@ -86,38 +77,39 @@ class PowerStatusEndpoint(BasePcsEndpoint):
           PowerControlException: Any non-nominal response from PCS.
           JSONDecodeError: Error decoding the PCS response
         """
-        status_bucket = defaultdict(set)
+        status_bucket: defaultdict[str, set[str]] = defaultdict(set)
         if not nodes:
-            LOGGER.warning(
-                "status called without nodes; returning without action.")
+            LOGGER.warning("status called without nodes; returning without action.")
             return status_bucket
-        power_status_all = self.query(xname=list(nodes), **kwargs)
+        power_status_all = self.query(list(nodes))
         for power_status_entry in power_status_all['status']:
+            xname = power_status_entry.get('xname')
+            if not xname:
+                LOGGER.warning("power status response contained item with no xname: %s",
+                               power_status_entry)
+                continue
             # If the returned xname has an error, it itself is the status regardless of
             # what the powerState field suggests. This is a major departure from how CAPMC
             # handled errors.
-            xname = power_status_entry.get('xname', '')
-            if power_status_entry['error']:
-                status_bucket[power_status_entry['error']].add(xname)
+            if (error := power_status_entry.get("error")):
+                status_bucket[error].add(xname)
                 continue
-            power_status = power_status_entry.get('powerState', '').lower()
-            if not all([power_status, xname]):
-                continue
-            status_bucket[power_status].add(xname)
+            if (power_status := power_status_entry.get('powerState')):
+                status_bucket[power_status.lower()].add(xname)
         return status_bucket
 
-    def node_to_powerstate(self, nodes, **kwargs):
+    def node_to_powerstate(self, nodes: Iterable[str]) -> dict[str, str]:
         """
         For an iterable of nodes <nodes>; return a dictionary that maps to the current power state
         for the node in question.
         """
-        power_states = {}
+        power_states: dict[str, str] = {}
         if not nodes:
             LOGGER.warning(
                 "node_to_powerstate called without nodes; returning without action."
             )
             return power_states
-        status_bucket = self.status(nodes, **kwargs)
+        status_bucket = self.status(nodes)
         for pstatus, nodeset in status_bucket.items():
             for node in nodeset:
                 power_states[node] = pstatus

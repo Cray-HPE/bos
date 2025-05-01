@@ -21,10 +21,18 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from collections.abc import Iterable
+from functools import partialmethod
 import logging
+from typing import cast
 
 from .base import BasePcsEndpoint
 from .exceptions import PowerControlComponentsEmptyException, PowerControlSyntaxException
+from .types import (is_power_operation,
+                    PowerOperation,
+                    ReservedLocation,
+                    TransitionCreate,
+                    TransitionStartOutput)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -33,10 +41,10 @@ class TransitionsEndpoint(BasePcsEndpoint):
     ENDPOINT = 'transitions'
 
     def transition_create(self,
-                          xnames,
-                          operation,
-                          task_deadline_minutes=None,
-                          deputy_key=None):
+                          xnames: Iterable[str],
+                          operation: PowerOperation,
+                          task_deadline_minutes: int|None=None,
+                          deputy_key: str|None=None) -> TransitionStartOutput:
         """
         Interact with PCS to create a request to transition one or more xnames. The transition
         operation indicates what the desired operation should be, which is a string value
@@ -70,80 +78,20 @@ class TransitionsEndpoint(BasePcsEndpoint):
             raise PowerControlComponentsEmptyException(
                 f"_transition_create called with no xnames! (operation={operation})"
             )
-        try:
-            assert operation in {
-                'On', 'Off', 'Soft-Off', 'Soft-Restart', 'Hard-Restart',
-                'Init', 'Force-Off'
-            }
-        except AssertionError as err:
+        if not is_power_operation(operation):
             raise PowerControlSyntaxException(
                 f"Operation '{operation}' is not supported or implemented."
-            ) from err
-        params = {'location': [], 'operation': operation}
+            )
+        params: TransitionCreate = {'location': [], 'operation': operation}
         if task_deadline_minutes:
             params['taskDeadlineMinutes'] = int(task_deadline_minutes)
         for xname in xnames:
-            reserved_location = {'xname': xname}
+            reserved_location: ReservedLocation = {'xname': xname}
             if deputy_key:
                 reserved_location['deputyKey'] = deputy_key
             params['location'].append(reserved_location)
-        return self.post(json=params)
+        return cast(TransitionStartOutput, self.post(json=params))
 
-    def power_on(self, nodes, task_deadline_minutes=1, **kwargs):
-        """
-        Sends a request to PCS for transitioning nodes in question to a powered on state.
-        Returns: A JSON parsed object response from PCS, which includes the created request ID.
-        """
-        if not nodes:
-            raise PowerControlComponentsEmptyException(
-                "power_on called with no nodes!")
-        return self.transition_create(
-            xnames=nodes,
-            operation='On',
-            task_deadline_minutes=task_deadline_minutes,
-            **kwargs)
-
-    def power_off(self, nodes, task_deadline_minutes=1, **kwargs):
-        """
-        Sends a request to PCS for transitioning nodes in question to a powered off state
-        (graceful).
-        Returns: A JSON parsed object response from PCS, which includes the created request ID.
-        """
-        if not nodes:
-            raise PowerControlComponentsEmptyException(
-                "power_off called with no nodes!")
-        return self.transition_create(
-            xnames=nodes,
-            operation='Off',
-            task_deadline_minutes=task_deadline_minutes,
-            **kwargs)
-
-    def soft_off(self, nodes, task_deadline_minutes=1, **kwargs):
-        """
-        Sends a request to PCS for transitioning nodes in question to a powered off state
-        (graceful).
-        Returns: A JSON parsed object response from PCS, which includes the created request ID.
-        """
-        if not nodes:
-            raise PowerControlComponentsEmptyException(
-                "soft_off called with no nodes!")
-        return self.transition_create(
-            xnames=nodes,
-            operation='Soft-Off',
-            task_deadline_minutes=task_deadline_minutes,
-            **kwargs)
-
-    def force_off(self, nodes, task_deadline_minutes=1, **kwargs):
-        """
-        Sends a request to PCS for transitioning nodes in question to a powered off state
-        (forceful).
-        Returns: A JSON parsed object response from PCS, which includes the created request ID.
-        """
-        if not nodes:
-            raise PowerControlComponentsEmptyException(
-                "force_off called with no nodes!")
-        return self.transition_create(
-            xnames=nodes,
-            operation='Force-Off',
-            task_deadline_minutes=task_deadline_minutes,
-            **kwargs)
+    power_on = partialmethod(transition_create, operation='On', task_deadline_minutes=1)
+    soft_off = partialmethod(transition_create, operation='Soft-Off', task_deadline_minutes=1)
+    force_off = partialmethod(transition_create, operation='Force-Off', task_deadline_minutes=1)
