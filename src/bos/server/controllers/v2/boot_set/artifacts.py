@@ -22,11 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
-from bos.common.clients.s3 import S3Object, ArtifactNotFound
+from bos.common.clients.s3 import ArtifactNotFound, BootImageMetadata, S3Object
 from bos.common.utils import exc_type_msg
 from bos.common.types.general import JsonDict
 from bos.common.types.templates import BootSet
-from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 
 from .defs import LOGGER
 from .exceptions import BootSetError, BootSetWarning
@@ -35,7 +34,7 @@ from .exceptions import BootSetError, BootSetWarning
 def validate_boot_artifacts(bs: BootSet) -> None:
     # Verify that the boot artifacts exist
     try:
-        image_metadata = BootImageMetaDataFactory(bs)()
+        image_metadata = BootImageMetadata(bs)
     except Exception as err:
         raise BootSetError(
             f"Can't find boot artifacts. Error: {exc_type_msg(err)}") from err

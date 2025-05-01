@@ -31,7 +31,10 @@ from botocore.exceptions import ClientError
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
 from bos.common.clients.hsm import Inventory
-from bos.common.clients.s3 import S3Object, S3ObjectNotFound
+from bos.common.clients.s3 import (BootImageArtifactSummary,
+                                   BootImageMetadata,
+                                   S3Object,
+                                   S3ObjectNotFound)
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 from bos.common.types.components import (ComponentDesiredState,
                                          ComponentRecord,
@@ -44,8 +47,6 @@ from bos.operators.base import BaseOperator, main, chunk_components
 from bos.operators.filters import HSMState
 from bos.operators.filters.base import BaseFilter
 from bos.operators.session_completion import mark_session_complete
-from bos.operators.utils.boot_image_metadata import BootImageArtifactSummary
-from bos.operators.utils.boot_image_metadata.factory import BootImageMetaDataFactory
 from bos.operators.utils.rootfs.factory import get_provider
 
 LOGGER = logging.getLogger(__name__)
@@ -392,7 +393,7 @@ class Session:
         """
         state = {}
         boot_artifacts = {}
-        image_metadata = BootImageMetaDataFactory(boot_set)()
+        image_metadata = BootImageMetadata(boot_set)
         artifact_info = image_metadata.artifact_summary
         boot_artifacts['kernel'] = artifact_info['kernel']
         boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get(

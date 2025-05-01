@@ -23,8 +23,8 @@
 #
 import logging
 
+from bos.common.clients.s3 import BootImageArtifactSummary
 from bos.common.types.templates import BootSet
-from bos.operators.utils.boot_image_metadata import BootImageArtifactSummary
 
 from .cpss3_provider import CPSS3Provider
 from .rootfs_provider import RootfsProvider
