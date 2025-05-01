@@ -29,6 +29,6 @@ from .response_data import ResponseData
 class ApiResponseError(Exception):
     """Raised when API response has non-ok status"""
 
-    def __init__(self, *args, response: requests.Response, **kwargs):
+    def __init__(self, *args, response: requests.Response, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.response_data = ResponseData.from_response(response)

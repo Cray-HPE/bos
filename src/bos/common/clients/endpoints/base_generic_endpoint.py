@@ -51,7 +51,7 @@ class BaseGenericEndpoint[RequestReturnT](ABC):
     def error_handler(self) -> type[BaseRequestErrorHandler]:
         return RequestErrorHandler
 
-    def __init__(self, session: requests.Session):
+    def __init__(self, session: requests.Session) -> None:
         super().__init__()
         self.session = session
 

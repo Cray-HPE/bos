@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -33,7 +33,7 @@ LOGGER = logging.getLogger(__name__)
 class Timestamp(BaseTimestamp):
 
     @property
-    def max_age(self):
+    def max_age(self) -> timedelta:
         """
         The maximum amount of time that can elapse before we consider the timestamp
         as invalid.

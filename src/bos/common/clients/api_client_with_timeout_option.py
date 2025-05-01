@@ -40,7 +40,7 @@ class APIClientWithTimeoutOption[T](APIClient[T], ABC):
     """
 
     def __init__(self, bos_options: BaseOptions | None=None,
-                 **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+                 **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]) -> None:
         self._bos_options = options if bos_options is None else bos_options
         kwargs = self.retry_kwargs
         kwargs.update(adapter_kwargs)

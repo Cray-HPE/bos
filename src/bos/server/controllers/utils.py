@@ -54,7 +54,7 @@ class ResourceNotFound(Exception):
         return self._resource_id
 
 
-def url_for(endpoint: str, **values) -> str:
+def url_for(endpoint: str) -> str:
     """Calculate the URL for an endpoint
 
     This wraps flask.url_for. flask.url_for doesn't generate the path that we
@@ -73,7 +73,7 @@ def url_for(endpoint: str, **values) -> str:
     """
     LOGGER.debug('url_for(endpoint=%s)', endpoint)
 
-    url = flask.url_for(endpoint, _external=True, **values)
+    url = flask.url_for(endpoint, _external=True)
     LOGGER.debug('url_for(url=%s)', url)
 
     proxy_path = os.environ.get('PROXY_PATH')

@@ -37,7 +37,7 @@ class APIClient[Endpoints](RetrySessionManager, ABC):
     This context manager is used to provide API endpoints, via subclassing.
     """
 
-    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]):
+    def __init__(self, **adapter_kwargs: Unpack[RequestsRetryAdapterArgs]) -> None:
         super().__init__(**adapter_kwargs)
         self._endpoint_data = self._init_endpoints
 
