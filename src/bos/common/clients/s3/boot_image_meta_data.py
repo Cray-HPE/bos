@@ -25,33 +25,35 @@ import logging
 
 from botocore.exceptions import ClientError
 
-from bos.common.clients.s3 import (ArtifactNotFound,
-                                   S3BootArtifacts,
-                                   S3MissingConfiguration,
-                                   S3Url)
-from bos.common.utils import exc_type_msg
 from bos.common.types.templates import BootSet
-from bos.operators.utils.boot_image_metadata import (BootImageError,
-                                                     BootImageMetaData,
-                                                     BootImageMetaDataBadRead)
+from bos.common.utils import exc_type_msg
+
+from .exceptions import (ArtifactNotFound,
+                         BootImageError,
+                         BootImageMetadataBadRead,
+                         BootImageMetadataUnknown,
+                         S3MissingConfiguration)
+from .s3 import S3BootArtifacts, S3Url
+from .types import BootImageArtifactSummary, ImageArtifactManifest, ImageManifest
 
 LOGGER = logging.getLogger(__name__)
 
 
-class S3BootImageMetaData(BootImageMetaData):
-
-    def __init__(self, boot_set: BootSet):
-        """
-        Create an S3 BootImage by downloading the manifest
-        """
-        super().__init__(boot_set)
+class BootImageMetadata:
+    def __init__(self, boot_set: BootSet) -> None:
+        path_type = boot_set.get('type', None)
+        if not path_type:
+            raise BootImageMetadataUnknown(f"No path type set in boot set: {boot_set}")
+        if path_type != 's3':
+            raise BootImageMetadataUnknown(f"No BootImageMetadata class for type {path_type}")
         try:
-            path = self._boot_set['path']
+            path = boot_set['path']
         except KeyError as exc:
             raise BootImageError(f"Boot set is missing required 'path' field: {boot_set}") from exc
+        self._boot_set = boot_set
         etag = self._boot_set.get('etag', None)
         self.boot_artifacts = S3BootArtifacts(path, etag)
-        self.artifact_summary = {}
+        self.artifact_summary: BootImageArtifactSummary = {}
         try:
             self.artifact_summary['kernel'] = self.kernel_path
         except ArtifactNotFound as err:
@@ -80,23 +82,23 @@ class S3BootImageMetaData(BootImageMetaData):
             LOGGER.warning(exc_type_msg(err))
 
     @property
-    def metadata(self):
+    def metadata(self) -> ImageManifest:
         """
         Get the initial object metadata. This metadata may contain information
         about the other boot objects -- kernel, initrd, rootfs, kernel parameters.
 
         Raises:
-          BootImageMetaDataBadRead -- it cannot read the manifest
+          BootImageMetadataBadRead -- it cannot read the manifest
         """
         try:
             return self.boot_artifacts.manifest_json
         except (ClientError, S3MissingConfiguration) as error:
             LOGGER.error("Unable to read %s -- Error: %s",
                          self._boot_set.get('path', ''), exc_type_msg(error))
-            raise BootImageMetaDataBadRead(error) from error
+            raise BootImageMetadataBadRead(error) from error
 
     @property
-    def kernel(self):
+    def kernel(self) -> ImageArtifactManifest:
         """
         Get the kernel object
         As an example, the object looks like this
@@ -110,7 +112,7 @@ class S3BootImageMetaData(BootImageMetaData):
         return self.boot_artifacts.kernel
 
     @property
-    def initrd(self):
+    def initrd(self) -> ImageArtifactManifest:
         """
         Get the initrd object
         As an example, the object looks like this
@@ -124,9 +126,9 @@ class S3BootImageMetaData(BootImageMetaData):
         return self.boot_artifacts.initrd
 
     @property
-    def boot_parameters(self):
+    def boot_parameters(self) -> ImageArtifactManifest | None:
         """
-        Get the boot parameters object
+        Get the boot parameters object (or None, if it does not exist)
         As an example, the object looks like this
         {'link': {'etag': 'dcaa006fdd460586e62f9ec44e7f61cf',
                   'path': 's3://boot-images/1fb58f4e-ad23-489b-89b7-95868fca7ee6/boot_parameters',
@@ -138,7 +140,7 @@ class S3BootImageMetaData(BootImageMetaData):
         return self.boot_artifacts.boot_parameters
 
     @property
-    def rootfs(self):
+    def rootfs(self) -> ImageArtifactManifest:
         """
         Get the rootfs object
         As an example, the object looks like this
@@ -152,35 +154,35 @@ class S3BootImageMetaData(BootImageMetaData):
         return self.boot_artifacts.rootfs
 
     @property
-    def kernel_path(self):
+    def kernel_path(self) -> str:
         """
         Get the S3 path to the kernel
         """
         return self.kernel['link']['path']
 
     @property
-    def initrd_path(self):
+    def initrd_path(self) -> str:
         """
         Get the S3 path to the initrd
         """
         return self.initrd['link']['path']
 
     @property
-    def rootfs_path(self):
+    def rootfs_path(self) -> str:
         """
         Get the S3 path to the rootfs
         """
         return self.rootfs['link']['path']
 
     @property
-    def rootfs_etag(self):
+    def rootfs_etag(self) -> str:
         """
         Get the S3 etag to the rootfs
         """
         return self.rootfs['link']['etag']
 
     @property
-    def boot_parameters_path(self):
+    def boot_parameters_path(self) -> str | None:
         """
         Get the S3 path to the boot parameters
         This attribute may not exist.
@@ -195,7 +197,7 @@ class S3BootImageMetaData(BootImageMetaData):
         return None
 
     @property
-    def boot_parameters_etag(self):
+    def boot_parameters_etag(self) -> str | None:
         """
         Get the S3 path to the boot parameter's etag
         This attribute may not exist.

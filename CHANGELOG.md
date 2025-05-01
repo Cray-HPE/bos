@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9394: Fix type annotations for operators
 - CASMCMS-9402: CFS client: Simplify and add type annotations
 - CASMCMS-9403: BSS & PCS clients: Add type annotations
+- CASMCMS-9405: Consolidate S3 client and boot_image_metadata into single module
 
 ## [2.41.0] - 2025-04-28
 
