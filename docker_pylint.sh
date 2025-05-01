@@ -24,7 +24,11 @@
 #
 
 if [[ $# -eq 1 && $1 == "mypy" ]]; then
-  mypy $(cat ./srclist.txt)
+  # Even if we pass in a list of source files to mypy, it will still report errors in other files
+  # So we grep the results and only show the stuff in our source code
+  grep_args=$(cat ./srclist.txt)
+  grep_args=$(echo ${grep_args} | sed 's/^[[:space:]]\+//' | sed 's/[[:space:]]\+$//' | sed 's/[[:space:]]\+/|/g')
+  mypy $(cat ./srclist.txt) | grep -E "^(${grep_args}):"
 else
   pylint "$@" $(cat ./srclist.txt)
 fi
