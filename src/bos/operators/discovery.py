@@ -23,27 +23,28 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
-from copy import copy
 
-from bos.common.types.components import ComponentRecord
+from bos.common.types.components import ComponentLastAction, ComponentRecord, ComponentStagedState
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
-NEW_COMPONENT = {
-    'id': None,
-    'actual_state': EMPTY_ACTUAL_STATE,
-    'desired_state': EMPTY_DESIRED_STATE,
-    'staged_state': {},
-    'last_action': {
-        'action': Action.newly_discovered
-    },
-    'enabled': False,
-    'error': '',
-    'session': ''
-}
+
+def _new_component(component_id: str) -> ComponentRecord:
+    """
+    Return a new component record for the specified ID
+    """
+    return ComponentRecord(
+        id=component_id,
+        actual_state=EMPTY_ACTUAL_STATE,
+        desired_state=EMPTY_DESIRED_STATE,
+        staged_state=ComponentStagedState(),
+        last_action=ComponentLastAction(action=Action.newly_discovered),
+        enabled=False,
+        error='',
+        session='')
 
 
 class DiscoveryOperator(BaseOperator):
@@ -76,11 +77,9 @@ class DiscoveryOperator(BaseOperator):
         components_to_add: list[ComponentRecord] = []
         for component in sorted(self.missing_components):
             LOGGER.debug("Processing new xname entity '%s'", component)
-            new_component = copy(NEW_COMPONENT)
-            new_component['id'] = component
-            components_to_add.append(new_component)
+            components_to_add.append(_new_component(component))
         if not components_to_add:
-            LOGGER.debug("No new component(s) discovered.")
+            LOGGER.debug("No new components discovered.")
             return
         LOGGER.info("%s new component(s) from HSM.", len(components_to_add))
         for chunk in self._chunk_components(components_to_add):
