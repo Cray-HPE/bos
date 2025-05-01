@@ -150,7 +150,7 @@ class StatusOperator(BaseOperator):
             elif not cfs_component:
                 error = 'Component information was not returned by cfs'
 
-        updated_component = {
+        updated_component: ComponentRecord = {
             'id': component['id'],
             'status': {
                 'status_override': '',
