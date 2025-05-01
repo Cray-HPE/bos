@@ -24,11 +24,26 @@
 #
 
 if [[ $# -eq 1 && $1 == "mypy" ]]; then
+  outfile=$(mktemp) || exit 1
+  if mypy $(cat ./srclist.txt) > "${outfile}" 2>&1; then
+    cat "${outfile}"
+    rm "${outfile}"
+    exit 0
+  fi
   # Even if we pass in a list of source files to mypy, it will still report errors in other files
   # So we grep the results and only show the stuff in our source code
   grep_args=$(cat ./srclist.txt)
   grep_args=$(echo ${grep_args} | sed 's/^[[:space:]]\+//' | sed 's/[[:space:]]\+$//' | sed 's/[[:space:]]\+/|/g')
-  mypy $(cat ./srclist.txt) | grep -E "^(${grep_args}):"
+  grep -E "^(${grep_args}):" "${outfile}"
+  rc=$?
+  rm "${outfile}"
+  # If rc = 0, it means there was at least one error about our own source files
+  # If rc != 0, it means that the only errors were from other source files
+  if [[ $rc -eq 0 ]]; then
+    exit 1
+  fi
+  echo "No mypy errors for BOS source files"
+  exit 0
 else
   pylint "$@" $(cat ./srclist.txt)
 fi
