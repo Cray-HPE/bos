@@ -9,7 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.42.0] - 2025-05-01
 
-
 ### Changed
 - CASMCMS-9392: Change type annotation of `BootImageMetaDataFactory` to reflect the only actual
   type it can current return, to resolve `mypy` concerns.
