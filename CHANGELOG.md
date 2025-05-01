@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - CASMCMS-9407: Refactored session setup operator to resolve type annotation issues
 
+### Dependencies
+- Updated to openapi-generator-cli v7.13.0
+
 ## [2.42.0] - 2025-05-01
 
 ### Changed
