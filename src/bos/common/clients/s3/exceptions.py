@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # MIT License
 #
@@ -22,41 +21,58 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
 
-from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
-from bos.operators.filters.base import BaseFilter
-
-LOGGER = logging.getLogger(__name__)
-
-
-class GracefulPowerOffOperator(BaseOperator):
+class ArtifactNotFound(Exception):
     """
-    - Enabled in the BOS database and the status is power_off_pending
-    - Enabled in HSM
+    A boot artifact could not be located.
     """
 
-    retry_attempt_field = "power_off_graceful_attempts"
 
-    @property
-    def name(self) -> str:
-        return Action.power_off_gracefully
-
-    # Filters
-    @property
-    def filters(self) -> list[BaseFilter]:
-        return [
-            self.BOSQuery(enabled=True, status=Status.power_off_pending),
-            self.HSMState(),
-        ]
-
-    def _act(self, components):
-        if components:
-            component_ids = [component['id'] for component in components]
-            self.client.pcs.transitions.soft_off(component_ids)
-        return components
+class ManifestNotFound(Exception):
+    """
+    The image manifest could not be found.
+    """
 
 
-if __name__ == '__main__':
-    main(GracefulPowerOffOperator)
+class ManifestTooBig(Exception):
+    """
+    The image manifest is larger than MAX_MANIFEST_SIZE_BYTES
+    (almost certainly meaning it is not actually a manifest file)
+    """
+
+
+class TooManyArtifacts(Exception):
+    """
+    One and only one artifact was expected to be found. More than one artifact
+    was found.
+    """
+
+
+class S3MissingConfiguration(Exception):
+    """
+    We were missing configuration information needed to contact S3.
+    """
+
+
+class S3ObjectNotFound(Exception):
+    """
+    The S3 object could not be found.
+    """
+
+
+class BootImageError(Exception):
+    """
+    General error getting boot image
+    """
+
+
+class BootImageMetadataBadRead(BootImageError):
+    """
+    The metadata for the boot image could not be read/retrieved.
+    """
+
+
+class BootImageMetadataUnknown(BootImageError):
+    """
+    Raised when a user requests a Provider provisioning mechanism that is not known
+    """

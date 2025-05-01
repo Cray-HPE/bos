@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2022, 2024-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -21,25 +21,41 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-import logging
-import os
-from datetime import timedelta
 
-from liveness.timestamp import Timestamp as BaseTimestamp
-
-LOGGER = logging.getLogger(__name__)
+from typing import TypedDict
 
 
-class Timestamp(BaseTimestamp):
+class ImageArtifactLinkManifest(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/ims/blob/develop/src/server/helper.py
+    """
+    path: str
+    etag: str
+    type: str
 
-    @property
-    def max_age(self) -> timedelta:
-        """
-        The maximum amount of time that can elapse before we consider the timestamp
-        as invalid.
 
-        This value is returned as a timedelta object.
-        """
-        computation_time = timedelta(
-            seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
-        return computation_time
+class ImageArtifactManifest(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/ims/blob/develop/src/server/helper.py
+    """
+    link: ImageArtifactLinkManifest
+    type: str
+    md5: str
+
+
+class ImageManifest(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/ims/blob/develop/src/server/helper.py
+    """
+    version: str
+    created: str
+    artifacts: list[ImageArtifactManifest]
+
+
+class BootImageArtifactSummary(TypedDict, total=False):
+    kernel: str
+    initrd: str
+    rootfs: str
+    rootfs_etag: str
+    boot_parameters: str | None
+    boot_parameters_etag: str | None

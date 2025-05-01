@@ -24,6 +24,7 @@
 import logging
 import threading
 import time
+from typing import cast
 
 from bos.common.options import DEFAULTS, OptionsCache
 from bos.common.types.general import JsonDict
@@ -60,7 +61,7 @@ class OptionsData(OptionsCache):
                     cls.instance = new_instance
         return cls.instance
 
-    def __init__(self, _initialize: bool=False):
+    def __init__(self, _initialize: bool=False) -> None:
         """
         We only want this singleton to be initialized once
         """
@@ -92,10 +93,11 @@ class OptionsData(OptionsCache):
             LOGGER.info("Retrieved options from DB after retrying")
             return options
         LOGGER.warning("Unable to retrieve options from DB. Using default values")
-        return dict(DEFAULTS)
+        # Safe to use copy and not deepcopy, because BOS options are all primitive types
+        return DEFAULTS.copy()
 
 
-def get_db_options_with_retries(max_attempts=10, sleep_seconds=1) -> OptionsDict | None:
+def get_db_options_with_retries(max_attempts: int=10, sleep_seconds: int=1) -> OptionsDict | None:
     """
     Try to get the BOS options from the DB. If not successful after retries, return None.
     """
@@ -142,9 +144,9 @@ def init_options() -> None:
     update_server_log_level()
 
 
-def remove_invalid_keys(data: JsonDict) -> OptionsDict:
+def remove_invalid_keys(data: JsonDict | OptionsDict) -> OptionsDict:
     """Removes keys that are not in the options spec"""
-    return { key: value for key, value in data.items() if is_option_name(key) }
+    return cast(OptionsDict, { key: value for key, value in data.items() if is_option_name(key) })
 
 
 def get_options() -> OptionsDict:
@@ -169,17 +171,12 @@ def get_v2_options_data() -> OptionsDict:
 
 def _check_defaults(data: OptionsDict | None) -> OptionsDict:
     """Adds defaults to the options data if they don't exist"""
-    put = False
-    if not data:
-        data = {}
-        put = True
-    for key, default_value in DEFAULTS.items():
-        if key not in data:
-            data[key] = default_value
-            put = True
-    if put:
-        DB.put_options(data)
-    return data
+    new_data = DEFAULTS.copy()
+    if data:
+        new_data.update(data)
+    if data != new_data:
+        DB.put_options(new_data)
+    return new_data
 
 
 def update_server_log_level() -> None:

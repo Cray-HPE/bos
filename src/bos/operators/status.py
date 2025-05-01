@@ -23,6 +23,7 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+from typing import Literal
 
 from bos.common.clients.bos.options import options
 from bos.common.types.components import ComponentRecord
@@ -33,6 +34,7 @@ from bos.operators.filters import (BootArtifactStatesMatch,
                                    DesiredConfigurationIsNone,
                                    LastActionIs,
                                    TimeSinceLastAction)
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class StatusOperator(BaseOperator):
     Also disables stable components if necessary and sets some status overrides.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # Reuse filter code
         self.desired_boot_state_is_off = DesiredBootStateIsOff().component_match
@@ -55,21 +57,21 @@ class StatusOperator(BaseOperator):
         self.power_on_wait_time_elapsed = TimeSinceLastAction(
             seconds=options.max_power_on_wait_time).component_match
 
-    def desired_configuration_set_in_cfs(self, *args, **kwargs):
+    def desired_configuration_set_in_cfs(self, *args, **kwargs) -> bool:
         """
         Shortcut to DesiredConfigurationSetInCFS._match method
         """
         return self.DesiredConfigurationSetInCFS().component_match(*args, **kwargs)
 
     @property
-    def name(self):
+    def name(self) -> Literal[""]:
         """ Unused for the status operator """
         return ''
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return []
 
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
@@ -148,7 +150,7 @@ class StatusOperator(BaseOperator):
             elif not cfs_component:
                 error = 'Component information was not returned by cfs'
 
-        updated_component = {
+        updated_component: ComponentRecord = {
             'id': component['id'],
             'status': {
                 'status_override': '',

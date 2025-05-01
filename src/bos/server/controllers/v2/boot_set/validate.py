@@ -26,6 +26,7 @@ from functools import partial
 
 from bos.common.utils import exc_type_msg
 from bos.common.types.general import JsonDict
+from bos.common.types.sessions import SessionOperation
 from bos.common.types.templates import BootSet, SessionTemplate
 from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
 from bos.server.options import OptionsData
@@ -38,7 +39,7 @@ from .ims import validate_ims_boot_image
 
 def validate_boot_sets(
         session_template: SessionTemplate,
-        operation: str,
+        operation: SessionOperation,
         template_name: str,
         options_data: OptionsData | None=None) -> tuple[BootSetStatus, str]:
     """

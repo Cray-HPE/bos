@@ -36,12 +36,14 @@ from bos.common.utils import (exc_type_msg,
                               components_by_id)
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
+from bos.operators.filters.base import BaseFilter
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
 LOGGER = logging.getLogger(__name__)
 
-# This type hint is too unwieldy without giving it a name
-type BootArtifactsToCompIds = dict[tuple[str, str, str], set[str]]
+# These type hints are too unwieldy without giving them names
+type BootArtifactsTuple = tuple[str, str, str]
+type BootArtifactsToCompIds = defaultdict[BootArtifactsTuple, set[str]]
 
 class PowerOnOperator(BaseOperator):
     """
@@ -53,12 +55,12 @@ class PowerOnOperator(BaseOperator):
     retry_attempt_field = "power_on_attempts"
 
     @property
-    def name(self):
+    def name(self) -> str:
         return Action.power_on
 
     # Filters
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return [
             self.BOSQuery(enabled=True, status=Status.power_on_pending),
             self.HSMState()
@@ -117,15 +119,15 @@ class PowerOnOperator(BaseOperator):
 
         Returns: A tuple containing the first and second dictionary.
         """
-        boot_artifacts = defaultdict(set)
-        bos_sessions = {}
+        boot_artifacts: BootArtifactsToCompIds = defaultdict(set)
+        bos_sessions: dict[str, str] = {}
         for component in components:
             # Handle the boot artifacts
             nodes_boot_artifacts = component.get('desired_state',
                                                  {}).get('boot_artifacts', {})
-            kernel = nodes_boot_artifacts.get('kernel')
-            kernel_parameters = nodes_boot_artifacts.get('kernel_parameters')
-            initrd = nodes_boot_artifacts.get('initrd')
+            kernel = nodes_boot_artifacts.get('kernel', '')
+            kernel_parameters = nodes_boot_artifacts.get('kernel_parameters', '')
+            initrd = nodes_boot_artifacts.get('initrd', '')
             if not any([kernel, kernel_parameters, initrd]):
                 continue
             key = (kernel, kernel_parameters, initrd)
@@ -236,8 +238,8 @@ class PowerOnOperator(BaseOperator):
             LOGGER.debug("_tag_images: No components to act on.")
             return
 
-        image_id_to_nodes = defaultdict(set)
-        err_msg_to_nodes = defaultdict(set)
+        image_id_to_nodes: defaultdict[str, set[str]] = defaultdict(set)
+        err_msg_to_nodes: defaultdict[str, set[str]] = defaultdict(set)
         for boot_artifact, components_list in boot_artifacts.items():
             kernel_parameters = boot_artifact[1]
             if using_sbps_check_kernel_parameters(kernel_parameters):
@@ -259,8 +261,7 @@ class PowerOnOperator(BaseOperator):
                     # Soft deleted images in IMS move their S3 artifacts to have paths
                     # like s3://boot-images/deleted/<ims-id>/...
                     err_msg = f"Kernel path appears to refer to soft-deleted IMS image: '{kernel}'"
-
-                if err_msg is None:
+                else:
                     # Map image IDs to nodes
                     image_id_to_nodes[image_id].update(components_list)
                     continue

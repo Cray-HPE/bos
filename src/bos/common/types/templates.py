@@ -95,7 +95,7 @@ class SessionTemplate(TypedDict, total=False):
     description: str
     enable_cfs: bool
     links: list[Link]
-    name: Required[str]
+    name: str
     tenant: str | None
 
 def _update_boot_sets(record: dict[str, BootSet], new_record_copy: dict[str, BootSet]) -> None:

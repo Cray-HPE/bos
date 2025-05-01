@@ -178,13 +178,19 @@ class compact_response_text:
         return self._response_text if self._response_text is not None else "None"
 
     @classmethod
-    def _match_group_one(cls, match_object: re.Match) -> str:
+    def _match_group_one(cls, match_object: re.Match[str]) -> str:
         """
         Helper function for map iterator inside compact_response_text.
         This gets the first match group, strips the leading and trailing whitespace,
         and returns it
         """
-        return match_object.group(1).strip()
+        # There are evidently some weird edge cases regarding the return type of Match.group
+        # https://github.com/python/typeshed/issues/12090
+        # Thus, if we don't get back a string, we just return an empty string
+        g1 = match_object.group(1)
+        if isinstance(g1, str):
+            return g1.strip()
+        return ""
 
     def __str__(self) -> str:
         """

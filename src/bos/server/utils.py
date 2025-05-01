@@ -23,6 +23,7 @@
 #
 import logging
 import re
+from typing import cast
 
 import connexion
 
@@ -61,4 +62,4 @@ def get_request_json(log_data: bool=True) -> JsonData:
     json_data = connexion.request.get_json()
     if log_data:
         LOGGER.debug("type=%s content=%s", type(json_data).__name__, json_data)
-    return json_data
+    return cast(JsonData, json_data)

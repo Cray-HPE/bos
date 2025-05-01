@@ -27,8 +27,8 @@ Created on Apr 29, 2019
 @author: jsl
 '''
 
+from bos.common.clients.s3 import BootImageArtifactSummary
 from bos.common.types.templates import BootSet
-from bos.operators.utils.boot_image_metadata import BootImageArtifactSummary
 
 class RootfsProvider:
     """

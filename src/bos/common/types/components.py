@@ -53,13 +53,12 @@ class ComponentLastAction(TypedDict, total=False):
     failed: bool
     last_updated: str
 
-class ComponentEventStats(TypedDict, total=False):
-    """
-    #/components/schemas/V2ComponentEventStats
-    """
-    power_on_attempts: int
-    power_off_graceful_attempts: int
-    power_off_forceful_attempts: int
+ComponentEventStatsAttemptFields = Literal['power_on_attempts',
+                                           'power_off_graceful_attempts',
+                                           'power_off_forceful_attempts']
+
+# #/components/schemas/V2ComponentEventStats
+type ComponentEventStats = dict[ComponentEventStatsAttemptFields, int]
 
 class BaseComponentState(TypedDict, total=False):
     """

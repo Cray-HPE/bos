@@ -393,7 +393,7 @@ def _(
     Set the automatic component fields for the specified patch data.
     Remove its ID field, if present.
     Determine whether this is a session filter or an id filter, and get the current component data
-    for the specified filter.    
+    for the specified filter.
     """
     try:
         filters = data["filters"]

@@ -30,6 +30,7 @@ from bos.common.types.components import ComponentRecord
 from bos.common.values import EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import ActualStateAge, ActualBootStateIsSet
+from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
@@ -47,12 +48,12 @@ class ActualStateCleanupOperator(BaseOperator):
     """
 
     @property
-    def name(self):
+    def name(self) -> str:
         return 'Actual State Cleanup Operator'
 
     # Filters
     @property
-    def filters(self):
+    def filters(self) -> list[BaseFilter]:
         return [
             self.BOSQuery(),
             ActualBootStateIsSet(),
