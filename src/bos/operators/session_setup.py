@@ -23,9 +23,11 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 import copy
 import logging
+
 from botocore.exceptions import ClientError
 
 from bos.common.clients.bos import BOSClient
@@ -35,12 +37,14 @@ from bos.common.clients.s3 import (BootImageArtifactSummary,
                                    BootImageMetadata,
                                    S3Object,
                                    S3ObjectNotFound)
+from bos.common.clients.s3.types import ImageArtifactLinkManifest
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 from bos.common.types.components import (ComponentDesiredState,
                                          ComponentRecord,
                                          ComponentStagedState)
+from bos.common.types.components import BootArtifacts as ComponentStateBootArtifacts
 from bos.common.types.sessions import Session as SessionRecord
-from bos.common.types.templates import BootSet
+from bos.common.types.templates import BootSet, SessionTemplate, SessionTemplateCfsParameters
 from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseOperator, main, chunk_components
@@ -83,15 +87,20 @@ class SessionSetupOperator(BaseOperator):
         LOGGER.info('Found %d sessions that require action', len(sessions))
         inventory_cache = Inventory(self.client.hsm)
         for data in sessions:
-            session = Session(data, inventory_cache, self.client.bos,
-                              self.HSMState)
+            session = get_session_object(data, inventory_cache, self.client.bos, self.HSMState)
             session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self) -> list[SessionRecord]:
         return self.client.bos.sessions.get_sessions(status='pending')
 
 
-class Session:
+class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](ABC):
+    """
+    The base class for setting up a new BOS session.
+    Two concrete classes inerhit from this -- Session and StagedSession
+    The child classes handle the slight differences between those two cases, while the
+    common setup code is defined in this base class.
+    """
 
     def __init__(self, data: SessionRecord, inventory_cache: Inventory, bos_client: BOSClient,
                  hsm_state: Callable[..., HSMState]) -> None:
@@ -99,11 +108,34 @@ class Session:
         self.inventory = inventory_cache
         self.bos_client = bos_client
         self.HSMState = hsm_state
-        self._template = None
+        self._template: SessionTemplate | None = None
+
+    @abstractmethod
+    def _set_component_data(self, data: ComponentRecord, state: TargetStateT) -> None:
+        """
+        Helper for the _operate method
+        Set the component data fields for this session
+        """
+
+    @classmethod
+    @abstractmethod
+    def _empty_target_state(cls) -> TargetStateT:
+        """
+        Helper for the _generate_target_state method
+        Return the "empty" state object for the target state type
+        """
+
+    @abstractmethod
+    def _new_target_state(self, boot_artifacts: ComponentStateBootArtifacts,
+                          configuration: str) -> TargetStateT:
+        """
+        Helper for the _generate_target_state method
+        Create and return a new state object for the target state type
+        """
 
     @property
     def name(self) -> str:
-        return self.session_data.get('name')
+        return self.session_data['name']
 
     @property
     def tenant(self) -> str | None:
@@ -111,12 +143,12 @@ class Session:
 
     @property
     def operation_type(self) -> str:
-        return self.session_data.get('operation')
+        return self.session_data['operation']
 
     @property
-    def template(self) -> str:
+    def template(self) -> SessionTemplate:
         if not self._template:
-            template_name = self.session_data.get('template_name')
+            template_name = self.session_data['template_name']
             self._template = self.bos_client.session_templates.get_session_template(
                 template_name, self.tenant)
         return self._template
@@ -129,27 +161,24 @@ class Session:
         else:
             self._mark_running(component_ids)
 
-    def _setup_components(self, max_batch_size: int) -> list[str]:
+    def _setup_components(self, max_batch_size: int) -> set[str]:
         all_component_ids: set[str] = set()
-        data = []
-        stage = self.session_data.get("stage", False)
+        data: list[ComponentRecord] = []
         try:
-            for _, boot_set in self.template.get('boot_sets', {}).items():
+            for boot_set in self.template['boot_sets'].values():
                 components = self._get_boot_set_component_list(boot_set)
                 if not components:
                     continue
-                if stage:
-                    state = self._generate_desired_state(boot_set, staged=True)
-                else:
-                    state = self._generate_desired_state(boot_set)
+                state = self._generate_target_state(boot_set)
                 for component_id in components:
-                    data.append(
-                        self._operate(component_id, copy.deepcopy(state)))
+                    data.append(self._operate(component_id, copy.deepcopy(state)))
                 all_component_ids.update(components)
             if not all_component_ids:
                 raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
             self._log(LOGGER.debug, exc_type_msg(err))
+            if isinstance(err, SessionSetupException):
+                raise
             raise SessionSetupException(err) from err
         # No exception raised by previous block
         self._log(LOGGER.info, 'Found %d components that require updates',
@@ -169,7 +198,7 @@ class Session:
         raise SessionSetupException("All nodes found to act upon do not exist as BOS components")
 
     def _get_boot_set_component_list(self, boot_set: BootSet) -> set[str]:
-        nodes = set()
+        nodes: set[str] = set()
         # Populate from nodelist
         for node_name in boot_set.get('node_list', []):
             nodes.add(node_name)
@@ -221,7 +250,7 @@ class Session:
         nodes = self._apply_tenant_limit(nodes)
         return nodes
 
-    def _apply_arch(self, nodes: Iterable[str], arch: str) -> set[str]:
+    def _apply_arch(self, nodes: set[str], arch: str) -> set[str]:
         """
         Removes any node from <nodes> that does not match arch. Nodes in HSM that do not have the
         arch field, and nodes that have the arch field flagged as undefined are assumed to be of
@@ -256,7 +285,7 @@ class Session:
                 len(nodes))
         return nodes
 
-    def _apply_include_disabled(self, nodes: Iterable[str]) -> Iterable[str]:
+    def _apply_include_disabled(self, nodes: set[str]) -> set[str]:
         """
         If include_disabled is False for this session, filter out any nodes which are disabled
         in HSM. Otherwise, return the node list unchanged.
@@ -278,13 +307,13 @@ class Session:
                 len(nodes))
         return nodes
 
-    def _apply_limit(self, nodes: Iterable[str]) -> Iterable[str]:
+    def _apply_limit(self, nodes: set[str]) -> set[str]:
         session_limit = self.session_data.get('limit')
         if not session_limit:
             # No limit is defined, so all nodes are allowed
             return nodes
         self._log(LOGGER.info, f'Applying limit to session: {session_limit}')
-        limit_node_set = set()
+        limit_node_set: set[str] = set()
         for limit in session_limit.split(','):
             if limit[0] == '&':
                 limit = limit[1:]
@@ -311,7 +340,7 @@ class Session:
                       len(nodes))
         return nodes
 
-    def _apply_tenant_limit(self, nodes: Iterable[str]) -> Iterable[str]:
+    def _apply_tenant_limit(self, nodes: set[str]) -> set[str]:
         tenant = self.session_data.get("tenant")
         if not tenant:
             return nodes
@@ -331,7 +360,7 @@ class Session:
                 len(nodes))
         return nodes
 
-    def _mark_running(self, component_ids: list[str]) -> None:
+    def _mark_running(self, component_ids: Iterable[str]) -> None:
         self.bos_client.sessions.update_session(
             self.name, self.tenant, {
                 'status': {
@@ -354,57 +383,33 @@ class Session:
 
     # Operations
     def _operate(
-        self, component_id: str, state: ComponentDesiredState | ComponentStagedState
+        self, component_id: str, state: TargetStateT
     ) -> ComponentRecord:
-        stage = self.session_data.get("stage", False)
-        data: ComponentRecord = {"id": component_id}
-        if stage:
-            data["staged_state"] = state
-            data["staged_state"]["session"] = self.name
-        else:
-            data["desired_state"] = state
-            if self.operation_type == "reboot":
-                data["actual_state"] = EMPTY_ACTUAL_STATE
-            data["session"] = self.name
-            data["enabled"] = True
-            # Set node's last_action
-            data["last_action"] = {"action": Action.session_setup}
-        data['error'] = ''
+        data: ComponentRecord = {"id": component_id, "error": ""}
+        self._set_component_data(data, state)
         return data
 
-    def _generate_desired_state(
-        self, boot_set: BootSet, staged: bool=False
-    ) -> ComponentDesiredState | ComponentStagedState:
+    def _generate_target_state(self, boot_set: BootSet) -> TargetStateT:
         if self.operation_type == "shutdown":
-            return EMPTY_STAGED_STATE if staged else EMPTY_DESIRED_STATE
-        state = self._get_state_from_boot_set(boot_set)
-        return state
+            return self._empty_target_state()
+        boot_artifacts = self._get_boot_artifacts_from_boot_set(boot_set)
+        configuration = self._get_configuration_from_boot_set(boot_set)
+        return self._new_target_state(boot_artifacts, configuration)
 
-    def _get_state_from_boot_set(
-        self, boot_set: BootSet
-    ) -> ComponentDesiredState | ComponentStagedState:
+    def _get_boot_artifacts_from_boot_set(self, boot_set: BootSet) -> ComponentStateBootArtifacts:
         """
         Returns:
-          state: A dictionary containing two keys 'boot_artifacts' and 'configuration'.
-            'boot_artifacts' is itself a dictionary containing key/value pairs where the keys are
+            A dictionary containing key/value pairs where the keys are
             the boot artifacts (kernel, initrd, rootfs, and boot parameters) and the values are
             paths to those artifacts in storage.
-            'configuration' is a string.
         """
-        state = {}
-        boot_artifacts = {}
         image_metadata = BootImageMetadata(boot_set)
         artifact_info = image_metadata.artifact_summary
-        boot_artifacts['kernel'] = artifact_info['kernel']
-        boot_artifacts['initrd'] = image_metadata.initrd.get("link", {}).get(
-            "path", "")
-        boot_artifacts[
-            'kernel_parameters'] = self.assemble_kernel_boot_parameters(
-                boot_set, artifact_info)
-        state['boot_artifacts'] = boot_artifacts
-        state['configuration'] = self._get_configuration_from_boot_set(
-            boot_set)
-        return state
+        kernel = artifact_info['kernel']
+        initrd = image_metadata.initrd.get("link", ImageArtifactLinkManifest()).get("path", "")
+        kernel_parameters = self.assemble_kernel_boot_parameters(boot_set, artifact_info)
+        return ComponentStateBootArtifacts(kernel=kernel, initrd=initrd,
+                                           kernel_parameters=kernel_parameters)
 
     def _get_configuration_from_boot_set(self, boot_set: BootSet) -> str:
         """
@@ -417,13 +422,14 @@ class Session:
         """
         if not self.template.get('enable_cfs', True):
             return ''
-        bs_config = boot_set.get('cfs', {}).get('configuration', '')
+        bs_config = boot_set.get('cfs', SessionTemplateCfsParameters()).get('configuration', '')
         if bs_config:
             return bs_config
         # Otherwise, we take the configuration value from the session template itself
         return self.template.get('cfs', {}).get('configuration', '')
 
-    def assemble_kernel_boot_parameters(self, boot_set: BootSet, artifact_info: BootImageArtifactSummary) -> str:
+    def assemble_kernel_boot_parameters(self, boot_set: BootSet,
+                                        artifact_info: BootImageArtifactSummary) -> str:
         """
         Assemble the kernel boot parameters that we want to set in the
         Boot Script Service (BSS).
@@ -451,38 +457,11 @@ class Session:
         Raises:
             ClientError -- An S3 client error
         """
-
-        boot_param_pieces = []
-
-        # Parameters from the image itself if the parameters exist.
-        if (artifact_info.get('boot_parameters') is not None
-                and artifact_info.get('boot_parameters_etag') is not None):
-            self._log(LOGGER.info, "++ _get_s3_download_url %s with etag %s.",
-                      artifact_info['boot_parameters'],
-                      artifact_info['boot_parameters_etag'])
-
-            try:
-                s3_obj = S3Object(artifact_info['boot_parameters'],
-                                  artifact_info['boot_parameters_etag'])
-                image_kernel_parameters_object = s3_obj.object
-
-                parameters_raw = image_kernel_parameters_object['Body'].read(
-                ).decode('utf-8')
-                image_kernel_parameters = parameters_raw.split()
-                if image_kernel_parameters:
-                    boot_param_pieces.extend(image_kernel_parameters)
-            except (ClientError, UnicodeDecodeError,
-                    S3ObjectNotFound) as error:
-                self._log(
-                    LOGGER.error,
-                    "Error reading file %s; no kernel boot parameters obtained from image",
-                    artifact_info['boot_parameters'])
-                self._log(LOGGER.error, exc_type_msg(error))
-                raise
+        boot_param_pieces = self._base_boot_param_pieces(artifact_info)
 
         # Parameters from the BOS Session template if the parameters exist.
-        if boot_set.get('kernel_parameters'):
-            boot_param_pieces.append(boot_set.get('kernel_parameters'))
+        if (kernel_parameters := boot_set.get('kernel_parameters')):
+            boot_param_pieces.append(kernel_parameters)
 
         # Append special parameters for the rootfs and Node Memory Dump
         provider = get_provider(boot_set, artifact_info)
@@ -498,6 +477,111 @@ class Session:
             f'bos_update_frequency={options.component_actual_state_ttl}')
 
         return ' '.join(boot_param_pieces)
+
+    def _base_boot_param_pieces(self, artifact_info: BootImageArtifactSummary) -> list[str]:
+        """
+        Helper for assemble_kernel_boot_parameters that generates the initial boot parameter pieces,
+        based on the image boot parameters
+        """
+        boot_param_pieces: list[str] = []
+
+        # Parameters from the image itself if the parameters exist.
+        boot_parameters = artifact_info.get('boot_parameters')
+        if boot_parameters is None:
+            return boot_param_pieces
+        boot_parameters_etag = artifact_info.get('boot_parameters_etag')
+        if boot_parameters_etag is None:
+            return boot_param_pieces
+        self._log(LOGGER.info, "++ _get_s3_download_url %s with etag %s.",
+                  boot_parameters, boot_parameters_etag)
+
+        try:
+            s3_obj = S3Object(boot_parameters, boot_parameters_etag)
+            image_kernel_parameters_object = s3_obj.object
+
+            parameters_raw = image_kernel_parameters_object['Body'].read().decode('utf-8')
+            image_kernel_parameters = parameters_raw.split()
+            if image_kernel_parameters:
+                boot_param_pieces.extend(image_kernel_parameters)
+        except (ClientError, UnicodeDecodeError, S3ObjectNotFound) as error:
+            self._log(LOGGER.error,
+                      "Error reading file %s; no kernel boot parameters obtained from image",
+                      artifact_info['boot_parameters'])
+            self._log(LOGGER.error, exc_type_msg(error))
+            raise
+        return boot_param_pieces
+
+
+class Session(BaseSession[ComponentDesiredState]):
+    """
+    Concrete class for setting up a non-staged BOS session
+    """
+
+    @classmethod
+    def _empty_target_state(cls) -> ComponentDesiredState:
+        """
+        Helper for the _generate_target_state method
+        Return the "empty" state object for the target state type
+        """
+        return EMPTY_DESIRED_STATE
+
+    def _new_target_state(self, boot_artifacts: ComponentStateBootArtifacts,
+                          configuration: str) -> ComponentDesiredState:
+        """
+        Helper for the _generate_target_state method
+        Create and return a new state object for the target state type
+        """
+        return ComponentDesiredState(boot_artifacts=boot_artifacts, configuration=configuration)
+
+    def _set_component_data(self, data: ComponentRecord, state: ComponentDesiredState) -> None:
+        """
+        Helper for the _operate method
+        Set the component data fields for this session
+        """
+        data["desired_state"] = state
+        if self.operation_type == "reboot":
+            data["actual_state"] = EMPTY_ACTUAL_STATE
+        data["session"] = self.name
+        data["enabled"] = True
+        # Set node's last_action
+        data["last_action"] = {"action": Action.session_setup}
+
+
+class StagedSession(BaseSession[ComponentStagedState]):
+    """
+    Concrete class for setting up a staged BOS session
+    """
+
+    @classmethod
+    def _empty_target_state(cls) -> ComponentStagedState:
+        """
+        Helper for the _generate_target_state method
+        Return the "empty" state object for the target state type
+        """
+        return EMPTY_STAGED_STATE
+
+    def _new_target_state(self, boot_artifacts: ComponentStateBootArtifacts,
+                          configuration: str) -> ComponentStagedState:
+        """
+        Helper for the _generate_target_state method
+        Create and return a new state object for the target state type
+        """
+        return ComponentStagedState(boot_artifacts=boot_artifacts, configuration=configuration,
+                                    session=self.name)
+
+    def _set_component_data(self, data: ComponentRecord, state: ComponentStagedState) -> None:
+        """
+        Helper for the _operate method
+        Set the component data fields for this session
+        """
+        data["staged_state"] = state
+
+
+def get_session_object(data: SessionRecord, inventory_cache: Inventory, bos_client: BOSClient,
+                       hsm_state: Callable[..., HSMState]) -> Session | StagedSession:
+    if data.get("stage", False):
+        return StagedSession(data, inventory_cache, bos_client, hsm_state)
+    return Session(data, inventory_cache, bos_client, hsm_state)
 
 
 if __name__ == '__main__':
