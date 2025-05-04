@@ -55,10 +55,10 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     apk update
 
 # Post-process generated Python code
-#FROM pre-alpine-base AS code-post-process
-#WORKDIR /app
+FROM pre-alpine-base AS code-post-process
+WORKDIR /app
 # Copy in generated code
-#COPY --from=codegen /app/lib/ /app/lib
+COPY --from=codegen /app/lib/ /app/lib
 #RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     #apk add --no-cache py3-yapf py3-tomli && \
     #apk -U upgrade --no-cache && \
@@ -69,7 +69,7 @@ RUN --mount=type=secret,id=netrc,target=/root/.netrc \
 FROM pre-alpine-base AS alpine-base
 WORKDIR /app
 # Copy in generated code
-#COPY --from=code-post-process /app/lib/ /app/lib
+COPY --from=code-post-process /app/lib/ /app/lib
 # Copy in Python constraints file
 COPY constraints.txt /app/
 ENV VIRTUAL_ENV=/app/venv
