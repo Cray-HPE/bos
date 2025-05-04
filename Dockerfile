@@ -25,7 +25,7 @@
 
 # Upstream Build Args
 ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.10.0
-ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3
+ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/python:alpine
 
 # Generate Code
 FROM $OPENAPI_IMAGE AS codegen
@@ -60,7 +60,7 @@ WORKDIR /app
 # Copy in generated code
 COPY --from=codegen /app/lib/ /app/lib
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    apk add --no-cache python3 py3-yapf py3-tomli && \
+    apk add --no-cache py3-yapf py3-tomli && \
     apk -U upgrade --no-cache && \
     find /app/lib -type f -name \*.py -print0 | xargs -0 python3 -m yapf -p -i -vv
 
