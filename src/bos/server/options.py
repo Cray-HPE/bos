@@ -21,10 +21,13 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+# Enable forward references
+from __future__ import annotations
 import logging
 import threading
 import time
-from typing import cast
+from typing import cast, final, ClassVar
 
 from bos.common.options import DEFAULTS, OptionsCache
 from bos.common.types.general import JsonDict
@@ -38,6 +41,7 @@ LogLevelUpdateLock = threading.Lock()
 
 DB = dbutils.OptionsDBWrapper()
 
+@final
 class OptionsData(OptionsCache):
     """
     Handler for reading configuration options from the BOS DB
@@ -46,20 +50,26 @@ class OptionsData(OptionsCache):
     result in DB calls.
     """
 
-    _create_lock = threading.Lock()
+    # Use OptionsData instead of Self, because class is final
+    _instance: ClassVar[OptionsData | None] = None
+    _create_lock: ClassVar[threading.Lock] = threading.Lock()
 
-    def __new__(cls):
+    # Use OptionsData as return type, instead of Self, since this class is final
+    def __new__(cls) -> OptionsData:
         """This override makes the class a singleton"""
-        if not hasattr(cls, 'instance'):
-            # Make sure that no other thread has beaten us to the punch
-            with cls._create_lock:
-                if not hasattr(cls, 'instance'):
-                    new_instance = super().__new__(cls)
-                    new_instance.__init__(_initialize=True)
-                    # Only assign to cls.instance after all work has been done, to ensure
-                    # no other threads access it prematurely
-                    cls.instance = new_instance
-        return cls.instance
+        if (instance := cls._instance) is not None:
+            return instance
+        # Make sure that no other thread has beaten us to the punch
+        with cls._create_lock:
+            if (instance := cls._instance) is not None:
+                return instance
+            new_instance: OptionsData = super().__new__(cls)
+            OptionsData.__init__(new_instance, _initialize=True)
+            # Only assign to cls._instance after all work has been done, to ensure
+            # no other threads access it prematurely
+            cls._instance = new_instance
+        return new_instance
+
 
     def __init__(self, _initialize: bool=False) -> None:
         """
