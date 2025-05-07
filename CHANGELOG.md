@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enable more thorough `mypy` checks at build time
   - CASMCMS-9413: Add explicit annotations for S3 methods
   - CASMCMS-9414: Create helper types for sessions and component type annotation
+  - CASMCMS-9415: Refactor `dbwrapper` to resolve type annotation issues
 
 ### Dependencies
 - Updated to openapi-generator-cli v7.13.0
