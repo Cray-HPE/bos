@@ -9,7 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CASMCMS-9407: Refactored session setup operator to resolve type annotation issues
-- CASMCMS-9412: Enable more thorough `mypy` checks at build time
+- CASMCMS-9412:
+  - Enable more thorough `mypy` checks at build time
+  - CASMCMS-9413: Add explicit annotations for S3 methods
 
 ### Dependencies
 - Updated to openapi-generator-cli v7.13.0

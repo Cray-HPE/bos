@@ -26,7 +26,7 @@ import json
 import logging
 import os
 import threading
-from typing import cast
+from typing import cast, TYPE_CHECKING
 from urllib.parse import urlparse
 
 import boto3
@@ -42,6 +42,23 @@ from .exceptions import (ArtifactNotFound,
                          S3ObjectNotFound,
                          TooManyArtifacts)
 from .types import ImageArtifactManifest, ImageManifest
+
+# Type annotation of S3/boto objects is complicated. These modules use some weird dynamic
+# typing where the classes being returned do not exist at the time that type checking happens.
+# The boto3-stubs and botocore-stubs packages allow mypy to handle these types, but we do not
+# include the stub packages in production, because they are only useful for type checking.
+# This is why the TYPE_CHECKING conditional is used here:
+if TYPE_CHECKING:
+    # Define the types we need to explicitly annotate the S3/boto objects we need
+    from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_s3.type_defs import GetObjectOutputTypeDef as S3GetObjectOutput
+    from mypy_boto3_s3.type_defs import HeadObjectOutputTypeDef as S3HeadObjectOutput
+else:
+    # To prevent pylint from complaining about undefined annotation names, we
+    # include this. It will have no impact at runtime.
+    S3Client = object
+    S3GetObjectOutput = object
+    S3HeadObjectOutput = object
 
 LOGGER = logging.getLogger(__name__)
 
@@ -76,12 +93,7 @@ class S3Url:
     def url(self) -> str:
         return self._parsed.geturl()
 
-# For functions or methods which return S3/boto objects, we do not type annotate the return type,
-# because there's no easy way to do it. It uses some weird dynamic typing where the classes being
-# returned do not exist at the time that type checking happens. The boto3-stubs and
-# botocore-stubs packages allow mypy to handle these types, but you have to leave the
-# applicable types un-annotated, and let mypy infer them
-def s3_client(connection_timeout: int=60, read_timeout: int=60):
+def s3_client(connection_timeout: int=60, read_timeout: int=60) -> S3Client:
     """
     Return an s3 client
 
@@ -132,9 +144,8 @@ class S3Object:
         self.etag = etag
         self.s3url = S3Url(self.path)
 
-    # No return type annotation: see earlier comment above s3_client function for explanation
     @property
-    def object_header(self):
+    def object_header(self) -> S3HeadObjectOutput:
         """
         Get the S3 object's header metadata.
 
@@ -163,9 +174,8 @@ class S3Object:
                 self.etag)
         return s3_obj
 
-    # No return type annotation: see earlier comment above s3_client function for explanation
     @property
-    def object(self):
+    def object(self) -> S3GetObjectOutput:
         """
         The S3 object itself.  If the object was not found, log it and return an error.
 
