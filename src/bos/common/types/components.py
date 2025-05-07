@@ -223,3 +223,22 @@ class ApplyStagedStatus(TypedDict, total=False):
     failed: list[str]
     ignored: list[str]
     succeeded: list[str]
+
+class GetComponentsFilter(TypedDict, total=False):
+    """
+    Filters that can be specified when doing a GET to /v2/components
+    """
+    ids: str
+    session: str
+    staged_session: str
+    enabled: bool
+    phase: str
+    status: str
+    start_after_id: str
+    page_size: int
+
+class ComponentBulkUpdateParams(TypedDict, total=False):
+    """
+    Parameters that can be specified when doing a bulk component patch
+    """
+    skip_bad_ids: bool
