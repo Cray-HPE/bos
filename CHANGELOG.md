@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.43.0] - 2025-05-07
+
 ### Changed
 - CASMCMS-9407: Refactored session setup operator to resolve type annotation issues
 - CASMCMS-9412:
