@@ -26,5 +26,5 @@ from .base import BaseHsmEndpoint
 from .types import Partition
 
 
-class PartitionsEndpoint(BaseHsmEndpoint[list[Partition]]):
+class PartitionsEndpoint(BaseHsmEndpoint[None, list[Partition]]):
     ENDPOINT = 'partitions'

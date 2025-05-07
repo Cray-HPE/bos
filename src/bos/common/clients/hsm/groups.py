@@ -26,5 +26,5 @@ from .base import BaseHsmEndpoint
 from .types import Group
 
 
-class GroupsEndpoint(BaseHsmEndpoint[list[Group]]):
+class GroupsEndpoint(BaseHsmEndpoint[None, list[Group]]):
     ENDPOINT = 'groups'
