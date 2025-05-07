@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - CASMCMS-9407: Refactored session setup operator to resolve type annotation issues
+- CASMCMS-9412: Enable more thorough `mypy` checks at build time
 
 ### Dependencies
 - Updated to openapi-generator-cli v7.13.0
