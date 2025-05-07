@@ -26,8 +26,16 @@ import logging
 from typing import Literal
 
 from bos.common.clients.bos.options import options
-from bos.common.types.components import ComponentRecord
-from bos.common.values import Phase, Status, Action, EMPTY_ACTUAL_STATE
+from bos.common.clients.cfs.types import CfsComponentData
+from bos.common.types.components import (ComponentLastAction,
+                                         ComponentRecord,
+                                         ComponentStatus)
+from bos.common.values import (Action,
+                               ComponentPhaseStr,
+                               ComponentStatusStr,
+                               Phase,
+                               Status,
+                               EMPTY_ACTUAL_STATE)
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import (BootArtifactStatesMatch,
                                    DesiredBootStateIsOff,
@@ -57,11 +65,13 @@ class StatusOperator(BaseOperator):
         self.power_on_wait_time_elapsed = TimeSinceLastAction(
             seconds=options.max_power_on_wait_time).component_match
 
-    def desired_configuration_set_in_cfs(self, *args, **kwargs) -> bool:
+    def desired_configuration_set_in_cfs(self, component: ComponentRecord,
+                                         cfs_component: CfsComponentData | None = None) -> bool:
         """
         Shortcut to DesiredConfigurationSetInCFS._match method
         """
-        return self.DesiredConfigurationSetInCFS().component_match(*args, **kwargs)
+        return self.DesiredConfigurationSetInCFS().component_match(component=component,
+                                                                   cfs_component=cfs_component)
 
     @property
     def name(self) -> Literal[""]:
@@ -117,7 +127,7 @@ class StatusOperator(BaseOperator):
         LOGGER.debug('Updated components: %s', updated_components)
         self.client.bos.components.update_components(updated_components)
 
-    def _get_cfs_components(self):
+    def _get_cfs_components(self) -> dict[str, CfsComponentData]:
         """
         Gets all the components from CFS.
         We used to get only the components of interest, but that caused an HTTP request
@@ -125,12 +135,13 @@ class StatusOperator(BaseOperator):
         Requesting all components means none need to be specified in the request.
         """
         cfs_data = self.client.cfs.components.get_components()
-        cfs_states = {}
+        cfs_states: dict[str, CfsComponentData] = {}
         for component in cfs_data:
             cfs_states[component['id']] = component
         return cfs_states
 
-    def _check_status(self, component: ComponentRecord, power_state, cfs_component):
+    def _check_status(self, component: ComponentRecord, power_state: str|None,
+                      cfs_component: CfsComponentData|None) -> ComponentRecord | None:
         """
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
@@ -152,12 +163,10 @@ class StatusOperator(BaseOperator):
 
         updated_component: ComponentRecord = {
             'id': component['id'],
-            'status': {
-                'status_override': '',
-            }
+            'status': ComponentStatus(status_override='')
         }
         update = False
-        previous_phase = component.get('status', {}).get('phase', '')
+        previous_phase = component.get('status', ComponentStatus()).get('phase', Phase.none)
         if phase != previous_phase:
             if phase == Phase.none:
                 # The current event has completed.  Reset the event stats
@@ -173,7 +182,7 @@ class StatusOperator(BaseOperator):
             update = True
         if override:
             updated_component['status']['status_override'] = override
-        if override != component.get('status', {}).get('status_override', ''):
+        if override != component.get('status', ComponentStatus()).get('status_override', ''):
             update = True
         if disable and options.disable_components_on_completion:
             updated_component['enabled'] = False
@@ -182,15 +191,19 @@ class StatusOperator(BaseOperator):
             updated_component['error'] = error
             update = True
         if action_failed and action_failed != component.get(
-                'last_action', {}).get('failed', False):
-            updated_component['last_action'] = {}
-            updated_component['last_action']['failed'] = True
+                'last_action', ComponentLastAction()).get('failed', False):
+            updated_component['last_action'] = ComponentLastAction(failed=True)
             update = True
         if update:
             return updated_component
         return None
 
-    def _calculate_status(self, component: ComponentRecord, power_state, cfs_component):
+    def _calculate_status(
+        self,
+        component: ComponentRecord,
+        power_state: str,
+        cfs_component: CfsComponentData
+    ) -> tuple[ComponentPhaseStr, ComponentStatusStr | Literal[''], bool, str, bool]:
         """
         Calculate a component's status based on its current state, power state, and
         CFS state.
@@ -200,13 +213,13 @@ class StatusOperator(BaseOperator):
         Override is used for status information that cannot be determined using only
             internal BOS information, such as a failed configuration state.
         """
-        phase = ''
-        override = ''
+        phase = Phase.none
+        override: ComponentStatusStr | Literal[''] = ''
         disable = False
         error = ''
         action_failed = False
 
-        status_data = component.get('status', {})
+        status_data = component.get('status', ComponentStatus())
         if status_data.get('status') == Status.failed:
             disable = True  # Failed state - the aggregated status if "failed"
             override = Status.failed

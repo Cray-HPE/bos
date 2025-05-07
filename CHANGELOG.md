@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.43.0] - 2025-05-07
+
+### Changed
+- CASMCMS-9407: Refactored session setup operator to resolve type annotation issues
+- CASMCMS-9412:
+  - Enable more thorough `mypy` checks at build time
+  - CASMCMS-9413: Add explicit annotations for S3 methods
+  - CASMCMS-9414: Create helper types for sessions and component type annotation
+  - CASMCMS-9415: Refactor `dbwrapper` to resolve type annotation issues
+  - CASMCMS-9416: Resolve type annotation issues in `server/options.py`
+  - CASMCMS-9417: Resolve type annotation issues in session status operator
+  - CASMCMS-9418: Resolve type annotation issues in BOS client, HSM client, and filters
+  - Update Jenkinsfile to make failed `mypy` checks fail the build
+
+### Dependencies
+- Updated to openapi-generator-cli v7.13.0
+
 ## [2.42.0] - 2025-05-01
 
 ### Changed

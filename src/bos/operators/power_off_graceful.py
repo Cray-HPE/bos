@@ -24,6 +24,7 @@
 #
 import logging
 
+from bos.common.types.components import ComponentRecord
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters.base import BaseFilter
@@ -51,7 +52,7 @@ class GracefulPowerOffOperator(BaseOperator):
             self.HSMState(),
         ]
 
-    def _act(self, components):
+    def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         if components:
             component_ids = [component['id'] for component in components]
             self.client.pcs.transitions.soft_off(component_ids)

@@ -31,14 +31,16 @@ from bos.common.clients.ims import (get_arch_from_image_data,
                                     ImageRecord,
                                     IMSClient)
 from bos.common.clients.s3 import S3Url
-from bos.common.types.general import JsonDict
 from bos.common.types.templates import BootSet, BootSetArch
 from bos.common.types.templates import BOOT_SET_DEFAULT_ARCH as DEFAULT_ARCH
 from bos.common.utils import exc_type_msg
 from bos.server.options import OptionsData
 
-from .exceptions import BootSetArchMismatch, BootSetError, BootSetWarning, \
-                        CannotValidateBootSetArch, NonImsImage
+from .exceptions import (BootSetArchMismatch,
+                         BootSetError,
+                         BootSetWarning,
+                         CannotValidateBootSetArch,
+                         NonImsImage)
 
 
 LOGGER = logging.getLogger(__name__)
@@ -46,7 +48,9 @@ LOGGER = logging.getLogger(__name__)
 
 # Mapping from BOS boot set arch values to expected IMS image arch values
 # Omits BOS Other value, since there is no corresponding IMS image arch value
-EXPECTED_IMS_ARCH: Mapping[BootSetArch, ImageArch] = {"ARM": "aarch64", "Unknown": "x86_64", "X86": "x86_64"}
+EXPECTED_IMS_ARCH: Mapping[BootSetArch, ImageArch] = {"ARM": "aarch64",
+                                                      "Unknown": "x86_64",
+                                                      "X86": "x86_64"}
 
 
 def validate_ims_boot_image(bs: BootSet, options_data: OptionsData) -> None:

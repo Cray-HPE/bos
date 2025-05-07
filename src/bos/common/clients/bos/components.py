@@ -21,40 +21,63 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+from collections.abc import Iterable
 import logging
+from typing import Unpack
 
-from .base import BaseBosNonTenantAwareEndpoint
+from bos.common.types.components import (ComponentData,
+                                         ComponentRecord,
+                                         ComponentUpdateFilter,
+                                         GetComponentsFilter)
+from bos.common.types.components import ComponentBulkUpdateParams as CompBulkUpdateParams
+
+from .base import (BaseBosNonTenantAwareGetItemEndpoint,
+                   BaseBosNonTenantAwareGetItemsEndpoint,
+                   BaseBosNonTenantAwareUpdateItemEndpoint,
+                   BaseBosNonTenantAwareUpdateItemsEndpoint,
+                   BaseBosNonTenantAwarePutItemsEndpoint)
 from .options import options
 
 LOGGER = logging.getLogger(__name__)
 
+type CompList = list[ComponentRecord]
+type CompUpdateData = ComponentData | ComponentRecord
+type CompBulkUpdateData = CompList | ComponentUpdateFilter
 
-class ComponentEndpoint(BaseBosNonTenantAwareEndpoint):
-    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
+class ComponentEndpoint(
+    BaseBosNonTenantAwareGetItemEndpoint[ComponentRecord],
+    BaseBosNonTenantAwareGetItemsEndpoint[GetComponentsFilter, ComponentRecord],
+    BaseBosNonTenantAwareUpdateItemEndpoint[CompUpdateData, ComponentRecord],
+    BaseBosNonTenantAwareUpdateItemsEndpoint[CompBulkUpdateParams, CompBulkUpdateData,
+                                             ComponentRecord],
+    BaseBosNonTenantAwarePutItemsEndpoint[ComponentRecord]
+):
+    ENDPOINT = 'components'
 
-    def get_component(self, component_id):
-        return self.get_item(component_id)
+    def get_component(self, component_id: str) -> ComponentRecord:
+        return self.get_item_untenanted(component_id)
 
-    def get_components(self, page_size: int | None=None, **kwargs):
-        page_size = options.max_component_batch_size if page_size is None else page_size
+    def get_components(self, **kwargs: Unpack[GetComponentsFilter]) -> CompList:
+        page_size = kwargs.get("page_size")
+        if page_size is None:
+            kwargs["page_size"] = page_size = options.max_component_batch_size
+        results = self.get_items_untenanted(params=kwargs)
         if page_size == 0:
-            return self.get_items(**kwargs)
-        next_page = self.get_items(page_size=page_size, **kwargs)
-        results = next_page
+            return results
+        next_page = results
         while len(next_page) == page_size:
             last_id = next_page[-1]["id"]
-            next_page = self.get_items(page_size=page_size,
-                                       start_after_id=last_id,
-                                       **kwargs)
+            kwargs["start_after_id"]=last_id
+            next_page = self.get_items_untenanted(params=kwargs)
             results.extend(next_page)
         return results
 
-    def update_component(self, component_id, data):
-        return self.update_item(component_id, data)
+    def update_component(self, component_id: str, data: CompUpdateData) -> ComponentRecord:
+        return self.update_item_untenanted(component_id, data)
 
-    def update_components(self, data, skip_bad_ids: bool | None=None):
-        params = {} if skip_bad_ids is None else { "skip_bad_ids": skip_bad_ids }
-        return self.update_items(data, **params)
+    def update_components(self, data: CompBulkUpdateData,
+                          **params: Unpack[CompBulkUpdateParams]) -> CompList:
+        return self.update_items_untenanted(data, params=params)
 
-    def put_components(self, data):
-        return self.put_items(data)
+    def put_components(self, data: Iterable[ComponentRecord]) -> list[ComponentRecord]:
+        return self.put_items_untenanted(data)

@@ -22,15 +22,17 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC
+from collections.abc import Mapping
 from json import JSONDecodeError
-from typing import cast
+from typing import cast, Unpack
 
 from requests.exceptions import HTTPError
 from requests.exceptions import ConnectionError as RequestsConnectionError
 from urllib3.exceptions import MaxRetryError
 
 from bos.common.clients.endpoints import ApiResponseError, BaseEndpoint, RequestsMethod
-from bos.common.types.general import JsonData, JsonDict
+from bos.common.clients.endpoints.base_generic_endpoint import RequestKwargs
+from bos.common.types.general import JsonData
 from bos.common.utils import PROTOCOL
 
 from .exceptions import HWStateManagerException
@@ -39,7 +41,7 @@ SERVICE_NAME = 'cray-smd'
 ENDPOINT = f"{PROTOCOL}://{SERVICE_NAME}/hsm/v2"
 
 
-class BaseHsmEndpoint[ListDataT](BaseEndpoint, ABC):
+class BaseHsmEndpoint[ListParamsT: Mapping[str, object]|None, ListDataT](BaseEndpoint, ABC):
     """
     This base class provides generic access to the HSM API.
     The individual endpoint needs to be overridden for a specific endpoint.
@@ -49,16 +51,14 @@ class BaseHsmEndpoint[ListDataT](BaseEndpoint, ABC):
     def request(self,
                 method: RequestsMethod,
                 /,
-                *,
-                uri: str = "",
-                **kwargs) -> JsonData:
+                **kwargs: Unpack[RequestKwargs]) -> JsonData:
         try:
-            return super().request(method, uri=uri, **kwargs)
+            return super().request(method, **kwargs)
         except (ApiResponseError, RequestsConnectionError, HTTPError,
                 JSONDecodeError, MaxRetryError) as err:
             raise HWStateManagerException(err) from err
 
     def get_list(
-        self, params: JsonDict|None=None
+        self, params: ListParamsT|None=None
     ) -> ListDataT:
         return cast(ListDataT, self.get(params=params))

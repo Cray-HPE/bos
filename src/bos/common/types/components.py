@@ -160,7 +160,8 @@ def update_component_record(
     Perform in-place update of current record using data from new record.
     """
     # Make a copy, to avoid changing new_record in place
-    # Cast it as ComponentData, since that will just have the effect of making the 'id' field optional
+    # Cast it as ComponentData, since that will just have the effect of making the 'id' field
+    # optional
     new_record_copy = cast(ComponentData, copy.deepcopy(new_record))
 
     # Pop the 'id' field, if present
@@ -186,7 +187,8 @@ def update_component_record(
         else:
             record["staged_state"] = new_record_copy.pop("staged_state")
 
-    # Next, merge the regular sub-dicts -- this is also not done in a loop, for the same reason as above
+    # Next, merge the regular sub-dicts -- this is also not done in a loop, for the same reason
+    # as above
     if "last_action" in new_record_copy:
         if "last_action" in record:
             record["last_action"].update(new_record_copy.pop("last_action"))
@@ -221,3 +223,22 @@ class ApplyStagedStatus(TypedDict, total=False):
     failed: list[str]
     ignored: list[str]
     succeeded: list[str]
+
+class GetComponentsFilter(TypedDict, total=False):
+    """
+    Filters that can be specified when doing a GET to /v2/components
+    """
+    ids: str
+    session: str
+    staged_session: str
+    enabled: bool
+    phase: str
+    status: str
+    start_after_id: str
+    page_size: int
+
+class ComponentBulkUpdateParams(TypedDict, total=False):
+    """
+    Parameters that can be specified when doing a bulk component patch
+    """
+    skip_bad_ids: bool

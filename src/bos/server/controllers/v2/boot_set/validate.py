@@ -25,10 +25,9 @@
 from functools import partial
 
 from bos.common.utils import exc_type_msg
-from bos.common.types.general import JsonDict
 from bos.common.types.sessions import SessionOperation
 from bos.common.types.templates import BootSet, SessionTemplate
-from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
+from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS
 from bos.server.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
@@ -137,16 +136,16 @@ def verify_nonempty_hw_specifier_field(bs: BootSet) -> None:
     """
     Raises an exception if there are no non-empty hardware specifier fields.
     """
-    # Validate that the boot set has at least one of the HARDWARE_SPECIFIER_FIELDS
-    if not any(field_name in bs for field_name in HARDWARE_SPECIFIER_FIELDS):
+    # Validate that the boot set has at least one of the BOOT_SET_HARDWARE_SPECIFIER_FIELDS
+    if not any(field_name in bs for field_name in BOOT_SET_HARDWARE_SPECIFIER_FIELDS):
         raise BootSetError(
-            f"No hardware specifier fields ({HARDWARE_SPECIFIER_FIELDS})")
+            f"No hardware specifier fields ({BOOT_SET_HARDWARE_SPECIFIER_FIELDS})")
 
-    # Validate that at least one of the HARDWARE_SPECIFIER_FIELDS is non-empty
+    # Validate that at least one of the BOOT_SET_HARDWARE_SPECIFIER_FIELDS is non-empty
     if not any(field_name in bs and bs[field_name]
-               for field_name in HARDWARE_SPECIFIER_FIELDS):
+               for field_name in BOOT_SET_HARDWARE_SPECIFIER_FIELDS):
         raise BootSetError(
-            f"No non-empty hardware specifier fields ({HARDWARE_SPECIFIER_FIELDS})"
+            f"No non-empty hardware specifier fields ({BOOT_SET_HARDWARE_SPECIFIER_FIELDS})"
         )
 
 

@@ -136,8 +136,7 @@ pipeline {
                             sh "make image_build_base"
                         }
                         sh "make image_build_mypy"
-                        // For now, do not fail on mypy failures
-                        sh "make image_run_mypy || true"
+                        sh "make image_run_mypy"
                     }
                 }
                 stage('Chart') {

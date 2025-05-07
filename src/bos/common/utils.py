@@ -103,7 +103,8 @@ def duration_to_timedelta(timestamp: str) -> datetime.timedelta:
     }
     match = TIME_DURATION_PATTERN.search(timestamp)
     if match is None:
-        raise InvalidDurationTimestamp(f"Timestamp string does not match expected format: '{timestamp}'")
+        raise InvalidDurationTimestamp(
+                f"Timestamp string does not match expected format: '{timestamp}'")
     timeval, durationval = match.groups()
     timeval = float(timeval)
     seconds = timeval * seconds_table[durationval]
@@ -148,15 +149,12 @@ def retry_session(
     return retry_session_manager(**kwargs)
 
 
-def retry_session_get(*get_args,
-                      session: requests.Session | None = None,
-                      protocol: str | None = None,
-                      adapter_kwargs: rrs.RequestsRetryAdapterArgs | None = None,
-                      **get_kwargs) -> AbstractContextManager[requests.Response]:
-    with retry_session(session=session,
-                       protocol=protocol,
-                       adapter_kwargs=adapter_kwargs) as _session:
-        return _session.get(*get_args, **get_kwargs)
+def retry_session_get(
+    url: str,
+    session: requests.Session | None = None
+) -> AbstractContextManager[requests.Response]:
+    with retry_session(session=session) as _session:
+        return _session.get(url)
 
 
 class compact_response_text:
@@ -263,7 +261,9 @@ def components_by_id(components: list[ComponentRecord]) -> dict[str, ComponentRe
     return {component["id"]: component for component in components}
 
 
-def reverse_components_by_id(components_by_id_map: dict[str, ComponentRecord]) -> list[ComponentRecord]:
+def reverse_components_by_id(
+    components_by_id_map: dict[str, ComponentRecord]
+) -> list[ComponentRecord]:
     """
     Input:
     components_by_id_map: a dictionary with the name of each component as the

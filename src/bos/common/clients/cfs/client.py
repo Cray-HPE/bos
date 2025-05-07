@@ -31,7 +31,7 @@ from .components import ComponentEndpoint
 class CfsEndpoints:
     components: ComponentEndpoint | None = None
 
-class CFSClient(APIClientWithTimeoutOption):
+class CFSClient(APIClientWithTimeoutOption[CfsEndpoints]):
     @property
     def _init_endpoints(self) -> CfsEndpoints:
         return CfsEndpoints()

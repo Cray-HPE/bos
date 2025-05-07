@@ -22,7 +22,6 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from collections.abc import Iterable
-from functools import partialmethod
 import logging
 from typing import cast
 
@@ -40,11 +39,11 @@ LOGGER = logging.getLogger(__name__)
 class TransitionsEndpoint(BasePcsEndpoint):
     ENDPOINT = 'transitions'
 
-    def transition_create(self,
-                          xnames: Iterable[str],
-                          operation: PowerOperation,
-                          task_deadline_minutes: int|None=None,
-                          deputy_key: str|None=None) -> TransitionStartOutput:
+    def _transition_create(self,
+                           xnames: Iterable[str],
+                           operation: PowerOperation,
+                           task_deadline_minutes: int|None,
+                           deputy_key: str|None) -> TransitionStartOutput:
         """
         Interact with PCS to create a request to transition one or more xnames. The transition
         operation indicates what the desired operation should be, which is a string value
@@ -92,6 +91,30 @@ class TransitionsEndpoint(BasePcsEndpoint):
             params['location'].append(reserved_location)
         return cast(TransitionStartOutput, self.post(json=params))
 
-    power_on = partialmethod(transition_create, operation='On', task_deadline_minutes=1)
-    soft_off = partialmethod(transition_create, operation='Soft-Off', task_deadline_minutes=1)
-    force_off = partialmethod(transition_create, operation='Force-Off', task_deadline_minutes=1)
+    def power_on(self, xnames: Iterable[str], task_deadline_minutes: int|None=1,
+                 deputy_key: str|None=None) -> TransitionStartOutput:
+        """
+        Wrapper for calling _transition_create to power on a node
+        """
+        return self._transition_create(operation='On', xnames=xnames,
+                                       task_deadline_minutes=task_deadline_minutes,
+                                       deputy_key=deputy_key)
+
+
+    def soft_off(self, xnames: Iterable[str], task_deadline_minutes: int|None=1,
+                 deputy_key: str|None=None) -> TransitionStartOutput:
+        """
+        Wrapper for calling _transition_create to soft power off a node
+        """
+        return self._transition_create(operation='Soft-Off', xnames=xnames,
+                                       task_deadline_minutes=task_deadline_minutes,
+                                       deputy_key=deputy_key)
+
+    def force_off(self, xnames: Iterable[str], task_deadline_minutes: int|None=1,
+                  deputy_key: str|None=None) -> TransitionStartOutput:
+        """
+        Wrapper for calling _transition_create to force power off a node
+        """
+        return self._transition_create(operation='Force-Off', xnames=xnames,
+                                       task_deadline_minutes=task_deadline_minutes,
+                                       deputy_key=deputy_key)

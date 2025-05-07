@@ -31,6 +31,7 @@ import logging
 from typing import ParamSpec, TypeVar
 
 import connexion
+from connexion.lifecycle import ConnexionResponse as CxResponse
 import redis
 
 from bos.common.utils import exc_type_msg
@@ -40,11 +41,11 @@ LOGGER = logging.getLogger(__name__)
 P = ParamSpec('P')
 R = TypeVar('R')
 
-def redis_error_handler(func: Callable[P, R]) -> Callable[P, R]:
+def redis_error_handler(func: Callable[P, R]) -> Callable[P, R|CxResponse]:
     """Decorator for returning better errors if Redis is unreachable"""
 
     @functools.wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | CxResponse:
         try:
             if 'body' in kwargs:
                 # Our get/patch functions don't take body, but the **kwargs

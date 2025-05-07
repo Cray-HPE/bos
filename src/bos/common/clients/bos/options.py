@@ -23,6 +23,7 @@
 #
 import logging
 import json
+from typing import cast
 
 import requests
 from requests.exceptions import HTTPError
@@ -53,14 +54,14 @@ class Options(OptionsCache):
         try:
             with retry_session_get(ENDPOINT, session=session) as response:
                 response.raise_for_status()
-                return json.loads(response.text)
+                return cast(OptionsDict, json.loads(response.text))
         except (RequestsConnectionError, MaxRetryError) as e:
             LOGGER.error("Unable to connect to BOS: %s", exc_type_msg(e))
         except HTTPError as e:
             LOGGER.error("Unexpected response from BOS: %s", exc_type_msg(e))
         except json.JSONDecodeError as e:
             LOGGER.error("Non-JSON response from BOS: %s", exc_type_msg(e))
-        return {}
+        return OptionsDict()
 
 
 options = Options(update_on_create=False)

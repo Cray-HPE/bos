@@ -26,9 +26,10 @@ from collections.abc import Callable
 import functools
 import logging
 import hashlib
-from typing import ParamSpec, Required, TypedDict, TypeVar
+from typing import cast, ParamSpec, Required, TypedDict, TypeVar
 
 import connexion
+from connexion.lifecycle import ConnexionResponse as CxResponse
 import requests
 from requests.exceptions import HTTPError
 
@@ -126,7 +127,7 @@ def get_tenant_data(tenant: str, session: requests.Session | None = None) -> Ten
                 raise InvalidTenantException(
                     f"Data not found for tenant {tenant}") from e
             raise
-        return response.json()
+        return cast(Tenant, response.json())
 
 
 def get_tenant_component_set(tenant: str) -> set[str]:
@@ -155,11 +156,11 @@ def validate_tenant_exists(tenant: str) -> bool:
 P1 = ParamSpec("P1")
 R1 = TypeVar("R1")
 
-def tenant_error_handler(func: Callable[P1, R1]) -> Callable[P1, R1]:
+def tenant_error_handler(func: Callable[P1, R1]) -> Callable[P1, R1 | CxResponse]:
     """Decorator for returning errors if there is an exception when calling tapms"""
 
     @functools.wraps(func)
-    def wrapper(*args: P1.args, **kwargs: P1.kwargs) -> R1:
+    def wrapper(*args: P1.args, **kwargs: P1.kwargs) -> R1 | CxResponse:
         try:
             return func(*args, **kwargs)
         except InvalidTenantException as e:
@@ -173,11 +174,11 @@ def tenant_error_handler(func: Callable[P1, R1]) -> Callable[P1, R1]:
 P2 = ParamSpec("P2")
 R2 = TypeVar("R2")
 
-def reject_invalid_tenant(func: Callable[P2, R2]) -> Callable[P2, R2]:
+def reject_invalid_tenant(func: Callable[P2, R2]) -> Callable[P2, R2 | CxResponse]:
     """Decorator for preemptively validating the tenant exists"""
 
     @functools.wraps(func)
-    def wrapper(*args: P2.args, **kwargs: P2.kwargs) -> R2:
+    def wrapper(*args: P2.args, **kwargs: P2.kwargs) -> R2 | CxResponse:
         tenant = get_tenant_from_header()
         if tenant and not validate_tenant_exists(tenant):
             LOGGER.debug("The provided tenant does not exist")

@@ -24,7 +24,6 @@
 
 from bos.common.clients.s3 import ArtifactNotFound, BootImageMetadata, S3Object
 from bos.common.utils import exc_type_msg
-from bos.common.types.general import JsonDict
 from bos.common.types.templates import BootSet
 
 from .defs import LOGGER

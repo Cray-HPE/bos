@@ -36,7 +36,7 @@ import threading
 import os
 import time
 from types import TracebackType
-from typing import cast, ClassVar, Literal, NoReturn, Self
+from typing import cast, ClassVar, Literal, NoReturn, Self, TypedDict, Unpack
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
@@ -50,7 +50,8 @@ from bos.common.types.components import (BaseComponentData,
                                          ComponentEventStats,
                                          ComponentEventStatsAttemptFields,
                                          ComponentLastAction,
-                                         ComponentRecord)
+                                         ComponentRecord,
+                                         GetComponentsFilter)
 from bos.common.values import Status
 from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, HSMState
 from bos.operators.filters.base import BaseFilter
@@ -108,6 +109,21 @@ class ApiClients:
         return self._stack.__exit__(exc_type, exc_val, exc_tb)
 
 
+class DesiredConfigSetInCFSKwargs(TypedDict, total=False):
+    """
+    Format of non-cfs_client args to DesiredConfigurationSetInCFS.__init__ filter
+    """
+    negate: bool
+
+
+class HSMStateKwargs(TypedDict, total=False):
+    """
+    Format of non-hsm_client args to HSMState.__init__ filter
+    """
+    enabled: bool | None
+    ready: bool | None
+
+
 class BaseOperator(ABC):
     """
     An abstract class for all BOS operators.
@@ -148,22 +164,26 @@ class BaseOperator(ABC):
     @abstractmethod
     def filters(self) -> list[BaseFilter]: ...
 
-    def BOSQuery(self, bos_client: BOSClient | None = None, **kwargs) -> BOSQuery:
+    def BOSQuery(self, bos_client: BOSClient | None = None,
+                 **kwargs: Unpack[GetComponentsFilter]) -> BOSQuery:
         """
         Shortcut to get a BOSQuery filter with the bos_client for this operator
         """
         return BOSQuery(bos_client=self.client.bos if bos_client is None else bos_client,
                         **kwargs)
 
-    def DesiredConfigurationSetInCFS(self, cfs_client: CFSClient | None = None,
-                                     **kwargs) -> DesiredConfigurationSetInCFS:
+    def DesiredConfigurationSetInCFS(
+        self, cfs_client: CFSClient | None = None,
+        **kwargs: Unpack[DesiredConfigSetInCFSKwargs]
+    ) -> DesiredConfigurationSetInCFS:
         """
         Shortcut to get a DesiredConfigurationSetInCFS filter with the cfs_client for this operator
         """
         return DesiredConfigurationSetInCFS(
                 cfs_client=self.client.cfs if cfs_client is None else cfs_client, **kwargs)
 
-    def HSMState(self, hsm_client: HSMClient | None = None, **kwargs) -> HSMState:
+    def HSMState(self, hsm_client: HSMClient | None = None,
+                 **kwargs: Unpack[HSMStateKwargs]) -> HSMState:
         """
         Shortcut to get a HSMState filter with the bos_client for this operator
         """
@@ -436,7 +456,7 @@ def _init_logging() -> None:
     logging.basicConfig(level=log_level, format=log_format)
 
 
-def main(operator: type[BaseOperator]):
+def main(operator: type[BaseOperator]) -> NoReturn:
     """
     The main method for any operator type.
     Automatically handles logging and heartbeats as well as starting the operator.

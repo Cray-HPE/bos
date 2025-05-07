@@ -35,13 +35,13 @@ API_JSON_SCHEMA_PATH = "/app/lib/bos/server/openapi.jsonschema"
 
 class Validator:
 
-    def __init__(self):
+    def __init__(self) -> None:
         LOGGER.info("Loading API schema from %s", API_JSON_SCHEMA_PATH)
         with open(API_JSON_SCHEMA_PATH, "rt") as f:
             oas = json.load(f)
         self.api_schema = oas["components"]["schemas"]
 
-    def validate(self, data: Any, schema_name: str):
+    def validate(self, data: Any, schema_name: str) -> None:
         jsonschema.validate(data, self.api_schema[schema_name])
 
     def validate_component(self, data: Any) -> None:
