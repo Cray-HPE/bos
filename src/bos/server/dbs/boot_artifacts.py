@@ -51,7 +51,8 @@ def record_boot_artifacts(token: str, kernel: str, kernel_parameters: str,
         "Logging BSS token and boot artifacts: token='%s' kernel='%s' "
         "kernel_parameters='%s' initrd='%s'", token, kernel, kernel_parameters,
         initrd)
-    boot_artifacts = BootArtifacts(kernel=kernel, kernel_parameters=kernel_parameters, initrd=initrd, timestamp=get_current_timestamp())
+    boot_artifacts = BootArtifacts(kernel=kernel, kernel_parameters=kernel_parameters,
+                                   initrd=initrd, timestamp=get_current_timestamp())
     TOKENS_DB.put(token, boot_artifacts)
 
 

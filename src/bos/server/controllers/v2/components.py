@@ -324,7 +324,8 @@ def patch_v2_components(
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
-        current_component_data, component_patch_data = _parse_v2_components_bulk_patch(data, skip_bad_ids=skip_bad_ids)
+        current_component_data, component_patch_data = _parse_v2_components_bulk_patch(
+                                                            data, skip_bad_ids=skip_bad_ids)
     except ComponentNotFound as err:
         LOGGER.warning(err)
         return _404_component_not_found(resource_id=err.resource_id)  # pylint: disable=redundant-keyword-arg
@@ -381,7 +382,8 @@ def _(
 
     components = _load_comps_from_id_list(list(patch_data), skip_bad_ids=skip_bad_ids)
 
-    LOGGER.debug("_parse_v2_components_bulk_patch(list): %d components to be patched", len(components))
+    LOGGER.debug("_parse_v2_components_bulk_patch(list): %d components to be patched",
+                 len(components))
     return components, patch_data
 
 
@@ -670,7 +672,8 @@ def _apply_staged(component_id: str, clear_staged: bool=False) -> bool:
     return True
 
 
-def _set_state_from_staged(data: CompAny, staged_state: ComponentStagedState, staged_session_name: str) -> None:
+def _set_state_from_staged(data: CompAny, staged_state: ComponentStagedState,
+                           staged_session_name: str) -> None:
     tenant = get_tenant_from_header()
     try:
         session = SESSIONS_DB.tenanted_get(staged_session_name, tenant)
@@ -765,9 +768,11 @@ def del_timestamp(data: CompAny) -> None:
 
 def _set_last_updated[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
     timestamp = get_current_timestamp()
-    if 'actual_state' in data and isinstance(data['actual_state'], dict) and data['actual_state'].keys() != {"bss_token"}:
+    if 'actual_state' in data and isinstance(data['actual_state'], dict) and \
+                                  data['actual_state'].keys() != {"bss_token"}:
         data['actual_state']['last_updated'] = timestamp
-    if 'desired_state' in data and isinstance(data['desired_state'], dict) and data['desired_state'].keys() != {"bss_token"}:
+    if 'desired_state' in data and isinstance(data['desired_state'], dict) and \
+                                   data['desired_state'].keys() != {"bss_token"}:
         data['desired_state']['last_updated'] = timestamp
     if 'staged_state' in data and isinstance(data['staged_state'], dict):
         data['staged_state']['last_updated'] = timestamp

@@ -30,8 +30,8 @@ from typing import cast
 
 from bos.common.tenant_utils import get_tenant_aware_key
 from bos.common.types.general import JsonDict
-from bos.common.types.templates import BOOT_SET_DEFAULT_ARCH as DEFAULT_ARCH
-from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS as HARDWARE_SPECIFIER_FIELDS
+from bos.common.types.templates import BOOT_SET_DEFAULT_ARCH
+from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS
 from bos.server.schema import validator
 
 from .db import TEMP_DB, delete_component, delete_session, delete_template
@@ -229,7 +229,7 @@ def sanitize_bootset(bsname: str, bsdata: JsonDict) -> None:
 
     # If the arch field is not present, set it to its default value
     if "arch" not in bsdata:
-        bsdata["arch"] = DEFAULT_ARCH
+        bsdata["arch"] = BOOT_SET_DEFAULT_ARCH
 
     # Remove any fields that are no longer in the spec
     bad_fields = [
@@ -257,7 +257,7 @@ def sanitize_bootset(bsname: str, bsdata: JsonDict) -> None:
             del bsdata[field]
             continue
 
-        if field != 'rootfs_provider' and field not in HARDWARE_SPECIFIER_FIELDS:
+        if field != 'rootfs_provider' and field not in BOOT_SET_HARDWARE_SPECIFIER_FIELDS:
             continue
 
         # rootfs_provider and the node-specifier fields are optional* but if present,
@@ -268,7 +268,7 @@ def sanitize_bootset(bsname: str, bsdata: JsonDict) -> None:
         #   be set
         if not value:
             del bsdata[field]
-        elif field in HARDWARE_SPECIFIER_FIELDS:
+        elif field in BOOT_SET_HARDWARE_SPECIFIER_FIELDS:
             nonempty_node_field_found = True
 
     # Validate that at least one of the required node-specified fields is present
@@ -276,7 +276,7 @@ def sanitize_bootset(bsname: str, bsdata: JsonDict) -> None:
         return
 
     raise ValidationError(
-        f"Boot set '{bsname}' has no non-empty node fields ({HARDWARE_SPECIFIER_FIELDS})"
+        f"Boot set '{bsname}' has no non-empty node fields ({BOOT_SET_HARDWARE_SPECIFIER_FIELDS})"
     )
 
 

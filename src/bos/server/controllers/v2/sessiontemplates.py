@@ -264,7 +264,8 @@ def validate_v2_sessiontemplate(
     return msg, 200
 
 
-def validate_sanitize_session_template(session_template_id: str, template_data: SessionTemplate) -> None:
+def validate_sanitize_session_template(session_template_id: str,
+                                       template_data: SessionTemplate) -> None:
     """
     Used when creating or patching session templates
     """
@@ -283,4 +284,5 @@ def validate_sanitize_session_template(session_template_id: str, template_data: 
     for bs in template_data["boot_sets"].values():
         del bs["name"]
 
-_404_template_not_found = partial(_404_tenanted_resource_not_found, resource_type="Session template")
+_404_template_not_found = partial(_404_tenanted_resource_not_found,
+                                  resource_type="Session template")

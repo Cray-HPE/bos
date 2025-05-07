@@ -463,7 +463,8 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
         percent_powering_off=round(component_phase_percents.get(Phase.powering_off, 0), 2),
         percent_configuring=round(component_phase_percents.get(Phase.configuring, 0), 2)
     )
-    timing = SessionExtendedStatusTiming(start_time=start_time, end_time=end_time, duration=duration)
+    timing = SessionExtendedStatusTiming(start_time=start_time, end_time=end_time,
+                                         duration=duration)
     extended_status = SessionExtendedStatus(
         managed_components_count=num_managed_components,
         phases=phases,

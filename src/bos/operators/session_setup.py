@@ -27,6 +27,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 import copy
 import logging
+from typing import Any
 
 from botocore.exceptions import ClientError
 
@@ -110,6 +111,18 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         self.HSMState = hsm_state
         self._template: SessionTemplate | None = None
 
+    def _log_debug(self, message: str, *xargs: Any) -> None:
+        LOGGER.debug(f'Session {self.name}: {message}', *xargs)
+
+    def _log_error(self, message: str, *xargs: Any) -> None:
+        LOGGER.error(f'Session {self.name}: {message}', *xargs)
+
+    def _log_info(self, message: str, *xargs: Any) -> None:
+        LOGGER.info(f'Session {self.name}: {message}', *xargs)
+
+    def _log_warning(self, message: str, *xargs: Any) -> None:
+        LOGGER.warning(f'Session {self.name}: {message}', *xargs)
+
     @abstractmethod
     def _set_component_data(self, data: ComponentRecord, state: TargetStateT) -> None:
         """
@@ -176,22 +189,22 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             if not all_component_ids:
                 raise SessionSetupException("No nodes were found to act upon.")
         except Exception as err:
-            self._log(LOGGER.debug, exc_type_msg(err))
+            self._log_debug(exc_type_msg(err))
             if isinstance(err, SessionSetupException):
                 raise
             raise SessionSetupException(err) from err
         # No exception raised by previous block
-        self._log(LOGGER.info, 'Found %d components that require updates',
-                  len(data))
+        self._log_info('Found %d components that require updates', len(data))
         for chunk in chunk_components(data, max_batch_size):
-            self._log(LOGGER.debug, f'Updated components: {chunk}')
+            self._log_debug('Updated components: %s', chunk)
             patched_comps = self.bos_client.components.update_components(chunk, skip_bad_ids=True)
             chunk_comp_ids = set(comp["id"] for comp in chunk)
             patched_comp_ids = set(comp["id"] for comp in patched_comps)
             unpatched_comp_ids = chunk_comp_ids - patched_comp_ids
             if not unpatched_comp_ids:
                 continue
-            self._log(LOGGER.warning, '%d components not found in BOS: %s', len(unpatched_comp_ids), unpatched_comp_ids)
+            self._log_warning('%d components not found in BOS: %s',
+                              len(unpatched_comp_ids), unpatched_comp_ids)
             all_component_ids.difference_update(unpatched_comp_ids)
         if all_component_ids:
             return all_component_ids
@@ -212,26 +225,19 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         # Populate from node_groups
         for group_name in boot_set.get('node_groups', []):
             if group_name not in self.inventory.groups:
-                self._log(LOGGER.warning,
-                          f"No hardware matching label {group_name}")
+                self._log_warning("No hardware matching label %s", group_name)
                 continue
             nodes |= self.inventory.groups[group_name]
         # Populate from node_roles_groups
         for role_name in boot_set.get('node_roles_groups', []):
             if role_name not in self.inventory.roles:
-                self._log(LOGGER.warning,
-                          f"No hardware matching role {role_name}")
+                self._log_warning("No hardware matching role %s", role_name)
                 continue
             nodes |= self.inventory.roles[role_name]
         if not nodes:
-            self._log(
-                LOGGER.warning,
-                "After populating node list, before any filtering, no nodes to act upon."
-            )
+            self._log_warning("After populating node list, before filtering, no nodes to act upon")
             return nodes
-        self._log(LOGGER.debug,
-                  "Before any limiting or filtering, %d nodes to act upon.",
-                  len(nodes))
+        self._log_debug("Before any limiting or filtering, %d nodes to act upon", len(nodes))
         # Filter out any nodes that do not match the boot set architecture desired; boot sets that
         # do not have a specified arch are considered 'X86' nodes.
         arch = boot_set.get('arch', 'X86')
@@ -274,15 +280,10 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         hsm_filter = self.HSMState()
         nodes = set(hsm_filter.filter_by_arch(nodes, valid_archs))
         if not nodes:
-            self._log(
-                LOGGER.warning,
-                "After filtering for architecture, no nodes remain to act upon."
-            )
+            self._log_warning("After filtering for architecture, no nodes remain to act upon")
         else:
-            self._log(
-                LOGGER.debug,
-                "After filtering for architecture, %d nodes remain to act upon.",
-                len(nodes))
+            self._log_debug("After filtering for architecture, %d nodes remain to act upon",
+                            len(nodes))
         return nodes
 
     def _apply_include_disabled(self, nodes: set[str]) -> set[str]:
@@ -297,14 +298,10 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         hsmfilter = self.HSMState(enabled=True)
         nodes = set(hsmfilter.filter_component_ids(list(nodes)))
         if not nodes:
-            self._log(
-                LOGGER.warning,
-                "After removing disabled nodes, no nodes remain to act upon.")
+            self._log_warning("After removing disabled nodes, no nodes remain to act upon")
         else:
-            self._log(
-                LOGGER.debug,
-                "After removing disabled nodes, %d nodes remain to act upon.",
-                len(nodes))
+            self._log_debug("After removing disabled nodes, %d nodes remain to act upon",
+                            len(nodes))
         return nodes
 
     def _apply_limit(self, nodes: set[str]) -> set[str]:
@@ -312,7 +309,7 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         if not session_limit:
             # No limit is defined, so all nodes are allowed
             return nodes
-        self._log(LOGGER.info, f'Applying limit to session: {session_limit}')
+        self._log_info('Applying limit to session: %s', session_limit)
         limit_node_set: set[str] = set()
         for limit in session_limit.split(','):
             if limit[0] == '&':
@@ -332,12 +329,9 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             limit_node_set = op(limit_nodes)
         nodes = nodes.intersection(limit_node_set)
         if not nodes:
-            self._log(LOGGER.warning,
-                      "After applying limit, no nodes remain to act upon.")
+            self._log_warning("After applying limit, no nodes remain to act upon")
         else:
-            self._log(LOGGER.debug,
-                      "After applying limit, %d nodes remain to act upon.",
-                      len(nodes))
+            self._log_debug("After applying limit, %d nodes remain to act upon", len(nodes))
         return nodes
 
     def _apply_tenant_limit(self, nodes: set[str]) -> set[str]:
@@ -350,14 +344,9 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             raise SessionSetupException(str(e)) from e
         nodes = nodes.intersection(tenant_limit)
         if not nodes:
-            self._log(
-                LOGGER.warning,
-                "After applying tenant limit, no nodes remain to act upon.")
+            self._log_warning("After applying tenant limit, no nodes remain to act upon")
         else:
-            self._log(
-                LOGGER.debug,
-                "After applying tenant limit, %d nodes remain to act upon.",
-                len(nodes))
+            self._log_debug("After applying tenant limit, %d nodes remain to act upon", len(nodes))
         return nodes
 
     def _mark_running(self, component_ids: Iterable[str]) -> None:
@@ -368,7 +357,7 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
                 },
                 "components": ",".join(component_ids)
             })
-        self._log(LOGGER.info, 'Session is running')
+        self._log_info('Session is running')
 
     def _mark_failed(self, err: str) -> None:
         """
@@ -376,10 +365,7 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
           err (string): The error that prevented the session from running
         """
         mark_session_complete(self.name, self.tenant, self.bos_client, err=err)
-        self._log(LOGGER.info, 'Session %s has failed.', self.name)
-
-    def _log(self, logger, message: str, *xargs):
-        logger(f'Session {self.name}: {message}', *xargs)
+        self._log_info('Session %s has failed.', self.name)
 
     # Operations
     def _operate(
@@ -492,8 +478,8 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         boot_parameters_etag = artifact_info.get('boot_parameters_etag')
         if boot_parameters_etag is None:
             return boot_param_pieces
-        self._log(LOGGER.info, "++ _get_s3_download_url %s with etag %s.",
-                  boot_parameters, boot_parameters_etag)
+        self._log_info("++ _get_s3_download_url %s with etag %s.",
+                       boot_parameters, boot_parameters_etag)
 
         try:
             s3_obj = S3Object(boot_parameters, boot_parameters_etag)
@@ -504,10 +490,9 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             if image_kernel_parameters:
                 boot_param_pieces.extend(image_kernel_parameters)
         except (ClientError, UnicodeDecodeError, S3ObjectNotFound) as error:
-            self._log(LOGGER.error,
-                      "Error reading file %s; no kernel boot parameters obtained from image",
-                      artifact_info['boot_parameters'])
-            self._log(LOGGER.error, exc_type_msg(error))
+            self._log_error("Error reading file %s; no kernel boot parameters obtained from image",
+                            artifact_info['boot_parameters'])
+            self._log_error(exc_type_msg(error))
             raise
         return boot_param_pieces
 

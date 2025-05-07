@@ -70,11 +70,8 @@ class SessionCleanupOperator(BaseOperator):
         if self.disabled:
             return
 
-        self.client.bos.sessions.delete_sessions(
-            **{
-                'status': 'complete',
-                'min_age': options.cleanup_completed_session_ttl
-            })
+        self.client.bos.sessions.delete_sessions(status='complete',
+                                                 min_age=options.cleanup_completed_session_ttl)
 
 
 if __name__ == '__main__':
