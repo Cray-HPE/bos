@@ -21,13 +21,29 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from contextlib import AbstractContextManager
-from typing import Any, NamedTuple
+from typing import NamedTuple, TypedDict
 
 import requests
 
 type RequestsMethod = Callable[..., AbstractContextManager[requests.Response]]
+
+
+class RequestOptions(TypedDict, total=False):
+    """
+    Kwargs definition for BaseGenericEndpoint _request method
+    These are passed into the requests module request methods.
+
+    This is not intended to list all of the supported arguments for the requests
+    module methods -- only the ones that BOS uses. And even for those, these
+    definitions will only cover the ways in which BOS uses them.
+    """
+    params: Mapping[str,object]|None
+    json: object
+    headers: Mapping[str,object]|None
+    verify: bool
+
 
 class RequestData(NamedTuple):
     """
@@ -37,4 +53,4 @@ class RequestData(NamedTuple):
     """
     method_name: str
     url: str
-    request_options: dict[str, Any]
+    request_options: RequestOptions

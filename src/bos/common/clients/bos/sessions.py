@@ -22,30 +22,44 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 import logging
+from typing import Unpack
 
-from .base import BaseBosTenantAwareEndpoint
+from bos.common.types.sessions import Session, SessionFilter, SessionUpdate
+
+from .base import (BaseBosGetItemEndpoint,
+                   BaseBosGetItemsEndpoint,
+                   BaseBosUpdateItemEndpoint,
+                   BaseBosPostItemEndpoint,
+                   BaseBosDeleteItemsEndpoint)
 
 LOGGER = logging.getLogger(__name__)
 
 
-class SessionEndpoint(BaseBosTenantAwareEndpoint):
-    ENDPOINT = __name__.lower().rsplit('.', maxsplit=1)[-1]
+class SessionEndpoint(
+    BaseBosGetItemEndpoint[Session],
+    BaseBosGetItemsEndpoint[SessionFilter, Session],
+    BaseBosUpdateItemEndpoint[SessionUpdate, Session],
+    BaseBosPostItemEndpoint[None, Session],
+    BaseBosDeleteItemsEndpoint[SessionFilter]
+):
+    ENDPOINT = 'sessions'
 
-    def get_session(self, session_id, tenant):
+    def get_session(self, session_id: str, tenant: str | None) -> Session:
         return self.get_item(session_id, tenant)
 
-    def get_sessions(self, **kwargs):
-        return self.get_items(**kwargs)
+    def get_sessions(self, tenant: str | None=None,
+                     **params: Unpack[SessionFilter]) -> list[Session]:
+        return self.get_items(tenant=tenant, params=params)
 
-    def update_session(self, session_id, tenant, data):
+    def update_session(self, session_id: str, tenant: str | None, data: SessionUpdate) -> Session:
         return self.update_item(session_id, tenant, data)
 
-    def delete_sessions(self, **kwargs):
-        return self.delete_items(**kwargs)
+    def delete_sessions(self, tenant: str | None=None, **params: Unpack[SessionFilter]) -> None:
+        self.delete_items(tenant=tenant, params=params)
 
-    def post_session_status(self, session_id, tenant):
+    def post_session_status(self, session_id: str, tenant: str | None) -> Session:
         """
         Post information for a single BOS Session status.
         This basically saves the BOS Session status to the database.
         """
-        return self.post_item(f'{session_id}/status', tenant)
+        return self.post_item(f'{session_id}/status', tenant, None)
