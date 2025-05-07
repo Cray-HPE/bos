@@ -27,17 +27,14 @@ DBWrapper class
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable
-from functools import partialmethod
 from itertools import batched, islice
 import json
 import logging
 from typing import (Any,
                     ClassVar,
                     Generic,
-                    Literal,
                     Protocol,
-                    cast,
-                    overload)
+                    cast)
 
 import redis
 
@@ -103,25 +100,9 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     @abstractmethod
     def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> DataT: ...
 
-    @overload
-    def _load_entry(self, key: str, data: Any, /, *,
-                    return_json: Literal[False]) -> DataT: ...
-
-    @overload
-    def _load_entry(self, key: str, data: Any, /, *,
-                    return_json: Literal[True]) -> JsonDict: ...
-
-    @overload
-    def _load_entry(self, key: str, data: Any, /, *,
-                    return_json: bool) -> DataT | JsonDict: ...
-
-    def _load_entry(
-        self, key: str, data: Any, /, *,
-        return_json: bool
-    ) -> DataT | JsonDict:
+    def _load_jsondict(self, key: str, data: Any, /) -> JsonDict:
         """
         Parses entry as JSON and verifies it is a dict, or raises an appropriate exception.
-        If return_json is not True, converts result to DataT before returning it.
         """
         if data is None:
             raise NotFoundInDB(db=self.db, key=key)
@@ -143,12 +124,11 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
             raise InvalidDBJsonDataType(db=self.db, key=key, entry_data=cast(JsonData, jsondata))
 
         # Cast the type as JsonDict, so mypy has no doubts
-        jsondict = cast(JsonDict, jsondata)
+        return cast(JsonDict, jsondata)
 
-        return jsondict if return_json else self._jsondict_to_bosdata(key, jsondict)
-
-    _load_bosdata = partialmethod(_load_entry, return_json=False)
-    _load_jsondict = partialmethod(_load_entry, return_json=True)
+    def _load_bosdata(self, key: str, data: Any, /) -> DataT:
+        jsondict = self._load_jsondict(key, data)
+        return self._jsondict_to_bosdata(key, jsondict)
 
     def get(self, key: str, /) -> DataT:
         """Get the data for the given key."""
@@ -171,18 +151,15 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         """
         self.client.set(key, json.dumps(data))
 
-    def _get_and_delete[DataFormat](self, key: str, /, *,
-                                    load_func: Callable[[str, Any], DataFormat]) -> DataFormat:
+    def get_and_delete_raw(self, key: str, /) -> JsonDict:
         """Get the data for the given key and delete it from the DB."""
         # The redis type annotations are not ideal, so we need to use cast here
         data = cast(Any, self.client.getdel(key))
-        return load_func(key, data)
+        return self._load_jsondict(key, data)
 
     def get_and_delete(self, key: str, /) -> DataT:
-        return self._get_and_delete(key, load_func=self._load_bosdata)
-
-    def get_and_delete_raw(self, key: str, /) -> JsonDict:
-        return self._get_and_delete(key, load_func=self._load_jsondict)
+        jsondict = self.get_and_delete_raw(key)
+        return self._jsondict_to_bosdata(key, jsondict)
 
     def get_all(self) -> list[DataT]:
         """Get an array of data for all keys."""
@@ -239,7 +216,8 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         Omits from the mapping any keys which do not exist in the DB.
         """
         raw_data_list: list[Any] = cast(list[Any], self.client.mget(keys))
-        return { key: self._load_bosdata(key, data) for key, data in zip(keys, raw_data_list) if data is not None }
+        return { key: self._load_bosdata(key, data)
+                 for key, data in zip(keys, raw_data_list) if data is not None }
 
     def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
         """
