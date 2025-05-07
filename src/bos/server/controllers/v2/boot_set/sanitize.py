@@ -88,7 +88,8 @@ def validate_sanitize_boot_set(bs_name: str, bs_data: BootSet,
     if "arch" not in bs_data:
         bs_data["arch"] = DEFAULT_ARCH
 
-    # Remove the 'cfs' field if it is set to a null value (either an empty dict, or a dict whose 'configuration' field maps to an empty string
+    # Remove the 'cfs' field if it is set to a null value (either an empty dict, or a dict whose
+    # 'configuration' field maps to an empty string
     remove_empty_cfs_field(bs_data)
 
     # Check the boot artifacts

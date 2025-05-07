@@ -23,6 +23,7 @@
 #
 from collections.abc import Iterable
 import logging
+from typing import cast
 
 from .base import BaseBssEndpoint
 
@@ -77,5 +78,5 @@ class BootParametersEndpoint(BaseBssEndpoint):
             "initrd": initrd
         }
 
-        return self.put(json=payload,
-                        verify=False).headers['bss-referral-token']
+        return cast(str, self.put(json=payload,
+                                  verify=False).headers['bss-referral-token'])

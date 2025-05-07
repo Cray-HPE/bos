@@ -26,7 +26,7 @@ import logging
 
 from bos.common.clients.bos import BOSClient
 from bos.common.types.components import ComponentRecord
-from bos.common.types.sessions import Session
+from bos.common.types.sessions import Session, SessionStatus, SessionUpdate
 from bos.common.utils import get_current_timestamp
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters.base import BaseFilter
@@ -66,7 +66,7 @@ class SessionCompletionOperator(BaseOperator):
     def _get_incomplete_sessions(self) -> list[Session]:
         return self.client.bos.sessions.get_sessions(status='running')
 
-    def _get_incomplete_components(self, session_id) -> list[ComponentRecord]:
+    def _get_incomplete_components(self, session_id: str) -> list[ComponentRecord]:
         components = self.client.bos.components.get_components(
             session=session_id, enabled=True)
         components += self.client.bos.components.get_components(
@@ -83,14 +83,10 @@ def mark_session_complete(session_id: str, tenant: str | None, bos_client: BOSCl
     include that as well.
     Save the session status to the database.
     """
-    patch_data = {
-        'status': {
-            'status': 'complete',
-            'end_time': get_current_timestamp()
-        }
-    }
+    session_status = SessionStatus(status='complete', end_time=get_current_timestamp())
     if err is not None:
-        patch_data["status"]["error"] = err
+        session_status["error"] = err
+    patch_data = SessionUpdate(status=session_status)
     bos_client.sessions.update_session(session_id, tenant, patch_data)
     # This call causes the session status to saved in the database.
     bos_client.sessions.post_session_status(session_id, tenant)

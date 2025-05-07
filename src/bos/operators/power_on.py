@@ -30,7 +30,7 @@ import logging
 # BOS module imports
 from bos.common.clients.ims import get_ims_id_from_s3_url
 from bos.common.clients.s3 import S3Url
-from bos.common.types.components import ComponentRecord
+from bos.common.types.components import ComponentDesiredState, ComponentRecord
 from bos.common.utils import (exc_type_msg,
                               using_sbps_check_kernel_parameters,
                               components_by_id)
@@ -152,7 +152,7 @@ class PowerOnOperator(BaseOperator):
             # If we have been passed an empty dict, there is nothing to do.
             LOGGER.debug("_set_bss: No components to act on")
             return
-        bss_tokens = []
+        bss_tokens: list[ComponentRecord] = []
         for key, nodes in boot_artifacts.items():
             kernel, kernel_parameters, initrd = key
             try:
@@ -170,13 +170,9 @@ class PowerOnOperator(BaseOperator):
                                             kernel_parameters=kernel_parameters,
                                             initrd=initrd, retries=retries)
                 bss_tokens.extend([
-                    {
-                        "id": node,
-                        "desired_state": {
-                            "bss_token": token
-                        },
-                        "session": bos_sessions[node]
-                    } for node in nodes])
+                    ComponentRecord(id=node, session=bos_sessions[node],
+                                    desired_state=ComponentDesiredState(bss_token=token))
+                    for node in nodes])
         LOGGER.info('Found %d components that require BSS token updates',
                     len(bss_tokens))
         if not bss_tokens:

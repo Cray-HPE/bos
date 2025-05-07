@@ -62,12 +62,10 @@ class ActualStateCleanupOperator(BaseOperator):
         ]
 
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
-        data = []
-        for component_id in [component['id'] for component in components]:
-            data.append({
-                'id': component_id,
-                'actual_state': EMPTY_ACTUAL_STATE
-            })
+        data: list[ComponentRecord] = [
+            ComponentRecord(id=component['id'], actual_state=EMPTY_ACTUAL_STATE)
+            for component in components
+        ]
         if data:
             LOGGER.info('Found %d components that require updates', len(data))
             LOGGER.debug('Calling to update with payload: %s', data)
