@@ -22,9 +22,12 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC
+from collections.abc import Iterable, Mapping
 import logging
+from typing import cast
 
 from bos.common.clients.endpoints import BaseEndpoint
+from bos.common.clients.endpoints.base_generic_endpoint import GetDeleteKwargs, RequestKwargs
 from bos.common.tenant_utils import get_new_tenant_header
 from bos.common.utils import PROTOCOL
 
@@ -42,93 +45,174 @@ class BaseBosEndpoint(BaseEndpoint, ABC):
     """
     BASE_ENDPOINT = BASE_BOS_ENDPOINT
 
+def get_delete_request_kwargs(tenant: str|None,
+                              uri: str|None=None,
+                              params: Mapping|None=None) -> GetDeleteKwargs:
+    kwargs = GetDeleteKwargs()
+    if tenant:
+        kwargs["headers"] = get_new_tenant_header(tenant)
+    if uri is not None:
+        kwargs["uri"] = uri
+    if params is not None:
+        kwargs["params"] = params
+    return kwargs
 
-class BaseBosNonTenantAwareEndpoint(BaseBosEndpoint, ABC):
+def request_kwargs(tenant: str|None,
+                   uri: str|None=None,
+                   json: Mapping|Iterable|None=None,
+                   params: Mapping|None=None) -> RequestKwargs:
+    get_delete_kwargs = get_delete_request_kwargs(tenant=tenant, uri=uri, params=params)
+    kwargs = RequestKwargs(**get_delete_kwargs)
+    if json is not None:
+        kwargs["json"] = json
+    return kwargs
+
+
+class BaseBosGetItemEndpoint[ReturnT: Mapping](BaseBosEndpoint, ABC):
+    """
+    This base class provides generic access to the BOS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def get_item(self, item_id: str, tenant: str|None) -> ReturnT:
+        """Get information for a single BOS item"""
+        kwargs = get_delete_request_kwargs(uri=item_id, tenant=tenant)
+        return cast(ReturnT, self.get(**kwargs))
+
+
+class BaseBosGetItemsEndpoint[ParamsT: Mapping|None, ReturnT: Mapping](BaseBosEndpoint, ABC):
+    """
+    This base class provides generic access to the BOS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def get_items(self, tenant: str|None, params: ParamsT) -> list[ReturnT]:
+        """Get information for all BOS items"""
+        kwargs = get_delete_request_kwargs(params=params, tenant=tenant)
+        return cast(list[ReturnT], self.get(**kwargs))
+
+
+class BaseBosUpdateItemEndpoint[DataT: Mapping, ReturnT: Mapping](BaseBosEndpoint, ABC):
+    """
+    This base class provides generic access to the BOS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def update_item(self, item_id: str, tenant: str|None, data: DataT) -> ReturnT:
+        """Update information for a single BOS item"""
+        kwargs = request_kwargs(uri=item_id, json=data, tenant=tenant)
+        return cast(ReturnT, self.patch(**kwargs))
+
+
+class BaseBosUpdateItemsEndpoint[
+    ParamsT: Mapping|None,
+    DataT: Iterable|Mapping,
+    ReturnT: Mapping
+](BaseBosEndpoint, ABC):
+    """
+    This base class provides generic access to the BOS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def update_items(self, tenant: str|None, data: DataT, params: ParamsT) -> list[ReturnT]:
+        """Update information for multiple BOS items"""
+        kwargs = request_kwargs(json=data, params=params, tenant=tenant)
+        return cast(list[ReturnT], self.patch(**kwargs))
+
+
+class BaseBosPostItemEndpoint[DataT: Mapping|None, ReturnT: Mapping](BaseBosEndpoint, ABC):
+    """
+    This base class provides generic access to the BOS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def post_item(self, item_id: str, tenant: str|None, data: DataT) -> ReturnT:
+        """Post information for a single BOS item"""
+        kwargs = request_kwargs(uri=item_id, json=data, tenant=tenant)
+        return cast(ReturnT, self.post(**kwargs))
+
+
+class BaseBosPutItemsEndpoint[DataT: Mapping](BaseBosEndpoint, ABC):
+    """
+    This base class provides generic access to the BOS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def put_items(self, tenant: str|None, data: Iterable[DataT]) -> list[DataT]:
+        """Put information for multiple BOS items"""
+        kwargs = request_kwargs(json=data, tenant=tenant)
+        return cast(list[DataT], self.put(**kwargs))
+
+
+class BaseBosDeleteItemsEndpoint[ParamsT: Mapping|None](BaseBosEndpoint, ABC):
+    """
+    This base class provides generic access to the BOS API.
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def delete_items(self, tenant: str|None, params: ParamsT) -> None:
+        """Delete information for multiple BOS items"""
+        kwargs = get_delete_request_kwargs(params=params, tenant=tenant)
+        self.delete(**kwargs)
+
+### The following are for non-tenant-aware endpoints, which just auto-fill tenant=None
+
+class BaseBosNonTenantAwareGetItemEndpoint[ReturnT: Mapping](BaseBosGetItemEndpoint[ReturnT], ABC):
     """
     This base class provides generic access to the BOS API for non-tenant-aware endpoints
     The individual endpoint needs to be overridden for a specific endpoint.
     """
-
-    def get_item(self, item_id):
+    def get_item_untenanted(self, item_id: str) -> ReturnT:
         """Get information for a single BOS item"""
-        return self.get(uri=item_id)
-
-    def get_items(self, **kwargs):
-        """Get information for all BOS items"""
-        return self.get(params=kwargs)
-
-    def update_item(self, item_id, data):
-        """Update information for a single BOS item"""
-        return self.patch(uri=item_id, json=data)
-
-    def update_items(self, data, **params):
-        """Update information for multiple BOS items"""
-        kwargs = { "json": data }
-        if params:
-            kwargs["params"] = params
-        return self.patch(**kwargs)
-
-    def put_items(self, data):
-        """Put information for multiple BOS Items"""
-        return self.put(json=data)
-
-    def delete_items(self, **kwargs):
-        """Delete information for multiple BOS items"""
-        return self.delete(params=kwargs)
+        return self.get_item(item_id=item_id, tenant=None)
 
 
-class BaseBosTenantAwareEndpoint(BaseBosEndpoint, ABC):
+class BaseBosNonTenantAwareGetItemsEndpoint[
+    ParamsT: Mapping|None,
+    ReturnT: Mapping
+](BaseBosGetItemsEndpoint[ParamsT, ReturnT], ABC):
     """
-    This base class provides generic access to the BOS API for tenant aware endpoints.
+    This base class provides generic access to the BOS API for non-tenant-aware endpoints
     The individual endpoint needs to be overridden for a specific endpoint.
     """
-    def get_item(self, item_id, tenant):
-        """Get information for a single BOS item"""
-        kwargs = { "uri": item_id }
-        if tenant:
-            kwargs["headers"] = get_new_tenant_header(tenant)
-        return self.get(**kwargs)
-
-    def get_items(self, tenant: str | None = None, **params):
+    def get_items_untenanted(self, params: ParamsT) -> list[ReturnT]:
         """Get information for all BOS items"""
-        kwargs = { "params": params }
-        if tenant:
-            kwargs["headers"] = get_new_tenant_header(tenant)
-        return self.get(**kwargs)
+        return self.get_items(tenant=None, params=params)
 
-    def update_item(self, item_id, tenant, data):
+class BaseBosNonTenantAwareUpdateItemEndpoint[
+    DataT: Mapping,
+    ReturnT: Mapping
+](BaseBosUpdateItemEndpoint[DataT, ReturnT], ABC):
+    """
+    This base class provides generic access to the BOS API for non-tenant-aware endpoints
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def update_item_untenanted(self, item_id: str, data: DataT) -> ReturnT:
         """Update information for a single BOS item"""
-        kwargs = { "uri": item_id, "json": data }
-        if tenant:
-            kwargs["headers"] = get_new_tenant_header(tenant)
-        return self.patch(**kwargs)
+        return self.update_item(item_id=item_id, tenant=None, data=data)
 
-    def update_items(self, tenant, data, **params):
+class BaseBosNonTenantAwareUpdateItemsEndpoint[
+    ParamsT: Mapping|None,
+    DataT: Iterable|Mapping,
+    ReturnT: Mapping
+](BaseBosUpdateItemsEndpoint[ParamsT, DataT, ReturnT], ABC):
+    """
+    This base class provides generic access to the BOS API for non-tenant-aware endpoints
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def update_items_untenanted(self, data: DataT, params: ParamsT) -> list[ReturnT]:
         """Update information for multiple BOS items"""
-        kwargs = { "json": data }
-        if tenant:
-            kwargs["headers"] = get_new_tenant_header(tenant)
-        if params:
-            kwargs["params"] = params
-        return self.patch(**kwargs)
+        return self.update_items(tenant=None, data=data, params=params)
 
-    def post_item(self, item_id, tenant, data=None):
-        """Post information for a single BOS item"""
-        kwargs = { "uri": item_id, "json": data }
-        if tenant:
-            kwargs["headers"] = get_new_tenant_header(tenant)
-        return self.post(**kwargs)
+class BaseBosNonTenantAwarePutItemsEndpoint[DataT: Mapping](BaseBosPutItemsEndpoint[DataT], ABC):
+    """
+    This base class provides generic access to the BOS API for non-tenant-aware endpoints
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def put_items_untenanted(self, data: Iterable[DataT]) -> list[DataT]:
+        """Put information for multiple BOS Items"""
+        return self.put_items(tenant=None, data=data)
 
-    def put_items(self, tenant, data):
-        """Put information for multiple BOS items"""
-        kwargs = { "json": data }
-        if tenant:
-            kwargs["headers"] = get_new_tenant_header(tenant)
-        return self.put(**kwargs)
-
-    def delete_items(self, tenant: str | None = None, **params):
+class BaseBosNonTenantAwareDeleteItemsEndpoint[
+    ParamsT: Mapping|None
+](BaseBosDeleteItemsEndpoint[ParamsT], ABC):
+    """
+    This base class provides generic access to the BOS API for non-tenant-aware endpoints
+    The individual endpoint needs to be overridden for a specific endpoint.
+    """
+    def delete_items_untenanted(self, params: ParamsT) -> None:
         """Delete information for multiple BOS items"""
-        kwargs = { "params": params }
-        if tenant:
-            kwargs["headers"] = get_new_tenant_header(tenant)
-        return self.delete(**kwargs)
+        self.delete_items(tenant=None, params=params)
