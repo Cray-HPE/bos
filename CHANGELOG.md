@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - CASMCMS-9414: Create helper types for sessions and component type annotation
   - CASMCMS-9415: Refactor `dbwrapper` to resolve type annotation issues
   - CASMCMS-9416: Resolve type annotation issues in `server/options.py`
+  - CASMCMS-9417: Resolve type annotation issues in session status operator
 
 ### Dependencies
 - Updated to openapi-generator-cli v7.13.0
