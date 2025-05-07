@@ -25,9 +25,13 @@ from collections import defaultdict
 import logging
 
 from .client import HSMClient
+from .state_components import StateComponentsGetListParams
+from .types import StateComponentsDataArray
 
 LOGGER = logging.getLogger(__name__)
 
+type MemberDict = dict[str, set[str]]
+type DefaultMemberDict = defaultdict[str, set[str]]
 
 class Inventory:
     """
@@ -38,19 +42,19 @@ class Inventory:
     is used.
     """
 
-    def __init__(self, hsm_client: HSMClient, partition=None):
+    def __init__(self, hsm_client: HSMClient, partition: str|None=None) -> None:
         self._partition = partition  # Can be specified to limit to roles/components query
-        self._inventory = None
-        self._groups = None
-        self._partitions = None
-        self._roles = None
+        self._inventory: MemberDict | None = None
+        self._groups: MemberDict | None = None
+        self._partitions: MemberDict | None = None
+        self._roles: DefaultMemberDict | None = None
         self.hsm_client = hsm_client
 
     @property
-    def groups(self):
+    def groups(self) -> MemberDict:
         if self._groups is None:
             data = self.hsm_client.groups.get_list()
-            groups = {}
+            groups: MemberDict = {}
             for group in data:
                 groups[group['label']] = set(
                     group.get('members', {}).get('ids', []))
@@ -58,10 +62,10 @@ class Inventory:
         return self._groups
 
     @property
-    def partitions(self):
+    def partitions(self) -> MemberDict:
         if self._partitions is None:
             data = self.hsm_client.partitions.get_list()
-            partitions = {}
+            partitions: MemberDict = {}
             for partition in data:
                 partitions[partition['name']] = set(
                     partition.get('members', {}).get('ids', []))
@@ -69,13 +73,13 @@ class Inventory:
         return self._partitions
 
     @property
-    def roles(self):
+    def roles(self) -> DefaultMemberDict:
         if self._roles is None:
-            params = {}
+            params: StateComponentsGetListParams = {}
             if self._partition:
                 params['partition'] = self._partition
             data = self.hsm_client.state_components.get_list(params=params)
-            roles = defaultdict(set)
+            roles: DefaultMemberDict = defaultdict(set)
             for component in data['Components']:
                 role = ''
                 if 'Role' in component:
@@ -88,18 +92,18 @@ class Inventory:
         return self._roles
 
     @property
-    def inventory(self):
+    def inventory(self) -> MemberDict:
         if self._inventory is None:
-            inventory = {}
+            inventory: MemberDict = {}
             inventory.update(self.groups)
             inventory.update(self.partitions)
             inventory.update(self.roles)
             self._inventory = inventory
-            LOGGER.info(self._inventory)
+            LOGGER.debug(self._inventory)
         return self._inventory
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         return key in self.inventory
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> set[str]:
         return self.inventory[key]

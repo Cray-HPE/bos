@@ -23,7 +23,7 @@
 #
 
 import logging
-from typing import cast
+from typing import cast, TypedDict
 
 from bos.common.utils import exc_type_msg
 
@@ -34,7 +34,11 @@ from .types import StateComponentsDataArray
 LOGGER = logging.getLogger(__name__)
 
 
-class StateComponentsEndpoint(BaseHsmEndpoint[StateComponentsDataArray]):
+class StateComponentsGetListParams(TypedDict, total=False):
+    partition: str
+
+
+class StateComponentsEndpoint(BaseHsmEndpoint[StateComponentsGetListParams, StateComponentsDataArray]):
     ENDPOINT = 'State/Components'
 
     def read_all_node_xnames(self) -> set[str]:

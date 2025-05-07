@@ -82,3 +82,14 @@ def update_session_record(record: Session, patch_data: SessionUpdate) -> None:
 
     if "components" in patch_data:
         record["components"] = patch_data["components"]
+
+class SessionFilter(TypedDict, total=False):
+    """
+    The parameters that can be passed into BOS session endpoints that allow filtering
+    V2SessionsMaxAgeQueryParam:
+    V2SessionsMinAgeQueryParam:
+    V2SessionsStatusQueryParam:
+    """
+    min_age: str
+    max_age: str
+    status: SessionStatusLabel

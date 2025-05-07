@@ -23,22 +23,15 @@
 #
 import logging
 
-from .base import BaseBosTenantAwareEndpoint
+from bos.common.types.templates import SessionTemplate
+
+from .base import BaseBosGetItemEndpoint
 
 LOGGER = logging.getLogger(__name__)
 
 
-class SessionTemplateEndpoint(BaseBosTenantAwareEndpoint):
+class SessionTemplateEndpoint(BaseBosGetItemEndpoint[SessionTemplate]):
     ENDPOINT = 'sessiontemplates'
 
-    def get_session_template(self, session_template_id, tenant):
+    def get_session_template(self, session_template_id: str, tenant: str | None) -> SessionTemplate:
         return self.get_item(session_template_id, tenant)
-
-    def get_session_templates(self, **kwargs):
-        return self.get_items(**kwargs)
-
-    def update_session_template(self, session_template_id, tenant, data):
-        return self.update_item(session_template_id, tenant, data)
-
-    def update_session_templates(self, data):
-        raise Exception("Session templates don't support a bulk update")

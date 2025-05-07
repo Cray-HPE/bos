@@ -22,40 +22,50 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+from typing import Literal
+
 from bos.common.types.components import (BootArtifacts,
                                          ComponentActualState,
                                          ComponentDesiredState,
                                          ComponentStagedState)
 
+
+ComponentActionStr = Literal['powering_on', 'powering_off_gracefully', 'powering_off_forcefully',
+                          'apply_staged', 'session_setup', 'newly_discovered']
+ComponentPhaseStr = Literal['powering_on', 'powering_off', 'configuring', '']
+ComponentStatusStr = Literal['power_on_pending', 'power_on_called', 'power_off_pending',
+                          'power_off_gracefully_called', 'power_off_forcefully_called',
+                          'configuring', 'stable', 'failed', 'on_hold']
+
 # Phases
 class Phase:
-    powering_on = "powering_on"
-    powering_off = "powering_off"
-    configuring = "configuring"
-    none = ""
+    powering_on: ComponentPhaseStr = "powering_on"
+    powering_off: ComponentPhaseStr = "powering_off"
+    configuring: ComponentPhaseStr = "configuring"
+    none: ComponentPhaseStr = ""
 
 
 # Actions
 class Action:
-    power_on = "powering_on"
-    power_off_gracefully = "powering_off_gracefully"
-    power_off_forcefully = "powering_off_forcefully"
-    apply_staged = "apply_staged"
-    session_setup = "session_setup"
-    newly_discovered = "newly_discovered"
+    power_on: ComponentActionStr = "powering_on"
+    power_off_gracefully: ComponentActionStr = "powering_off_gracefully"
+    power_off_forcefully: ComponentActionStr = "powering_off_forcefully"
+    apply_staged: ComponentActionStr = "apply_staged"
+    session_setup: ComponentActionStr = "session_setup"
+    newly_discovered: ComponentActionStr = "newly_discovered"
 
 
 # Status
 class Status:
-    power_on_pending = "power_on_pending"
-    power_on_called = "power_on_called"
-    power_off_pending = "power_off_pending"
-    power_off_gracefully_called = "power_off_gracefully_called"
-    power_off_forcefully_called = "power_off_forcefully_called"
-    configuring = "configuring"
-    stable = "stable"
-    failed = "failed"
-    on_hold = "on_hold"
+    power_on_pending: ComponentStatusStr = "power_on_pending"
+    power_on_called: ComponentStatusStr = "power_on_called"
+    power_off_pending: ComponentStatusStr = "power_off_pending"
+    power_off_gracefully_called: ComponentStatusStr = "power_off_gracefully_called"
+    power_off_forcefully_called: ComponentStatusStr = "power_off_forcefully_called"
+    configuring: ComponentStatusStr = "configuring"
+    stable: ComponentStatusStr = "stable"
+    failed: ComponentStatusStr = "failed"
+    on_hold: ComponentStatusStr = "on_hold"
 
 
 EMPTY_BOOT_ARTIFACTS: BootArtifacts = {

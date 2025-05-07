@@ -22,17 +22,37 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 import logging
+from typing import cast, TypedDict, Unpack
 
 import requests
 
 from bos.common.utils import compact_response_text
 
-from .defs import RequestData, RequestsMethod
+from .defs import RequestData, RequestOptions, RequestsMethod
 from .exceptions import ApiResponseError
 from .request_error_handler import BaseRequestErrorHandler, RequestErrorHandler
 
 LOGGER = logging.getLogger(__name__)
+
+
+class GetDeleteKwargs(TypedDict, total=False):
+    """
+    Kwargs definition for BaseGenericEndpoint get and delete methods
+    """
+    uri: str
+    params: Mapping[str,object]|None
+    headers: Mapping[str,object]|None
+    verify: bool
+
+
+class RequestKwargs(GetDeleteKwargs, total=False):
+    """
+    Kwargs definition for BaseGenericEndpoint patch, post, put, and request methods
+    """
+    json: object
+
 
 class BaseGenericEndpoint[RequestReturnT](ABC):
     """
@@ -76,23 +96,23 @@ class BaseGenericEndpoint[RequestReturnT](ABC):
     def request(self,
                 method: RequestsMethod,
                 /,
-                *,
-                uri: str = "",
-                **kwargs) -> RequestReturnT:
-        url = self.url(uri)
-        LOGGER.debug("%s %s (kwargs=%s)", method.__name__.upper(), url, kwargs)
+                **kwargs: Unpack[RequestKwargs]) -> RequestReturnT:
+        url = self.url(kwargs.pop("uri", ""))
+        # After popping 'uri', we know we can consider it a RequestOptions dict
+        _kwargs = cast(RequestOptions, kwargs)
+        LOGGER.debug("%s %s (kwargs=%s)", method.__name__.upper(), url, _kwargs)
         try:
-            return self._request(method, url, **kwargs)
+            return self._request(method, url, **_kwargs)
         except Exception as err:
             self.error_handler.handle_exception(
                 err,
                 RequestData(method_name=method.__name__.upper(),
                             url=url,
-                            request_options=kwargs))
+                            request_options=_kwargs))
 
     @classmethod
     def _request(cls, method: RequestsMethod, url: str, /,
-                 **kwargs) -> RequestReturnT:
+                 **kwargs: Unpack[RequestOptions]) -> RequestReturnT:
         """Make API request"""
         with method(url, **kwargs) as response:
             LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
@@ -101,22 +121,22 @@ class BaseGenericEndpoint[RequestReturnT](ABC):
                 raise ApiResponseError(response=response)
             return cls.format_response(response)
 
-    def delete(self, **kwargs) -> RequestReturnT:
+    def delete(self, **kwargs: Unpack[GetDeleteKwargs]) -> RequestReturnT:
         """Delete request"""
         return self.request(self.session.delete, **kwargs)
 
-    def get(self, **kwargs) -> RequestReturnT:
+    def get(self, **kwargs: Unpack[GetDeleteKwargs]) -> RequestReturnT:
         """Get request"""
         return self.request(self.session.get, **kwargs)
 
-    def patch(self, **kwargs) -> RequestReturnT:
+    def patch(self, **kwargs: Unpack[RequestKwargs]) -> RequestReturnT:
         """Patch request"""
         return self.request(self.session.patch, **kwargs)
 
-    def post(self, **kwargs) -> RequestReturnT:
+    def post(self, **kwargs: Unpack[RequestKwargs]) -> RequestReturnT:
         """Post request"""
         return self.request(self.session.post, **kwargs)
 
-    def put(self, **kwargs) -> RequestReturnT:
+    def put(self, **kwargs: Unpack[RequestKwargs]) -> RequestReturnT:
         """Put request"""
         return self.request(self.session.put, **kwargs)
