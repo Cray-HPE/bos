@@ -26,7 +26,7 @@
 Type annotation definitions for BOS components
 """
 import copy
-from typing import Literal, Required, TypedDict, cast
+from typing import Literal, Required, TypedDict, cast, get_args
 
 class ComponentStatus(TypedDict, total=False):
     """
@@ -122,6 +122,11 @@ class BaseComponentData(TypedDict, total=False):
     staged_state: ComponentStagedState
     status: ComponentStatus
 
+CompDictFields = Literal["actual_state", "desired_state", "staged_state", "last_action",
+                         "event_stats", "status"]
+
+COMP_DICT_FIELDS: frozenset[CompDictFields] = frozenset(get_args(CompDictFields))
+
 class ComponentData(BaseComponentData, OptionalIdField):
     """
     #/components/schemas/V2Component
@@ -162,53 +167,34 @@ def update_component_record(
     # Make a copy, to avoid changing new_record in place
     # Cast it as ComponentData, since that will just have the effect of making the 'id' field
     # optional
-    new_record_copy = cast(ComponentData, copy.deepcopy(new_record))
+    new_rec_copy = cast(ComponentData, copy.deepcopy(new_record))
 
     # Pop the 'id' field, if present
-    new_record_copy.pop("id", None)
+    new_rec_copy.pop("id", None)
 
-    # Merge the state dicts -- this is not done in a loop because mypy gets confused keeping track
-    # of string literal values in loops
-    if "actual_state" in new_record_copy:
-        if "actual_state" in record:
-            _update_component_state(record["actual_state"], new_record_copy.pop("actual_state"))
-        else:
-            record["actual_state"] = new_record_copy.pop("actual_state")
+    for field in COMP_DICT_FIELDS.intersection(new_rec_copy):
 
-    if "desired_state" in new_record_copy:
-        if "desired_state" in record:
-            _update_component_state(record["desired_state"], new_record_copy.pop("desired_state"))
-        else:
-            record["desired_state"] = new_record_copy.pop("desired_state")
+        if field not in record:
+            record[field] = new_rec_copy.pop(field)
+            continue
 
-    if "staged_state" in new_record_copy:
-        if "staged_state" in record:
-            _update_component_state(record["staged_state"], new_record_copy.pop("staged_state"))
-        else:
-            record["staged_state"] = new_record_copy.pop("staged_state")
-
-    # Next, merge the regular sub-dicts -- this is also not done in a loop, for the same reason
-    # as above
-    if "last_action" in new_record_copy:
-        if "last_action" in record:
-            record["last_action"].update(new_record_copy.pop("last_action"))
-        else:
-            record["last_action"] = new_record_copy.pop("last_action")
-
-    if "event_stats" in new_record_copy:
-        if "event_stats" in record:
-            record["event_stats"].update(new_record_copy.pop("event_stats"))
-        else:
-            record["event_stats"] = new_record_copy.pop("event_stats")
-
-    if "status" in new_record_copy:
-        if "status" in record:
-            record["status"].update(new_record_copy.pop("status"))
-        else:
-            record["status"] = new_record_copy.pop("status")
+        # We have to break out the fields into separate cases, to help out poor mypy
+        match field:
+            case "actual_state":
+                _update_component_state(record["actual_state"], new_rec_copy.pop("actual_state"))
+            case "desired_state":
+                _update_component_state(record["desired_state"], new_rec_copy.pop("desired_state"))
+            case "staged_state":
+                _update_component_state(record["staged_state"], new_rec_copy.pop("staged_state"))
+            case "last_action":
+                record["last_action"].update(new_rec_copy.pop("last_action"))
+            case "event_stats":
+                record["event_stats"].update(new_rec_copy.pop("event_stats"))
+            case "status":
+                record["status"].update(new_rec_copy.pop("status"))
 
     # The remaining fields can be merged the old-fashioned way
-    record.update(new_record_copy)
+    record.update(new_rec_copy)
 
 class ApplyStagedComponents(TypedDict, total=False):
     """

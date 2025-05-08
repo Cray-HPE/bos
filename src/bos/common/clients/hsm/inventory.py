@@ -21,12 +21,16 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+HSM Inventory class
+"""
+
 from collections import defaultdict
 import logging
 
 from .client import HSMClient
 from .state_components import StateComponentsGetListParams
-from .types import StateComponentsDataArray
 
 LOGGER = logging.getLogger(__name__)
 

@@ -22,6 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+"""
+HSM State/Components endpoint definitions
+"""
+
 import logging
 from typing import cast, TypedDict
 
@@ -38,7 +42,8 @@ class StateComponentsGetListParams(TypedDict, total=False):
     partition: str
 
 
-class StateComponentsEndpoint(BaseHsmEndpoint[StateComponentsGetListParams, StateComponentsDataArray]):
+class StateComponentsEndpoint(BaseHsmEndpoint[StateComponentsGetListParams,
+                                              StateComponentsDataArray]):
     ENDPOINT = 'State/Components'
 
     def read_all_node_xnames(self) -> set[str]:
