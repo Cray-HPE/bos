@@ -22,6 +22,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+BOS component forceful power off operator
+"""
+
 import logging
 
 from bos.common.clients.bos.options import options

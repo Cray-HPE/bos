@@ -23,6 +23,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+"""
+BOS component power on operator
+"""
+
 # Standard imports
 from collections import defaultdict
 import logging

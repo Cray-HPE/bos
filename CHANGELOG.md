@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+= Refactor a couple huge methods in the status operator to make the code more digestible
+
 ## [2.43.0] - 2025-05-07
 
 ### Changed

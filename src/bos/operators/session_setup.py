@@ -23,6 +23,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+"""
+BOS session setup operator
+"""
+
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 import copy
