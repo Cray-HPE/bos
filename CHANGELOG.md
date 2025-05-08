@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 = Refactor a couple huge methods in the status operator to make the code more digestible
+- Minor refactoring of power on operator to resolve pylint complexity complaints
 
 ## [2.43.0] - 2025-05-07
 
