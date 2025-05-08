@@ -23,6 +23,9 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+"""
+Filter classes for BOS operators
+"""
 
 from .filters import (ActualBootStateIsSet,
                       ActualStateAge,

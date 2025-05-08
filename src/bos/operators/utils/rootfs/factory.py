@@ -21,6 +21,10 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+"""
+Function to return the appropriate rootfs provider class for a given boot set
+"""
+
 import logging
 
 from bos.common.clients.s3 import BootImageArtifactSummary

@@ -22,6 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+"""
+BOS utilities used by both server and operators
+"""
+
 # Standard imports
 from contextlib import nullcontext, AbstractContextManager
 import copy

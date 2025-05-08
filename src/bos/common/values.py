@@ -22,6 +22,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+"""
+BOS values used by both server and operators
+"""
+
 from typing import Literal
 
 from bos.common.types.components import (BootArtifacts,
