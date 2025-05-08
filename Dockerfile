@@ -164,7 +164,7 @@ CMD [ "./docker_pylint.sh", "--errors-only" ]
 # Pylint full
 FROM pylint-base AS pylint-full
 WORKDIR /app/venv
-CMD [ "./docker_pylint.sh", "--fail-under", "9" ]
+CMD [ "./docker_pylint.sh", "--fail-under", "9.2" ]
 
 
 # mypy
