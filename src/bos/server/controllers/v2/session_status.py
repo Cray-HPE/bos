@@ -81,7 +81,7 @@ class SessionStatusData:
 
     @property
     def session_extended_status_phases(self) -> SessionExtendedStatusPhases:
-        retirm SessionExtendedStatusPhases(
+        return SessionExtendedStatusPhases(
             percent_complete=round(self.complete_percent, 2),
             percent_powering_on=round(self.phase_percents[Phase.powering_on], 2),
             percent_powering_off=round(self.phase_percents[Phase.powering_off], 2),
