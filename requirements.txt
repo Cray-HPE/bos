@@ -11,6 +11,7 @@ flask
 jsonschema
 kubernetes
 liveness
+pandas[performance]
 python-dateutil
 PyYAML
 redis
