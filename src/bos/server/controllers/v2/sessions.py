@@ -21,12 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
-from collections import defaultdict, Counter
 from datetime import datetime, timedelta
 from functools import partial
 import logging
 import re
-from typing import Literal, NamedTuple, cast
+from typing import Literal, cast
 import uuid
 
 import connexion
@@ -34,27 +33,20 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
-from bos.common.types.components import ComponentRecord, ComponentStatus
-from bos.common.types.session_extended_status import (SessionExtendedStatus,
-                                                      SessionExtendedStatusErrorComponents,
-                                                      SessionExtendedStatusPhases,
-                                                      SessionExtendedStatusTiming)
+from bos.common.types.session_extended_status import SessionExtendedStatus
 from bos.common.types.sessions import Session as SessionRecordT
 from bos.common.types.sessions import SessionCreate as SessionCreateT
 from bos.common.types.sessions import SessionOperation as SessionOperationT
 from bos.common.types.sessions import SessionStatus as SessionStatusT
 from bos.common.types.sessions import SessionUpdate as SessionUpdateT
 from bos.common.types.sessions import update_session_record
-from bos.common.utils import (cached_property_readonly,
-                              exc_type_msg,
+from bos.common.utils import (exc_type_msg,
                               get_current_time,
                               get_current_timestamp,
                               load_timestamp)
-from bos.common.values import ComponentPhaseStr, Phase, Status, COMPONENT_PHASE_STR
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
-from bos.server.controllers.v2.components import get_v2_components_data
 from bos.server.options import OptionsData
 from bos.server.controllers.v2.sessiontemplates import get_v2_sessiontemplate
 from bos.server.models.v2_session import V2Session as Session  # noqa: E501
@@ -62,11 +54,12 @@ from bos.server.models.v2_session_create import V2SessionCreate as SessionCreate
 from bos.server.options import update_server_log_level
 from bos.server.utils import get_request_json, ParsingException
 
+from .session_status import SessionStatusData
+
 LOGGER = logging.getLogger(__name__)
 DB = dbutils.SessionDBWrapper()
 COMPONENTS_DB = dbutils.ComponentDBWrapper()
 STATUS_DB = dbutils.SessionStatusDBWrapper()
-MAX_COMPONENTS_IN_ERROR_DETAILS = 10
 LIMIT_NID_RE = re.compile(r'^[&!]*nid')
 
 
@@ -416,176 +409,7 @@ def _matches_filter(data: SessionRecordT, tenant: str | None, min_start: datetim
 
 def _get_v2_session_status(session_id: str, tenant_id: str | None,
                            session: SessionRecordT) -> SessionExtendedStatus:
-    return _SessionStatusData(session_id, tenant_id, session).session_extended_status
-
-
-class _CompCounts(NamedTuple):
-    phases: tuple[defaultdict[ComponentPhaseStr,int]
-    successful: int
-    failed: int
-
-
-class _SessionStatusData:
-    def __init__(self, session_id: str, tenant_id: str, session: SessionRecordT) -> None:
-        self._session_id = session_id
-        self._tenant_id = tenant_id
-        self._session = session
-
-    @property
-    def session_extended_status(self) -> SessionExtendedStatus:
-        extended_status = SessionExtendedStatus(
-            managed_components_count=self.num_components,
-            phases=self.session_extended_status_phases,
-            percent_staged=round(self.staged_percent, 2),
-            percent_successful=round(self.successful_percent, 2),
-            percent_failed=round(self.failed_percent, 2),
-            error_summary=self.component_errors,
-            timing=self.session_extended_status_timing)
-        try:
-            extended_status["status"] = self.session["status"]["status"]
-        except KeyError:
-            pass
-        return extended_status
-
-    @property
-    def session_extended_status_timing(self) -> SessionExtendedStatusTiming:
-        return SessionExtendedStatusTiming(start_time=self.start_time,
-                                           end_time=self.end_time,
-                                           duration=self.duration)
-
-    @property
-    def session_extended_status_phases(self) -> SessionExtendedStatusPhases:
-        retirm SessionExtendedStatusPhases(
-            percent_complete=round(self.complete_percent, 2),
-            percent_powering_on=round(self.phase_percents[Phase.powering_on], 2),
-            percent_powering_off=round(self.phase_percents[Phase.powering_off], 2),
-            percent_configuring=round(self.phase_percents[Phase.configuring], 2)
-        )
-
-    @property
-    def session_id(self) -> str:
-        return self._session_id
-
-    @property
-    def tenant_id(self) -> str:
-        return self._tenant_id
-
-    @property
-    def session(self) -> SessionRecordT:
-        return self._session
-
-    @cached_property_readonly
-    def components(self) -> list[ComponentRecord]:
-        return get_v2_components_data(session=self.session_id, tenant=self.tenant_id)
-
-    @cached_property_readonly
-    def staged_components(self) -> list[ComponentRecord]:
-        return get_v2_components_data(staged_session=self.session_id, tenant=self.tenant_id)
-
-    @cached_property_readonly
-    def num_components(self) -> int:
-        return len(self.components) + len(self.staged_components)
-
-    @cached_property_readonly
-    def _component_phase_success_fail_counts(self) -> _CompCounts:
-        phase_counts: defaultdict[ComponentPhaseStr,int] = defaultdict(int)
-        num_successful = 0
-        num_failed = 0
-        for c in components:
-            c_status = c.get("status")
-            if not c_status:
-                continue
-            match c_status.get("status"):
-                case Status.stable:
-                    num_successful += 1
-                case Status.failed:
-                    num_failed += 1
-            if not c.get('enabled'):
-                continue
-            if status.get("status_override") == Status.on_hold:
-                continue
-            if (phase := c_status.get('phase')) is not None:
-                phase_counts[phase] += 1
-        return _CompCounts(phases=phase_counts, successful=num_successful, failed=num_failed)
-
-    @property
-    def phase_counts(self) -> defaultdict[ComponentPhaseStr,int]:
-        return self._component_phase_success_fail_counts.phases
-
-    @property
-    def successful_count(self) -> int:
-        return self._component_phase_success_fail_counts.successful
-
-    @property
-    def failed_count(self) -> int:
-        return self._component_phase_success_fail_counts.failed
-
-    @cached_property_readonly
-    def phase_percents(self) -> dict[ComponentPhaseStr,float]:
-        phase_counts = self.phase_counts
-        num_components = self.num_components
-        return { phase: phase_counts[phase] * 100.0 / num_components
-                 for phase in COMPONENT_PHASE_STR }
-
-    @property
-    def complete_count(self) -> int:
-        return self.successful_count + self.failed_count
-
-    @property
-    def complete_percent(self) -> float:
-        return self.complete_count * 100.0 / self.num_components
-
-    @property
-    def staged_count(self) -> int:
-        return len(self.staged_components)
-
-    @property
-    def staged_percent(self) -> float:
-        return self.staged_count * 100.0 / self.num_components
-
-    @cached_property_readonly
-    def component_errors(self) -> dict[str, SessionExtendedStatusErrorComponents]:
-        """
-        Returns a mapping from error messages, to a SessionExtendedStatusErrorComponents
-        object reflecting the components with that error.
-        """
-        comp_errs_data: defaultdict[str, set[str]] = defaultdict(set)
-        for component in self.components:
-            if (error_str := component.get('error')):
-                comp_errs_data[error_str].add(component['id'])
-        comp_errs: dict[str, SessionExtendedStatusErrorComponents] = {}
-        for error, component_ids in comp_errs_data.items():
-            component_list = ','.join(
-                list(component_ids)[:MAX_COMPONENTS_IN_ERROR_DETAILS])
-            if len(component_ids) > MAX_COMPONENTS_IN_ERROR_DETAILS:
-                component_list += '...'
-            comp_errs[error] = SessionExtendedStatusErrorComponents(count=len(component_ids),
-                                                                    list=component_list)
-        return comp_errs
-
-    @cached_property_readonly
-    def start_time(self) -> str:
-        return self.session['status']['start_time']
-
-    @cached_property_readonly
-    def end_time(self) -> str|None:
-        return self.session['status'].get('end_time')
-
-    @property
-    def duration(self) -> str:
-        if (end_time := self.end_time):
-            return str(load_timestamp(end_time) - load_timestamp(self.start_time))
-        return str(get_current_time() - load_timestamp(self.start_time))
-
-
-def _age_to_timestamp(age: str) -> datetime:
-    delta_kwargs = {}
-    for interval in ['weeks', 'days', 'hours', 'minutes']:
-        result = re.search(fr'(\d+)\w*{interval[0]}', age, re.IGNORECASE)
-        if result:
-            delta_kwargs[interval] = int(result.groups()[0])
-    delta = timedelta(**delta_kwargs)
-    return get_current_time() - delta
+    return SessionStatusData(session_id, tenant_id, session).session_extended_status
 
 
 _404_session_not_found = partial(_404_tenanted_resource_not_found, resource_type="Session")
@@ -603,3 +427,13 @@ def _409_session_already_exists(session_id: str, tenant: str | None) -> CxRespon
         status=409,
         title="The resource to be created already exists",
         detail=detail)
+
+
+def _age_to_timestamp(age: str) -> datetime:
+    delta_kwargs = {}
+    for interval in ['weeks', 'days', 'hours', 'minutes']:
+        result = re.search(fr'(\d+)\w*{interval[0]}', age, re.IGNORECASE)
+        if result:
+            delta_kwargs[interval] = int(result.groups()[0])
+    delta = timedelta(**delta_kwargs)
+    return get_current_time() - delta
