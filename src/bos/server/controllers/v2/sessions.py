@@ -50,7 +50,7 @@ from bos.common.utils import (cached_property_readonly,
                               get_current_time,
                               get_current_timestamp,
                               load_timestamp)
-from bos.common.values import Phase, Status
+from bos.common.values import ComponentPhaseStr, Phase, Status, COMPONENT_PHASE_STR
 from bos.server import redis_db_utils as dbutils
 from bos.server.controllers.utils import _400_bad_request, _404_tenanted_resource_not_found
 from bos.server.controllers.v2.boot_set import BootSetStatus, validate_boot_sets
