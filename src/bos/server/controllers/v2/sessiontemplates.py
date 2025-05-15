@@ -32,6 +32,7 @@ from bos.common.tenant_utils import (get_tenant_from_header,
 from bos.common.types.templates import (BootSet,
                                         SessionTemplate,
                                         SessionTemplateCfsParameters,
+                                        SessionTemplatePatch,
                                         remove_empty_cfs_field,
                                         update_template_record)
 from bos.common.utils import exc_type_msg
@@ -215,7 +216,7 @@ def patch_v2_sessiontemplate(
         return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
 
     try:
-        template_patch_data = cast(SessionTemplate, get_request_json())
+        template_patch_data = cast(SessionTemplatePatch, get_request_json())
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request data: %s",
                      session_template_id, exc_type_msg(err))

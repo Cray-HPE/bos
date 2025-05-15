@@ -387,6 +387,29 @@ components:
           $ref: '#/components/schemas/LinkListReadOnly'
       additionalProperties: false
       required: [ boot_sets ]
+    V2SessionTemplatePatch:
+      type: object
+      description: Data to update an existing Session Template record.
+      properties:
+        description:
+          $ref: '#/components/schemas/SessionTemplateDescription'
+        enable_cfs:
+          $ref: '#/components/schemas/EnableCfs'
+        cfs:
+          $ref: '#/components/schemas/V2CfsParameters'
+        boot_sets:
+          type: object
+          description: |
+            Mapping from Boot Set names to Boot Sets.
+
+            * Boot Set names must be 1-127 characters in length.
+            * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names must begin and end with a letter or digit.
+          minProperties: 1
+          maxProperties: 127
+          additionalProperties:
+            $ref: '#/components/schemas/V2BootSet'
+      additionalProperties: false
     V2SessionTemplateValidation:
       description: |
         Message describing errors or incompleteness in a Session Template.
@@ -1575,7 +1598,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V2SessionTemplate'
+              $ref: '#/components/schemas/V2SessionTemplatePatch'
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'
