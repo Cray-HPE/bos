@@ -29,7 +29,7 @@ BOS component graceful power off operator
 
 import logging
 
-from bos.common.types.components import ComponentRecord
+from bos.common.types.components import ComponentActionStr, ComponentRecord
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters.base import BaseFilter
@@ -46,7 +46,11 @@ class GracefulPowerOffOperator(BaseOperator):
     retry_attempt_field = "power_off_graceful_attempts"
 
     @property
-    def name(self) -> str:
+    def name(self) -> ComponentActionStr:
+        return Action.power_off_gracefully
+
+    @property
+    def last_action(self) -> ComponentActionStr:
         return Action.power_off_gracefully
 
     # Filters

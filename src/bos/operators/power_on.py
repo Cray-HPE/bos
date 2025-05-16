@@ -34,7 +34,7 @@ import logging
 # BOS module imports
 from bos.common.clients.ims import get_ims_id_from_s3_url
 from bos.common.clients.s3 import S3Url
-from bos.common.types.components import ComponentDesiredState, ComponentRecord
+from bos.common.types.components import ComponentActionStr, ComponentDesiredState, ComponentRecord
 from bos.common.utils import (exc_type_msg,
                               using_sbps_check_kernel_parameters,
                               components_by_id)
@@ -59,7 +59,11 @@ class PowerOnOperator(BaseOperator):
     retry_attempt_field = "power_on_attempts"
 
     @property
-    def name(self) -> str:
+    def name(self) -> ComponentActionStr:
+        return Action.power_on
+
+    @property
+    def last_action(self) -> ComponentActionStr:
         return Action.power_on
 
     # Filters

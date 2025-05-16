@@ -34,10 +34,10 @@ from typing import Literal
 from bos.common.clients.bos.options import options
 from bos.common.clients.cfs.types import CfsComponentData
 from bos.common.types.components import (ComponentLastAction,
+                                         ComponentPhaseStr,
                                          ComponentRecord,
                                          ComponentStatus)
 from bos.common.values import (Action,
-                               ComponentPhaseStr,
                                ComponentStatusStr,
                                Phase,
                                Status,

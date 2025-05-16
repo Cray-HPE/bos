@@ -45,8 +45,9 @@ from bos.common.clients.cfs import CFSClient
 from bos.common.clients.hsm import HSMClient
 from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
-from bos.common.utils import exc_type_msg, update_log_level
+from bos.common.utils import cached_property_readonly, exc_type_msg, update_log_level
 from bos.common.types.components import (BaseComponentData,
+                                         ComponentActionStr,
                                          ComponentEventStats,
                                          ComponentEventStatsAttemptFields,
                                          ComponentLastAction,
@@ -159,6 +160,14 @@ class BaseOperator(ABC):
     @property
     @abstractmethod
     def name(self) -> str: ...
+
+    @property
+    def last_action(self) -> ComponentActionStr | None:
+        """
+        Should be overridden by operators which want the last_action["action"] field automatically
+        set by the _update_database and _preset_last_action methods
+        """
+        return None
 
     @property
     @abstractmethod
@@ -314,6 +323,16 @@ class BaseOperator(ABC):
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         """ The action taken by the operator on target components """
 
+    @cached_property_readonly
+    def _last_action_patch(self) -> ComponentLastAction|None:
+        """
+        No need to create a new "last_action" dict for each patch entry, since
+        they will all be identical
+        """
+        if (last_action := self.last_action) is not None:
+            return ComponentLastAction(action=last_action, failed=False)
+        return None
+
     def _update_database(self,
                          components: list[ComponentRecord],
                          additional_fields: BaseComponentData | None = None) -> None:
@@ -330,11 +349,10 @@ class BaseOperator(ABC):
         for component in components:
             patch: ComponentRecord = {
                 'id': component['id'],
-                'error':
-                component['error']  # New error, or clearing out old error
+                'error': component['error']  # New error, or clearing out old error
             }
-            if self.name:
-                patch['last_action'] = ComponentLastAction(action=self.name, failed=False)
+            if (last_action := self._last_action_patch) is not None:
+                patch['last_action'] = last_action
             if self.retry_attempt_field:
                 event_stats_data: ComponentEventStats = {
                     self.retry_attempt_field:
@@ -372,8 +390,8 @@ class BaseOperator(ABC):
         data: list[ComponentRecord] = []
         for component in components:
             patch: ComponentRecord = {'id': component['id'], 'error': component['error']}
-            if self.name:
-                patch['last_action'] = ComponentLastAction(action=self.name, failed=False)
+            if (last_action := self._last_action_patch) is not None:
+                patch['last_action'] = last_action
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)

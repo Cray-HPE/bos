@@ -150,6 +150,7 @@ COPY srclist.txt docker_pylint.sh /app/venv/
 # Pylint reporting
 FROM lint-base AS pylint-base
 WORKDIR /app
+COPY pylintrc /app/venv
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
     pip3 install --no-cache-dir pylint -c constraints.txt && \
     pip3 list --format freeze

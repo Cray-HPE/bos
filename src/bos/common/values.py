@@ -26,17 +26,17 @@
 BOS values used by both server and operators
 """
 
-from typing import Literal
+from typing import Literal, get_args
 
 from bos.common.types.components import (BootArtifacts,
+                                         ComponentActionStr,
                                          ComponentActualState,
                                          ComponentDesiredState,
+                                         ComponentPhaseStr,
                                          ComponentStagedState)
 
 
-ComponentActionStr = Literal['powering_on', 'powering_off_gracefully', 'powering_off_forcefully',
-                          'apply_staged', 'session_setup', 'newly_discovered']
-ComponentPhaseStr = Literal['powering_on', 'powering_off', 'configuring', '']
+
 ComponentStatusStr = Literal['power_on_pending', 'power_on_called', 'power_off_pending',
                           'power_off_gracefully_called', 'power_off_forcefully_called',
                           'configuring', 'stable', 'failed', 'on_hold']
@@ -51,12 +51,13 @@ class Phase:
 
 # Actions
 class Action:
-    power_on: ComponentActionStr = "powering_on"
-    power_off_gracefully: ComponentActionStr = "powering_off_gracefully"
-    power_off_forcefully: ComponentActionStr = "powering_off_forcefully"
+    actual_state_cleanup: ComponentActionStr = "actual_state_cleanup"
     apply_staged: ComponentActionStr = "apply_staged"
-    session_setup: ComponentActionStr = "session_setup"
     newly_discovered: ComponentActionStr = "newly_discovered"
+    power_off_forcefully: ComponentActionStr = "powering_off_forcefully"
+    power_off_gracefully: ComponentActionStr = "powering_off_gracefully"
+    power_on: ComponentActionStr = "powering_on"
+    session_setup: ComponentActionStr = "session_setup"
 
 
 # Status

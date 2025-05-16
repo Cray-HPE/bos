@@ -1,0 +1,5 @@
+[MAIN]
+
+# Following line is necessary to avoid problems with cached_property_readonly in bos.common.utils,
+# due to https://github.com/pylint-dev/pylint/issues/10377
+init-hook=import astroid.bases; astroid.bases.POSSIBLE_PROPERTIES.add('cached_property_readonly')

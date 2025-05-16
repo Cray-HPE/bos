@@ -30,7 +30,7 @@ BOS component forceful power off operator
 import logging
 
 from bos.common.clients.bos.options import options
-from bos.common.types.components import ComponentRecord
+from bos.common.types.components import ComponentActionStr, ComponentRecord
 from bos.common.values import Action, Status
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import TimeSinceLastAction
@@ -49,7 +49,11 @@ class ForcefulPowerOffOperator(BaseOperator):
     retry_attempt_field = "power_off_forceful_attempts"
 
     @property
-    def name(self) -> str:
+    def name(self) -> ComponentActionStr:
+        return Action.power_off_forcefully
+
+    @property
+    def last_action(self) -> ComponentActionStr:
         return Action.power_off_forcefully
 
     # Filters

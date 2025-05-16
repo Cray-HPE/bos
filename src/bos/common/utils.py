@@ -30,11 +30,11 @@ BOS utilities used by both server and operators
 from contextlib import nullcontext, AbstractContextManager
 import copy
 import datetime
-from functools import partial
+from functools import cached_property, partial
 import logging
 import re
 import traceback
-from typing import Unpack
+from typing import NoReturn, Unpack
 
 # Third party imports
 from dateutil.parser import parse
@@ -47,6 +47,19 @@ LOGGER = logging.getLogger(__name__)
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
+
+
+# If this class is ever removed, pylintrc can be edited to remove the
+# workaround for https://github.com/pylint-dev/pylint/issues/10377
+class cached_property_readonly[T](cached_property[T]):
+    """
+    A read-only version of the @functools.cached_property decorator
+    """
+    def __set__(self, instance: object, val: T) -> NoReturn:
+        """
+        Raise an AttributeError if someone tries to set the attribute
+        """
+        raise AttributeError(f"Atrribute {self.attrname} in class {type(instance).__name__} is read-only")
 
 
 class InvalidDurationTimestamp(Exception):

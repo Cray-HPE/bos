@@ -28,11 +28,16 @@ Type annotation definitions for BOS components
 import copy
 from typing import Literal, Required, TypedDict, cast, get_args
 
+#/components/schemas/V2ComponentPhase
+ComponentPhaseStr = Literal['powering_on', 'powering_off', 'configuring', '']
+
+COMPONENT_PHASE_STR: frozenset[ComponentPhaseStr] = frozenset(get_args(ComponentPhaseStr))
+
 class ComponentStatus(TypedDict, total=False):
     """
     #/components/schemas/V2ComponentStatus
     """
-    phase: str
+    phase: ComponentPhaseStr
     status: str
     status_override: str
 
@@ -45,11 +50,15 @@ class BootArtifacts(TypedDict, total=False):
     initrd: Required[str]
     timestamp: str
 
+ComponentActionStr = Literal['actual_state_cleanup', 'apply_staged', 'newly_discovered',
+                             'powering_off_forcefully', 'powering_off_gracefully', 'powering_on',
+                             'session_setup']
+
 class ComponentLastAction(TypedDict, total=False):
     """
     #/components/schemas/V2ComponentLastAction
     """
-    action: str
+    action: ComponentActionStr
     failed: bool
     last_updated: str
 
@@ -218,7 +227,7 @@ class GetComponentsFilter(TypedDict, total=False):
     session: str
     staged_session: str
     enabled: bool
-    phase: str
+    phase: ComponentPhaseStr
     status: str
     start_after_id: str
     page_size: int

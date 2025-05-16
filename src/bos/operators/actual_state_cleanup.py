@@ -31,8 +31,8 @@ import logging
 
 from bos.common.clients.bos.options import options
 from bos.common.utils import duration_to_timedelta
-from bos.common.types.components import ComponentRecord
-from bos.common.values import EMPTY_ACTUAL_STATE
+from bos.common.types.components import ComponentActionStr, ComponentRecord
+from bos.common.values import Action, EMPTY_ACTUAL_STATE
 from bos.operators.base import BaseOperator, main
 from bos.operators.filters import ActualStateAge, ActualBootStateIsSet
 from bos.operators.filters.base import BaseFilter
@@ -55,6 +55,10 @@ class ActualStateCleanupOperator(BaseOperator):
     @property
     def name(self) -> str:
         return 'Actual State Cleanup Operator'
+
+    @property
+    def last_action(self) -> ComponentActionStr:
+        return Action.actual_state_cleanup
 
     # Filters
     @property
