@@ -191,8 +191,7 @@ class BootImageMetadata:
           The S3 path to the boot parameters file, if it exists
           else None
         """
-        bp = self.boot_parameters
-        if bp:
+        if (bp := self.boot_parameters):
             return bp['link']['path']
         return None
 
@@ -205,8 +204,7 @@ class BootImageMetadata:
           The S3 path to the boot parameters etag file,
           if it exists else None
         """
-        bp = self.boot_parameters
-        if bp:
+        if (bp := self.boot_parameters):
             return bp['link']['etag']
         return None
 

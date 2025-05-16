@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - CASMCMS-9428: Change component `phase` and `action` fields to enumerated string types; refactor
   operators to take advantage of the changed `action` field type.
 - CASMCMS-9429: Refactor `_get_v2_session_status` logic into its own module
+- CASMCMS-9430: Modify select `@property` decorators into `@cached_property`, for improved performance.
 
 ## [2.43.0] - 2025-05-07
 
