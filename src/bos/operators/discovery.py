@@ -29,30 +29,15 @@ BOS component discovery operator
 
 import logging
 
-from bos.common.types.components import ComponentLastAction, ComponentRecord, ComponentStagedState
+from bos.common.types.components import ComponentRecord, ComponentStagedState
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import BaseActionOperator, main
 from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
 
-def _new_component(component_id: str) -> ComponentRecord:
-    """
-    Return a new component record for the specified ID
-    """
-    return ComponentRecord(
-        id=component_id,
-        actual_state=EMPTY_ACTUAL_STATE,
-        desired_state=EMPTY_DESIRED_STATE,
-        staged_state=ComponentStagedState(),
-        last_action=ComponentLastAction(action=Action.newly_discovered),
-        enabled=False,
-        error='',
-        session='')
-
-
-class DiscoveryOperator(BaseOperator):
+class DiscoveryOperator(BaseActionOperator):
     """
     The Discovery operator periodically queries the set of components
     known by HSM and BOS and reconciles any missing entries. It does
@@ -60,11 +45,22 @@ class DiscoveryOperator(BaseOperator):
     any records caused by transient loss or hardware swap actions.
     """
 
+    action = Action.newly_discovered
     frequency_option = "discovery_frequency"
 
-    @property
-    def name(self) -> str:
-        return "Discovery"
+    def _new_component(self, component_id: str) -> ComponentRecord:
+        """
+        Return a new component record for the specified ID
+        """
+        return ComponentRecord(
+            id=component_id,
+            actual_state=EMPTY_ACTUAL_STATE,
+            desired_state=EMPTY_DESIRED_STATE,
+            staged_state=ComponentStagedState(),
+            last_action=self._component_last_action,
+            enabled=False,
+            error='',
+            session='')
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
@@ -79,17 +75,16 @@ class DiscoveryOperator(BaseOperator):
         """
         A single iteration of discovery.
         """
-        components_to_add: list[ComponentRecord] = []
-        for component in sorted(self.missing_components):
-            LOGGER.debug("Processing new xname entity '%s'", component)
-            components_to_add.append(_new_component(component))
-        if not components_to_add:
+        missing_component_ids = self.missing_components
+        if not missing_component_ids:
             LOGGER.debug("No new components discovered.")
             return
-        LOGGER.info("%s new component(s) from HSM.", len(components_to_add))
+        LOGGER.debug("Processing new xname entities: %s", missing_component_ids)
+        components_to_add = [self._new_component(comp_id) for comp_id in missing_component_ids]
+        LOGGER.info("%d new component(s) from HSM.", len(components_to_add))
         for chunk in self._chunk_components(components_to_add):
             self.client.bos.components.put_components(chunk)
-            LOGGER.info("%s new component(s) added to BOS!", len(chunk))
+            LOGGER.info("%d new component(s) added to BOS!", len(chunk))
 
     @property
     def bos_components(self) -> set[str]:
@@ -109,11 +104,11 @@ class DiscoveryOperator(BaseOperator):
         return self.client.hsm.state_components.read_all_node_xnames()
 
     @property
-    def missing_components(self) -> set[str]:
+    def missing_components(self) -> list[str]:
         """
-        The set of component IDs that need to be added to BOS.
+        The sorted list of component IDs that need to be added to BOS.
         """
-        return self.hsm_xnames - self.bos_components
+        return sorted(self.hsm_xnames - self.bos_components)
 
 
 if __name__ == '__main__':

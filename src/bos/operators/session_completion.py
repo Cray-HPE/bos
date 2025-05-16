@@ -45,10 +45,6 @@ class SessionCompletionOperator(BaseOperator):
     that are part of the session have been disabled.
     """
 
-    @property
-    def name(self) -> str:
-        return 'SessionCompletion'
-
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
     @property

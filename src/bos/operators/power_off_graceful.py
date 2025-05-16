@@ -31,23 +31,20 @@ import logging
 
 from bos.common.types.components import ComponentRecord
 from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import BaseActionOperator, main
 from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
 
-class GracefulPowerOffOperator(BaseOperator):
+class GracefulPowerOffOperator(BaseActionOperator):
     """
     - Enabled in the BOS database and the status is power_off_pending
     - Enabled in HSM
     """
 
+    action = Action.power_off_gracefully
     retry_attempt_field = "power_off_graceful_attempts"
-
-    @property
-    def name(self) -> str:
-        return Action.power_off_gracefully
 
     # Filters
     @property
