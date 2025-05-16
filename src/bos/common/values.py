@@ -26,20 +26,13 @@
 BOS values used by both server and operators
 """
 
-from typing import Literal, get_args
-
 from bos.common.types.components import (BootArtifacts,
                                          ComponentActionStr,
                                          ComponentActualState,
                                          ComponentDesiredState,
                                          ComponentPhaseStr,
-                                         ComponentStagedState)
-
-
-
-ComponentStatusStr = Literal['power_on_pending', 'power_on_called', 'power_off_pending',
-                          'power_off_gracefully_called', 'power_off_forcefully_called',
-                          'configuring', 'stable', 'failed', 'on_hold']
+                                         ComponentStagedState,
+                                         ComponentStatusStr)
 
 # Phases
 class Phase:

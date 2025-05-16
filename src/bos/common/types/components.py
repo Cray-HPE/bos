@@ -33,6 +33,10 @@ ComponentPhaseStr = Literal['powering_on', 'powering_off', 'configuring', '']
 
 COMPONENT_PHASE_STR: frozenset[ComponentPhaseStr] = frozenset(get_args(ComponentPhaseStr))
 
+ComponentStatusStr = Literal['power_on_pending', 'power_on_called', 'power_off_pending',
+                          'power_off_gracefully_called', 'power_off_forcefully_called',
+                          'configuring', 'stable', 'failed', 'on_hold']
+
 class ComponentStatus(TypedDict, total=False):
     """
     #/components/schemas/V2ComponentStatus
