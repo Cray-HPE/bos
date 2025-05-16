@@ -30,11 +30,11 @@ BOS utilities used by both server and operators
 from contextlib import nullcontext, AbstractContextManager
 import copy
 import datetime
-from functools import partial
+import functools
 import logging
 import re
 import traceback
-from typing import Unpack
+from typing import NoReturn, Unpack
 
 # Third party imports
 from dateutil.parser import parse
@@ -47,6 +47,20 @@ LOGGER = logging.getLogger(__name__)
 
 PROTOCOL = 'http'
 TIME_DURATION_PATTERN = re.compile(r"^(\d+?)(\D+?)$", re.M | re.S)
+
+
+# Was going to name this cached_property_readonly, but that hits
+# https://github.com/pylint-dev/pylint/issues/10377
+# That can be avoided by naming this class cached_property
+class cached_property[T](functools.cached_property[T]):
+    """
+    A read-only version of the @functools.cached_property decorator
+    """
+    def __set__(self, instance: object, val: T) -> NoReturn:
+        """
+        Raise an AttributeError if someone tries to set the attribute
+        """
+        raise AttributeError(f"Atrribute {self.attrname} in class {type(instance).__name__} is read-only")
 
 
 class InvalidDurationTimestamp(Exception):
@@ -122,9 +136,9 @@ DEFAULT_RETRY_ADAPTER_ARGS = rrs.RequestsRetryAdapterArgs(
     connect_timeout=3,
     read_timeout=10)
 
-retry_session_manager = partial(rrs.retry_session_manager,
-                                protocol=PROTOCOL,
-                                **DEFAULT_RETRY_ADAPTER_ARGS)
+retry_session_manager = functools.partial(rrs.retry_session_manager,
+                                          protocol=PROTOCOL,
+                                          **DEFAULT_RETRY_ADAPTER_ARGS)
 
 
 class RetrySessionManager(rrs.RetrySessionManager):
