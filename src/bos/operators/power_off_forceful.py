@@ -32,25 +32,22 @@ import logging
 from bos.common.clients.bos.options import options
 from bos.common.types.components import ComponentRecord
 from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import BaseActionOperator, main
 from bos.operators.filters import TimeSinceLastAction
 from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
 
-class ForcefulPowerOffOperator(BaseOperator):
+class ForcefulPowerOffOperator(BaseActionOperator):
     """
     The Forceful Power-Off Operator tells pcs to power-off nodes if:
     - Enabled in the BOS database and the status is power_off_gracefully of power_off_forcefully
     - Enabled in HSM
     """
 
+    action = Action.power_off_forcefully
     retry_attempt_field = "power_off_forceful_attempts"
-
-    @property
-    def name(self) -> str:
-        return Action.power_off_forcefully
 
     # Filters
     @property

@@ -28,7 +28,6 @@ BOS component configuration operator
 """
 
 import logging
-from typing import Literal
 
 from bos.common.types.components import ComponentRecord
 from bos.common.values import Status
@@ -43,14 +42,11 @@ class ConfigurationOperator(BaseOperator):
     The Configure Operator sets the desired configuration in CFS if:
     - Enabled in the BOS database and the current phase is configuring
     - DesiredConfiguration != SetConfiguration
-    """
 
-    @property
-    def name(self) -> Literal[""]:
-        # The Configuration step can take place at any time before power-on.
-        # This step is therefore outside the normal boot flow and the name is
-        # left empty so this step is not recorded to the component data.
-        return ''
+    The Configuration step can take place at any time before power-on.
+    Because this step is therefore outside the normal boot flow, it does not
+    inherit from BaseActionOperator, so it is not recorded to the component data.
+    """
 
     # Filters
     @property

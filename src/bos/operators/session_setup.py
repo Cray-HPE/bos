@@ -45,6 +45,7 @@ from bos.common.clients.s3 import (BootImageArtifactSummary,
 from bos.common.clients.s3.types import ImageArtifactLinkManifest
 from bos.common.tenant_utils import get_tenant_component_set, InvalidTenantException
 from bos.common.types.components import (ComponentDesiredState,
+                                         ComponentLastAction,
                                          ComponentRecord,
                                          ComponentStagedState)
 from bos.common.types.components import BootArtifacts as ComponentStateBootArtifacts
@@ -52,7 +53,7 @@ from bos.common.types.sessions import Session as SessionRecord
 from bos.common.types.templates import BootSet, SessionTemplate, SessionTemplateCfsParameters
 from bos.common.utils import exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
-from bos.operators.base import BaseOperator, main, chunk_components
+from bos.operators.base import BaseActionOperator, main, chunk_components
 from bos.operators.filters import HSMState
 from bos.operators.filters.base import BaseFilter
 from bos.operators.session_completion import mark_session_complete
@@ -65,15 +66,13 @@ class SessionSetupException(Exception):
     """ The Session Set-up experienced a fatal error """
 
 
-class SessionSetupOperator(BaseOperator):
+class SessionSetupOperator(BaseActionOperator):
     """
     The Session Setup Operator sets the desired state of components based
     on existing sessions.
     """
 
-    @property
-    def name(self) -> str:
-        return 'SessionSetup'
+    action = Action.session_setup
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
@@ -92,7 +91,7 @@ class SessionSetupOperator(BaseOperator):
         LOGGER.info('Found %d sessions that require action', len(sessions))
         inventory_cache = Inventory(self.client.hsm)
         for data in sessions:
-            session = get_session_object(data, inventory_cache, self.client.bos, self.HSMState)
+            session = get_session_object(data, inventory_cache, self.client.bos, self.HSMState, self._component_last_action)
             session.setup(self.max_batch_size)
 
     def _get_pending_sessions(self) -> list[SessionRecord]:
@@ -108,12 +107,14 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
     """
 
     def __init__(self, data: SessionRecord, inventory_cache: Inventory, bos_client: BOSClient,
-                 hsm_state: Callable[..., HSMState]) -> None:
+                 hsm_state: Callable[..., HSMState],
+                 component_last_action: ComponentLastAction) -> None:
         self.session_data = data
         self.inventory = inventory_cache
         self.bos_client = bos_client
         self.HSMState = hsm_state
         self._template: SessionTemplate | None = None
+        self._component_last_action = component_last_action
 
     def _log_debug(self, message: str, *xargs: Any) -> None:
         LOGGER.debug(f'Session {self.name}: {message}', *xargs)
@@ -533,7 +534,7 @@ class Session(BaseSession[ComponentDesiredState]):
         data["session"] = self.name
         data["enabled"] = True
         # Set node's last_action
-        data["last_action"] = {"action": Action.session_setup}
+        data["last_action"] = self._component_last_action
 
 
 class StagedSession(BaseSession[ComponentStagedState]):
@@ -567,10 +568,11 @@ class StagedSession(BaseSession[ComponentStagedState]):
 
 
 def get_session_object(data: SessionRecord, inventory_cache: Inventory, bos_client: BOSClient,
-                       hsm_state: Callable[..., HSMState]) -> Session | StagedSession:
+                       hsm_state: Callable[..., HSMState],
+                       component_last_action: ComponentLastAction) -> Session | StagedSession:
     if data.get("stage", False):
-        return StagedSession(data, inventory_cache, bos_client, hsm_state)
-    return Session(data, inventory_cache, bos_client, hsm_state)
+        return StagedSession(data, inventory_cache, bos_client, hsm_state, component_last_action)
+    return Session(data, inventory_cache, bos_client, hsm_state, component_last_action)
 
 
 if __name__ == '__main__':

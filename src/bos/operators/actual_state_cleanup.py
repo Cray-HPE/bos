@@ -32,15 +32,15 @@ import logging
 from bos.common.clients.bos.options import options
 from bos.common.utils import duration_to_timedelta
 from bos.common.types.components import ComponentRecord
-from bos.common.values import EMPTY_ACTUAL_STATE
-from bos.operators.base import BaseOperator, main
+from bos.common.values import Action, EMPTY_ACTUAL_STATE
+from bos.operators.base import BaseActionOperator, main
 from bos.operators.filters import ActualStateAge, ActualBootStateIsSet
 from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
 
 
-class ActualStateCleanupOperator(BaseOperator):
+class ActualStateCleanupOperator(BaseActionOperator):
     """
     The ActualStateCleanupOperator is responsible for identifying components that have
     an expired actual state set (from boot artifacts). Typically this can happen when
@@ -52,9 +52,7 @@ class ActualStateCleanupOperator(BaseOperator):
     zero the actual booted state record when the configured TTL has expired.
     """
 
-    @property
-    def name(self) -> str:
-        return 'Actual State Cleanup Operator'
+    action = Action.actual_state_cleanup
 
     # Filters
     @property

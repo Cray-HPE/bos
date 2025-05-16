@@ -45,10 +45,6 @@ class SessionCleanupOperator(BaseOperator):
     """
 
     @property
-    def name(self) -> str:
-        return 'SessionCleanup'
-
-    @property
     def disabled(self) -> bool:
         """
         When users set the cleanup time to 0, no cleanup behavior is desired.

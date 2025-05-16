@@ -39,7 +39,7 @@ from bos.common.utils import (exc_type_msg,
                               using_sbps_check_kernel_parameters,
                               components_by_id)
 from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import BaseActionOperator, main
 from bos.operators.filters.base import BaseFilter
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
@@ -49,18 +49,15 @@ LOGGER = logging.getLogger(__name__)
 type BootArtifactsTuple = tuple[str, str, str]
 type BootArtifactsToCompIds = defaultdict[BootArtifactsTuple, set[str]]
 
-class PowerOnOperator(BaseOperator):
+class PowerOnOperator(BaseActionOperator):
     """
     The Power-On Operator tells pcs to power-on nodes if:
     - Enabled in the BOS database and the status is power_on_pending
     - Enabled in HSM
     """
 
+    action = Action.power_on
     retry_attempt_field = "power_on_attempts"
-
-    @property
-    def name(self) -> str:
-        return Action.power_on
 
     # Filters
     @property

@@ -36,7 +36,7 @@ import threading
 import os
 import time
 from types import TracebackType
-from typing import cast, ClassVar, Literal, NoReturn, Self, TypedDict, Unpack
+from typing import cast, ClassVar, Literal, NoReturn, Protocol, Self, TypedDict, Unpack
 
 from bos.common.clients.bos import BOSClient
 from bos.common.clients.bos.options import options
@@ -47,6 +47,7 @@ from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
 from bos.common.utils import exc_type_msg, update_log_level
 from bos.common.types.components import (BaseComponentData,
+                                         ComponentActionStr,
                                          ComponentEventStats,
                                          ComponentEventStatsAttemptFields,
                                          ComponentLastAction,
@@ -155,10 +156,6 @@ class BaseOperator(ABC):
         if self._client is None:
             raise ValueError("Attempted to access uninitialized API client")
         return self._client
-
-    @property
-    @abstractmethod
-    def name(self) -> str: ...
 
     @property
     @abstractmethod
@@ -314,6 +311,12 @@ class BaseOperator(ABC):
     def _act(self, components: list[ComponentRecord]) -> list[ComponentRecord]:
         """ The action taken by the operator on target components """
 
+    def _component_patch_record(self, component: ComponentRecord) -> ComponentRecord:
+        """
+        Return the basic framework for patching a given component
+        """
+        return ComponentRecord(id=component['id'], error=component.get('error',''))
+
     def _update_database(self,
                          components: list[ComponentRecord],
                          additional_fields: BaseComponentData | None = None) -> None:
@@ -328,13 +331,7 @@ class BaseOperator(ABC):
             return
         data: list[ComponentRecord] = []
         for component in components:
-            patch: ComponentRecord = {
-                'id': component['id'],
-                'error':
-                component['error']  # New error, or clearing out old error
-            }
-            if self.name:
-                patch['last_action'] = ComponentLastAction(action=self.name, failed=False)
+            patch = self._component_patch_record(component)
             if self.retry_attempt_field:
                 event_stats_data: ComponentEventStats = {
                     self.retry_attempt_field:
@@ -352,28 +349,6 @@ class BaseOperator(ABC):
             # session is incorrectly blanked.
             if 'desired_state' in patch and 'session' not in patch:
                 raise MissingSessionData
-            data.append(patch)
-        LOGGER.info('Found %d components that require updates', len(data))
-        LOGGER.debug('Updated components: %s', data)
-        self.client.bos.components.update_components(data)
-
-    def _preset_last_action(self, components: list[ComponentRecord]) -> None:
-        # This is done to eliminate the window between performing an action and marking the
-        # nodes as acted
-        # e.g. nodes could be powered-on without the correct power-on last action, causing
-        # status problems
-        if not self.name:
-            return
-        if not components:
-            # If we have been passed an empty list, there is nothing to do.
-            LOGGER.debug(
-                "_preset_last_action: No components require database updates")
-            return
-        data: list[ComponentRecord] = []
-        for component in components:
-            patch: ComponentRecord = {'id': component['id'], 'error': component['error']}
-            if self.name:
-                patch['last_action'] = ComponentLastAction(action=self.name, failed=False)
             data.append(patch)
         LOGGER.info('Found %d components that require updates', len(data))
         LOGGER.debug('Updated components: %s', data)
@@ -406,6 +381,48 @@ class BaseOperator(ABC):
         LOGGER.debug('Updated components: %s', data)
         self.client.bos.components.update_components(data)
 
+
+class HasActionDefined(Protocol):
+    """
+    Specifies that a class has the action classvar defined
+    """
+    action: ClassVar[ComponentActionStr]
+
+
+class BaseActionOperator(BaseOperator, HasActionDefined, ABC):
+    """
+    Base class for operators that update the last_action field when patching components
+    """
+    @property
+    def _component_last_action(self) -> ComponentLastAction:
+        """
+        Return the ComponentLastAction object to use when patching or creating components
+        with this operator
+        """
+        return ComponentLastAction(action=self.action, failed=False)
+
+    def _component_patch_record(self, component: ComponentRecord) -> ComponentRecord:
+        """
+        Return the basic framework for patching a given component, including the last_action field
+        """
+        patch = super()._component_patch_record(component)
+        patch["last_action"] = self._component_last_action
+        return patch
+
+    def _preset_last_action(self, components: list[ComponentRecord]) -> None:
+        # This is done to eliminate the window between performing an action and marking the
+        # nodes as acted
+        # e.g. nodes could be powered-on without the correct power-on last action, causing
+        # status problems
+        if not components:
+            # If we have been passed an empty list, there is nothing to do.
+            LOGGER.debug(
+                "_preset_last_action: No components require database updates")
+            return
+        data = [self._component_patch_record(component) for component in components]
+        LOGGER.info('Found %d components that require updates', len(data))
+        LOGGER.debug('Updated components: %s', data)
+        self.client.bos.components.update_components(data)
 
 def chunk_components(components: list[ComponentRecord],
                      max_batch_size: int) -> Generator[list[ComponentRecord], None, None]:

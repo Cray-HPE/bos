@@ -34,7 +34,7 @@ from connexion.lifecycle import ConnexionResponse as CxResponse
 
 from bos.common.tenant_utils import (get_tenant_from_header,
                                      reject_invalid_tenant)
-from bos.common.types.components import ComponentRecord, ComponentStatus
+from bos.common.types.components import ComponentPhaseStr, ComponentRecord, ComponentStatus
 from bos.common.types.session_extended_status import (SessionExtendedStatus,
                                                       SessionExtendedStatusErrorComponents,
                                                       SessionExtendedStatusPhases,
@@ -409,6 +409,7 @@ def _matches_filter(data: SessionRecordT, tenant: str | None, min_start: datetim
             return None
     return data
 
+type _CompPhaseCounter = Counter[ComponentPhaseStr|None|Literal['failed', 'staged', 'successful']]
 
 def _get_v2_session_status(session_id: str, tenant_id: str | None,
                            session: SessionRecordT) -> SessionExtendedStatus:
@@ -417,7 +418,7 @@ def _get_v2_session_status(session_id: str, tenant_id: str | None,
                                                tenant=tenant_id)
     num_managed_components = len(components) + len(staged_components)
     if num_managed_components:
-        component_phase_counts = Counter([
+        component_phase_counts: _CompPhaseCounter = Counter([
             c.get('status', cast(ComponentStatus, {})).get('phase') for c in components
             if _component_enabled_and_not_on_hold(c)
         ])
