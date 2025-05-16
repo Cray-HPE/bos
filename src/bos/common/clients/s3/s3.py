@@ -33,7 +33,7 @@ import boto3
 from botocore.exceptions import ClientError, ParamValidationError
 from botocore.config import Config as BotoConfig
 
-from bos.common.utils import exc_type_msg
+from bos.common.utils import cached_property, exc_type_msg
 
 from .exceptions import (ArtifactNotFound,
                          ManifestNotFound,
@@ -83,13 +83,13 @@ class S3Url:
     def bucket(self) -> str:
         return self._parsed.netloc
 
-    @property
+    @cached_property
     def key(self) -> str:
         if self._parsed.query:
             return self._parsed.path.lstrip('/') + '?' + self._parsed.query
         return self._parsed.path.lstrip('/')
 
-    @property
+    @cached_property
     def url(self) -> str:
         return self._parsed.geturl()
 
@@ -144,7 +144,7 @@ class S3Object:
         self.etag = etag
         self.s3url = S3Url(self.path)
 
-    @property
+    @cached_property
     def object_header(self) -> S3HeadObjectOutput:
         """
         Get the S3 object's header metadata.
@@ -174,7 +174,7 @@ class S3Object:
                 self.etag)
         return s3_obj
 
-    @property
+    @cached_property
     def object(self) -> S3GetObjectOutput:
         """
         The S3 object itself.  If the object was not found, log it and return an error.
@@ -213,7 +213,7 @@ class S3BootArtifacts(S3Object):
         S3Object.__init__(self, path, etag)
         self._manifest_json: ImageManifest | None = None
 
-    @property
+    @cached_property
     def manifest_json(self) -> ImageManifest:
         """
         Read a manifest.json file from S3. If the object was not found, log it and return an error.
@@ -299,7 +299,7 @@ class S3BootArtifacts(S3Object):
             raise TooManyArtifacts(msg)
         return artifacts[0]
 
-    @property
+    @cached_property
     def initrd(self) -> ImageArtifactManifest:
         """
         Get the initrd artifact object out of the manifest.
@@ -309,7 +309,7 @@ class S3BootArtifacts(S3Object):
         """
         return self._get_artifact('application/vnd.cray.image.initrd')
 
-    @property
+    @cached_property
     def kernel(self) -> ImageArtifactManifest:
         """
         Get the kernel artifact object out of the manifest.
@@ -319,7 +319,7 @@ class S3BootArtifacts(S3Object):
         """
         return self._get_artifact('application/vnd.cray.image.kernel')
 
-    @property
+    @cached_property
     def boot_parameters(self) -> ImageArtifactManifest | None:
         """
         Get the boot parameters artifact object out of the manifest, if one exists.
@@ -332,7 +332,7 @@ class S3BootArtifacts(S3Object):
         except ArtifactNotFound:
             return None
 
-    @property
+    @cached_property
     def rootfs(self) -> ImageArtifactManifest:
         """
         Get the rootfs artifact object out of the manifest.

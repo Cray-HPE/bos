@@ -45,7 +45,7 @@ from bos.common.clients.cfs import CFSClient
 from bos.common.clients.hsm import HSMClient
 from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
-from bos.common.utils import exc_type_msg, update_log_level
+from bos.common.utils import cached_property, exc_type_msg, update_log_level
 from bos.common.types.components import (BaseComponentData,
                                          ComponentActionStr,
                                          ComponentEventStats,
@@ -393,7 +393,7 @@ class BaseActionOperator(BaseOperator, HasActionDefined, ABC):
     """
     Base class for operators that update the last_action field when patching components
     """
-    @property
+    @cached_property
     def _component_last_action(self) -> ComponentLastAction:
         """
         Return the ComponentLastAction object to use when patching or creating components

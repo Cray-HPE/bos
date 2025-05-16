@@ -51,7 +51,7 @@ from bos.common.types.components import (ComponentDesiredState,
 from bos.common.types.components import BootArtifacts as ComponentStateBootArtifacts
 from bos.common.types.sessions import Session as SessionRecord
 from bos.common.types.templates import BootSet, SessionTemplate, SessionTemplateCfsParameters
-from bos.common.utils import exc_type_msg
+from bos.common.utils import cached_property, exc_type_msg
 from bos.common.values import Action, EMPTY_ACTUAL_STATE, EMPTY_DESIRED_STATE, EMPTY_STAGED_STATE
 from bos.operators.base import BaseActionOperator, main, chunk_components
 from bos.operators.filters import HSMState
@@ -113,7 +113,6 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         self.inventory = inventory_cache
         self.bos_client = bos_client
         self.HSMState = hsm_state
-        self._template: SessionTemplate | None = None
         self._component_last_action = component_last_action
 
     def _log_debug(self, message: str, *xargs: Any) -> None:
@@ -163,13 +162,10 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
     def operation_type(self) -> str:
         return self.session_data['operation']
 
-    @property
+    @cached_property
     def template(self) -> SessionTemplate:
-        if not self._template:
-            template_name = self.session_data['template_name']
-            self._template = self.bos_client.session_templates.get_session_template(
-                template_name, self.tenant)
-        return self._template
+        template_name = self.session_data['template_name']
+        return self.bos_client.session_templates.get_session_template(template_name, self.tenant)
 
     def setup(self, max_batch_size: int) -> None:
         try:
