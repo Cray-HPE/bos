@@ -22,6 +22,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+Base classes for BOS filters
+"""
+
 from abc import ABC, abstractmethod
 import logging
 

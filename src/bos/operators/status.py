@@ -22,6 +22,12 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+BOS component status operator
+"""
+
+from dataclasses import dataclass
 import logging
 from typing import Literal
 
@@ -45,6 +51,17 @@ from bos.operators.filters import (BootArtifactStatesMatch,
 from bos.operators.filters.base import BaseFilter
 
 LOGGER = logging.getLogger(__name__)
+
+@dataclass
+class _StatusData:
+    """
+    To simplify passing status data around inside StatusOperator
+    """
+    phase: ComponentPhaseStr = Phase.none
+    override: ComponentStatusStr | Literal[''] = ''
+    disable: bool = False
+    error: str = ''
+    action_failed: bool = False
 
 
 class StatusOperator(BaseOperator):
@@ -72,11 +89,6 @@ class StatusOperator(BaseOperator):
         """
         return self.DesiredConfigurationSetInCFS().component_match(component=component,
                                                                    cfs_component=cfs_component)
-
-    @property
-    def name(self) -> Literal[""]:
-        """ Unused for the status operator """
-        return ''
 
     # This operator overrides _run and does not use "filters" or "_act", but they are defined here
     # because they are abstract methods in the base class and must be implemented.
@@ -146,64 +158,20 @@ class StatusOperator(BaseOperator):
         Calculate the component's current status based upon its power state and CFS configuration
         state. If its status differs from the status in the database, return this information.
         """
-        error = None
         if power_state and cfs_component:
-            phase, override, disable, error, action_failed = self._calculate_status(
-                component, power_state, cfs_component)
+            new_status = self._calculate_status(component, power_state, cfs_component)
         else:
             # If the component cannot be found in pcs or cfs
-            phase = Phase.none
-            override = Status.on_hold
-            action_failed = False
-            disable = True
+            new_status = _StatusData(override=Status.on_hold, disable=True)
             if not power_state or power_state == 'undefined':
-                error = 'Component information was not returned by pcs'
+                new_status.error = 'Component information was not returned by pcs'
             elif not cfs_component:
-                error = 'Component information was not returned by cfs'
+                new_status.error = 'Component information was not returned by cfs'
 
-        updated_component: ComponentRecord = {
-            'id': component['id'],
-            'status': ComponentStatus(status_override='')
-        }
-        update = False
-        previous_phase = component.get('status', ComponentStatus()).get('phase', Phase.none)
-        if phase != previous_phase:
-            if phase == Phase.none:
-                # The current event has completed.  Reset the event stats
-                updated_component['event_stats'] = {
-                    "power_on_attempts": 0,
-                    "power_off_graceful_attempts": 0,
-                    "power_off_forceful_attempts": 0
-                }
-            if previous_phase == Phase.powering_off:
-                # Powering off has been completed.  The actual state can be cleared.
-                updated_component['actual_state'] = EMPTY_ACTUAL_STATE
-            updated_component['status']['phase'] = phase
-            update = True
-        if override:
-            updated_component['status']['status_override'] = override
-        if override != component.get('status', ComponentStatus()).get('status_override', ''):
-            update = True
-        if disable and options.disable_components_on_completion:
-            updated_component['enabled'] = False
-            update = True
-        if error and error != component.get('error', ''):
-            updated_component['error'] = error
-            update = True
-        if action_failed and action_failed != component.get(
-                'last_action', ComponentLastAction()).get('failed', False):
-            updated_component['last_action'] = ComponentLastAction(failed=True)
-            update = True
-        if update:
-            return updated_component
-        return None
+        return _updated_component(component, new_status)
 
-    def _calculate_status(
-        self,
-        component: ComponentRecord,
-        power_state: str,
-        cfs_component: CfsComponentData
-    ) -> tuple[ComponentPhaseStr, ComponentStatusStr | Literal[''], bool, str, bool]:
+    def _calculate_status(self, component: ComponentRecord, power_state: str,
+                          cfs_component: CfsComponentData) -> _StatusData:
         """
         Calculate a component's status based on its current state, power state, and
         CFS state.
@@ -213,71 +181,141 @@ class StatusOperator(BaseOperator):
         Override is used for status information that cannot be determined using only
             internal BOS information, such as a failed configuration state.
         """
-        phase = Phase.none
-        override: ComponentStatusStr | Literal[''] = ''
-        disable = False
-        error = ''
-        action_failed = False
+        calculated_status = _StatusData()
 
         status_data = component.get('status', ComponentStatus())
         if status_data.get('status') == Status.failed:
-            disable = True  # Failed state - the aggregated status if "failed"
-            override = Status.failed
-        if power_state == 'off':
-            if self.desired_boot_state_is_off(component):
-                phase = Phase.none
-                disable = True  # Successful state - desired and actual state are off
-            else:
-                if self.last_action_is_power_on(
-                        component) and self.power_on_wait_time_elapsed(
-                            component):
-                    action_failed = True
-                phase = Phase.powering_on
-        else:
-            if self.desired_boot_state_is_off(component):
-                phase = Phase.powering_off
-            elif self.boot_artifact_states_match(component):
-                if not self.desired_configuration_set_in_cfs(
-                        component, cfs_component):
-                    phase = Phase.configuring
-                elif self.desired_configuration_is_none(component):
-                    # Successful state - booted with the correct artifacts,
-                    # no configuration necessary
-                    phase = Phase.none
-                    disable = True
-                else:
-                    cfs_status = cfs_component.get('configuration_status',
-                                                   '').lower()
-                    if cfs_status == 'configured':
-                        # Successful state - booted with the correct artifacts and configured
-                        phase = Phase.none
-                        disable = True
-                    elif cfs_status == 'failed':
-                        # Failed state - configuration failed
-                        phase = Phase.configuring
-                        disable = True
-                        override = Status.failed
-                        error = 'cfs configuration failed'
-                    elif cfs_status == 'pending':
-                        phase = Phase.configuring
-                    else:
-                        # Failed state - configuration is no longer set
-                        phase = Phase.configuring
-                        disable = True
-                        override = Status.failed
-                        error = (
-                            'cfs is not reporting a valid configuration status for '
-                            f'this component: {cfs_status}')
-            else:
-                if self.last_action_is_power_on(
-                        component
-                ) and not self.boot_wait_time_elapsed(component):
-                    phase = Phase.powering_on
-                else:
-                    # Includes both power-off for restarts and ready-recovery scenario
-                    phase = Phase.powering_off
+            calculated_status.disable = True  # Failed state - the aggregated status if "failed"
+            calculated_status.override = Status.failed
 
-        return phase, override, disable, error, action_failed
+        if power_state == 'off':
+            self._calculate_status_power_state_off(component, calculated_status)
+            return calculated_status
+
+        if self.desired_boot_state_is_off(component):
+            calculated_status.phase = Phase.powering_off
+            return calculated_status
+
+        if self.boot_artifact_states_match(component):
+            self._calculate_status_not_power_off_boot_artifacts_match(component, cfs_component,
+                                                                      calculated_status)
+            return calculated_status
+
+        if self.last_action_is_power_on(component) and not self.boot_wait_time_elapsed(component):
+            calculated_status.phase = Phase.powering_on
+            return calculated_status
+
+        # Includes both power-off for restarts and ready-recovery scenario
+        calculated_status.phase = Phase.powering_off
+        return calculated_status
+
+    def _calculate_status_power_state_off(self, component: ComponentRecord,
+                                          calculated_status: _StatusData) -> None:
+        """
+        Helper function for _calculate_status, called when the power_state is "off"
+        """
+        if self.desired_boot_state_is_off(component):
+            calculated_status.phase = Phase.none
+            calculated_status.disable = True  # Successful state - desired and actual state are off
+            return
+        if self.last_action_is_power_on(component) and self.power_on_wait_time_elapsed(component):
+            calculated_status.action_failed = True
+        calculated_status.phase = Phase.powering_on
+
+
+    def _calculate_status_not_power_off_boot_artifacts_match(
+        self,
+        component: ComponentRecord,
+        cfs_component: CfsComponentData,
+        calculated_status: _StatusData
+    ) -> None:
+        """
+        Helper function for _calculate_status, called when all of the following are true:
+        - the power_state is not "off",
+        - the desired power state is not "off"
+        - self.boot_artifact_states_match(component) is True
+        """
+        if not self.desired_configuration_set_in_cfs(component, cfs_component):
+            calculated_status.phase = Phase.configuring
+            return
+
+        if self.desired_configuration_is_none(component):
+            # Successful state - booted with the correct artifacts,
+            # no configuration necessary
+            calculated_status.phase = Phase.none
+            calculated_status.disable = True
+            return
+
+        cfs_status = cfs_component.get('configuration_status', '').lower()
+        match cfs_status:
+            case 'configured':
+                # Successful state - booted with the correct artifacts and configured
+                calculated_status.phase = Phase.none
+                calculated_status.disable = True
+            case 'failed':
+                # Failed state - configuration failed
+                calculated_status.phase = Phase.configuring
+                calculated_status.disable = True
+                calculated_status.override = Status.failed
+                calculated_status.error = 'cfs configuration failed'
+            case 'pending':
+                calculated_status.phase = Phase.configuring
+            case _:
+                # Failed state - configuration is no longer set
+                calculated_status.phase = Phase.configuring
+                calculated_status.disable = True
+                calculated_status.override = Status.failed
+                calculated_status.error = ('cfs is not reporting a valid configuration status for '
+                                           f'this component: {cfs_status}')
+
+
+def _updated_component(comp: ComponentRecord, new_status: _StatusData) -> ComponentRecord | None:
+    """
+    Helper function for _check_status method
+    """
+    updated_component: ComponentRecord = {
+        'id': comp['id'],
+        'status': ComponentStatus(status_override=new_status.override or '')
+    }
+    update = _check_phase(new_status.phase, comp, updated_component)
+    if new_status.override != comp.get('status', ComponentStatus()).get('status_override', ''):
+        update = True
+    if new_status.disable and options.disable_components_on_completion:
+        updated_component['enabled'] = False
+        update = True
+    if new_status.error and new_status.error != comp.get('error', ''):
+        updated_component['error'] = new_status.error
+        update = True
+    af = new_status.action_failed
+    if af and af != comp.get('last_action', ComponentLastAction()).get('failed', False):
+        updated_component['last_action'] = ComponentLastAction(failed=True)
+        update = True
+    if update:
+        return updated_component
+    return None
+
+
+def _check_phase(phase: ComponentPhaseStr, component: ComponentRecord,
+                 updated_component: ComponentRecord) -> bool:
+    """
+    Sets fields in update_component based on the phase and current component data
+    Returns boolean to indicate if update_component was modified.
+    """
+    previous_phase = component.get('status', ComponentStatus()).get('phase', Phase.none)
+    if phase == previous_phase:
+        return False
+    if phase == Phase.none:
+        # The current event has completed.  Reset the event stats
+        updated_component['event_stats'] = {
+            "power_on_attempts": 0,
+            "power_off_graceful_attempts": 0,
+            "power_off_forceful_attempts": 0
+        }
+    if previous_phase == Phase.powering_off:
+        # Powering off has been completed.  The actual state can be cleared.
+        updated_component['actual_state'] = EMPTY_ACTUAL_STATE
+    updated_component['status']['phase'] = phase
+    return True
 
 
 if __name__ == '__main__':

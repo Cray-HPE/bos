@@ -22,6 +22,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+BOS session cleanup operator
+"""
+
 import logging
 import re
 
@@ -38,10 +43,6 @@ class SessionCleanupOperator(BaseOperator):
     The Session Completion Operator marks sessions complete when all components
     that are part of the session have been disabled.
     """
-
-    @property
-    def name(self) -> str:
-        return 'SessionCleanup'
 
     @property
     def disabled(self) -> bool:

@@ -23,6 +23,10 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 
+"""
+BOS component power on operator
+"""
+
 # Standard imports
 from collections import defaultdict
 import logging
@@ -35,7 +39,7 @@ from bos.common.utils import (exc_type_msg,
                               using_sbps_check_kernel_parameters,
                               components_by_id)
 from bos.common.values import Action, Status
-from bos.operators.base import BaseOperator, main
+from bos.operators.base import BaseActionOperator, main
 from bos.operators.filters.base import BaseFilter
 from bos.server.dbs.boot_artifacts import record_boot_artifacts
 
@@ -45,18 +49,15 @@ LOGGER = logging.getLogger(__name__)
 type BootArtifactsTuple = tuple[str, str, str]
 type BootArtifactsToCompIds = defaultdict[BootArtifactsTuple, set[str]]
 
-class PowerOnOperator(BaseOperator):
+class PowerOnOperator(BaseActionOperator):
     """
     The Power-On Operator tells pcs to power-on nodes if:
     - Enabled in the BOS database and the status is power_on_pending
     - Enabled in HSM
     """
 
+    action = Action.power_on
     retry_attempt_field = "power_on_attempts"
-
-    @property
-    def name(self) -> str:
-        return Action.power_on
 
     # Filters
     @property
@@ -166,9 +167,8 @@ class PowerOnOperator(BaseOperator):
                     "Failed to set BSS for boot artifacts: %s for nodes: %s. Error: %s",
                     key, nodes, exc_type_msg(err))
             else: # No exception raised in try block
-                self._record_boot_artifacts(token=token, kernel=kernel,
-                                            kernel_parameters=kernel_parameters,
-                                            initrd=initrd, retries=retries)
+                self._record_boot_artifacts(token=token, kernel_kernel_parameters_initrd=key,
+                                            retries=retries)
                 bss_tokens.extend([
                     ComponentRecord(id=node, session=bos_sessions[node],
                                     desired_state=ComponentDesiredState(bss_token=token))
@@ -186,7 +186,8 @@ class PowerOnOperator(BaseOperator):
         self.client.bos.components.update_components(bss_tokens)
 
 
-    def _record_boot_artifacts(self, token: str, kernel: str, kernel_parameters: str, initrd: str,
+    def _record_boot_artifacts(self, token: str,
+                               kernel_kernel_parameters_initrd: BootArtifactsTuple,
                                retries: int) -> None:
         """
         Try to update the boot artifact records up to the specified number of retries.
@@ -195,7 +196,7 @@ class PowerOnOperator(BaseOperator):
         attempts = 0
         while True:
             try:
-                record_boot_artifacts(token, kernel, kernel_parameters, initrd)
+                record_boot_artifacts(token, *kernel_kernel_parameters_initrd)
                 return
             except Exception as err:
                 attempts += 1
@@ -231,39 +232,14 @@ class PowerOnOperator(BaseOperator):
         """
         if not boot_artifacts:
             # If we have been passed an empty dictionary, there is nothing to do.
-            LOGGER.debug("_tag_images: No components to act on.")
+            LOGGER.debug("_tag_images: No boot artifacts to process.")
             return
 
-        image_id_to_nodes: defaultdict[str, set[str]] = defaultdict(set)
-        err_msg_to_nodes: defaultdict[str, set[str]] = defaultdict(set)
-        for boot_artifact, components_list in boot_artifacts.items():
-            kernel_parameters = boot_artifact[1]
-            if using_sbps_check_kernel_parameters(kernel_parameters):
-                # Get the image ID
-                err_msg = None
+        image_id_to_nodes, err_msg_to_nodes = parse_boot_artifacts(boot_artifacts)
 
-                # Get the path to the kernel
-                kernel = boot_artifact[0]
-
-                # Parse kernel patch as an S3 URL (the only supported boot artifact type for BOS)
-                kernel_s3_url = S3Url(kernel)
-
-                # Extract IMS ID from S3 URL
-                image_id = get_ims_id_from_s3_url(kernel_s3_url) or None
-
-                if image_id is None:
-                    err_msg = f"Unable to extract IMS ID from kernel path: {kernel}"
-                elif image_id == 'deleted':
-                    # Soft deleted images in IMS move their S3 artifacts to have paths
-                    # like s3://boot-images/deleted/<ims-id>/...
-                    err_msg = f"Kernel path appears to refer to soft-deleted IMS image: '{kernel}'"
-                else:
-                    # Map image IDs to nodes
-                    image_id_to_nodes[image_id].update(components_list)
-                    continue
-
-                LOGGER.error(err_msg)
-                err_msg_to_nodes[err_msg].update(components_list)
+        if not err_msg_to_nodes and not image_id_to_nodes:
+            LOGGER.debug("_tag_images: None of the boot artifacts are using SBPS")
+            return
 
         my_components_by_id = components_by_id(components)
         for err_msg, component_set in err_msg_to_nodes.items():
@@ -294,6 +270,43 @@ class PowerOnOperator(BaseOperator):
         self._update_database(components_to_update)
 
 
+def parse_boot_artifacts(
+    boot_artifacts: BootArtifactsToCompIds
+) -> tuple[defaultdict[str, set[str]], defaultdict[str, set[str]]]:
+    """
+    Helper function for _tag_images method.
+    Parses boot_artifacts and generates image_id_to_nodes and err_msg_to_nodes dicts
+    """
+    image_id_to_nodes: defaultdict[str, set[str]] = defaultdict(set)
+    err_msg_to_nodes: defaultdict[str, set[str]] = defaultdict(set)
+    for boot_artifact, components_list in boot_artifacts.items():
+        if not using_sbps_check_kernel_parameters(boot_artifact[1]):
+            continue
+
+        # Get the image ID
+        err_msg = None
+
+        # Get the path to the kernel
+        kernel = boot_artifact[0]
+
+        # Parse kernel patch as an S3 URL (the only supported boot artifact type for BOS)
+        # Extract IMS ID from S3 URL
+        image_id = get_ims_id_from_s3_url(S3Url(kernel)) or None
+
+        if image_id is None:
+            err_msg = f"Unable to extract IMS ID from kernel path: {kernel}"
+        elif image_id == 'deleted':
+            # Soft deleted images in IMS move their S3 artifacts to have paths
+            # like s3://boot-images/deleted/<ims-id>/...
+            err_msg = f"Kernel path appears to refer to soft-deleted IMS image: '{kernel}'"
+        else:
+            # Map image IDs to nodes
+            image_id_to_nodes[image_id].update(components_list)
+            continue
+
+        LOGGER.error(err_msg)
+        err_msg_to_nodes[err_msg].update(components_list)
+    return image_id_to_nodes, err_msg_to_nodes
 
 if __name__ == '__main__':
     main(PowerOnOperator)

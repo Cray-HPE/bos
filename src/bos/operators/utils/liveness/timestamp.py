@@ -21,6 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+Timestamp class
+"""
+
 import logging
 import os
 from datetime import timedelta
@@ -31,6 +36,11 @@ LOGGER = logging.getLogger(__name__)
 
 
 class Timestamp(BaseTimestamp):
+    def __init__(self) -> None:
+        # Calculate the value for the max_age property
+        # Save the value, since the environment variable will not change during execution
+        super().__init__()
+        self._computation_time = timedelta(seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
 
     @property
     def max_age(self) -> timedelta:
@@ -40,6 +50,4 @@ class Timestamp(BaseTimestamp):
 
         This value is returned as a timedelta object.
         """
-        computation_time = timedelta(
-            seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
-        return computation_time
+        return self._computation_time

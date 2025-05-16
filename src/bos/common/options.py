@@ -21,6 +21,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+BOS Options code common to both server and operators
+"""
+
 from abc import ABC, abstractmethod
 
 from bos.common.types.options import OptionsDict, OptionName, OptionValue

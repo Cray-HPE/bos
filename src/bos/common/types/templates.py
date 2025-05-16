@@ -86,17 +86,25 @@ def _update_boot_set(record: BootSet, new_record_copy: BootSet) -> None:
     # The remaining fields can be merged the old-fashioned way
     record.update(new_record_copy)
 
-class SessionTemplate(TypedDict, total=False):
+class BaseSessionTemplate(TypedDict, total=False):
+    cfs: SessionTemplateCfsParameters
+    description: str
+    enable_cfs: bool
+
+class SessionTemplate(BaseSessionTemplate, total=False):
     """
     #/components/schemas/V2SessionTemplate
     """
     boot_sets: Required[dict[str, BootSet]]
-    cfs: SessionTemplateCfsParameters
-    description: str
-    enable_cfs: bool
     links: list[Link]
     name: str
     tenant: str | None
+
+class SessionTemplatePatch(BaseSessionTemplate, total=False):
+    """
+    #/components/schemas/V2SessionTemplatePatch
+    """
+    boot_sets: dict[str, BootSet]
 
 def _update_boot_sets(record: dict[str, BootSet], new_record_copy: dict[str, BootSet]) -> None:
     """
@@ -110,13 +118,13 @@ def _update_boot_sets(record: dict[str, BootSet], new_record_copy: dict[str, Boo
         else:
             record[new_bs_name] = new_bs_record
 
-def update_template_record(record: SessionTemplate, new_record: SessionTemplate) -> None:
+def update_template_record(record: SessionTemplate, patch_data: SessionTemplatePatch) -> None:
     """
     This is used to patch session template data.
-    The session template 'record' is patched in-place with the data from 'new_record'.
+    The session template 'record' is patched in-place with the data from 'patch_data'.
     """
-    # Make a copy, to avoid changing new_record in place
-    new_record_copy = copy.deepcopy(new_record)
+    # Make a copy, to avoid changing patch_data in place
+    new_record_copy = copy.deepcopy(patch_data)
 
     if "cfs" in new_record_copy:
         new_cfs_data = new_record_copy.pop("cfs")

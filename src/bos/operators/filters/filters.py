@@ -22,6 +22,11 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+Filter classes for BOS operators
+"""
+
 from collections.abc import Container, Iterable
 import copy
 from datetime import timedelta

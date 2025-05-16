@@ -387,6 +387,29 @@ components:
           $ref: '#/components/schemas/LinkListReadOnly'
       additionalProperties: false
       required: [ boot_sets ]
+    V2SessionTemplatePatch:
+      type: object
+      description: Data to update an existing Session Template record.
+      properties:
+        description:
+          $ref: '#/components/schemas/SessionTemplateDescription'
+        enable_cfs:
+          $ref: '#/components/schemas/EnableCfs'
+        cfs:
+          $ref: '#/components/schemas/V2CfsParameters'
+        boot_sets:
+          type: object
+          description: |
+            Mapping from Boot Set names to Boot Sets.
+
+            * Boot Set names must be 1-127 characters in length.
+            * Boot Set names must use only letters, digits, periods (.), dashes (-), and underscores (_).
+            * Boot Set names must begin and end with a letter or digit.
+          minProperties: 1
+          maxProperties: 127
+          additionalProperties:
+            $ref: '#/components/schemas/V2BootSet'
+      additionalProperties: false
     V2SessionTemplateValidation:
       description: |
         Message describing errors or incompleteness in a Session Template.
@@ -760,9 +783,7 @@ components:
         last_updated:
           $ref: '#/components/schemas/V2ComponentLastUpdated'
         action:
-          type: string
-          description: A description of the most recent operator/action to impact the Component.
-          maxLength: 1024
+          $ref: '#/components/schemas/V2ComponentAction'
         failed:
           type: boolean
           description: Denotes if the last action failed to accomplish its task
@@ -788,10 +809,14 @@ components:
           minimum: 0
           maximum: 1048576
       additionalProperties: false
+    V2ComponentAction:
+        type: string
+        description: A description of the most recent operator/action to impact the Component.
+        enum: ['actual_state_cleanup', 'apply_staged', 'newly_discovered', 'powering_off_forcefully', 'powering_off_gracefully', 'powering_on', 'session_setup']
     V2ComponentPhase:
       type: string
       description: The current phase of the Component in the boot process.
-      maxLength: 128
+      enum: ['configuring', 'powering_off', 'powering_on', '']
     V2ComponentStatus:
       description: Status information for the Component
       type: object
@@ -1575,7 +1600,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/V2SessionTemplate'
+              $ref: '#/components/schemas/V2SessionTemplatePatch'
       responses:
         200:
           $ref: '#/components/responses/V2SessionTemplateDetails'

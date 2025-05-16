@@ -21,12 +21,18 @@
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
 #
+
+"""
+HSM Inventory class
+"""
+
 from collections import defaultdict
 import logging
 
+from bos.common.utils import cached_property
+
 from .client import HSMClient
 from .state_components import StateComponentsGetListParams
-from .types import StateComponentsDataArray
 
 LOGGER = logging.getLogger(__name__)
 
@@ -44,63 +50,51 @@ class Inventory:
 
     def __init__(self, hsm_client: HSMClient, partition: str|None=None) -> None:
         self._partition = partition  # Can be specified to limit to roles/components query
-        self._inventory: MemberDict | None = None
-        self._groups: MemberDict | None = None
-        self._partitions: MemberDict | None = None
-        self._roles: DefaultMemberDict | None = None
         self.hsm_client = hsm_client
 
-    @property
+    @cached_property
     def groups(self) -> MemberDict:
-        if self._groups is None:
-            data = self.hsm_client.groups.get_list()
-            groups: MemberDict = {}
-            for group in data:
-                groups[group['label']] = set(
-                    group.get('members', {}).get('ids', []))
-            self._groups = groups
-        return self._groups
+        data = self.hsm_client.groups.get_list()
+        groups: MemberDict = {}
+        for group in data:
+            groups[group['label']] = set(group.get('members', {}).get('ids', []))
+        LOGGER.debug("groups: %s", groups)
+        return groups
 
-    @property
+    @cached_property
     def partitions(self) -> MemberDict:
-        if self._partitions is None:
-            data = self.hsm_client.partitions.get_list()
-            partitions: MemberDict = {}
-            for partition in data:
-                partitions[partition['name']] = set(
-                    partition.get('members', {}).get('ids', []))
-            self._partitions = partitions
-        return self._partitions
+        data = self.hsm_client.partitions.get_list()
+        partitions: MemberDict = {}
+        for partition in data:
+            partitions[partition['name']] = set(partition.get('members', {}).get('ids', []))
+        LOGGER.debug("partitions: %s", partitions)
+        return partitions
 
-    @property
+    @cached_property
     def roles(self) -> DefaultMemberDict:
-        if self._roles is None:
-            params: StateComponentsGetListParams = {}
-            if self._partition:
-                params['partition'] = self._partition
-            data = self.hsm_client.state_components.get_list(params=params)
-            roles: DefaultMemberDict = defaultdict(set)
-            for component in data['Components']:
-                role = ''
-                if 'Role' in component:
-                    role = str(component['Role'])
-                    roles[role].add(component['ID'])
-                if 'SubRole' in component:
-                    subrole = role + '_' + str(component['SubRole'])
-                    roles[subrole].add(component['ID'])
-            self._roles = roles
-        return self._roles
+        params: StateComponentsGetListParams = {}
+        if self._partition:
+            params['partition'] = self._partition
+        data = self.hsm_client.state_components.get_list(params=params)
+        roles: DefaultMemberDict = defaultdict(set)
+        for component in data['Components']:
+            role = ''
+            if 'Role' in component:
+                role = str(component['Role'])
+                roles[role].add(component['ID'])
+            if 'SubRole' in component:
+                subrole = role + '_' + str(component['SubRole'])
+                roles[subrole].add(component['ID'])
+        LOGGER.debug("roles: %s", roles)
+        return roles
 
-    @property
+    @cached_property
     def inventory(self) -> MemberDict:
-        if self._inventory is None:
-            inventory: MemberDict = {}
-            inventory.update(self.groups)
-            inventory.update(self.partitions)
-            inventory.update(self.roles)
-            self._inventory = inventory
-            LOGGER.debug(self._inventory)
-        return self._inventory
+        inventory: MemberDict = {}
+        inventory.update(self.groups)
+        inventory.update(self.partitions)
+        inventory.update(self.roles)
+        return inventory
 
     def __contains__(self, key: str) -> bool:
         return key in self.inventory
