@@ -26,7 +26,7 @@ DBWrapper class
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Container, Generator, Iterable
+from collections.abc import Callable, Generator, Iterable
 from itertools import batched, islice
 import json
 import logging
@@ -174,7 +174,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     def get_all_filtered[OutDataT](self,
                          filter_func: Callable[[DataT], OutDataT | None], *,
                          start_after_key: str | None = None,
-                         specific_keys: Container[str] | None = None,
+                         specific_keys: Iterable[str] | None = None,
                          page_size: int = 0) -> list[OutDataT]:
         """
         Get an array of data for all keys after passing them through the specified filter
@@ -229,7 +229,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
     def iter_values(self, /, *,
                     start_after_key: str | None = None,
-                    specific_keys: Container[str] | None = None) -> Generator[DataT, None, None]:
+                    specific_keys: Iterable[str] | None = None) -> Generator[DataT, None, None]:
         """
         Iterate through every item in the database. Parse each item as a string and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
@@ -240,7 +240,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
     def iter_keys(self, /, *,
                   start_after_key: str | None = None,
-                  specific_keys: Container[str] | None = None) -> Generator[str, None, None]:
+                  specific_keys: Iterable[str] | None = None) -> Generator[str, None, None]:
         """
         Sorted list of all current keys in DB
         """
@@ -256,7 +256,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     def _iter_items[DataFormat](
         self, /, *, start_after_key: str | None,
         load_func: Callable[[str, Any], DataFormat],
-        specific_keys: Container[str] | None
+        specific_keys: Iterable[str] | None
     ) -> Generator[tuple[str, DataFormat], None, None]:
         """
         Iterate through every item in the database. Parse each item using the specified function
@@ -272,7 +272,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
     def iter_items(
         self, /, *, start_after_key: str | None = None,
-        specific_keys: Container[str] | None = None
+        specific_keys: Iterable[str] | None = None
     ) -> Generator[tuple[str, DataT], None, None]:
         """
         Wrapper for _iter_items that specified the appropriate BOS data type loading function,
