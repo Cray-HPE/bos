@@ -26,7 +26,7 @@ DBWrapper class
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Generator, Iterable
+from collections.abc import Callable, Container, Generator, Iterable
 from itertools import batched, islice
 import json
 import logging
@@ -174,6 +174,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     def get_all_filtered[OutDataT](self,
                          filter_func: Callable[[DataT], OutDataT | None], *,
                          start_after_key: str | None = None,
+                         specific_keys: Container[str] | None = None,
                          page_size: int = 0) -> list[OutDataT]:
         """
         Get an array of data for all keys after passing them through the specified filter
@@ -184,7 +185,8 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         More elements may remain and additional queries will be needed to acquire them.
         """
         filtered_values_including_nones = map(filter_func,
-                                              self.iter_values(start_after_key=start_after_key))
+                                              self.iter_values(start_after_key=start_after_key,
+                                                               specific_keys=specific_keys))
         filtered_values = (data for data in filtered_values_including_nones if data is not None)
         if page_size:
             return list(islice(filtered_values, page_size))
@@ -226,19 +228,26 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         self.client.mset({ key: json.dumps(data) for key, data in key_data_map.items()})
 
     def iter_values(self, /, *,
-                    start_after_key: str | None = None) -> Generator[DataT, None, None]:
+                    start_after_key: str | None = None,
+                    specific_keys: Container[str] | None = None) -> Generator[DataT, None, None]:
         """
         Iterate through every item in the database. Parse each item as a string and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
         """
-        for _, data in self.iter_items(start_after_key=start_after_key):
+        for _, data in self.iter_items(start_after_key=start_after_key,
+                                       specific_keys=specific_keys):
             yield data
 
-    def iter_keys(self, /, *, start_after_key: str | None = None) -> Generator[str, None, None]:
+    def iter_keys(self, /, *,
+                  start_after_key: str | None = None,
+                  specific_keys: Container[str] | None = None) -> Generator[str, None, None]:
         """
         Sorted list of all current keys in DB
         """
-        all_keys_list = sorted({k.decode() for k in self.client.scan_iter()})
+        all_keys_set = {k.decode() for k in self.client.scan_iter()}
+        if specific_keys is not None:
+            all_keys_set.intersection_update(specific_keys)
+        all_keys_list = sorted(all_keys_set)
         if start_after_key is None:
             yield from all_keys_list
         else:
@@ -246,34 +255,39 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
     def _iter_items[DataFormat](
         self, /, *, start_after_key: str | None,
-        load_func: Callable[[str, Any], DataFormat]
+        load_func: Callable[[str, Any], DataFormat],
+        specific_keys: Container[str] | None
     ) -> Generator[tuple[str, DataFormat], None, None]:
         """
         Iterate through every item in the database. Parse each item using the specified function
         and yield it.
         If start_after_key is specified, skip any keys that are lexically <= the specified key.
         """
-        for next_keys in batched(self.iter_keys(start_after_key=start_after_key), 500):
+        for next_keys in batched(self.iter_keys(start_after_key=start_after_key,
+                                                specific_keys=specific_keys), 500):
             data_list = cast(Iterable[Any], self.client.mget(next_keys))
             for key, data in zip(next_keys, data_list):
                 if data is not None:
                     yield key, load_func(key, data)
 
     def iter_items(
-        self, /, *, start_after_key: str | None = None
+        self, /, *, start_after_key: str | None = None,
+        specific_keys: Container[str] | None = None
     ) -> Generator[tuple[str, DataT], None, None]:
         """
         Wrapper for _iter_items that specified the appropriate BOS data type loading function,
         and defaults start_after_key to None.
         """
-        yield from self._iter_items(start_after_key=start_after_key, load_func=self._load_bosdata)
+        yield from self._iter_items(start_after_key=start_after_key, load_func=self._load_bosdata,
+                                    specific_keys=specific_keys)
 
     def iter_items_raw(self) -> Generator[tuple[str, JsonDict], None, None]:
         """
         Intended for use by the BOS migration job. Wrapper for _iter_items that only does JSON
         decoding, not any further data processing.
         """
-        yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict)
+        yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict,
+                                    specific_keys=None)
 
 def _get_redis_client(db: Databases) -> redis.Redis:
     """Create a connection with the database."""
