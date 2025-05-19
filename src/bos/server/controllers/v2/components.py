@@ -147,8 +147,7 @@ def get_v2_components_data(
     if id_set is not None and not id_set:
         return []
 
-    _component_filter_func = _get_component_filter_func(id_set=id_set,
-                                                        enabled=enabled,
+    _component_filter_func = _get_component_filter_func(enabled=enabled,
                                                         session=session,
                                                         staged_session=staged_session,
                                                         phase=phase,
@@ -157,7 +156,8 @@ def get_v2_components_data(
 
     return DB.get_all_filtered(filter_func=_component_filter_func,
                                start_after_key=start_after_id,
-                               page_size=page_size)
+                               page_size=page_size,
+                               specific_keys=id_set)
 
 def _get_id_set(id_list: list[str] | None, tenant: str | None) -> set[str] | None:
     """
@@ -180,7 +180,6 @@ def _get_id_set(id_list: list[str] | None, tenant: str | None) -> set[str] | Non
     return id_set
 
 def _get_component_filter_func(
-    id_set: set[str] | None,
     enabled: bool | None,
     session: str | None,
     staged_session: str | None,
@@ -191,9 +190,8 @@ def _get_component_filter_func(
     """
     Return the filter function to be used by get_v2_components_data
     """
-    if any([id_set, enabled, session, staged_session, phase, status]):
+    if any([enabled, session, staged_session, phase, status]):
         return partial(_filter_component,
-                       id_set=id_set,
                        enabled=enabled,
                        session=session or None,
                        staged_session=staged_session or None,
@@ -204,7 +202,6 @@ def _get_component_filter_func(
 
 def _filter_component(
     data: ComponentRecord,
-    id_set: set[str] | None,
     enabled: bool | None,
     session: str | None,
     staged_session: str | None,
@@ -213,8 +210,6 @@ def _filter_component(
     delete_timestamp: bool
 ) -> ComponentRecord | None:
     # Do all of the checks we can before calculating status, to avoid doing it needlessly
-    if id_set is not None and data["id"] not in id_set:
-        return None
     if enabled is not None and data.get('enabled', None) != enabled:
         return None
     if session is not None and data.get('session', None) != session:

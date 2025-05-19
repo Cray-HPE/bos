@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Improve performance of BOS component queries that specify IDs or a tenant
+
 ## [2.44.1] - 2025-05-19
 
 ### Fixed
