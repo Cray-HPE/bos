@@ -33,6 +33,7 @@ from bos.common.types.components import (BootArtifacts,
                                          ComponentPhaseStr,
                                          ComponentStagedState,
                                          ComponentStatusStr)
+from bos.common.types.templates import SupportedRootfsProvider
 
 # Phases
 class Phase:
@@ -65,6 +66,9 @@ class Status:
     failed: ComponentStatusStr = "failed"
     on_hold: ComponentStatusStr = "on_hold"
 
+# Rootfs providers
+class RootfsProvider:
+    sbps: SupportedRootfsProvider = "sbps"
 
 EMPTY_BOOT_ARTIFACTS: BootArtifacts = {
     "kernel": "",

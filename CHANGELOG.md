@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.45.0] - 2025-05-19
+
+### Added
+
+- CASMCMS-9421: Add rootfs provider validation to session template validation endpoint
+
+### Changed
+
+- Improve performance of BOS component queries that specify IDs or a tenant
+- CASMCMS-9432: Update API spec examples to use SBPS instead of CPS/DVS
+- CASMCMS-9433: Update `sessiontemplatetemplate` endpoint to use SBPS instead of CPS/DVS
+
+### Removed
+
+- CASMCMS-9421: Remove CPS/DVS rootfs support
+
 ## [2.44.1] - 2025-05-19
 
 ### Fixed

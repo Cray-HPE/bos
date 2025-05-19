@@ -25,12 +25,33 @@
 Provisioning mechanism using the Scalable Boot Provisioning Service
 '''
 
-from .rootfs_provider_with_artifact_info import RootfsProviderWithArtifactInfo
+from .rootfs_provider import RootfsProvider
 
 
-class SBPSProvider(RootfsProviderWithArtifactInfo):
+class SBPSProvider(RootfsProvider):
     '''
     Provisioning mechanism using the Scalable Boot Provisioning Service
     '''
 
     PROTOCOL = 'sbps-s3'
+
+    @property
+    def provider_field(self) -> str:
+        return self.artifact_info['rootfs']
+
+    @property
+    def provider_field_id(self) -> str:
+        return self.artifact_info['rootfs_etag']
+
+    @property
+    def nmd_field(self) -> str:
+        """
+        The value to add to the kernel boot parameters for Node Memory Dump (NMD)
+        parameter.
+        """
+        fields = []
+        if self.provider_field:
+            fields.append(f"url={self.provider_field}")
+        if self.provider_field_id:
+            fields.append(f"etag={self.provider_field_id}")
+        return f"nmd_data={','.join(fields)}" if fields else ''
