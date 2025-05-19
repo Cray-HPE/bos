@@ -53,8 +53,8 @@ EXAMPLE_BOOT_SET = BootSet(
     cfs=SessionTemplateCfsParameters(configuration="bootset-specific-cfs-override"),
     node_list=["xname1", "xname2", "xname3"],
     path="s3://boot-images/boot-image-ims-id/manifest.json",
-    rootfs_provider="cpss3",
-    rootfs_provider_passthrough="dvs:api-gw-service-nmn.local:300:hsn0,nmn0:0",
+    rootfs_provider="sbps",
+    rootfs_provider_passthrough="sbps:v1:iqn.2023-06.csm.iscsi:_sbps-hsn._tcp.my-system.my-site-domain:300",
 )
 
 EXAMPLE_SESSION_TEMPLATE = SessionTemplate(
