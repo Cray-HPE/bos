@@ -53,6 +53,10 @@ BootSetHardwareSpecifierFields = Literal['node_list', 'node_roles_groups', 'node
 BOOT_SET_HARDWARE_SPECIFIER_FIELDS: frozenset[BootSetHardwareSpecifierFields] = \
     frozenset(get_args(BootSetHardwareSpecifierFields))
 
+SupportedRootfsProvider = Literal['sbps']
+SUPPORTED_ROOTFS_PROVIDERS: frozenset[SupportedRootfsProvider] = \
+    frozenset(get_args(SupportedRootfsProvider))
+
 class BootSet(TypedDict, total=False):
     """
     #/components/schemas/V2BootSet
