@@ -26,8 +26,10 @@ from functools import partial
 
 from bos.common.utils import exc_type_msg
 from bos.common.types.sessions import SessionOperation
-from bos.common.types.templates import BootSet, SessionTemplate
-from bos.common.types.templates import BOOT_SET_HARDWARE_SPECIFIER_FIELDS
+from bos.common.types.templates import (BootSet,
+                                        SessionTemplate,
+                                        BOOT_SET_HARDWARE_SPECIFIER_FIELDS,
+                                        SUPPORTED_ROOTFS_PROVIDERS)
 from bos.server.options import OptionsData
 
 from .artifacts import validate_boot_artifacts
@@ -114,6 +116,11 @@ def validate_boot_set(bs: BootSet, operation: str,
     verify_nonempty_hw_specifier_field(bs)
 
     try:
+        verify_rootfs_provider(bs)
+    except BootSetWarning as err:
+        warning_msgs.append(str(err))
+
+    try:
         check_node_list_for_nids(bs, options_data)
     except BootSetWarning as err:
         warning_msgs.append(str(err))
@@ -161,3 +168,19 @@ def check_node_list_for_nids(bs: BootSet, options_data: OptionsData) -> None:
         msg = "Has NID in 'node_list'"
         raise BootSetError(
             msg) if options_data.reject_nids else BootSetWarning(msg)
+
+
+def verify_rootfs_provider(bs: BootSet) -> None:
+    """
+    Raises a warning exception if the rootfs_provider field is set to an unsupported value
+    """
+    # BOS boot/reboot sessions with the rootfs_provider field set to an unsupported value will fail
+    # (sessions without the provider field set at all are allowed by BOS)
+    try:
+        provider = bs["rootfs_provider"]
+    except KeyError as exc:
+        return
+    if provider in SUPPORTED_ROOTFS_PROVIDERS:
+        return
+    raise BootSetWarning(f"Unsupported rootfs_provider ('{provider}') will cause boot/reboot "
+                         "sessions to fail")

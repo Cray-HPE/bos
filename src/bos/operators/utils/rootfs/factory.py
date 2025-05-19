@@ -29,8 +29,8 @@ import logging
 
 from bos.common.clients.s3 import BootImageArtifactSummary
 from bos.common.types.templates import BootSet
+from bos.common.values import RootfsProvider as RootfsProviderValues
 
-from .cpss3_provider import CPSS3Provider
 from .rootfs_provider import RootfsProvider
 from .sbps_provider import SBPSProvider
 
@@ -57,9 +57,7 @@ def get_provider(boot_set: BootSet, artifact_info: BootImageArtifactSummary) -> 
     except KeyError:
         # Default to RootfsProvider
         return RootfsProvider(boot_set, artifact_info)
-    if provider_name == 'cpss3':
-        return CPSS3Provider(boot_set, artifact_info)
-    if provider_name == 'sbps':
+    if provider_name == RootfsProviderValues.sbps:
         return SBPSProvider(boot_set, artifact_info)
     msg = f"Unsupported rootfs_provider ('{provider_name}') specified in boot set: {boot_set}"
     LOGGER.error(msg)
