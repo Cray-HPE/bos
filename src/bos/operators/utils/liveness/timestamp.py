@@ -34,14 +34,11 @@ from liveness.timestamp import Timestamp as BaseTimestamp
 
 LOGGER = logging.getLogger(__name__)
 
+# Only need to calculate this value once, since the environment variable will not
+# change during execution
+_timestamp_max_age = timedelta(seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
 
 class Timestamp(BaseTimestamp):
-    def __init__(self) -> None:
-        # Calculate the value for the max_age property
-        # Save the value, since the environment variable will not change during execution
-        super().__init__()
-        self._computation_time = timedelta(seconds=int(os.getenv('LIVENESS_DELTA_MAX', "20")))
-
     @property
     def max_age(self) -> timedelta:
         """
@@ -50,4 +47,4 @@ class Timestamp(BaseTimestamp):
 
         This value is returned as a timedelta object.
         """
-        return self._computation_time
+        return _timestamp_max_age

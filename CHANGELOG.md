@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.44.1] - 2025-05-19
+
+### Fixed
+- Make operators Timestamp class thread-safe
+
 ## [2.44.0] - 2025-05-16
 
 ### Changed
