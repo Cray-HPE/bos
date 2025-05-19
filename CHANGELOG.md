@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.30.15] - 2025-05-19
+
+### Changed
+
+- CASMCMS-9432: Update API spec examples to use SBPS instead of CPS/DVS
+
 ## [2.30.14] - 2025-04-14
 
 ### Changed
