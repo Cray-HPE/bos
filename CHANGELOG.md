@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.46.0] - 2025-06-5
+
 ### Fixed
 - CASMCMS-9452: Cleanup of leftover Cluster/RoleBindings under CMS
 
