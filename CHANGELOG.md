@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Dependencies
+- CASMCMS-9453: Pinned Alpine version to 3.22
+- CASMCMS-9453: Bumped versions of several Python dependencies
+
 ## [2.46.0] - 2025-06-5
 
 ### Fixed
