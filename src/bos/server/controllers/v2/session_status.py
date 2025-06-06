@@ -59,19 +59,15 @@ class SessionStatusData:
 
     @property
     def session_extended_status(self) -> SessionExtendedStatus:
-        extended_status = SessionExtendedStatus(
+        return SessionExtendedStatus(
             managed_components_count=self.num_components,
             phases=self.session_extended_status_phases,
             percent_staged=round(self.staged_percent, 2),
             percent_successful=round(self.successful_percent, 2),
             percent_failed=round(self.failed_percent, 2),
             error_summary=self.component_errors,
+            status=self.session["status"]["status"],
             timing=self.session_extended_status_timing)
-        try:
-            extended_status["status"] = self.session["status"]["status"]
-        except KeyError:
-            pass
-        return extended_status
 
     @property
     def session_extended_status_timing(self) -> SessionExtendedStatusTiming:

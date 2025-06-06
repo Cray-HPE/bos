@@ -30,7 +30,7 @@ from typing import Literal, Required, TypedDict
 
 SessionStatusLabel = Literal['complete', 'pending', 'running']
 
-class SessionStatus(TypedDict, total=False):
+class SessionStatus(TypedDict, total=True):
     """
     #/components/schemas/V2SessionStatus
     """
