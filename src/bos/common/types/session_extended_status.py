@@ -53,7 +53,7 @@ class SessionExtendedStatusTiming(TypedDict, total=True):
     start_time: str
     duration: str
 
-class SessionExtendedStatus(TypedDict, total=False):
+class SessionExtendedStatus(TypedDict, total=True):
     """
     #/components/schemas/V2SessionExtendedStatus
     """
