@@ -84,3 +84,27 @@ class StateComponentsDataArray(TypedDict, total=False):
     '#/definitions/ComponentArray_ComponentArray'
     """
     Components: list[StateComponentData]
+
+
+class ComponentStatus(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/hms-smd/blob/master/api/swagger_v2.yaml
+    '#/definitions/ComponentStatus.1.0.0'
+    """
+    ID: str
+    Locked: bool
+    Reserved: bool
+    CreatedTime: str
+    ExpirationTime: str
+    ReservationDisabled: bool
+
+
+class LocksComponentsDataArray(TypedDict, total=False):
+    """
+    https://github.com/Cray-HPE/hms-smd/blob/master/api/swagger_v2.yaml
+    '#/definitions/AdminStatusCheck_Response.1.0.0'
+    """
+    Components: list[ComponentStatus]
+    # The way that BOS queries for locks, this field should never actually be used, since it never
+    # queries for specific xnames
+    NotFound: list[str]

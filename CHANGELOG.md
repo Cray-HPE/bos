@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CASMCMS-8843: Filter out locked nodes when starting a session; improve logging around node lists in same
+
 ## [2.46.1] - 2025-06-06
 
 ### Dependencies
