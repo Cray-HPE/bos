@@ -26,12 +26,14 @@ from dataclasses import dataclass
 from bos.common.clients.api_client_with_timeout_option import APIClientWithTimeoutOption
 
 from .groups import GroupsEndpoint
+from .locks import LocksEndpoint
 from .partitions import PartitionsEndpoint
 from .state_components import StateComponentsEndpoint
 
 @dataclass
 class HsmEndpoints:
     groups: GroupsEndpoint | None = None
+    locks: LocksEndpoint | None = None
     partitions: PartitionsEndpoint | None = None
     state_components: StateComponentsEndpoint | None = None
 
@@ -49,6 +51,12 @@ class HSMClient(APIClientWithTimeoutOption[HsmEndpoints]):
         if self._endpoints.groups is None:
             self._endpoints.groups = GroupsEndpoint(self.requests_session)
         return self._endpoints.groups
+
+    @property
+    def locks(self) -> LocksEndpoint:
+        if self._endpoints.locks is None:
+            self._endpoints.locks = LocksEndpoint(self.requests_session)
+        return self._endpoints.locks
 
     @property
     def partitions(self) -> PartitionsEndpoint:

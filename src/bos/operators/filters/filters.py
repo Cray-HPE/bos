@@ -133,6 +133,12 @@ class HSMState(IDFilter):
             if component.get('Arch', 'Unknown') in arch
         ]
 
+    def filter_for_unlocked(self, nodes: set[str]) -> set[str]:
+        """
+        Query HSM for the list of locked nodes, and return all specified nodes that are not locked
+        """
+        return nodes - self.hsm_client.locks.get_locked_nodes()
+
 
 class TimeSinceLastAction(LocalFilter):
     """ Returns all components whose last actions was over some time ago """
