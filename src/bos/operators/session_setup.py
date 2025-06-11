@@ -212,10 +212,11 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         raise SessionSetupException("All nodes found to act upon do not exist as BOS components")
 
     def _get_boot_set_component_list(self, boot_set: BootSet) -> set[str]:
-        nodes: set[str] = set()
         # Populate from nodelist
-        for node_name in boot_set.get('node_list', []):
-            nodes.add(node_name)
+        nodes: set[str] = set(boot_set.get('node_list', []))
+
+        self._log_append_diff(set(), nodes, 'node_list')
+
         if nodes:
             tenant_nodes = self._apply_tenant_limit(nodes)
             if nodes != tenant_nodes:
@@ -223,39 +224,102 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
                 raise SessionSetupException(
                     f"The session template includes nodes which do not exist"
                     f" or are not available to this tenant: {invalid_nodes}")
+
         # Populate from node_groups
+        nodes_before = set(nodes)
         for group_name in boot_set.get('node_groups', []):
             if group_name not in self.inventory.groups:
                 self._log_warning("No hardware matching label %s", group_name)
                 continue
             nodes |= self.inventory.groups[group_name]
+        self._log_append_diff(nodes_before, nodes, 'node_groups')
+
         # Populate from node_roles_groups
+        nodes_before = set(nodes)
         for role_name in boot_set.get('node_roles_groups', []):
             if role_name not in self.inventory.roles:
                 self._log_warning("No hardware matching role %s", role_name)
                 continue
             nodes |= self.inventory.roles[role_name]
+        self._log_append_diff(nodes_before, nodes, 'node_roles_groups')
         if not nodes:
             self._log_warning("After populating node list, before filtering, no nodes to act upon")
             return nodes
         self._log_debug("Before any limiting or filtering, %d nodes to act upon", len(nodes))
+
+        # Filter to nodes defined by limit
+        nodes = self._apply_limit(nodes)
+        if not nodes:
+            return nodes
+
+        # Remove any nodes locked in HSM
+        nodes = self._apply_hsm_lock_filter(nodes)
+        if not nodes:
+            return nodes
+
+        # If this session is for a tenant, filter out nodes not belonging to this tenant
+        nodes = self._apply_tenant_limit(nodes)
+        if not nodes:
+            return nodes
+
         # Filter out any nodes that do not match the boot set architecture desired; boot sets that
         # do not have a specified arch are considered 'X86' nodes.
         arch = boot_set.get('arch', 'X86')
         nodes = self._apply_arch(nodes, arch)
         if not nodes:
             return nodes
-        # Filter to nodes defined by limit
-        nodes = self._apply_limit(nodes)
-        if not nodes:
-            return nodes
+
         # Exclude disabled nodes
         nodes = self._apply_include_disabled(nodes)
-        if not nodes:
-            return nodes
-        # If this session is for a tenant, filter out nodes not belonging to this tenant
-        nodes = self._apply_tenant_limit(nodes)
         return nodes
+
+    def _log_filter_diff(self, nodes_before: set[str], nodes_after: set[str], action: str) -> None:
+        """
+        Logs an appropriate messgae at an appropriate log level, based on the results of
+        the filtering
+        """
+        if nodes_before == nodes_after:
+            self._log_debug("No nodes were removed when %s", action)
+            return
+        if not nodes_after:
+            self._log_warning("After %s, no nodes remain to act upon", action)
+            return
+        self._log_debug("nodes_after %s = %s", action, nodes_after)
+        nodes_diff = nodes_before - nodes_after
+        nodes_diff_count = len(nodes_diff)
+        if nodes_diff_count <= 10:
+            self._log_info("%d nodes were removed when %s: %s", nodes_diff_count, action,
+                           ','.join(sorted(nodes_diff)))
+            return
+        nodes_after_count = len(nodes_after)
+        if nodes_after_count <= 10:
+            self._log_info("%d nodes were removed when %s, leaving only %d nodes: %s",
+                           nodes_diff_count, action, nodes_after_count,
+                           ','.join(sorted(nodes_after)))
+            return
+        self._log_info("%d nodes were removed when %s, leaving %d nodes",
+                       nodes_diff_count, action, nodes_after_count)
+
+    def _log_append_diff(self, nodes_before: set[str], nodes_after: set[str],
+                         bs_field: str) -> None:
+        """
+        Logs an appropriate messgae at an appropriate log level, based on the results of
+        the appending (basically, the same as the previous method, except this one is when we are building up
+        the node list, not whittling it down
+        """
+        text = f"nodes were added from '{bs_field}' boot set field"
+        if nodes_before == nodes_after:
+            self._log_debug("No %s", text)
+            return
+        self._log_debug("nodes_after %s = %s", text, nodes_after)
+        nodes_diff = nodes_after - nodes_before
+        nodes_diff_count = len(nodes_diff)
+        if nodes_diff_count <= 10:
+            self._log_info("%d %s: %s", nodes_diff_count, text,
+                           ','.join(sorted(nodes_diff)))
+            return
+        self._log_info("%d %s, giving a new total of %d nodes", nodes_diff_count, text,
+                       len(nodes_after))
 
     def _apply_arch(self, nodes: set[str], arch: str) -> set[str]:
         """
@@ -279,13 +343,9 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         if arch == 'X86':
             valid_archs.add('UNKNOWN')
         hsm_filter = self.HSMState()
-        nodes = set(hsm_filter.filter_by_arch(nodes, valid_archs))
-        if not nodes:
-            self._log_warning("After filtering for architecture, no nodes remain to act upon")
-        else:
-            self._log_debug("After filtering for architecture, %d nodes remain to act upon",
-                            len(nodes))
-        return nodes
+        nodes_after = set(hsm_filter.filter_by_arch(nodes, valid_archs))
+        self._log_filter_diff(nodes, nodes_after, "filtering for architecture")
+        return nodes_after
 
     def _apply_include_disabled(self, nodes: set[str]) -> set[str]:
         """
@@ -297,13 +357,18 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             # Nodes disabled in HSM may be included, so no filtering is required
             return nodes
         hsmfilter = self.HSMState(enabled=True)
-        nodes = set(hsmfilter.filter_component_ids(list(nodes)))
-        if not nodes:
-            self._log_warning("After removing disabled nodes, no nodes remain to act upon")
-        else:
-            self._log_debug("After removing disabled nodes, %d nodes remain to act upon",
-                            len(nodes))
-        return nodes
+        nodes_after = set(hsmfilter.filter_component_ids(list(nodes)))
+        self._log_filter_diff(nodes, nodes_after, "removing HSM-disabled nodes")
+        return nodes_after
+
+    def _apply_hsm_lock_filter(self, nodes: set[str]) -> set[str]:
+        """
+        Remove any nodes that are locked in HSM
+        """
+        hsmfilter = self.HSMState()
+        nodes_after = hsmfilter.filter_for_unlocked(nodes)
+        self._log_filter_diff(nodes, nodes_after, "removing nodes locked in HSM")
+        return nodes_after
 
     def _apply_limit(self, nodes: set[str]) -> set[str]:
         session_limit = self.session_data.get('limit')
@@ -328,12 +393,9 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             elif limit in self.inventory:
                 limit_nodes = self.inventory[limit]
             limit_node_set = op(limit_nodes)
-        nodes = nodes.intersection(limit_node_set)
-        if not nodes:
-            self._log_warning("After applying limit, no nodes remain to act upon")
-        else:
-            self._log_debug("After applying limit, %d nodes remain to act upon", len(nodes))
-        return nodes
+        nodes_after = nodes.intersection(limit_node_set)
+        self._log_filter_diff(nodes, nodes_after, "applying BOS session limit")
+        return nodes_after
 
     def _apply_tenant_limit(self, nodes: set[str]) -> set[str]:
         tenant = self.session_data.get("tenant")
@@ -343,12 +405,9 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             tenant_limit = get_tenant_component_set(tenant)
         except InvalidTenantException as e:
             raise SessionSetupException(str(e)) from e
-        nodes = nodes.intersection(tenant_limit)
-        if not nodes:
-            self._log_warning("After applying tenant limit, no nodes remain to act upon")
-        else:
-            self._log_debug("After applying tenant limit, %d nodes remain to act upon", len(nodes))
-        return nodes
+        nodes_after = nodes.intersection(tenant_limit)
+        self._log_filter_diff(nodes, nodes_after, "applying tenant limit")
+        return nodes_after
 
     def _mark_running(self, component_ids: Iterable[str]) -> None:
         self.bos_client.sessions.update_session(
