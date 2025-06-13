@@ -280,7 +280,7 @@ def _updated_component(comp: ComponentRecord, new_status: _StatusData) -> Compon
     update = _check_phase(new_status.phase, comp, updated_component)
     if new_status.override != comp.get('status', ComponentStatus()).get('status_override', ''):
         update = True
-    if new_status.disable and options.disable_components_on_completion:
+    if new_status.disable:
         updated_component['enabled'] = False
         update = True
     if new_status.error and new_status.error != comp.get('error', ''):
