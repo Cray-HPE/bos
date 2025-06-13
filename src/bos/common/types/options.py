@@ -41,7 +41,6 @@ OptionName = Literal[
     'clear_stage',
     'component_actual_state_ttl',
     'default_retry_policy',
-    'disable_components_on_completion',
     'discovery_frequency',
     'hsm_read_timeout',
     'ims_errors_fatal',
@@ -80,7 +79,6 @@ class OptionsDict(TypedDict, total=False):
     clear_stage: bool
     component_actual_state_ttl: str
     default_retry_policy: int
-    disable_components_on_completion: bool
     discovery_frequency: int
     hsm_read_timeout: int
     ims_errors_fatal: bool

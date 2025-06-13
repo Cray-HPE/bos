@@ -43,7 +43,6 @@ DEFAULTS: OptionsDict = {
     'clear_stage': False,
     'component_actual_state_ttl': "4h",
     'default_retry_policy': 3,
-    'disable_components_on_completion': True,
     'discovery_frequency': 300,
     'hsm_read_timeout': 20,
     'ims_errors_fatal': False,
@@ -99,10 +98,6 @@ class BaseOptions(ABC):
     @property
     def default_retry_policy(self) -> int:
         return int(self.get_option('default_retry_policy'))
-
-    @property
-    def disable_components_on_completion(self) -> bool:
-        return bool(self.get_option('disable_components_on_completion'))
 
     @property
     def discovery_frequency(self) -> int:
