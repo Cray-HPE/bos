@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.48.0] - 2025-06-13
+
+### Removed
+- CASMCMS-8131: Removed `disable_components_on_completion` option due to lack of use and lack of testing.
+
 ## [2.47.0] - 2025-06-11
 
 ### Changed
