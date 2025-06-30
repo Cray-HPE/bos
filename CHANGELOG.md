@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CASMCMS-9446 - Allow ingress for Victoria Metrics.
+
 ## [2.48.0] - 2025-06-13
 
 ### Removed
