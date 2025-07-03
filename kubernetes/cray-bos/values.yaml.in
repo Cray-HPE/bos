@@ -10,7 +10,7 @@
 database:
   image:
     repository: artifactory.algol60.net/csm-docker/stable/docker.io/library/redis
-    tag: 7.2-alpine3.18
+    tag: 7.2-alpine
   storageClass: ceph-cephfs-external
   accessMode: ReadWriteMany
 

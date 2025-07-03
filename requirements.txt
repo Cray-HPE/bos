@@ -13,7 +13,7 @@ kubernetes
 liveness
 python-dateutil
 PyYAML
-redis
+redis[hiredis]
 requests
 requests-retry-session>=2.0
 urllib3

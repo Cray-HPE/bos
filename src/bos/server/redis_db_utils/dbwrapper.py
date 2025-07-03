@@ -289,14 +289,18 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict,
                                     specific_keys=None)
 
-def _get_redis_client(db: Databases) -> redis.Redis:
+def _get_redis_client(db: Databases) -> redis.client.Redis:
     """Create a connection with the database."""
     LOGGER.debug("Creating database connection host: %s port: %s database: %d (%s)",
                  DB_HOST, DB_PORT, db.value, db.name)
     try:
-        return redis.Redis(host=DB_HOST, port=DB_PORT, db=db.value)
+        rclient: redis.client.Redis = redis.Redis(host=DB_HOST,
+                                                  port=DB_PORT,
+                                                  db=db.value,
+                                                  protocol=3)
     except Exception as err:
         LOGGER.error("Failed to connect to database %d (%s) : %s", db.value, db.name,
                      exc_type_msg(err))
         raise BosDBException(db=db, msg="Failed to connect to database",
                              exc=exc_type_msg(err)) from err
+    return rclient

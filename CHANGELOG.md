@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.48.2] - 2025-07-03
+
+### Changed
+- Use `redis` `RESP3` protocol
+
+### Dependencies
+- CASMCMS-9479: Update `redis` module
+
 ## [2.48.1] - 2025-07-02
 
 ### Dependencies
