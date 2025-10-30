@@ -1,5 +1,7 @@
 # Boot Orchestration Service (BOS)
 
+CHANGE for CHANGE's sake!
+
 This is the Boot Orchestration Service (BOS) API. It includes a CRUD style
 database and a number of operators (implemented as individual deployments)
 that are designed to move registered components (typically hardware) from
