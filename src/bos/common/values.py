@@ -35,6 +35,10 @@ from bos.common.types.components import (BootArtifacts,
                                          ComponentStatusStr)
 from bos.common.types.templates import SupportedRootfsProvider
 
+
+LOG_FORMAT = "%(asctime)-15s - %(process)d - %(thread)d - %(levelname)-7s - %(name)s - %(filename)s:%(lineno)d - %(funcName)s - %(message)s"
+
+
 # Phases
 class Phase:
     powering_on: ComponentPhaseStr = "powering_on"

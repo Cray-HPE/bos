@@ -54,6 +54,8 @@ so that it stays around for much longer after completing.
 import logging
 import sys
 
+from bos.common.values import LOG_FORMAT
+
 from .db import COMP_DB, SESS_DB, TEMP_DB, all_db_ready
 from .sanitize import sanitize_component, sanitize_session, sanitize_session_template
 
@@ -83,7 +85,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     log_level = logging.getLevelName('INFO')
-    logging.basicConfig(level=log_level)
+    logging.basicConfig(level=log_level, format=LOG_FORMAT)
 
     LOGGER.info("Beginning post-upgrade BOS data migration")
     main()
