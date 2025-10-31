@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Include process ID, thread ID, file name, line number, and function name in BOS logging messages.
 
+### Dependencies
+- Use `v7.17` of `openapi-generator-cli`
+
 ## [2.48.2] - 2025-07-03
 
 ### Changed
