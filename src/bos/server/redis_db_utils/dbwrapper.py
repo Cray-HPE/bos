@@ -187,6 +187,11 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         """
         while True:
             try:
+                # At the time of this writing, pylint is not clever enough to understand
+                # the function signature mutation performed by the @redis_pipeline
+                # decorator, and so it falsely reports that we are missing an argument
+                # here.
+                # pylint: disable=no-value-for-parameter
                 return self._conditional_put(key=key, new_data=data, checker=checker)
             except redis.exceptions.WatchError:
                 pass
