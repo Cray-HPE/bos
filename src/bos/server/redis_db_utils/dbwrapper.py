@@ -37,6 +37,7 @@ from typing import (Any,
                     cast)
 
 import redis
+from redis.maint_notifications import MaintNotificationsConfig
 
 from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
@@ -289,14 +290,22 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict,
                                     specific_keys=None)
 
-def _get_redis_client(db: Databases) -> redis.Redis:
+def _get_redis_client(db: Databases) -> redis.client.Redis:
     """Create a connection with the database."""
     LOGGER.debug("Creating database connection host: %s port: %s database: %d (%s)",
                  DB_HOST, DB_PORT, db.value, db.name)
     try:
-        return redis.Redis(host=DB_HOST, port=DB_PORT, db=db.value)
+        # explicitly disabling maint_notifications, to avoid a warning message being logged, as
+        # they're not supported (although it causes no problems beyond the warning message)
+        mn_config = MaintNotificationsConfig(enabled=False)
+        rclient: redis.client.Redis = redis.Redis(host=DB_HOST,
+                                                  port=DB_PORT,
+                                                  db=db.value,
+                                                  protocol=3,
+                                                  maint_notifications_config=mn_config)
     except Exception as err:
         LOGGER.error("Failed to connect to database %d (%s) : %s", db.value, db.name,
                      exc_type_msg(err))
         raise BosDBException(db=db, msg="Failed to connect to database",
                              exc=exc_type_msg(err)) from err
+    return rclient

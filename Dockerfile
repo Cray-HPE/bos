@@ -24,7 +24,7 @@
 # Dockerfile for Cray Boot Orchestration Service (BOS)
 
 # Upstream Build Args
-ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.13.0
+ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.17.0
 ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3.22
 
 # Generate Code
@@ -75,7 +75,7 @@ COPY constraints.txt /app/
 ENV VIRTUAL_ENV=/app/venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN --mount=type=secret,id=netrc,target=/root/.netrc \
-    apk add --no-cache python3-dev py3-pip && \
+    apk add --no-cache python3-dev py3-pip gcc && \
     apk -U upgrade --no-cache && \
     python3 -m venv $VIRTUAL_ENV && \
     $VIRTUAL_ENV/bin/pip3 install --no-cache-dir -U pip -c constraints.txt && \

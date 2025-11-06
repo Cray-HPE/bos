@@ -8,7 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- Include process ID, thread ID, file name, line number, and function name in BOS logging messages.
 - CASMCMS-9446 - Allow ingress for Victoria Metrics.
+
+### Dependencies
+- Use `v7.17` of `openapi-generator-cli`
+- Bumped versions of several Python dependencies
+
+## [2.48.2] - 2025-07-03
+
+### Changed
+- Use `redis` `RESP3` protocol
+
+### Dependencies
+- CASMCMS-9479: Update `redis` module
+
+## [2.48.1] - 2025-07-02
+
+### Dependencies
+
+- CASMCMS-9468: Specify different `requests-retry-session` version based on Python version
 
 ## [2.48.0] - 2025-06-13
 
