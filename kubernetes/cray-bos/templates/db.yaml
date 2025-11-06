@@ -155,7 +155,13 @@ spec:
     - podSelector:
         matchLabels:
           app.kubernetes.io/name: "{{ include "cray-service.name" . }}-migration"
-    {{/* Redis database port */}}
+    {{/* Sysmgmt health namespace - Victoria Metrics */}}
+    - namespaceSelector:
+        matchLabels:
+          kubernetes.io/metadata.name: sysmgmt-health
+    {{/* Redis database and Victoria Metrics ports */}}
     ports:
     - protocol: TCP
       port: 6379
+    - protocol: TCP
+      port: 15020
