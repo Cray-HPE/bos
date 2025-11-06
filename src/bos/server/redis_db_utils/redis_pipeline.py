@@ -57,7 +57,7 @@ def redis_pipeline[**P, C: HasRedisClient, R](
     @functools.wraps(method)
     def wrapper(self: C, /, *args: P.args, **kwargs: P.kwargs) -> R:
         # Because C is bounded by the HasRedisClient protocol, we know that
-        # self.client is a redis.client.Redis object
+        # self.client is a redis.Redis object
         with self.client.pipeline() as pipe:
             return method(self, pipe, *args, **kwargs)
 

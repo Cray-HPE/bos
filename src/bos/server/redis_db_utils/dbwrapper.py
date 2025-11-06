@@ -49,6 +49,7 @@ from .exceptions import (BosDBException,
                          InvalidDBJsonDataType,
                          NonJsonDBData,
                          NotFoundInDB)
+from .redis_pipeline import redis_pipeline
 
 LOGGER = logging.getLogger(__name__)
 
@@ -151,6 +152,44 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         JSON-encode the specified data and write it to the database under the specified key
         """
         self.client.set(key, json.dumps(data))
+
+    @redis_pipeline
+    def _conditional_put(self,
+                         pipe: redis.client.Pipeline,
+                         *,
+                         key: str,
+                         new_data: DataT,
+                         checker: Callable[[DataT], bool]) -> bool:
+        """
+        Note:
+        The pipe argument does not exist as far as the caller of this method is concerned.
+        That argument is automatically provided by the @redis_pipeline wrapper.
+        """
+        pipe.watch(key)
+        db_data_raw = cast(Any, pipe.get(key))
+        db_data = self._load_bosdata(key, db_data_raw)
+        if not checker(db_data):
+            return False
+        # Encode the updated data as a JSON string
+        new_data_str = json.dumps(new_data)
+        pipe.multi()
+        pipe.set(key, new_data_str)
+        pipe.execute()
+        return True
+
+    def conditional_put(self, key: str, data: DataT, /, checker: Callable[[DataT], bool]) -> bool:
+        """
+        Reads key entry from DB and decodes it into DataT.
+        Calls checker on it.
+        If checker is True, encodes data as JSON and writes it to key.
+        Returns the return value of checker.
+        Will automatically retry if the DB value of key changes while we are doing this.
+        """
+        while True:
+            try:
+                return self._conditional_put(key=key, new_data=data, checker=checker)
+            except redis.exceptions.WatchError:
+                pass
 
     def get_and_delete_raw(self, key: str, /) -> JsonDict:
         """Get the data for the given key and delete it from the DB."""
