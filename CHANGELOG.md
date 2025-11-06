@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.49.0] - 2025-11-06
 ### Changed
 - Include process ID, thread ID, file name, line number, and function name in BOS logging messages.
 - CASMCMS-9446 - Allow ingress for Victoria Metrics.
