@@ -443,8 +443,8 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         key: str,
         patch_data: PatchDataFormat,
         *,
-        update_handler: Optional[UpdateHandler[DataT]] = None,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
+        update_handler: Optional[UpdateHandler[DataT]] = None,
         default_entry: Optional[DataT] = None
     ) -> DataT:
         """
