@@ -191,7 +191,7 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | C
     try:
         patched_session_data = DB.tenanted_patch(session_id,
                                                  tenant,
-                                                 patch_data=patch_data,
+                                                 patch_data,
                                                  patch_handler=apply_patch)
     except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)

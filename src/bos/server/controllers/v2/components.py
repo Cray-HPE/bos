@@ -541,7 +541,7 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
                           tenant=get_tenant_from_header())
     try:
         patched_component_data = DB.patch(component_id,
-                                          patch_data=patch_data,
+                                          patch_data,
                                           patch_handler=apply_patch)
     except (InvalidTenantComponent, dbutils.NotFoundInDB):
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg

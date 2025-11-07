@@ -220,7 +220,7 @@ def patch_v2_sessiontemplate(
     try:
         patched_template = DB.tenanted_patch(session_template_id,
                                              tenant,
-                                             patch_data=template_patch_data,
+                                             template_patch_data,
                                              patch_handler=apply_patch)
     except dbutils.NotFoundInDB:
         if tenant:
