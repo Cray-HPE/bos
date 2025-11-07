@@ -30,6 +30,7 @@ from collections.abc import Callable, Generator, Iterable
 from itertools import batched, islice
 import json
 import logging
+import time
 from typing import (Any,
                     ClassVar,
                     Generic,
@@ -43,7 +44,7 @@ from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 
 from .convert_db_watch_errors import convert_db_watch_errors
-from .defs import DB_HOST, DB_PORT, Databases
+from .defs import DB_BUSY_SECONDS, DB_HOST, DB_PORT, Databases
 from .defs import BosDataRecord as DataT
 from .exceptions import (BosDBException,
                          InvalidDBDataType,
@@ -53,6 +54,16 @@ from .exceptions import (BosDBException,
 from .redis_pipeline import redis_pipeline
 
 LOGGER = logging.getLogger(__name__)
+
+class EntryChecker[DataT](Protocol):
+    def __call__(self, data: DataT) -> bool: ...
+
+class PatchHandler[DataT, PatchDataFormat](Protocol):
+    def __call__(self, data: DataT, patch_data: PatchDataFormat) -> DataT: ...
+
+class UpdateHandler[DataT](Protocol):
+    def __call__(self, data: DataT) -> None: ...
+
 
 class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
     """ Require that some classes set the _Database class variable """
@@ -160,7 +171,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                          *,
                          key: str,
                          new_data: DataT,
-                         checker: Callable[[DataT], bool]) -> bool:
+                         checker: EntryChecker[DataT]) -> bool:
         """
         Note:
         The pipe argument does not exist as far as the caller of this method is concerned.
@@ -179,7 +190,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         return True
 
     @convert_db_watch_errors
-    def conditional_put(self, key: str, data: DataT, /, checker: Callable[[DataT], bool]) -> bool:
+    def conditional_put(self, key: str, data: DataT, /, checker: EntryChecker[DataT]) -> bool:
         """
         Reads key entry from DB and decodes it into DataT.
         Calls checker on it.
@@ -335,6 +346,63 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         """
         yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict,
                                     specific_keys=None)
+
+    @convert_db_watch_errors
+    def patch[PatchDataFormat](
+        self,
+        key: str,
+        patch_data: PatchDataFormat,
+        *,
+        update_handler: Optional[UpdateHandler[DataT]] = None,
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        default_entry: Optional[DataT] = None
+    ) -> None:
+        """
+        Patch data in the database.
+        If the entry does not exist in the DB:
+            If default_entry is None, then DBNoEntryError is raised.
+            Otherwise, the patch is applied on top of the specified default entry
+            (and written to the DB).
+        patch_handler provides an option to specify a non-default patch function.
+        update_handler provides a way to operate on the full patched data.
+        """
+        # Set the time after which we will perform no more DB retries.
+        # Note that this is not the same as it being a hard timeout. If no Redis
+        # WatchErrors are raised after this time limit has been passed, then the method
+        # will run to completion, regardless of how long it takes. This is solely
+        # present to avoid a method which endlessly keeps retrying.
+        no_retries_after: float = time.time() + DB_BUSY_SECONDS
+
+        # The loop condition is a simple True because the logic for exiting the loop is
+        # contained inside the loop itself.
+        while True:
+            try:
+                # Call a helper function to try and patch the entry. If it is successful,
+                # it will return the updated data, which we will return to our caller.
+                # If it is unsuccessful, an exception will be raised.
+                #
+                # At the time of this writing, pylint is not clever enough to understand
+                # the function signature mutation performed by the @redis_pipeline
+                # decorator, and so it falsely reports that we are missing an argument
+                # here.
+                # pylint: disable=no-value-for-parameter
+                #return self._patch(key=key,
+                #                   patch_data=patch_data,
+                #                   update_handler=update_handler,
+                #                   patch_handler=patch_handler,
+                #                   default_entry=default_entry)
+                pass
+            except redis.exceptions.WatchError as err:
+                # This means the entry changed values while the helper function was
+                # trying to patch it.
+                if time.time() > no_retries_after:
+                    # We are past the last allowed retry time, so re-raise the exception
+                    raise err
+
+                # We are not past the time limit, so just log a warning and we'll go back to the
+                # top of the loop.
+                LOGGER.warning("Key '%s' changed (%s); retrying", key, err)
+
 
 def _get_redis_client(db: Databases) -> redis.client.Redis:
     """Create a connection with the database."""
