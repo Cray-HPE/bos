@@ -513,6 +513,12 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     return new_component, 200
 
 
+class InvalidTenantComponent(Exception):
+    """Raised when a tenant tries to apply a patch to a component that isn't theirs"""
+
+class CannotUpdateActualState(Exception):
+    """Raised when attempting to patch component actual state when it is not allowed"""
+
 @tenant_error_handler
 @dbutils.redis_error_handler
 def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
@@ -529,27 +535,41 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
                      exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    if not is_valid_tenant_component(component_id, get_tenant_from_header()):
-        LOGGER.warning("Component %s could not be found", component_id)
-        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
+    patch_data.pop("id", None)
+    apply_patch = partial(patch_component_record,
+                          component_id=component_id,
+                          tenant=get_tenant_from_header())
     try:
-        component = DB.get(component_id)
-    except dbutils.NotFoundInDB:
-        LOGGER.warning("Component %s could not be found", component_id)
+        patched_component_data = DB.patch(component_id,
+                                          patch_data=patch_data,
+                                          patch_handler=apply_patch)
+    except (InvalidTenantComponent, dbutils.NotFoundInDB):
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-
-    if "actual_state" in patch_data and not _validate_actual_state_change_is_allowed(component):
-        LOGGER.warning("Not able to update actual state")
+    except CannotUpdateActualState:
         return connexion.problem(
             status=409,
             title="Actual state can not be updated.",
             detail="BOS is currently changing the state of the node,"
             " and the actual state can not be accurately recorded")
-    patch_data.pop("id", None)
-    patch_data = _set_auto_fields(patch_data)
-    update_component_record(component, patch_data)
-    DB.put(component_id, component)
-    return component, 200
+
+    return patched_component_data, 200
+
+
+def patch_component_record(
+    component_id: str,
+    tenant: Optional[str],
+    component_data: ComponentRecord,
+    patch_data: ComponentData
+) -> None:
+    if not is_valid_tenant_component(component_id, tenant):
+        LOGGER.warning("Component %s could not be found", component_id)
+        raise InvalidTenantComponent()
+    if "actual_state" in patch_data and not _validate_actual_state_change_is_allowed(component_data):
+        LOGGER.warning("Not able to update actual state for component %s", component_id)
+        raise CannotUpdateActualState()
+    # Make a copy so we do not change the original
+    updated_patch_data = _set_auto_fields(copy.deepcopy(patch_data))
+    update_component_record(component_data, updated_patch_data)
 
 
 def _validate_actual_state_change_is_allowed(current_data: CompAny) -> bool:
