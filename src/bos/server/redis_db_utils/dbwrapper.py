@@ -27,6 +27,7 @@ DBWrapper class
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable
+import copy
 from itertools import batched, islice
 import json
 import logging
