@@ -388,12 +388,13 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
             new_data = copy.deepcopy(orig_data)
 
             # Apply the patch_data to the current data
-            new_data = patch_handler(new_data, patch_data)
+            patch_handler(new_data, patch_data)
         elif default_entry is not None:
             # A default entry was specified, so we will apply the patch
             # on that.
             orig_data = None
-            new_data = patch_handler(default_entry, patch_data)
+            new_data = copy.deepcopy(default_entry)
+            patch_handler(new_data, patch_data)
         else:
             # No default entry specified
             # Raise an exception if no or null entry.
@@ -401,7 +402,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
         # Call the update handler, if one was specified
         if update_handler is not None:
-            new_data = update_handler(new_data)
+            update_handler(new_data)
 
         # If the data has not changed, no need to continue
         if orig_data == new_data:
