@@ -42,7 +42,7 @@ LOGGER = logging.getLogger(__name__)
 class ForcefulPowerOffOperator(BaseActionOperator):
     """
     The Forceful Power-Off Operator tells pcs to power-off nodes if:
-    - Enabled in the BOS database and the status is power_off_gracefully of power_off_forcefully
+    - Enabled in the BOS database and the status is power_off_gracefully or power_off_forcefully
     - Enabled in HSM
     """
 
