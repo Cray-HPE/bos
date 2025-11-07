@@ -29,6 +29,7 @@ import os
 
 import connexion
 
+from bos.common.values import LOG_FORMAT
 from bos.server.options import init_options
 from bos.server.encoder import JSONEncoder
 
@@ -38,7 +39,7 @@ LOGGER = logging.getLogger(__name__)
 def create_app() -> connexion.App:
     starting_log_level = os.environ.get('BOS_LOG_LEVEL', 'INFO')
     log_level = logging.getLevelName(starting_log_level.upper())
-    logging.basicConfig(level=log_level)
+    logging.basicConfig(level=log_level, format=LOG_FORMAT)
     LOGGER.info("BOS server starting.")
 
     init_options()

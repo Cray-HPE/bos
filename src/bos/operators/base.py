@@ -45,7 +45,6 @@ from bos.common.clients.cfs import CFSClient
 from bos.common.clients.hsm import HSMClient
 from bos.common.clients.ims import IMSClient
 from bos.common.clients.pcs import PCSClient
-from bos.common.utils import cached_property, exc_type_msg, update_log_level
 from bos.common.types.components import (BaseComponentData,
                                          ComponentActionStr,
                                          ComponentEventStats,
@@ -53,7 +52,8 @@ from bos.common.types.components import (BaseComponentData,
                                          ComponentLastAction,
                                          ComponentRecord,
                                          GetComponentsFilter)
-from bos.common.values import Status
+from bos.common.utils import cached_property, exc_type_msg, update_log_level
+from bos.common.values import Status, LOG_FORMAT
 from bos.operators.filters import BOSQuery, DesiredConfigurationSetInCFS, HSMState
 from bos.operators.filters.base import BaseFilter
 from bos.operators.utils.liveness.timestamp import Timestamp
@@ -462,7 +462,6 @@ def _liveliness_heartbeat() -> None:
 
 def _init_logging() -> None:
     """ Sets the format and initial log level for logging """
-    log_format = "%(asctime)-15s - %(levelname)-7s - %(name)s - %(message)s"
     requested_log_level = os.environ.get('BOS_OPERATOR_LOG_LEVEL', 'INFO')
     log_level = logging.getLevelName(requested_log_level)
 
@@ -470,7 +469,7 @@ def _init_logging() -> None:
         LOGGER.warning('Log level %r is not valid. Falling back to INFO',
                        requested_log_level)
         log_level = logging.INFO
-    logging.basicConfig(level=log_level, format=log_format)
+    logging.basicConfig(level=log_level, format=LOG_FORMAT)
 
 
 def main(operator: type[BaseOperator]) -> NoReturn:

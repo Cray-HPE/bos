@@ -30,6 +30,7 @@ import sys
 import logging
 import os
 
+from bos.common.values import LOG_FORMAT
 from bos.operators.utils.liveness import TIMESTAMP_PATH
 from bos.operators.utils.liveness.timestamp import Timestamp
 
@@ -38,11 +39,10 @@ DEFAULT_LOG_LEVEL = logging.INFO
 
 
 def setup_logging() -> None:
-    log_format = "%(asctime)-15s - %(levelname)-7s - %(name)s - %(message)s"
     requested_log_level = os.environ.get('BOS_OPERATOR_LOG_LEVEL',
                                          DEFAULT_LOG_LEVEL)
     log_level = logging.getLevelName(requested_log_level)
-    logging.basicConfig(level=log_level, format=log_format)
+    logging.basicConfig(level=log_level, format=LOG_FORMAT)
 
 
 if __name__ == '__main__':
