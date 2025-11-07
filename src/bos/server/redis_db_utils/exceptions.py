@@ -27,7 +27,7 @@ DB-related exceptions
 
 from bos.common.types.general import JsonData
 
-from .defs import Databases
+from .defs import Databases, DB_BUSY_SECONDS
 
 class BosDBException(Exception):
     """
@@ -50,6 +50,15 @@ class BosDBException(Exception):
         if msg is not None:
             err_info_list.append(msg)
         return " ".join(err_info_list)
+
+
+class BosDBTooBusyError(BosDBException):
+    """
+    This exception is raised when the DB is unable to complete a change
+    within DB_BUSY_SECONDS because other processes keep changing the same
+    keys.
+    """
+    DEFAULT_MSG = f"Could not complete database operation within {DB_BUSY_SECONDS} seconds"
 
 
 class BosDBEntryException(BosDBException):
