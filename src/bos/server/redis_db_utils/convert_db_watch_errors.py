@@ -33,6 +33,7 @@ from typing import Concatenate, Protocol
 
 import redis
 
+from .defs import Databases
 from .exceptions import BosDBTooBusyError
 
 
