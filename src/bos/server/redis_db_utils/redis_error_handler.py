@@ -36,13 +36,15 @@ import redis
 
 from bos.common.utils import exc_type_msg
 
+from .exceptions import BosDBTooBusyError
+
 LOGGER = logging.getLogger(__name__)
 
 P = ParamSpec('P')
 R = TypeVar('R')
 
 def redis_error_handler(func: Callable[P, R]) -> Callable[P, R|CxResponse]:
-    """Decorator for returning better errors if Redis is unreachable"""
+    """Decorator for returning better errors if Redis is unreachable or busy"""
 
     @functools.wraps(func)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | CxResponse:
@@ -52,11 +54,17 @@ def redis_error_handler(func: Callable[P, R]) -> Callable[P, R|CxResponse]:
                 # in the arguments to this wrapper cause it to get passed.
                 del kwargs['body']
             return func(*args, **kwargs)
-        except redis.exceptions.ConnectionError as e:
-            LOGGER.error('Unable to connect to the Redis database: %s', exc_type_msg(e))
+        except redis.exceptions.ConnectionError as exc:
+            LOGGER.error('Unable to connect to the Redis database: %s', exc_type_msg(exc))
             return connexion.problem(
                 status=503,
                 title='Unable to connect to the Redis database',
-                detail=str(e))
+                detail=str(exc))
+        except BosDBTooBusyError as exc:
+            LOGGER.error('Redis database busy: %s', exc_type_msg(exc))
+            return connexion.problem(
+                status=503,
+                title='Redis database busy',
+                detail=str(exc))
 
     return wrapper
