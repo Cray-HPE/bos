@@ -42,6 +42,7 @@ from redis.maint_notifications import MaintNotificationsConfig
 from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 
+from .convert_db_watch_errors import convert_db_watch_errors
 from .defs import DB_HOST, DB_PORT, Databases
 from .defs import BosDataRecord as DataT
 from .exceptions import (BosDBException,
