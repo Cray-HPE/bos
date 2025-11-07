@@ -177,6 +177,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         pipe.execute()
         return True
 
+    @convert_db_watch_errors
     def conditional_put(self, key: str, data: DataT, /, checker: Callable[[DataT], bool]) -> bool:
         """
         Reads key entry from DB and decodes it into DataT.
