@@ -70,15 +70,15 @@ class TenantAwareDBWrapper(DBWrapper[DataT], Generic[DataT], ABC):
         name: str,
         tenant: str | None,
         patch_data: PatchDataFormat,
-        /,
+        /, *,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         update_handler: UpdateHandler[DataT] | None = None,
         default_entry: DataT | None = None
     ) -> DataT:
         """Patch data in the database"""
         return self.patch(
-            key=get_tenant_aware_key(name, tenant),
-            patch_data=patch_data,
+            get_tenant_aware_key(name, tenant),
+            patch_data,
             patch_handler=patch_handler,
             update_handler=update_handler,
             default_entry=default_entry)

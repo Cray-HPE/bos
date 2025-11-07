@@ -442,7 +442,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         self,
         key: str,
         patch_data: PatchDataFormat,
-        *,
+        /, *,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         update_handler: UpdateHandler[DataT] | None = None,
         default_entry: DataT | None = None
