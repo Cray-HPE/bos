@@ -26,7 +26,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial, singledispatch
 import logging
-from typing import Any, Literal, cast
+from typing import Any, Literal, Optional, cast
 
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
