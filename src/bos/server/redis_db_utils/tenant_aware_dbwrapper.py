@@ -27,7 +27,7 @@ TenantAwareDBWrapper class
 
 from abc import ABC
 
-from typing import Generic
+from typing import Generic, Optional
 
 from bos.common.tenant_utils import get_tenant_aware_key
 
