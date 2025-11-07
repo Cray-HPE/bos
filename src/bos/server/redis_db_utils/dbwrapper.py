@@ -34,6 +34,7 @@ import time
 from typing import (Any,
                     ClassVar,
                     Generic,
+                    Optional,
                     Protocol,
                     cast)
 
@@ -62,7 +63,7 @@ class PatchHandler[DataT, PatchDataFormat](Protocol):
     def __call__(self, data: DataT, patch_data: PatchDataFormat) -> DataT: ...
 
 class UpdateHandler[DataT](Protocol):
-    def __call__(self, data: DataT) -> None: ...
+    def __call__(self, data: DataT) -> DataT: ...
 
 
 class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
@@ -347,6 +348,95 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict,
                                     specific_keys=None)
 
+    @redis_pipeline
+    def _patch[PatchDataFormat](
+        self,
+        pipe: redis.client.Pipeline,
+        *,
+        key: str,
+        patch_data: PatchDataFormat,
+        update_handler: Optional[UpdateHandler[DataT]],
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        default_entry: Optional[DataT]
+    ) -> DataT:
+        """
+        Helper function for patch, which tries to apply the patch inside a Redis pipeline.
+        Returns the updated entry data if successful.
+        The pipeline will raise a Redis WatchError otherwise.
+
+        Note:
+        The pipe argument does not exist as far as the caller of this method is concerned.
+        That argument is automatically provided by the @redis_pipeline wrapper.
+        """
+        # Mark this key for monitoring before we retrieve its data,
+        # so that we know if it changes underneath us.
+        pipe.watch(key)
+
+        # Because we have not yet called pipe.multi(), this DB
+        # get call will execute immediately and return the data.
+        raw_data = cast(Any, pipe.get(key))
+
+        orig_data: Optional[DataT]
+        new_data: DataT
+        if raw_data is not None:
+            orig_data = self._load_bosdata(key, raw_data)
+
+            # Start by making a copy of the data, so that we can compare
+            # the final patched version to it, and see if it has been changed
+            # (this is necessary because many of the BOS patching functions change the
+            # data in place, as well as returning it)
+            new_data = copy.deepcopy(orig_data)
+
+            # Apply the patch_data to the current data
+            new_data = patch_handler(new_data, patch_data)
+        elif default_entry is not None:
+            # A default entry was specified, so we will apply the patch
+            # on that.
+            orig_data = None
+            new_data = patch_handler(default_entry, patch_data)
+        else:
+            # No default entry specified
+            # Raise an exception if no or null entry.
+            raise NotFoundInDB(db=self.db, key=key)
+
+        # Call the update handler, if one was specified
+        if update_handler is not None:
+            new_data = update_handler(new_data)
+
+        # If the data has not changed, no need to continue
+        if orig_data == new_data:
+            return new_data
+
+        # Encode the updated data as a JSON string
+        data_str = json.dumps(new_data)
+
+        # Begin our transaction.
+        pipe.multi()
+
+        # Because this is after the pipe.multi() call, the following
+        # set command is not executed immediately, and instead is
+        # queued up. The return value from this call is not the
+        # return value for the actual DB call.
+        pipe.set(key, data_str)
+
+        # Calling pipe.execute() does one of two things:
+        # 1. If the key we are watching has not changed since we started
+        #    watching it, then our DB set operation will be executed.
+        #    The return value of pipe.execute() is a list of the responses
+        #    from all of the queued DB commands (in our case, just a single
+        #    command -- the set). We don't really care about the response.
+        #    If the set failed, Redis would raise an exception, and that's
+        #    all we're really concerned about.
+        # 2. If they key we are watching DID change, then the queued DB
+        #    operations (the set, in our case) are aborted and a Redis WatchError
+        #    exception will be raised, and the caller will have to decide how
+        #    to deal with it.
+        pipe.execute()
+
+        # If we get here, it means no exception was raised by pipe.execute, so we
+        # should return the updated data.
+        return new_data
+
     @convert_db_watch_errors
     def patch[PatchDataFormat](
         self,
@@ -356,7 +446,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         update_handler: Optional[UpdateHandler[DataT]] = None,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         default_entry: Optional[DataT] = None
-    ) -> None:
+    ) -> DataT:
         """
         Patch data in the database.
         If the entry does not exist in the DB:
@@ -386,12 +476,11 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                 # decorator, and so it falsely reports that we are missing an argument
                 # here.
                 # pylint: disable=no-value-for-parameter
-                #return self._patch(key=key,
-                #                   patch_data=patch_data,
-                #                   update_handler=update_handler,
-                #                   patch_handler=patch_handler,
-                #                   default_entry=default_entry)
-                pass
+                return self._patch(key=key,
+                                   patch_data=patch_data,
+                                   update_handler=update_handler,
+                                   patch_handler=patch_handler,
+                                   default_entry=default_entry)
             except redis.exceptions.WatchError as err:
                 # This means the entry changed values while the helper function was
                 # trying to patch it.
