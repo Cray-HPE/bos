@@ -35,7 +35,6 @@ import time
 from typing import (Any,
                     ClassVar,
                     Generic,
-                    Optional,
                     Protocol,
                     cast)
 
@@ -61,10 +60,10 @@ class EntryChecker[DataT](Protocol):
     def __call__(self, data: DataT) -> bool: ...
 
 class PatchHandler[DataT, PatchDataFormat](Protocol):
-    def __call__(self, data: DataT, patch_data: PatchDataFormat) -> DataT: ...
+    def __call__(self, data: DataT, patch_data: PatchDataFormat) -> None: ...
 
 class UpdateHandler[DataT](Protocol):
-    def __call__(self, data: DataT) -> DataT: ...
+    def __call__(self, data: DataT) -> None: ...
 
 
 class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
@@ -356,9 +355,9 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         *,
         key: str,
         patch_data: PatchDataFormat,
-        update_handler: Optional[UpdateHandler[DataT]],
+        update_handler: UpdateHandler[DataT] | None,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
-        default_entry: Optional[DataT]
+        default_entry: DataT | None
     ) -> DataT:
         """
         Helper function for patch, which tries to apply the patch inside a Redis pipeline.
@@ -377,7 +376,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # get call will execute immediately and return the data.
         raw_data = cast(Any, pipe.get(key))
 
-        orig_data: Optional[DataT]
+        orig_data: DataT | None
         new_data: DataT
         if raw_data is not None:
             orig_data = self._load_bosdata(key, raw_data)
@@ -445,8 +444,8 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         patch_data: PatchDataFormat,
         *,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
-        update_handler: Optional[UpdateHandler[DataT]] = None,
-        default_entry: Optional[DataT] = None
+        update_handler: UpdateHandler[DataT] | None = None,
+        default_entry: DataT | None = None
     ) -> DataT:
         """
         Patch data in the database.

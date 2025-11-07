@@ -28,11 +28,10 @@ Utilities for getting information from environment variables
 
 import logging
 import os
-from typing import Optional
 
 LOGGER = logging.getLogger(__name__)
 
-def get_pos_int_env_var(varname: str) -> Optional[int]:
+def get_pos_int_env_var(varname: str) -> int | None:
     """
     If the specified environment variable is set to a positive base-10 integer string
     value, return it (as an integer). Otherwise, log a relevant warning message and return None.

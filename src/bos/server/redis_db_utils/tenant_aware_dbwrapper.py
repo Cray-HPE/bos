@@ -27,7 +27,7 @@ TenantAwareDBWrapper class
 
 from abc import ABC
 
-from typing import Generic, Optional
+from typing import Generic
 
 from bos.common.tenant_utils import get_tenant_aware_key
 
@@ -71,8 +71,9 @@ class TenantAwareDBWrapper(DBWrapper[DataT], Generic[DataT], ABC):
         tenant: str | None,
         patch_data: PatchDataFormat,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
-        update_handler: Optional[UpdateHandler[DataT]] = None,
-        default_entry: Optional[DataT] = None, \
+        update_handler: UpdateHandler[DataT] | None = None,
+        default_entry: DataT | None = None,
+        /
     ) -> DataT:
         """Patch data in the database"""
         return self.patch(

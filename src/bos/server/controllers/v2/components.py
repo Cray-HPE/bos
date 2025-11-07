@@ -26,7 +26,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial, singledispatch
 import logging
-from typing import Any, Literal, Optional, cast
+from typing import Any, Literal, cast
 
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
@@ -557,7 +557,7 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
 
 def patch_component_record(
     component_id: str,
-    tenant: Optional[str],
+    tenant: str | None,
     component_data: ComponentRecord,
     patch_data: ComponentData
 ) -> None:
