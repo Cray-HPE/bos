@@ -502,8 +502,9 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     @redis_pipeline
     def _mpatch[PatchDataFormat](
         self,
-        key_patch_data_map: Mapping[str, PatchDataFormat],
+        pipe: redis.client.Pipeline,
         *,
+        key_patch_data_map: Mapping[str, PatchDataFormat],
         skip_nonexistent_keys: bool,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         update_handler: UpdateHandler[DataT] | None
