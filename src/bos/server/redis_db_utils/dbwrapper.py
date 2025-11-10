@@ -591,7 +591,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         skip_nonexistent_keys: bool,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         update_handler: UpdateHandler[DataT] | None = None
-    ) -> key_data_map: dict[str, DataT]:
+    ) -> dict[str, DataT]:
         # Set the time after which we will perform no more DB retries.
         # Note that this is not the same as it being a hard timeout. If no Redis
         # WatchErrors are raised after this time limit has been passed, then the method
