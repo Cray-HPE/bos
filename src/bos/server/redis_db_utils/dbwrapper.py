@@ -493,26 +493,26 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                 # top of the loop.
                 LOGGER.warning("Key '%s' changed (%s); retrying", key, err)
 
-    @redis_pipeline
-    def _mpatch[PatchDataFormat](
-        self,
-        key_patch_data_map: Mapping[str, PatchDataFormat],
-        /, *,
-        skip_nonexistent_keys: bool,
-        patch_handler: PatchHandler[DataT, PatchDataFormat],
-        update_handler: UpdateHandler[DataT] | None = None
-    ) -> key_data_map: dict[str, DataT]:
+    #@redis_pipeline
+    #def _mpatch[PatchDataFormat](
+        #self,
+        #key_patch_data_map: Mapping[str, PatchDataFormat],
+        #/, *,
+        #skip_nonexistent_keys: bool,
+        #patch_handler: PatchHandler[DataT, PatchDataFormat],
+        #update_handler: UpdateHandler[DataT] | None = None
+    #) -> key_data_map: dict[str, DataT]:
 
 
-    @convert_db_watch_errors
-    def mpatch[PatchDataFormat](
-        self,
-        key_patch_data_map: Mapping[str, PatchDataFormat],
-        /, *,
-        skip_nonexistent_keys: bool,
-        patch_handler: PatchHandler[DataT, PatchDataFormat],
-        update_handler: UpdateHandler[DataT] | None = None
-    ) -> key_data_map: dict[str, DataT]:
+    #@convert_db_watch_errors
+    #def mpatch[PatchDataFormat](
+        #self,
+        #key_patch_data_map: Mapping[str, PatchDataFormat],
+        #/, *,
+        #skip_nonexistent_keys: bool,
+        #patch_handler: PatchHandler[DataT, PatchDataFormat],
+        #update_handler: UpdateHandler[DataT] | None = None
+    #) -> key_data_map: dict[str, DataT]:
 
     #@convert_db_watch_errors
     #def patch_by_filter[PatchDataFormat](
