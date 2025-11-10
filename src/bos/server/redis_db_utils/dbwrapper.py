@@ -507,7 +507,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         skip_nonexistent_keys: bool,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         update_handler: UpdateHandler[DataT] | None
-    ) -> key_data_map: dict[str, DataT]:
+    ) -> dict[str, DataT]:
         # Mapping of patched data (to be returned to caller)
         key_patched_data_map: dict[str, DataT] = {}
 
