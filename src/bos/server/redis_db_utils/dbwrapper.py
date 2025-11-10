@@ -26,7 +26,7 @@ DBWrapper class
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Generator, Iterable
+from collections.abc import Callable, Generator, Iterable, Mapping
 import copy
 from itertools import batched, islice
 import json
@@ -280,7 +280,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         return { key: self._load_bosdata(key, data)
                  for key, data in zip(keys, raw_data_list) if data is not None }
 
-    def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
+    def mput(self, key_data_map: Mapping[str, DataT] | Mapping[str, JsonDict], /) -> None:
         """
         JSON-encode all data and then write each item to the database under its respective key
         """
@@ -492,6 +492,26 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                 # We are not past the time limit, so just log a warning and we'll go back to the
                 # top of the loop.
                 LOGGER.warning("Key '%s' changed (%s); retrying", key, err)
+
+    #@convert_db_watch_errors
+    #def mpatch[PatchDataFormat](
+    #    self,
+    #    key_patch_data_map: Mapping[str, PatchDataFormat],
+    #    /, *,
+    #    skip_nonexistent_keys: bool,
+    #    patch_handler: PatchHandler[DataT, PatchDataFormat],
+    #    update_handler: UpdateHandler[DataT] | None = None
+    #) -> key_data_map: dict[str, DataT]:
+
+    #@convert_db_watch_errors
+    #def patch_by_filter[PatchDataFormat](
+    #    self,
+    #    entry_checker: EntryChecker[DataT],
+    #    patch_data: PatchDataFormat,
+    #    /, *,
+    #    patch_handler: PatchHandler[DataT, PatchDataFormat],
+    #    update_handler: UpdateHandler[DataT] | None = None
+    #) -> key_data_map: dict[str, DataT]:
 
 
 def _get_redis_client(db: Databases) -> redis.client.Redis:
