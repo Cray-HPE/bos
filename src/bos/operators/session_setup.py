@@ -193,7 +193,7 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
             self._log_debug(exc_type_msg(err))
             if isinstance(err, SessionSetupException):
                 raise
-            raise SessionSetupException(err) from err
+            raise SessionSetupException(exc_type_msg(err)) from err
         # No exception raised by previous block
         self._log_info('Found %d components that require updates', len(data))
         for chunk in chunk_components(data, max_batch_size):
