@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- CASMCMS-9593
+  - Generate error string for ApiResponseError exceptions
+  - Include exception type when reporting unexpected session setup errors
+
 ### Dependencies
 - Use actual `pypi` instead of `arti.hpc` clone, to avoid intermittent build failures
 

@@ -23,12 +23,20 @@
 #
 import requests
 
+from bos.common.utils import compact_response_text
+
 from .response_data import ResponseData
 
 
 class ApiResponseError(Exception):
     """Raised when API response has non-ok status"""
 
-    def __init__(self, response: requests.Response) -> None:
-        super().__init__()
+    def __init__(self, response: requests.Response, method: str, url: str) -> None:
         self.response_data = ResponseData.from_response(response)
+        self.request_method = method
+        self.request_url = url
+        super().__init__(
+            f"Non-2XX response ({self.response_data.status_code}) "
+            f"to {self.request_method} {self.request_url}; "
+            f"{self.response_data.reason} {compact_response_text(self.response_data.text)}"
+        )
