@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.49.1] - 2025-11-18
 ### Fixed
 - CASMCMS-9593
   - Generate error string for ApiResponseError exceptions
