@@ -33,16 +33,15 @@ from .exceptions import ImageNotFound, TagFailure
 class ImsImageRequestErrorHandler(RequestErrorHandler):
 
     @classmethod
-    def handle_api_response_error(cls, err: ApiResponseError,
-                                  request_data: RequestData) -> NoReturn:
+    def handle_api_response_error(cls, err: ApiResponseError) -> NoReturn:
         if err.response_data.status_code == 404:
             # If it's not found, we just log it as a warning, because we may be
             # okay with that -- that will be for the caller to decide
-            LOGGER.warning("%s %s: 404 response", request_data.method_name,
-                           request_data.url)
-            image_id = request_data.url.split('/')[-1]
+            LOGGER.warning("%s %s: 404 response", err.request_method,
+                           err.request_url)
+            image_id = err.request_url.split('/')[-1]
             raise ImageNotFound(image_id) from err
-        super().handle_api_response_error(err, request_data)
+        super().handle_api_response_error(err)
 
 
 ImageArch = Literal['aarch64', 'x86_64']

@@ -118,7 +118,7 @@ class BaseGenericEndpoint[RequestReturnT](ABC):
             LOGGER.debug("Response status code=%d, reason=%s, body=%s", response.status_code,
                  response.reason, compact_response_text(response.text))
             if not response.ok:
-                raise ApiResponseError(response=response)
+                raise ApiResponseError(response=response, method=method.__name__.upper(), url=url)
             return cls.format_response(response)
 
     def delete(self, **kwargs: Unpack[GetDeleteKwargs]) -> RequestReturnT:
