@@ -324,7 +324,9 @@ def patch_v2_components(
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
-        patched_component_list = _v2_components_bulk_patch(data, skip_bad_ids=skip_bad_ids)
+        patched_component_list = _v2_components_bulk_patch(data,
+                                                           skip_bad_ids=skip_bad_ids,
+                                                           tenant=get_tenant_from_header() or None)
     except ComponentNotFound as err:
         LOGGER.warning(err)
         return _404_component_not_found(resource_id=err.resource_id)  # pylint: disable=redundant-keyword-arg
@@ -438,7 +440,7 @@ def _v2_components_session_filter_patch(session: str, patch: ComponentData, tena
             return []
 
     entry_filter = lambda comp_data: comp_data.get('session', None) == session
-    return DB.bulk_patch_by_filter(entry_checker, patch,
+    return DB.bulk_patch_by_filter(entry_filter, patch,
                                    specific_keys=legal_component_ids,
                                    patch_handler=_apply_component_patch)
 
