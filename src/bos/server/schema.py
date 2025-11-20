@@ -24,7 +24,6 @@
 
 import json
 import logging
-from typing import Any
 
 import jsonschema
 
@@ -41,22 +40,22 @@ class Validator:
             oas = json.load(f)
         self.api_schema = oas["components"]["schemas"]
 
-    def validate(self, data: Any, schema_name: str) -> None:
+    def validate(self, data: object, schema_name: str) -> None:
         jsonschema.validate(data, self.api_schema[schema_name])
 
-    def validate_component(self, data: Any) -> None:
+    def validate_component(self, data: object) -> None:
         self.validate(data, "V2ComponentWithId")
 
-    def validate_extended_session_status(self, data: Any) -> None:
+    def validate_extended_session_status(self, data: object) -> None:
         self.validate(data, "V2SessionExtendedStatus")
 
-    def validate_options(self, data: Any) -> None:
+    def validate_options(self, data: object) -> None:
         self.validate(data, "V2Options")
 
-    def validate_session(self, data: Any) -> None:
+    def validate_session(self, data: object) -> None:
         self.validate(data, "V2Session")
 
-    def validate_session_template(self, data: Any) -> None:
+    def validate_session_template(self, data: object) -> None:
         self.validate(data, "V2SessionTemplate")
 
     def get_schema_fields(self, schema_name: str) -> set[str]:
