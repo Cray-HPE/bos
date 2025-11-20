@@ -324,10 +324,6 @@ def patch_v2_components(
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     try:
-        current_component_data, component_patch_data = _parse_v2_components_bulk_patch(
-                                                            data, skip_bad_ids=skip_bad_ids)
-
-    try:
         patched_component_list = _v2_components_bulk_patch(data, skip_bad_ids=skip_bad_ids)
     except ComponentNotFound as err:
         LOGGER.warning(err)

@@ -531,6 +531,10 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # Mapping of patched data (to be returned to caller)
         key_patched_data_map: dict[str, DataT] = {}
 
+        # Mapping of data that is technically patched, but is
+        # unchanged by the patch
+        #key_noop_data_map: dict[str, DataT] = {}
+
         # Extract the keys from the mapping
         keys: list[str] = list(key_patch_data_map)
 
@@ -670,7 +674,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         keys_done: set[str]
     ) -> dict[str, DataT]:
         # Mapping from keys to the updated data
-        patched_data_map: dict[str, DbEntry] = {}
+        patched_data_map: dict[str, DataT] = {}
 
         # If no keys were specified we're done already
         if not keys:
