@@ -162,6 +162,10 @@ def _create_session(session_create: SessionCreate, tenant: str | None) -> Sessio
     return Session.from_dict(body)
 
 
+class PatchError(Exception):
+    """ Error applying session patch """
+
+
 @dbutils.redis_error_handler
 def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | CxResponse:
     """PATCH /v2/session
@@ -183,21 +187,32 @@ def patch_v2_session(session_id: str) -> tuple[SessionRecordT, Literal[200]] | C
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
     tenant = get_tenant_from_header()
+    apply_patch = partial(patch_session_record, session_id=session_id)
     try:
-        session_data = DB.tenanted_get(session_id, tenant)
+        patched_session_data = DB.tenanted_patch(session_id,
+                                                 tenant,
+                                                 patch_data,
+                                                 patch_handler=apply_patch)
     except dbutils.NotFoundInDB:
         LOGGER.warning("Could not find v2 session %s (tenant = '%s')", session_id, tenant)
         return _404_session_not_found(resource_id=session_id, tenant=tenant)  # pylint: disable=redundant-keyword-arg
+    except PatchError as err:
+        return _400_bad_request(f"Error patching with the data provided: {err}")
 
+    return patched_session_data, 200
+
+
+def patch_session_record(
+    session_id: str,
+    session_data: SessionRecordT,
+    patch_data: SessionUpdateT
+) -> None:
     try:
         update_session_record(session_data, patch_data)
     except Exception as err:
         LOGGER.error("Error parsing PATCH '%s' request with data: %s", session_id,
                      exc_type_msg(err))
-        return _400_bad_request(f"Error patching with the data provided: {err}")
-
-    DB.tenanted_put(session_id, tenant, session_data)
-    return session_data, 200
+        raise PatchError(str(err)) from err
 
 
 @dbutils.redis_error_handler

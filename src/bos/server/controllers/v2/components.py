@@ -23,7 +23,7 @@
 #
 import copy
 from collections import defaultdict
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from functools import partial, singledispatch
 import logging
 from typing import Literal, cast
@@ -42,6 +42,7 @@ from bos.common.types.components import (ApplyStagedComponents,
                                          ComponentRecord,
                                          ComponentStagedState,
                                          ComponentUpdateFilter,
+                                         strip_id_from_component_record,
                                          update_component_record)
 from bos.common.utils import components_by_id, exc_type_msg, get_current_timestamp
 from bos.common.values import (Phase,
@@ -302,6 +303,10 @@ def put_v2_components() -> tuple[list[ComponentRecord], Literal[200]] | CxRespon
     return list(components.values()), 200
 
 
+class PatchRequestParseError(Exception):
+    """Raised if there is an error parsing the patch request data"""
+
+
 @tenant_error_handler
 @dbutils.redis_error_handler
 def patch_v2_components(
@@ -321,36 +326,31 @@ def patch_v2_components(
     try:
         current_component_data, component_patch_data = _parse_v2_components_bulk_patch(
                                                             data, skip_bad_ids=skip_bad_ids)
+
+    try:
+        patched_component_list = _v2_components_bulk_patch(data, skip_bad_ids=skip_bad_ids)
     except ComponentNotFound as err:
         LOGGER.warning(err)
         return _404_component_not_found(resource_id=err.resource_id)  # pylint: disable=redundant-keyword-arg
     except BadRequest as err:
         LOGGER.warning(err)
         return _400_bad_request(str(err))
-    except Exception as err:
+    except PatchRequestParseError as err:
         LOGGER.error("Error parsing PATCH request data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
-
-    if not current_component_data:
-        LOGGER.debug("patch_v2_components: No components to patch")
-        return [], 200
-
-    try:
-        for comp_id, comp in current_component_data.items():
-            update_component_record(comp, component_patch_data[comp_id])
     except Exception as err:
         LOGGER.error("Error patching component data: %s", exc_type_msg(err))
         return _400_bad_request(f"Error patching the data provided: {err}")
 
-    DB.mput(current_component_data)
-    return list(current_component_data.values()), 200
+    #if not current_component_data:
+    if not patched_component_list:
+        LOGGER.debug("patch_v2_components: No components to patch")
+
+    return patched_component_list, 200
 
 
 @singledispatch
-def _parse_v2_components_bulk_patch(
-    data: object, /, *, skip_bad_ids: bool
-) -> tuple[dict[str, ComponentRecord],
-           Mapping[str, ComponentData] | Mapping[str, ComponentRecord]]:
+def _v2_components_bulk_patch(data: object, /, *, skip_bad_ids: bool, tenant: str | None) -> list[ComponentRecord]:
     """
     This is the fallback function, for cases where data does not match one of the
     later definitions. This will only happen if data is not a list or a dict.
@@ -360,32 +360,31 @@ def _parse_v2_components_bulk_patch(
     raise BadRequest(f"Unexpected data type {type(data).__name__}")
 
 
-@_parse_v2_components_bulk_patch.register(list)
+@_v2_components_bulk_patch.register(list)
 def _(
-    data: list[ComponentRecord], /, *, skip_bad_ids: bool
-) -> tuple[dict[str, ComponentRecord], dict[str, ComponentRecord]]:
+    data: list[ComponentRecord], /, *, skip_bad_ids: bool, tenant: str | None
+) -> list[ComponentRecord]:
     """
-    Set the automatic component fields for the specified patch data
-    Extract the IDs from the specified list of component records, and get the current data for them
+    Applies the specified list of component patches
+    Returns the patched components
     """
-    LOGGER.debug("_parse_v2_components_bulk_patch(list): %d components specified", len(data))
-    try:
-        patch_data = { comp_id: _set_auto_fields(patch_comp)
-                       for comp_id, patch_comp in components_by_id(data).items() }
-    except Exception as err:
-        raise BadRequest(f"Error parsing the data provided: {exc_type_msg(err)}") from err
+    LOGGER.debug("_v2_components_bulk_patch(list): %d components specified", len(data))
+    if not data:
+        # In this case, we don't need to bother calling another function.
+        return []
+    comp_id_patch_dict: dict[str, ComponentData] = {}
+    while data:
+        # We pop these as we go just to conserve memory, so we don't have to keep the original list
+        # around plus the dict we are creating
+        comp_record = data.pop()
+        comp_id_patch_dict[comp_record["id"]] = strip_id_from_component_record(comp_record)
+    return _v2_components_dict_patch(comp_id_patch_dict, tenant=tenant, skip_bad_ids=skip_bad_ids)
 
-    components = _load_comps_from_id_list(list(patch_data), skip_bad_ids=skip_bad_ids)
 
-    LOGGER.debug("_parse_v2_components_bulk_patch(list): %d components to be patched",
-                 len(components))
-    return components, patch_data
-
-
-@_parse_v2_components_bulk_patch.register(dict)
+@_v2_components_bulk_patch.register(dict)
 def _(
-    data: ComponentUpdateFilter, /, *, skip_bad_ids: bool
-) -> tuple[dict[str, ComponentRecord], defaultdict[str, ComponentData]]:
+    data: ComponentUpdateFilter, /, *, skip_bad_ids: bool, tenant: str | None
+) -> list[ComponentRecord]:
     """
     Set the automatic component fields for the specified patch data.
     Remove its ID field, if present.
@@ -403,54 +402,49 @@ def _(
         raise BadRequest("Multiple filters provided")
     if not ids and not session:
         raise BadRequest("No filter provided.")
+    # We do not want to patch the ID field as part of the bulk patch
     patch.pop("id", None)
-    patch = _set_auto_fields(patch)
-    # Because in this case we are applying the same patch data to every component, we
-    # can just use a defaultdict that always returns our patch data
-    patch_data: defaultdict[str, ComponentData] = defaultdict(lambda: patch)
     if ids:
-        components = _update_filter_ids_to_components(ids,skip_bad_ids=skip_bad_ids)
-    else:
-        # session
-        tenant = get_tenant_from_header()
-        components = components_by_id(get_v2_components_data(session=session, tenant=tenant))
-    LOGGER.debug("_parse_v2_components_bulk_patch(dict): %d IDs found in specified %s",
-                 len(components), 'id list' if ids else 'session')
-    return components, patch_data
+        # ID filter
+        # This is basically the same as the bulk list patch, except that in this case
+        # every component is getting the same patch data
+        return _v2_components_dict_patch({ comp_id: patch for comp_id in ids.split(',')},
+                                         tenant=tenant, skip_bad_ids=skip_bad_ids)
+
+    # Session filter
+    return _v2_components_session_filter_patch(tenant=tenant, session=session, patch=patch)
 
 
-def _update_filter_ids_to_components(ids: str, skip_bad_ids: bool) -> dict[str, ComponentRecord]:
-    try:
-        id_list = ids.split(',')
-    except Exception as err:
-        raise BadRequest(f"Error parsing the IDs provided: {exc_type_msg(err)}") from err
-
-    return _load_comps_from_id_list(id_list, skip_bad_ids=skip_bad_ids)
-
-
-def _load_comps_from_id_list(id_list: list[str], skip_bad_ids: bool) -> dict[str, ComponentRecord]:
-    start_len = len(id_list)
-    LOGGER.debug("_load_comps_from_id_list: %d IDs specified", start_len)
-    tenant = get_tenant_from_header()
+def _v2_components_dict_patch(id_patch_map: MutableMapping[str, ComponentData] | MutableMapping[str, ComponentRecord]],
+                              skip_bad_ids: bool, tenant: str | None) -> list[ComponentRecord]:
 
     if skip_bad_ids:
-        if tenant:
-            legal_component_ids = get_tenant_component_set(tenant)
-            id_list = list(legal_component_ids.intersection(id_list))
-            if len(id_list) != start_len:
-                LOGGER.debug("After filtering out invalid IDs, %d IDs remain", len(id_list))
-            if not id_list:
-                return {}
+        _remove_invalid_tenant_comp(id_patch_map, tenant)
+        # If this is now empty, we are done
+        if not id_patch_map:
+            return []
+    elif tenant:
+        _check_for_invalid_tenant_comp(id_patch_map, tenant)
 
-        return DB.mget_skip_bad_keys(id_list)
+    return DB.bulk_patch_by_dict(id_patch_map,
+                                 patch_handler=_apply_component_patch,
+                                 skip_nonexistent_keys=skip_bad_ids)
 
+
+def _v2_components_session_filter_patch(session: str, patch: ComponentData, tenant: str | None) -> list[ComponentRecord]:
+
+    legal_component_ids: set[str] | None = None
     if tenant:
-        _check_for_invalid_tenant_comp(id_list, tenant)
+        legal_component_ids = get_tenant_component_set(tenant)
+        if not legal_component_ids:
+            # That means no components in the system
+            # will match our filter, so we can return an empty list immediately.
+            return []
 
-    try:
-        return DB.mget(id_list)
-    except dbutils.NotFoundInDB as exc:
-        raise ComponentNotFound(exc.key) from exc
+    entry_filter = lambda comp_data: comp_data.get('session', None) == session
+    return DB.bulk_patch_by_filter(entry_checker, patch,
+                                   specific_keys=legal_component_ids,
+                                   patch_handler=_apply_component_patch)
 
 
 def _check_for_invalid_tenant_comp(comp_id_list: Iterable[str], tenant: str) -> None:
@@ -462,6 +456,15 @@ def _check_for_invalid_tenant_comp(comp_id_list: Iterable[str], tenant: str) -> 
     for comp_id in comp_id_list:
         if comp_id not in legal_component_ids:
             raise ComponentNotFound(comp_id)
+
+
+def _remove_invalid_tenant_comp(id_patch_map: MutableMapping[str, object], tenant: str) -> None:
+    if not tenant:
+        return
+    for comp_id in get_tenant_component_set(tenant):
+        # Set None as the default, so that no error is raised if the component
+        # is not in the mapping
+        id_patch_map.pop(comp_id, None)
 
 
 @tenant_error_handler
@@ -513,6 +516,12 @@ def put_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] 
     return new_component, 200
 
 
+class InvalidTenantComponent(Exception):
+    """Raised when a tenant tries to apply a patch to a component that isn't theirs"""
+
+class CannotUpdateActualState(Exception):
+    """Raised when attempting to patch component actual state when it is not allowed"""
+
 @tenant_error_handler
 @dbutils.redis_error_handler
 def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]] | CxResponse:
@@ -529,27 +538,48 @@ def patch_v2_component(component_id: str) -> tuple[ComponentRecord, Literal[200]
                      exc_type_msg(err))
         return _400_bad_request(f"Error parsing the data provided: {err}")
 
-    if not is_valid_tenant_component(component_id, get_tenant_from_header()):
-        LOGGER.warning("Component %s could not be found", component_id)
-        return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
+    patch_data.pop("id", None)
+    apply_patch = partial(_patch_component_record,
+                          component_id=component_id,
+                          tenant=get_tenant_from_header())
     try:
-        component = DB.get(component_id)
-    except dbutils.NotFoundInDB:
-        LOGGER.warning("Component %s could not be found", component_id)
+        patched_component_data = DB.patch(component_id,
+                                          patch_data,
+                                          patch_handler=apply_patch)
+    except (InvalidTenantComponent, dbutils.NotFoundInDB):
         return _404_component_not_found(resource_id=component_id)  # pylint: disable=redundant-keyword-arg
-
-    if "actual_state" in patch_data and not _validate_actual_state_change_is_allowed(component):
-        LOGGER.warning("Not able to update actual state")
+    except CannotUpdateActualState:
         return connexion.problem(
             status=409,
             title="Actual state can not be updated.",
             detail="BOS is currently changing the state of the node,"
             " and the actual state can not be accurately recorded")
-    patch_data.pop("id", None)
-    patch_data = _set_auto_fields(patch_data)
-    update_component_record(component, patch_data)
-    DB.put(component_id, component)
-    return component, 200
+
+    return patched_component_data, 200
+
+
+def _patch_component_record(
+    component_id: str,
+    tenant: str | None,
+    comp_record: ComponentRecord,
+    patch_data: ComponentData
+) -> None:
+    if not is_valid_tenant_component(component_id, tenant):
+        LOGGER.warning("Component %s could not be found", component_id)
+        raise InvalidTenantComponent()
+    if "actual_state" in patch_data and not _validate_actual_state_change_is_allowed(comp_record):
+        LOGGER.warning("Not able to update actual state for component %s", component_id)
+        raise CannotUpdateActualState()
+    _apply_component_patch(comp_record, patch_data)
+
+
+def _apply_component_patch(
+    comp_record: ComponentRecord,
+    patch_data: ComponentData
+) -> None:
+    # Make a copy so we do not change the original
+    updated_patch_data = _set_auto_fields(copy.deepcopy(patch_data))
+    update_component_record(comp_record, updated_patch_data)
 
 
 def _validate_actual_state_change_is_allowed(current_data: CompAny) -> bool:
@@ -710,12 +740,18 @@ def _set_state_from_staged(data: CompAny, staged_state: ComponentStagedState,
 
 
 def _set_auto_fields[CompAnyT: (ComponentData, ComponentRecord)](data: CompAnyT) -> CompAnyT:
+    """
+    This is called when doing component PUT or a PATCH
+    In the case of a PUT, it is called on the new component data.
+    In the case of a PATCH, it is called on the *patch* data (before it is applied).
+    """
     data = _populate_boot_artifacts(data)
     data = _set_last_updated(data)
     data = _set_on_hold_when_enabled(data)
     data = _clear_session_when_manually_updated(data)
     data = _clear_event_stats_when_desired_state_changes(data)
     return data
+
 
 def _populate_boot_artifacts[CompAnyT: (ComponentData, ComponentRecord)](
     data: CompAnyT
@@ -780,7 +816,7 @@ def _set_on_hold_when_enabled[CompAnyT: (ComponentData, ComponentRecord)](
 ) -> CompAnyT:
     """
     The status operator doesn't monitor disabled components, so this causes a delay until it can
-    revaluate the component so that other operators don't act on old phase information.
+    reevaluate the component so that other operators don't act on old phase information.
     """
     if data.get("enabled"):
         if "status" not in data:

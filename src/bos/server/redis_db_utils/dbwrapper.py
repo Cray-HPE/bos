@@ -26,10 +26,18 @@ DBWrapper class
 """
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Generator, Iterable
+from collections.abc import (
+                                Callable,
+                                Collection,
+                                Generator,
+                                Iterable,
+                                Mapping
+                            )
+import copy
 from itertools import batched, islice
 import json
 import logging
+import time
 from typing import (ClassVar,
                     Generic,
                     Protocol,
@@ -41,15 +49,27 @@ from redis.maint_notifications import MaintNotificationsConfig
 from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 
-from .defs import DB_HOST, DB_PORT, Databases
+from .convert_db_watch_errors import convert_db_watch_errors
+from .defs import DB_BUSY_SECONDS, DB_HOST, DB_PORT, Databases
 from .defs import BosDataRecord as DataT
 from .exceptions import (BosDBException,
                          InvalidDBDataType,
                          InvalidDBJsonDataType,
                          NonJsonDBData,
                          NotFoundInDB)
+from .redis_pipeline import redis_pipeline
 
 LOGGER = logging.getLogger(__name__)
+
+class EntryChecker[DataT](Protocol):
+    def __call__(self, data: DataT) -> bool: ...
+
+class PatchHandler[DataT, PatchDataFormat](Protocol):
+    def __call__(self, data: DataT, patch_data: PatchDataFormat) -> None: ...
+
+class UpdateHandler[DataT](Protocol):
+    def __call__(self, data: DataT) -> None: ...
+
 
 class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
     """ Require that some classes set the _Database class variable """
@@ -153,6 +173,53 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         """
         self.client.set(key, json.dumps(data))
 
+    @redis_pipeline
+    def _conditional_put(self,
+                         pipe: redis.client.Pipeline,
+                         *,
+                         key: str,
+                         new_data: DataT,
+                         checker: EntryChecker[DataT]) -> bool:
+        """
+        Note:
+        The pipe argument does not exist as far as the caller of this method is concerned.
+        That argument is automatically provided by the @redis_pipeline wrapper.
+        """
+        pipe.watch(key)
+        # The redis type annotations are not ideal, so we need to use cast here
+        # But we cast to object to avoid making any assumptions about its type
+        # We do this rather than casting to Any since the Any type bypasses type checking
+        db_data_raw = cast(object, pipe.get(key))
+        db_data = self._load_bosdata(key, db_data_raw)
+        if not checker(db_data):
+            return False
+        # Encode the updated data as a JSON string
+        new_data_str = json.dumps(new_data)
+        pipe.multi()
+        pipe.set(key, new_data_str)
+        pipe.execute()
+        return True
+
+    @convert_db_watch_errors
+    def conditional_put(self, key: str, data: DataT, /, checker: EntryChecker[DataT]) -> bool:
+        """
+        Reads key entry from DB and decodes it into DataT.
+        Calls checker on it.
+        If checker is True, encodes data as JSON and writes it to key.
+        Returns the return value of checker.
+        Will automatically retry if the DB value of key changes while we are doing this.
+        """
+        while True:
+            try:
+                # At the time of this writing, pylint is not clever enough to understand
+                # the function signature mutation performed by the @redis_pipeline
+                # decorator, and so it falsely reports that we are missing an argument
+                # here.
+                # pylint: disable=no-value-for-parameter
+                return self._conditional_put(key=key, new_data=data, checker=checker)
+            except redis.exceptions.WatchError:
+                pass
+
     def get_and_delete_raw(self, key: str, /) -> JsonDict:
         """Get the data for the given key and delete it from the DB."""
         # The redis type annotations are not ideal, so we need to use cast here
@@ -231,7 +298,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         return { key: self._load_bosdata(key, data)
                  for key, data in zip(keys, raw_data_list) if data is not None }
 
-    def mput(self, key_data_map: dict[str, DataT] | dict[str, JsonDict], /) -> None:
+    def mput(self, key_data_map: Mapping[str, DataT] | Mapping[str, JsonDict], /) -> None:
         """
         JSON-encode all data and then write each item to the database under its respective key
         """
@@ -301,6 +368,403 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         """
         yield from self._iter_items(start_after_key=None, load_func=self._load_jsondict,
                                     specific_keys=None)
+
+    @redis_pipeline
+    def _patch[PatchDataFormat](
+        self,
+        pipe: redis.client.Pipeline,
+        *,
+        key: str,
+        patch_data: PatchDataFormat,
+        update_handler: UpdateHandler[DataT] | None,
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        default_entry: DataT | None
+    ) -> DataT:
+        """
+        Helper function for patch, which tries to apply the patch inside a Redis pipeline.
+        Returns the updated entry data if successful.
+        The pipeline will raise a Redis WatchError otherwise.
+
+        Note:
+        The pipe argument does not exist as far as the caller of this method is concerned.
+        That argument is automatically provided by the @redis_pipeline wrapper.
+        """
+        # Mark this key for monitoring before we retrieve its data,
+        # so that we know if it changes underneath us.
+        pipe.watch(key)
+
+        # Because we have not yet called pipe.multi(), this DB
+        # get call will execute immediately and return the data.
+        #
+        # The redis type annotations are not ideal, so we need to use cast here
+        # But we cast to object to avoid making any assumptions about its type
+        # We do this rather than casting to Any since the Any type bypasses type checking
+        raw_data = cast(object, pipe.get(key))
+
+        orig_data: DataT | None
+        new_data: DataT
+        if raw_data is not None:
+            orig_data = self._load_bosdata(key, raw_data)
+
+            # Start by making a copy of the data, so that we can compare
+            # the final patched version to it, and see if it has been changed
+            # (this is necessary because many of the BOS patching functions change the
+            # data in place, as well as returning it)
+            new_data = copy.deepcopy(orig_data)
+
+            # Apply the patch_data to the current data
+            patch_handler(new_data, patch_data)
+        elif default_entry is not None:
+            # A default entry was specified, so we will apply the patch
+            # on that.
+            orig_data = None
+            new_data = copy.deepcopy(default_entry)
+            patch_handler(new_data, patch_data)
+        else:
+            # No default entry specified
+            # Raise an exception if no or null entry.
+            raise NotFoundInDB(db=self.db, key=key)
+
+        # Call the update handler, if one was specified
+        if update_handler is not None:
+            update_handler(new_data)
+
+        # If the data has not changed, no need to continue
+        if orig_data == new_data:
+            return new_data
+
+        # Encode the updated data as a JSON string
+        data_str = json.dumps(new_data)
+
+        # Begin our transaction.
+        pipe.multi()
+
+        # Because this is after the pipe.multi() call, the following
+        # set command is not executed immediately, and instead is
+        # queued up. The return value from this call is not the
+        # return value for the actual DB call.
+        pipe.set(key, data_str)
+
+        # Calling pipe.execute() does one of two things:
+        # 1. If the key we are watching has not changed since we started
+        #    watching it, then our DB set operation will be executed.
+        #    The return value of pipe.execute() is a list of the responses
+        #    from all of the queued DB commands (in our case, just a single
+        #    command -- the set). We don't really care about the response.
+        #    If the set failed, Redis would raise an exception, and that's
+        #    all we're really concerned about.
+        # 2. If they key we are watching DID change, then the queued DB
+        #    operations (the set, in our case) are aborted and a Redis WatchError
+        #    exception will be raised, and the caller will have to decide how
+        #    to deal with it.
+        pipe.execute()
+
+        # If we get here, it means no exception was raised by pipe.execute, so we
+        # should return the updated data.
+        return new_data
+
+    @convert_db_watch_errors
+    def patch[PatchDataFormat](
+        self,
+        key: str,
+        patch_data: PatchDataFormat,
+        /, *,
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        update_handler: UpdateHandler[DataT] | None = None,
+        default_entry: DataT | None = None
+    ) -> DataT:
+        """
+        Patch data in the database.
+        If the entry does not exist in the DB:
+            If default_entry is None, then DBNoEntryError is raised.
+            Otherwise, the patch is applied on top of the specified default entry
+            (and written to the DB).
+        patch_handler provides an option to specify a non-default patch function.
+        update_handler provides a way to operate on the full patched data.
+        """
+        # Set the time after which we will perform no more DB retries.
+        # Note that this is not the same as it being a hard timeout. If no Redis
+        # WatchErrors are raised after this time limit has been passed, then the method
+        # will run to completion, regardless of how long it takes. This is solely
+        # present to avoid a method which endlessly keeps retrying.
+        no_retries_after: float = time.time() + DB_BUSY_SECONDS
+
+        # The loop condition is a simple True because the logic for exiting the loop is
+        # contained inside the loop itself.
+        while True:
+            try:
+                # Call a helper function to try and patch the entry. If it is successful,
+                # it will return the updated data, which we will return to our caller.
+                # If it is unsuccessful, an exception will be raised.
+                #
+                # At the time of this writing, pylint is not clever enough to understand
+                # the function signature mutation performed by the @redis_pipeline
+                # decorator, and so it falsely reports that we are missing an argument
+                # here.
+                # pylint: disable=no-value-for-parameter
+                return self._patch(key=key,
+                                   patch_data=patch_data,
+                                   update_handler=update_handler,
+                                   patch_handler=patch_handler,
+                                   default_entry=default_entry)
+            except redis.exceptions.WatchError as err:
+                # This means the entry changed values while the helper function was
+                # trying to patch it.
+                if time.time() > no_retries_after:
+                    # We are past the last allowed retry time, so re-raise the exception
+                    raise err
+
+                # We are not past the time limit, so just log a warning and we'll go back to the
+                # top of the loop.
+                LOGGER.warning("Key '%s' changed (%s); retrying", key, err)
+
+    @redis_pipeline
+    def _bulk_patch_by_dict[PatchDataFormat](
+        self,
+        pipe: redis.client.Pipeline,
+        *,
+        key_patch_data_map: Mapping[str, PatchDataFormat],
+        skip_nonexistent_keys: bool,
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        update_handler: UpdateHandler[DataT] | None
+    ) -> list[DataT]:
+        # Mapping of patched data (to be returned to caller)
+        key_patched_data_map: dict[str, DataT] = {}
+
+        # Extract the keys from the mapping
+        keys: list[str] = list(key_patch_data_map)
+
+        # Start by watching all of the keys
+        # This has to be done before we call mget for them.
+        pipe.watch(*keys)
+
+        # Retrieve all of the keys from the DB
+        # The redis type annotations are not ideal, so we need to use cast here
+        # But we cast to object to avoid making any assumptions about its type
+        # We do this rather than casting to Any since the Any type bypasses type checking
+        raw_data = cast(list[object], pipe.mget(keys))
+
+        if not skip_nonexistent_keys:
+            # In this case, check for None values before parsing
+            # any of the data further, since the parsing is more
+            # time consuming
+            for key, raw_data in zip(keys, raw_data):
+                if raw_data is None:
+                    raise NotFoundInDB(db=self.db, key=key)
+
+        for key, raw_data in zip(keys, raw_data):
+            if raw_data is None:
+                # skip_nonexistent_keys must be True, or else we would have
+                # failed earlier from this. So just skip this one.
+                continue
+            orig_data = self._load_bosdata(key, raw_data)
+
+            # Apply the patch to the current data,
+            # and call the update_handler
+            new_data = copy.deepcopy(orig_data)
+            patch_handler(new_data, key_patch_data_map[key])
+            # Call the update handler, if one was specified
+            if update_handler is not None:
+                update_handler(new_data)
+
+            # Only include this in our patch operation if it has changed
+            if orig_data != new_data:
+                key_patched_data_map[key] = new_data
+
+        # Make a new map which consists of all DB data that has actually changed
+        # as a result of the patch, encoded into JSON data strings
+        patched_datastr_map = { key: json.dumps(patched_data)
+                                for key, patched_data in key_patched_data_map.items()
+                              }
+
+        if patched_datastr_map:
+            # Begin our transaction
+            # After this call to pipe.multi(), the database calls are NOT executed immediately.
+            pipe.multi()
+
+            # Queue the DB command to updated the specified keys with the patched data
+            pipe.mset(patched_datastr_map)
+
+            # Execute the pipeline
+            #
+            # At this point, if any entries still being watched have been changed since we
+            # started watching them (including being created or deleted), then a Redis
+            # WatchError exception will be raised and the mset command will not be executed.
+            # The caller of this function will include logic that decides how to handle this.
+            #
+            # Instead, if none of those entries has changed, then Redis will atomically execute
+            # all of the queued database commands. The return value of the pipe.execute()
+            # call is a list with the return values for all of the queued DB commands. In this
+            # case, that is just the mset call, and we do not care about its return value.
+            # If the mset failed, it would raise an exception, and that's all we really care
+            # about.
+            pipe.execute()
+
+        # If we get here, it means that either the pipe executed successfully, or none of the
+        # patches actually resulted in DB data changing. Either way, return.
+        return [key_patched_data_map[key] for key in sorted(key_patched_data_map)]
+
+
+    @convert_db_watch_errors
+    def bulk_patch_by_dict[PatchDataFormat](
+        self,
+        key_patch_data_map: Mapping[str, PatchDataFormat],
+        /, *,
+        skip_nonexistent_keys: bool,
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        update_handler: UpdateHandler[DataT] | None = None
+    ) -> list[DataT]:
+        # Set the time after which we will perform no more DB retries.
+        # Note that this is not the same as it being a hard timeout. If no Redis
+        # WatchErrors are raised after this time limit has been passed, then the method
+        # will run to completion, regardless of how long it takes. This is solely
+        # present to avoid a method which endlessly keeps retrying.
+        no_retries_after: float = time.time() + DB_BUSY_SECONDS
+
+        # The loop condition is a simple True because the logic for exiting the loop is
+        # contained inside the loop itself.
+        while True:
+            # The main work in the loop is enclosed in this try/except block.
+            # This is to catch Redis WatchErrors, which are raised when a change to the database
+            # caused our patch operation to abort. Any other exceptions that arise are
+            # not handled at this layer.
+            try:
+                # Because the patch data is being sent to us as a mapping, it should be short enough
+                # that we do not require batch processing. This also means we can guarantee that
+                # either the entire patch is applied or none of it.
+                #
+                # Call our helper function to patch the data and return the result
+                # At the time of this writing, pylint is not clever enough to understand
+                # the function signature mutation performed by the @redis_pipeline
+                # decorator, and so it falsely reports that we are missing an argument
+                # here.
+                # pylint: disable=no-value-for-parameter
+                return self._mpatch(key_patch_data_map=key_patch_data_map,
+                                    skip_nonexistent_keys=skip_nonexistent_keys,
+                                    update_handler=update_handler,
+                                    patch_handler=patch_handler)
+            except redis.exceptions.WatchError as err:
+                # This means one of the keys changed values between when we filtered it and when
+                # we went to update the DB with the patched data.
+                if time.time() > no_retries_after:
+                    # We are past the last allowed retry time, so re-raise the exception
+                    raise err
+
+                # We are not past the time limit, so just log a warning and we'll go back to the
+                # top of the loop.
+                LOGGER.warning("Key changed (%s); retrying", err)
+
+
+    @redis_pipeline
+    def _bulk_patch_by_filter[PatchDataFormat](
+        self,
+        pipe: redis.client.Pipeline,
+        *,
+        keys: Collection[str],
+        entry_checker: EntryChecker[DataT],
+        patch_data: PatchDataFormat,
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        update_handler: UpdateHandler[DataT] | None,
+        keys_done: set[str]
+    ) -> dict[str, DataT]:
+        # Mapping from keys to the updated data
+        patched_data_map: dict[str, DbEntry] = {}
+
+        # If no keys were specified we're done already
+        if not keys:
+            return patched_data_map
+
+        # Mapping from keys to the updated JSON-encoded data strings
+        patched_datastr_map: dict[str, str] = {}
+
+        # Start by watching all of the keys in this batch
+        # This has to be done before we call mget for them.
+        pipe.watch(*keys)
+
+        # Retrieve all of the specified keys from the database
+        # All database calls to pipe will be executed immediately,
+        # since we have not yet called pipe.multi()
+        data_str_list: list[object] = pipe.mget(*keys)
+
+        for key, data_str in zip(keys, data_str_list):
+            if not raw_data:
+                # Already empty, cannot patch it
+                keys_done.add(key)
+                continue
+            orig_data = self._load_bosdata(key, raw_data)
+            # Data filtering happens here rather than after due to paging/memory constraints;
+            # we can't load all data and then filter on the results
+            if data_filter and not data_filter(orig_data):
+                # This data does not match our filter, so skip it
+                keys_done.add(key)
+                continue
+
+            # This key should be patched
+
+            # Start by making a copy of the data, so that we can compare
+            # the final patched version to it, and see if it has been changed
+            # (this is necessary because many of the CFS patching functions change the
+            # data in place, as well as returning it)
+            new_data = copy.deepcopy(orig_data)
+
+            # Apply the patch to the current data,
+            # and call the update_handler
+            new_data = patch_handler(new_data, patch)
+            if update_handler:
+                new_data = update_handler(new_data)
+
+            # If this did not actually change the entry, then there is no need to
+            # actually patch it
+            if new_data == orig_data:
+                keys_done.add(key)
+                continue
+
+            patched_data_map[key] = new_data
+            patched_datastr_map[key] = json.dumps(new_data)
+
+        if patched_datastr_map:
+            # Begin our transaction
+            # After this call to pipe.multi(), the database calls are NOT executed immediately.
+            pipe.multi()
+
+            # Queue the DB command to updated the specified keys with the patched data
+            pipe.mset(patched_datastr_map)
+
+            # Execute the pipeline
+            #
+            # At this point, if any entries still being watched have been changed since we
+            # started watching them (including being created or deleted), then a Redis
+            # WatchError exception will be raised and the mset command will not be executed.
+            # The caller of this function will include logic that decides how to handle this.
+            #
+            # Instead, if none of those entries has changed, then Redis will atomically execute
+            # all of the queued database commands. The return value of the pipe.execute()
+            # call is a list with the return values for all of the queued DB commands. In this
+            # case, that is just the mset call, and we do not care about its return value.
+            # If the mset failed, it would raise an exception, and that's all we really care
+            # about.
+            pipe.execute()
+
+        # If we get here, it means that either the pipe executed successfully, or (if we had no
+        # keys to be patched in this batch) it was not executed at all. Either way, add the
+        # patched keys (if any) to the done list, and then return the patched data map.
+        keys_done.update(patched_data_map)
+        return patched_data_map
+
+
+
+    @convert_db_watch_errors
+    def bulk_patch_by_filter[PatchDataFormat](
+        self,
+        entry_checker: EntryChecker[DataT],
+        patch_data: PatchDataFormat,
+        /, *,
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
+        specific_keys: Iterable[str] | None = None,
+        update_handler: UpdateHandler[DataT] | None = None
+    ) -> list[DataT]:
+
+
 
 def _get_redis_client(db: Databases) -> redis.client.Redis:
     """Create a connection with the database."""

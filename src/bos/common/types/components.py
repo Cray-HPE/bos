@@ -241,3 +241,15 @@ class ComponentBulkUpdateParams(TypedDict, total=False):
     Parameters that can be specified when doing a bulk component patch
     """
     skip_bad_ids: bool
+
+def strip_id_from_component_record(comp_record: ComponentRecord) -> ComponentData:
+    """
+    A new ComponentData object is created with the same values, the 'id' field is removed,
+    and the resulting ComponentData object is returned.
+    """
+    comp_data = ComponentData(**comp_record)
+    # We know that it contains the 'id' field, so we can just pop it without specifying a default
+    # value. Note that we do not care what the 'id' value is, so we do not save the return from
+    # the pop call.
+    comp_data.pop('id')
+    return comp_data

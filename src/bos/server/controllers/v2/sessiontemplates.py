@@ -189,6 +189,10 @@ def delete_v2_sessiontemplate(session_template_id: str) -> tuple[None, Literal[2
     return None, 204
 
 
+class PatchError(Exception):
+    """ Error applying session template patch """
+
+
 @dbutils.redis_error_handler
 def patch_v2_sessiontemplate(
     session_template_id: str
@@ -206,7 +210,18 @@ def patch_v2_sessiontemplate(
         session_template_id)
     tenant = get_tenant_from_header()
     try:
-        template = DB.tenanted_get(session_template_id, tenant)
+        template_patch_data = cast(SessionTemplatePatch, get_request_json())
+    except Exception as err:
+        LOGGER.error("Error parsing PATCH '%s' request data: %s",
+                     session_template_id, exc_type_msg(err))
+        return _400_bad_request(f"Error parsing the data provided: {err}")
+
+    apply_patch = partial(patch_template_record, session_template_id=session_template_id)
+    try:
+        patched_template = DB.tenanted_patch(session_template_id,
+                                             tenant,
+                                             template_patch_data,
+                                             patch_handler=apply_patch)
     except dbutils.NotFoundInDB:
         if tenant:
             LOGGER.warning("Session template not found for tenant '%s': %s", tenant,
@@ -214,24 +229,24 @@ def patch_v2_sessiontemplate(
         else:
             LOGGER.warning("Session template not found: %s", session_template_id)
         return _404_template_not_found(resource_id=session_template_id, tenant=tenant)
+    except PatchError as err:
+        return _400_bad_request(f"The session template could not be patched: {err}")
 
-    try:
-        template_patch_data = cast(SessionTemplatePatch, get_request_json())
-    except Exception as err:
-        LOGGER.error("Error parsing PATCH '%s' request data: %s",
-                     session_template_id, exc_type_msg(err))
-        return _400_bad_request(f"Error parsing the data provided: {err}")
+    return patched_template, 200
 
+
+def patch_template_record(
+    session_template_id: str,
+    template: SessionTemplate,
+    template_patch_data: SessionTemplatePatch
+) -> None:
     try:
         update_template_record(template, template_patch_data)
         validate_sanitize_session_template(session_template_id, template)
     except Exception as err:
         LOGGER.error("Error patching session template '%s': %s",
                      session_template_id, exc_type_msg(err))
-        return _400_bad_request(f"The session template could not be patched: {err}")
-
-    DB.tenanted_put(session_template_id, tenant, template)
-    return template, 200
+        raise PatchError(str(err)) from err
 
 
 @dbutils.redis_error_handler

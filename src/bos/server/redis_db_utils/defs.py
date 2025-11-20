@@ -26,13 +26,18 @@ Definitions for redis_db_utils modules
 """
 
 from enum import IntEnum
-from typing import TypeVar
+import logging
+from typing import Final, TypeVar
 
 from bos.common.types.components import BootArtifacts, ComponentRecord
 from bos.common.types.options import OptionsDict
 from bos.common.types.sessions import Session
 from bos.common.types.session_extended_status import SessionExtendedStatus
 from bos.common.types.templates import SessionTemplate
+
+from .env_vars import get_pos_int_env_var_or_default
+
+LOGGER = logging.getLogger(__name__)
 
 class Databases(IntEnum):
     """
@@ -51,3 +56,23 @@ DB_PORT = 6379
 # The decoded data formats for the different BOS databases
 BosDataRecord = TypeVar("BosDataRecord", BootArtifacts, ComponentRecord, OptionsDict,
                         Session, SessionExtendedStatus, SessionTemplate)
+
+# In a watch/execute pipeline, a DB method will not start a new retry iteration if
+# more than DB_BUSY_SECONDS have elapsed since the DB operation started.
+DEFAULT_DB_BUSY_SECONDS: Final[int] = 60
+DB_BUSY_SECONDS = get_pos_int_env_var_or_default("DB_BUSY_SECONDS",
+                                                 DEFAULT_DB_BUSY_SECONDS)
+LOGGER.debug("DB_BUSY_SECONDS = %d", DB_BUSY_SECONDS)
+
+# For database methods that work on multiple database entries, DB_BATCH_SIZE
+# is the maximum number of entries it will attempt to work on at once.
+# The lower the number, the worse the DB performance will be, but the lower
+# the risk of DB operations being retried because of conflicting DB changes by other clients.
+# The higher the number, the better the DB performance will be, but the higher
+# the risk of DB operations being retried because of conflicting DB changes by other clients.
+# (which would result in a performance impact or even a timeout failure for the
+# overall DB method).
+DEFAULT_DB_BATCH_SIZE: Final[int] = 20
+DB_BATCH_SIZE = get_pos_int_env_var_or_default("DB_BATCH_SIZE",
+                                               DEFAULT_DB_BATCH_SIZE)
+LOGGER.debug("DB_BATCH_SIZE = %d", DB_BATCH_SIZE)
