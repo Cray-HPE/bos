@@ -661,7 +661,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         pipe: redis.client.Pipeline,
         *,
         keys: Collection[str],
-        entry_checker: EntryChecker[DataT],
+        data_filter: EntryChecker[DataT],
         patch_data: PatchDataFormat,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         update_handler: UpdateHandler[DataT] | None,
@@ -675,7 +675,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
             return patched_data_map
 
         # Mapping from keys to the updated JSON-encoded data strings
-        patched_datastr_map: dict[str, str] = {}
+        patched_raw_data_map: dict[str, str] = {}
 
         # Start by watching all of the keys in this batch
         # This has to be done before we call mget for them.
@@ -684,9 +684,9 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # Retrieve all of the specified keys from the database
         # All database calls to pipe will be executed immediately,
         # since we have not yet called pipe.multi()
-        data_str_list: list[object] = pipe.mget(*keys)
+        raw_data_list: list[object] = pipe.mget(*keys)
 
-        for key, data_str in zip(keys, data_str_list):
+        for key, raw_data in zip(keys, raw_data_list):
             if not raw_data:
                 # Already empty, cannot patch it
                 keys_done.add(key)
@@ -694,7 +694,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
             orig_data = self._load_bosdata(key, raw_data)
             # Data filtering happens here rather than after due to paging/memory constraints;
             # we can't load all data and then filter on the results
-            if data_filter and not data_filter(orig_data):
+            if not data_filter(orig_data):
                 # This data does not match our filter, so skip it
                 keys_done.add(key)
                 continue
@@ -703,15 +703,15 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
             # Start by making a copy of the data, so that we can compare
             # the final patched version to it, and see if it has been changed
-            # (this is necessary because many of the CFS patching functions change the
-            # data in place, as well as returning it)
+            # (this is necessary because many BOS patching functions change the
+            # data in place)
             new_data = copy.deepcopy(orig_data)
 
             # Apply the patch to the current data,
             # and call the update_handler
-            new_data = patch_handler(new_data, patch)
+            patch_handler(new_data, patch_data)
             if update_handler:
-                new_data = update_handler(new_data)
+                update_handler(new_data)
 
             # If this did not actually change the entry, then there is no need to
             # actually patch it
@@ -720,15 +720,15 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                 continue
 
             patched_data_map[key] = new_data
-            patched_datastr_map[key] = json.dumps(new_data)
+            patched_raw_data_map[key] = json.dumps(new_data)
 
-        if patched_datastr_map:
+        if patched_raw_data_map:
             # Begin our transaction
             # After this call to pipe.multi(), the database calls are NOT executed immediately.
             pipe.multi()
 
             # Queue the DB command to updated the specified keys with the patched data
-            pipe.mset(patched_datastr_map)
+            pipe.mset(patched_raw_data_map)
 
             # Execute the pipeline
             #
@@ -752,18 +752,103 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         return patched_data_map
 
 
-
     @convert_db_watch_errors
     def bulk_patch_by_filter[PatchDataFormat](
         self,
-        entry_checker: EntryChecker[DataT],
+        data_filter: EntryChecker[DataT],
         patch_data: PatchDataFormat,
         /, *,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
         specific_keys: Iterable[str] | None = None,
         update_handler: UpdateHandler[DataT] | None = None
     ) -> list[DataT]:
+        # Set the time after which we will perform no more DB retries.
+        # Note that this is not the same as it being a hard timeout. If no Redis
+        # WatchErrors are raised after this time limit has been passed, then the method
+        # will run to completion, regardless of how long it takes. This is solely
+        # present to avoid a method which endlessly keeps retrying.
+        no_retries_after: float = time.time() + DB_BUSY_SECONDS
 
+        keys_left: list[str]
+        if specific_keys is not None:
+            # Set keys_left to the specific set of keys we've been asked to patch
+            keys_left = sorted(specific_keys)
+        else:
+            # keys_left starts being set to all of the keys in the database.
+            # We will remove keys from it as we process them (either by patching
+            # them or determining that they do not need to be patched).
+            keys_left = self.get_keys()
+
+        # Mapping from keys to the updated data
+        patched_data_map: dict[str, DataT] = {}
+
+        # The patch_all_entries method has a big loop at its heart.
+        # The keys_done variable is used to keep track of which keys have been processed
+        # in the current iteration of the loop.
+        keys_done: set[str] = set()
+
+        # Keep looping until either we have processed all of the keys in our keys_left list -- we
+        # do not worry about keys that are created after this method starts running.
+        #
+        # The DB busy scenario is handled by an exception being raised, so it bypasses the
+        # regular loop logic.
+        while keys_left:
+            if keys_done:
+                # keys_done is non-empty, which means that some keys were processed on
+                # the previous iteration of the loop. So we remove those from our list of
+                # remaining keys
+                keys_left = [ k for k in keys_left if k not in keys_done ]
+
+                # If that removed the final keys from the list, exit the loop
+                if not keys_left:
+                    break
+
+                # Clear the keys_done set, so it is empty to start this iteration
+                keys_done.clear()
+
+            # The main work in the loop is enclosed in this try/except block.
+            # This is to catch Redis WatchErrors, which are raised when a change to the database
+            # caused one of our patch operations to abort. Any other exceptions that arise are
+            # not handled at this layer.
+            try:
+                # Process the keys in batches, rather than all at once.
+                # See defs.py for details on DB_BATCH_SIZE.
+                for key_batch in itertools.batched(keys_left, DB_BATCH_SIZE):
+                    # Call our helper function on this batch of keys
+                    # At the time of this writing, pylint is not clever enough to understand
+                    # the function signature mutation performed by the @redis_pipeline
+                    # decorator, and so it falsely reports that we are missing an argument
+                    # here.
+                    # pylint: disable=no-value-for-parameter
+                    batch_patched_data_map = self._bulk_patch_by_filter(
+                                                keys=key_batch,
+                                                data_filter=data_filter,
+                                                patch_data=patch_data,
+                                                update_handler=update_handler,
+                                                patch_handler=patch_handler,
+                                                keys_done=keys_done
+                                             )
+                    # If we get here, it means the patches (if any) completed successfully.
+                    # The helper function will have already updated keys_done with any
+                    # keys that did not need to be patched, and any keys that were patched.
+
+                    # Update our master patched data map from this batch
+                    patched_data_map.update(batch_patched_data_map)
+            except redis.exceptions.WatchError as err:
+                # This means one of the keys changed values between when we filtered it and when
+                # we went to update the DB with the patched data.
+                if time.time() > no_retries_after:
+                    # We are past the last allowed retry time, so re-raise the exception
+                    raise err
+
+                # We are not past the time limit, so just log a warning and we'll go back to the
+                # top of the loop.
+                LOGGER.warning("Key changed (%s); retrying", err)
+
+        # If we get here, it means we ended up processing all of the keys in our starting list.
+        # So return a list of the patched data.
+        # Sort the list by key, to preserve the previous behavior of this function.
+        return [ patched_data_map[key] for key in sorted(patched_data_map) ]
 
 
 def _get_redis_client(db: Databases) -> redis.client.Redis:
