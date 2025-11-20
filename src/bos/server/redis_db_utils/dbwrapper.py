@@ -68,7 +68,7 @@ class EntryChecker[DataT](Protocol):
 class PatchHandler[DataT, PatchDataFormat](Protocol):
     def __call__(self, data: DataT, patch_data: PatchDataFormat) -> None: ...
 
-class BulkDictPatchOptions[PatchDataFormat](NamedTuple):
+class BulkDictPatchOptions[DataT, PatchDataFormat](NamedTuple):
     key_patch_data_map: Mapping[str, PatchDataFormat]
     patch_handler: PatchHandler[DataT, PatchDataFormat]
     skip_nonexistent_keys: bool
@@ -78,7 +78,7 @@ class BulkDictPatchOptions[PatchDataFormat](NamedTuple):
     def apply_patch(self, key: str, data: DataT, /) -> None:
         self.patch_handler(data, self.key_patch_data_map[key])
 
-class BulkPatchOptions[PatchDataFormat](NamedTuple):
+class BulkPatchOptions[DataT, PatchDataFormat](NamedTuple):
     patch_data: PatchDataFormat
     patch_handler: PatchHandler[DataT, PatchDataFormat]
     data_filter: EntryChecker[DataT]
@@ -604,12 +604,12 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
 
     @redis_pipeline
-    def _bulk_patch(
+    def _bulk_patch[PatchDataFormat](
         self,
         pipe: redis.client.Pipeline,
         *,
         keys: Collection[str],
-        patch_options: BulkPatchOptions[DataT] | BulkDictPatchOptions[DataT],
+        patch_options: BulkPatchOptions[DataT, PatchDataFormat] | BulkDictPatchOptions[DataT, PatchDataFormat],
         patch_status: BulkPatchStatus[DataT]
     ) -> None:
         # Mapping from keys to the updated data to be written to the DB
@@ -704,9 +704,9 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # patched keys (if any) to the done list, and update the patched data map.
         patch_status.patches_applied(pending_patched_data_map)
 
-    def _bulk_patch_loop(
+    def _bulk_patch_loop[PatchDataFormat](
         self, *,
-        patch_options: BulkPatchOptions[DataT] | BulkDictPatchOptions[DataT],
+        patch_options: BulkPatchOptions[DataT, PatchDataFormat] | BulkDictPatchOptions[DataT, PatchDataFormat],
         patch_status: BulkPatchStatus[DataT]
     ) -> list[DataT]:
         # Keep looping until either we have processed all of the keys in our keys_left list -- we
@@ -762,16 +762,22 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         skip_nonexistent_keys: bool,
         patch_handler: PatchHandler[DataT, PatchDataFormat]
     ) -> list[DataT]:
-
-        patch_options = BulkDictPatchOptions(key_patch_data_map=key_patch_data_map,
-                                             patch_handler=patch_handler,
-                                             skip_nonexistent_keys=skip_nonexistent_keys)
-                                         
         # keys_left starts being set to all of the keys in the patch data map
         keys_left: list[str] = list(key_patch_data_map)
-        patch_status = BulkPatchStatus.new_bulk_patch(keys_left, batch_size=len(keys_left))
+        patch_status: BulkPatchStatus[DataT] = BulkPatchStatus.new_bulk_patch(
+                                                keys_left,
+                                                batch_size=len(keys_left)
+                                               )
 
-        return self._bulk_patch_loop(patch_options=patch_options, patch_status=patch_status)
+        opts: BulkDictPatchOptions[DataT,
+                                   PatchDataFormat] = BulkDictPatchOptions(
+                                                       key_patch_data_map=key_patch_data_map,
+                                                       patch_handler=patch_handler,
+                                                       skip_nonexistent_keys=skip_nonexistent_keys
+                                                      )
+                                         
+
+        return self._bulk_patch_loop(patch_options=opts, patch_status=patch_status)
 
 
     @convert_db_watch_errors
@@ -789,13 +795,15 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # them or determining that they do not need to be patched).
         keys_left: list[str] = list(self.iter_keys(specific_keys=specific_keys))
 
-        patch_status = BulkPatchStatus.new_bulk_patch(keys_left)
+        patch_status: BulkPatchStatus[DataT] = BulkPatchStatus.new_bulk_patch(keys_left)
 
-        patch_options = BulkPatchOptions(patch=patch_data,
-                                         patch_handler=patch_handler,
-                                         data_filter=data_filter)
+        opts: BulkPatchOptions[DataT, PatchDataFormat] = BulkPatchOptions(
+                                                          patch=patch_data,
+                                                          patch_handler=patch_handler,
+                                                          data_filter=data_filter
+                                                         )
 
-        return self._bulk_patch_loop(patch_options=patch_options, patch_status=patch_status)
+        return self._bulk_patch_loop(patch_options=opts, patch_status=patch_status)
 
 
 def _get_redis_client(db: Databases) -> redis.client.Redis:
