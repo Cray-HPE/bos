@@ -30,8 +30,7 @@ from collections.abc import Callable, Generator, Iterable
 from itertools import batched, islice
 import json
 import logging
-from typing import (Any,
-                    ClassVar,
+from typing import (ClassVar,
                     Generic,
                     Protocol,
                     cast)
@@ -101,7 +100,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     @abstractmethod
     def _jsondict_to_bosdata(self, key: str, jsondict: JsonDict, /) -> DataT: ...
 
-    def _load_jsondict(self, key: str, data: Any, /) -> JsonDict:
+    def _load_jsondict(self, key: str, data: object, /) -> JsonDict:
         """
         Parses entry as JSON and verifies it is a dict, or raises an appropriate exception.
         """
@@ -127,14 +126,16 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # Cast the type as JsonDict, so mypy has no doubts
         return cast(JsonDict, jsondata)
 
-    def _load_bosdata(self, key: str, data: Any, /) -> DataT:
+    def _load_bosdata(self, key: str, data: object, /) -> DataT:
         jsondict = self._load_jsondict(key, data)
         return self._jsondict_to_bosdata(key, jsondict)
 
     def get(self, key: str, /) -> DataT:
         """Get the data for the given key."""
         # The redis type annotations are not ideal, so we need to use cast here
-        data = cast(Any, self.client.get(key))
+        # But we cast to object to avoid making any assumptions about its type
+        # We do this rather than casting to Any since the Any type bypasses type checking
+        data = cast(object, self.client.get(key))
         return self._load_bosdata(key, data)
 
     def delete(self, key: str, /) -> None:
@@ -155,7 +156,9 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     def get_and_delete_raw(self, key: str, /) -> JsonDict:
         """Get the data for the given key and delete it from the DB."""
         # The redis type annotations are not ideal, so we need to use cast here
-        data = cast(Any, self.client.getdel(key))
+        # But we cast to object to avoid making any assumptions about its type
+        # We do this rather than casting to Any since the Any type bypasses type checking
+        data = cast(object, self.client.getdel(key))
         return self._load_jsondict(key, data)
 
     def get_and_delete(self, key: str, /) -> DataT:
@@ -198,9 +201,12 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         Returns a mapping from the specified keys to the corresponding BOS data records.
         Raises exception if any are not found.
         """
-        raw_data_list: list[Any] = []
+        raw_data_list: list[object] = []
         for key_sublist in batched(keys, 500):
-            raw_data_sublist = cast(list[Any], self.client.mget(key_sublist))
+            # The redis type annotations are not ideal, so we need to use cast here
+            # But we cast to object to avoid making any assumptions about its type
+            # We do this rather than casting to Any since the Any type bypasses type checking
+            raw_data_sublist = cast(list[object], self.client.mget(key_sublist))
             try:
                 none_index = raw_data_sublist.index(None)
             except ValueError:
@@ -218,7 +224,10 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         Returns a mapping from the specified keys to the corresponding BOS data records.
         Omits from the mapping any keys which do not exist in the DB.
         """
-        raw_data_list: list[Any] = cast(list[Any], self.client.mget(keys))
+        # The redis type annotations are not ideal, so we need to use cast here
+        # But we cast to object to avoid making any assumptions about its type
+        # We do this rather than casting to Any since the Any type bypasses type checking
+        raw_data_list: list[object] = cast(list[object], self.client.mget(keys))
         return { key: self._load_bosdata(key, data)
                  for key, data in zip(keys, raw_data_list) if data is not None }
 
@@ -256,7 +265,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
     def _iter_items[DataFormat](
         self, /, *, start_after_key: str | None,
-        load_func: Callable[[str, Any], DataFormat],
+        load_func: Callable[[str, object], DataFormat],
         specific_keys: Iterable[str] | None
     ) -> Generator[tuple[str, DataFormat], None, None]:
         """
@@ -266,7 +275,10 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         """
         for next_keys in batched(self.iter_keys(start_after_key=start_after_key,
                                                 specific_keys=specific_keys), 500):
-            data_list = cast(Iterable[Any], self.client.mget(next_keys))
+            # The redis type annotations are not ideal, so we need to use cast here
+            # But we cast to object to avoid making any assumptions about its type
+            # We do this rather than casting to Any since the Any type bypasses type checking
+            data_list = cast(Iterable[object], self.client.mget(next_keys))
             for key, data in zip(next_keys, data_list):
                 if data is not None:
                     yield key, load_func(key, data)
