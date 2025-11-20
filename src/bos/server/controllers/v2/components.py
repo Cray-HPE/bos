@@ -415,7 +415,7 @@ def _(
     return _v2_components_session_filter_patch(tenant=tenant, session=session, patch=patch)
 
 
-def _v2_components_dict_patch(id_patch_map: MutableMapping[str, ComponentData] | MutableMapping[str, ComponentRecord]],
+def _v2_components_dict_patch(id_patch_map: MutableMapping[str, ComponentData],
                               skip_bad_ids: bool, tenant: str | None) -> list[ComponentRecord]:
 
     if skip_bad_ids:

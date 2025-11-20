@@ -50,7 +50,7 @@ from bos.common.types.general import JsonData, JsonDict
 from bos.common.utils import exc_type_msg
 
 from .convert_db_watch_errors import convert_db_watch_errors
-from .defs import DB_BUSY_SECONDS, DB_HOST, DB_PORT, Databases
+from .defs import DB_BATCH_SIZE, DB_BUSY_SECONDS, DB_HOST, DB_PORT, Databases
 from .defs import BosDataRecord as DataT
 from .exceptions import (BosDBException,
                          InvalidDBDataType,
@@ -639,10 +639,12 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                 # decorator, and so it falsely reports that we are missing an argument
                 # here.
                 # pylint: disable=no-value-for-parameter
-                return self._mpatch(key_patch_data_map=key_patch_data_map,
+                return self._bulk_patch_by_dict(
+                                    key_patch_data_map=key_patch_data_map,
                                     skip_nonexistent_keys=skip_nonexistent_keys,
                                     update_handler=update_handler,
-                                    patch_handler=patch_handler)
+                                    patch_handler=patch_handler
+                       )
             except redis.exceptions.WatchError as err:
                 # This means one of the keys changed values between when we filtered it and when
                 # we went to update the DB with the patched data.
@@ -769,15 +771,11 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # present to avoid a method which endlessly keeps retrying.
         no_retries_after: float = time.time() + DB_BUSY_SECONDS
 
-        keys_left: list[str]
-        if specific_keys is not None:
-            # Set keys_left to the specific set of keys we've been asked to patch
-            keys_left = sorted(specific_keys)
-        else:
-            # keys_left starts being set to all of the keys in the database.
-            # We will remove keys from it as we process them (either by patching
-            # them or determining that they do not need to be patched).
-            keys_left = self.get_keys()
+        # keys_left starts being set to all of the keys in the database
+        # (intersected with our list of specific keys, if set)
+        # We will remove keys from it as we process them (either by patching
+        # them or determining that they do not need to be patched).
+        keys_left: list[str] = list(self.iter_keys(specific_keys=specific_keys))
 
         # Mapping from keys to the updated data
         patched_data_map: dict[str, DataT] = {}
@@ -813,7 +811,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
             try:
                 # Process the keys in batches, rather than all at once.
                 # See defs.py for details on DB_BATCH_SIZE.
-                for key_batch in itertools.batched(keys_left, DB_BATCH_SIZE):
+                for key_batch in batched(keys_left, DB_BATCH_SIZE):
                     # Call our helper function on this batch of keys
                     # At the time of this writing, pylint is not clever enough to understand
                     # the function signature mutation performed by the @redis_pipeline
