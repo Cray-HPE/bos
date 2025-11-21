@@ -113,9 +113,6 @@ class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT]):
 
 # This class uses the pre-Python-3.12 syntax for Generics to avoid pylint
 # false positive error: https://github.com/pylint-dev/pylint/issues/9488#issuecomment-3564886847
-#
-# Interestingly, there is no need to use the pre-3.12 Generic syntax for the subclass,
-# only for the parent class
 @dataclass(slots=True, frozen=True)
 class BaseBulkPatchStatus(Generic[DataT]):
     patched_data_map: MutableMapping[str, DataT]
@@ -143,8 +140,10 @@ class BaseBulkPatchStatus(Generic[DataT]):
         return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
 
 
+# This class uses the pre-Python-3.12 syntax for Generics to avoid pylint
+# false positive error: https://github.com/pylint-dev/pylint/issues/9488#issuecomment-3564886847
 @dataclass(slots=True, frozen=True)
-class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
+class BulkPatchStatus(Generic[DataT], BaseBulkPatchStatus[DataT]):
     keys: InitVar[Iterable[str]]
     _keys_left: tuple[str, ...] = () # This field is intended to be a mutable "private" state
                                      # field within the class.
@@ -199,7 +198,7 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
 
         return cls(
                     keys=keys, keys_done=keys_done, patched_data_map=patched_data_map,
-                    no_retries_after=no_retries_after, batch_size=batch_size
+                    no_retries_after=no_retries_after, batch_size=_batch_size
                )
 
     @property
@@ -762,7 +761,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         #
         # The DB busy scenario is handled by an exception being raised, so it bypasses the
         # regular loop logic.
-        while patch_status.keys_left:
+        while patch_status.keys_left():
             # The main work in the loop is enclosed in this try/except block.
             # This is to catch Redis WatchErrors, which are raised when a change to the database
             # caused one of our patch operations to abort. Any other exceptions that arise are
