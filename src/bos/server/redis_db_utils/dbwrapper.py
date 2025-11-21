@@ -143,19 +143,20 @@ class BaseBulkPatchStatus[DataT]:
 @dataclass(slots=True, frozen=True)
 class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
     keys: InitVar[Iterable[str]]
-    keys_left: tuple[str, ...] = () # This field is intended to be mutable within the class.
-                                    # There is no clean way to do this in Python (having only some
-                                    # dataclass fields as frozen), and mypy does not like it if we
-                                    # have a non-frozen dataclass inherit from a frozen one.
-                                    # Instead, we internally bypass the frozen-ness of this field
-                                    # when needed
+    _keys_left: tuple[str, ...] = () # This field is intended to be a mutable "private" state
+                                     # field within the class.
+                                     # There is no clean way to do this in Python (having only some
+                                     # dataclass fields as frozen), and mypy does not like it if we
+                                     # have a non-frozen dataclass inherit from a frozen one.
+                                     # Instead, we internally bypass the frozen-ness of this field
+                                     # when needed
 
     def _update_keys_left(self, new_keys_left: tuple[str, ...]) -> None:
         """
         This acts as an internal setter method for the keys_left field
         This is necessary since the class is frozen
         """
-        object.__setattr__(self, 'keys_left', new_keys_left)
+        object.__setattr__(self, '_keys_left', new_keys_left)
 
     def __post_init__(self, keys: Iterable[str]) -> None:
         """
@@ -163,31 +164,23 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
         """
         self._update_keys_left(tuple(keys))
 
-    def updated_keys_left(self) -> tuple[str, ...]:
+    def keys_left(self) -> tuple[str, ...]:
         """
         Remove all completed keys (if any) from keys_left, then returns
         keys_left
         """
         if not self.keys_done:
             # Nothing to do
-            return self.keys_left
+            return self._keys_left
 
         # Create a new keys_left list without the keys from keys_done
-        new_keys_left = tuple( k for k in self.keys_left if k not in self.keys_done )
+        new_keys_left = tuple( k for k in self._keys_left if k not in self.keys_done )
         self._update_keys_left(new_keys_left)
 
         # Clear the keys_done set
         self.keys_done.clear()
 
-        return self.keys_left
-
-    def __bool__(self) -> bool:
-        """
-        Updates keys_left
-        Then returns True if any keys are left, false otherwise
-        """
-        self.update_keys_left()
-        return bool(self.keys_left)
+        return self._keys_left
 
     @classmethod
     def new_bulk_patch(cls, keys: Iterable[str], batch_size: int|None = None) -> Self:
@@ -202,14 +195,14 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
         no_retries_after: float = time.time() + DB_BUSY_SECONDS
 
         # Because this class has been marked as final, we know cls is BulkPatchStatus
-        return cls(
+        return BulkPatchStatus(
                     keys=keys, keys_done=keys_done, patched_data_map=patched_data_map,
                     no_retries_after=no_retries_after, batch_size=batch_size
                )
 
     @property
     def key_batches(self) -> Generator[tuple[str, ...], None, None]:
-        yield from batched(self.keys_left, self.batch_size)
+        yield from batched(self._keys_left, self.batch_size)
 
 
 class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
@@ -767,7 +760,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         #
         # The DB busy scenario is handled by an exception being raised, so it bypasses the
         # regular loop logic.
-        while patch_status.updated_keys_left:
+        while patch_status.keys_left:
             # The main work in the loop is enclosed in this try/except block.
             # This is to catch Redis WatchErrors, which are raised when a change to the database
             # caused one of our patch operations to abort. Any other exceptions that arise are
