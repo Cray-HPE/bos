@@ -32,7 +32,8 @@ from collections.abc import (
                                 Generator,
                                 Iterable,
                                 Mapping,
-                                MutableMapping
+                                MutableMapping,
+                                Self
                             )
 import copy
 from itertools import batched, islice
@@ -141,7 +142,7 @@ class BulkPatchStatus[DataT](NamedTuple):
         return bool(self.keys_left)
 
     @classmethod
-    def new_bulk_patch(cls, keys_left: list[str], batch_size: int|None = None) -> BulkPatchStatus:
+    def new_bulk_patch(cls, keys_left: list[str], batch_size: int|None = None) -> Self:
         keys_done=set()
         patched_data_map={}
         # Set the time after which we will perform no more DB retries.
