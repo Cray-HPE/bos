@@ -45,7 +45,8 @@ from typing import (ClassVar,
                     Literal,
                     Protocol,
                     Self,
-                    cast)
+                    cast,
+                    final)
 
 import redis
 from redis.maint_notifications import MaintNotificationsConfig
@@ -138,27 +139,38 @@ class BaseBulkPatchStatus[DataT]:
         return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
 
 
+@final
 @dataclass(slots=True, frozen=True)
 class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
     keys: InitVar[Iterable[str]]
     keys_left: tuple[str, ...] = () # This field is intended to be mutable within the class.
-                               # There is no clean way to do this in Python (having only some
-                               # dataclass fields as frozen), and mypy does not like it if we
-                               # have a non-frozen dataclass inherit from a frozen one.
-                               # Instead, we internally bypass the frozen-ness of this field
-                               # when needed
+                                    # There is no clean way to do this in Python (having only some
+                                    # dataclass fields as frozen), and mypy does not like it if we
+                                    # have a non-frozen dataclass inherit from a frozen one.
+                                    # Instead, we internally bypass the frozen-ness of this field
+                                    # when needed
 
     def _update_keys_left(self, new_keys_left: tuple[str, ...]) -> None:
-        # must use this roundabout method because this dataclass is frozen
+        """
+        This acts as an internal setter method for the keys_left field
+        This is necessary since the class is frozen
+        """
         object.__setattr__(self, 'keys_left', new_keys_left)
 
     def __post_init__(self, keys: Iterable[str]) -> None:
+        """
+        Initialize the keys_left field with the contents of the keys init variable
+        """
         self._update_keys_left(tuple(keys))
 
-    def update_keys_left(self) -> None:
+    def updated_keys_left(self) -> tuple[str, ...]:
+        """
+        Remove all completed keys (if any) from keys_left, then returns
+        keys_left
+        """
         if not self.keys_done:
             # Nothing to do
-            return
+            return self.keys_left
 
         # Create a new keys_left list without the keys from keys_done
         new_keys_left = tuple( k for k in self.keys_left if k not in self.keys_done )
@@ -166,6 +178,8 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
 
         # Clear the keys_done set
         self.keys_done.clear()
+
+        return self.keys_left
 
     def __bool__(self) -> bool:
         """
@@ -753,7 +767,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         #
         # The DB busy scenario is handled by an exception being raised, so it bypasses the
         # regular loop logic.
-        while patch_status:
+        while patch_status.updated_keys_left:
             # The main work in the loop is enclosed in this try/except block.
             # This is to catch Redis WatchErrors, which are raised when a change to the database
             # caused one of our patch operations to abort. Any other exceptions that arise are
