@@ -464,9 +464,11 @@ def _check_for_invalid_tenant_comp(comp_id_list: Iterable[str], tenant: str) -> 
             raise ComponentNotFound(comp_id)
 
 
-def _remove_invalid_tenant_comp(id_patch_map: MutableMapping[str, ComponentData], tenant: str) -> None:
+def _remove_invalid_tenant_comp(id_patch_map: MutableMapping[str, ComponentData], tenant: str | None) -> None:
     if not tenant:
         return
+    # You and I know that this means that tenant cannot be None, but mypy requires a little stronger assurance
+    assert tenant is not None
     for comp_id in get_tenant_component_set(tenant):
         # Set None as the default, so that no error is raised if the component
         # is not in the mapping

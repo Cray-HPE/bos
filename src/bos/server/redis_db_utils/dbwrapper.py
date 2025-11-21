@@ -41,6 +41,7 @@ import json
 import logging
 import time
 from typing import (ClassVar,
+                    Final,
                     Generic,
                     Literal,
                     Protocol,
@@ -74,19 +75,19 @@ class PatchHandler[DataT, PatchDataFormat](Protocol):
 
 @dataclass(slots=True)
 class BulkDictPatchOptions[DataT, PatchDataFormat]:
-    key_patch_data_map: Mapping[str, PatchDataFormat]
-    patch_handler: PatchHandler[DataT, PatchDataFormat]
-    skip_nonexistent_keys: bool
-    data_filter: None = None
+    key_patch_data_map: Final[Mapping[str, PatchDataFormat]]
+    patch_handler: Final[PatchHandler[DataT, PatchDataFormat]]
+    skip_nonexistent_keys: Final[bool]
+    data_filter: Final[None] = None
 
     def apply_patch(self, key: str, data: DataT, /) -> None:
         self.patch_handler(data, self.key_patch_data_map[key])
 
 @dataclass(slots=True)
 class BulkPatchOptions[DataT, PatchDataFormat]:
-    patch_data: PatchDataFormat
-    patch_handler: PatchHandler[DataT, PatchDataFormat]
-    data_filter: EntryChecker[DataT]
+    patch_data: Final[PatchDataFormat]
+    patch_handler: Final[PatchHandler[DataT, PatchDataFormat]]
+    data_filter: Final[EntryChecker[DataT]]
     skip_nonexistent_keys: Literal[True] = True
 
     def apply_patch(self, _: str, data: DataT, /) -> None:
@@ -98,11 +99,11 @@ class BulkPatchOptions[DataT, PatchDataFormat]:
 
 @dataclass(slots=True)
 class BulkPatchStatus[DataT]:
-    patched_data_map: MutableMapping[str, DataT]
-    keys_done: set[str]
+    patched_data_map: Final[MutableMapping[str, DataT]]
+    keys_done: Final[set[str]]
     keys_left: list[str]
-    no_retries_after: float
-    batch_size: int = DB_BATCH_SIZE
+    no_retries_after: Final[float]
+    batch_size: Final[int] = DB_BATCH_SIZE
 
     def patch_applied(self, key: str, data: DataT, /) -> None:
         self.patched_data_map[key] = data
@@ -120,16 +121,8 @@ class BulkPatchStatus[DataT]:
             # Nothing to do
             return
 
-        #i=0
-        #while i < len(self.keys_left):
-            #if self.keys_left[i] in self.keys_done:
-
-        # keys_done is non-empty, which means that some keys were processed
-        # So we remove those from our list of remaining keys
-        _new_keys_left = [ k for k in self.keys_left if k not in self.keys_done ]
-        # Update the current keys_left list with the new contents
-        self.keys_left.clear()
-        self.keys_left.extend(_new_keys_left)
+        # Create a new keys_left list without the keys from keys_done
+        self.keys_left = [ k for k in self.keys_left if k not in self.keys_done ]
 
         # Clear the keys_done set
         self.keys_done.clear()
