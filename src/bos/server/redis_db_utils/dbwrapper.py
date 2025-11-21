@@ -118,9 +118,15 @@ class BulkPatchStatus[DataT]:
     no_retries_after: float
     batch_size: int
     keys: InitVar[Iterable[str]]
+    _keys_left: tuple[str] = () # "Private" mutable attribute.
+                                # Must be included here because of slots
+
+    def _update_keys_left(self, new_keys_left: tuple[str]) -> None:
+        # must use this roundabout method because this dataclass is frozen
+        object.__setattr__(self, '_keys_left', new_keys_left)
 
     def __post_init__(self, keys: Iterable[str]) -> None:
-        self._keys_left = tuple(keys)
+        self._update_keys_left(tuple(keys))
 
     @property
     def keys_left(self) -> tuple[str]:
@@ -145,14 +151,14 @@ class BulkPatchStatus[DataT]:
     def patched_data_list(self) -> list[DataT]:
         return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
 
-
     def update_keys_left(self) -> None:
         if not self.keys_done:
             # Nothing to do
             return
 
         # Create a new keys_left list without the keys from keys_done
-        self._keys_left = tuple( k for k in self.keys_left if k not in self.keys_done )
+        new_keys_left = tuple( k for k in self.keys_left if k not in self.keys_done )
+        self._update_keys_left(new_keys_left)
 
         # Clear the keys_done set
         self.keys_done.clear()
