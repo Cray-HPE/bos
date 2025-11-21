@@ -112,8 +112,13 @@ class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT]):
         self.patch_handler(data, self.patch_data)
 
 
+# This class uses the pre-Python-3.12 syntax for Generics to avoid pylint
+# false positive error: https://github.com/pylint-dev/pylint/issues/9488#issuecomment-3564886847
+#
+# Interestingly, there is no need to use the pre-3.12 Generic syntax for the subclass,
+# only for the parent class
 @dataclass(slots=True, frozen=True)
-class BaseBulkPatchStatus[DataT]:
+class BaseBulkPatchStatus(Generic[DataT]):
     patched_data_map: MutableMapping[str, DataT]
     keys_done: set[str]
     no_retries_after: float
