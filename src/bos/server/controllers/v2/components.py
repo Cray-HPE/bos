@@ -409,6 +409,14 @@ def _(
         return _v2_components_dict_patch({ comp_id: patch for comp_id in ids.split(',')},
                                          tenant=tenant, skip_bad_ids=skip_bad_ids)
 
+    # This must mean that sessions is not None, since getting here means:
+    # ids and session  -> False
+    # (not ids) and (not session) -> False
+    # ids -> False
+    # Because if session was None, then the second statement would not be true.
+    # But mypy requires convincing.
+    assert session is not None
+
     # Session filter
     return _v2_components_session_filter_patch(tenant=tenant, session=session, patch=patch)
 
@@ -456,7 +464,7 @@ def _check_for_invalid_tenant_comp(comp_id_list: Iterable[str], tenant: str) -> 
             raise ComponentNotFound(comp_id)
 
 
-def _remove_invalid_tenant_comp(id_patch_map: MutableMapping[str, object], tenant: str) -> None:
+def _remove_invalid_tenant_comp(id_patch_map: MutableMapping[str, ComponentData], tenant: str) -> None:
     if not tenant:
         return
     for comp_id in get_tenant_component_set(tenant):

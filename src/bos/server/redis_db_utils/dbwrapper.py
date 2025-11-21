@@ -66,20 +66,10 @@ from .redis_pipeline import redis_pipeline
 LOGGER = logging.getLogger(__name__)
 
 class EntryChecker[DataT](Protocol):
-    def __call__(self, data: DataT) -> bool: ...
+    def __call__(self, data: DataT, /) -> bool: ...
 
 class PatchHandler[DataT, PatchDataFormat](Protocol):
-    def __call__(self, data: DataT, patch_data: PatchDataFormat) -> None: ...
-
-#@dataclass(slots=True)
-#class BaseBulkPatchOptions[DataT, PatchDataFormat](ABC):
-#    patch_handler: PatchHandler[DataT, PatchDataFormat]
-#    skip_nonexistent_keys: bool
-#    data_filter: EntryChecker[DataT] | None
-#
-#    @abstractmethod
-#    def apply_patch(self, key: str, data: DataT, /) -> None: ...
-
+    def __call__(self, data: DataT, patch_data: PatchDataFormat, /) -> None: ...
 
 
 @dataclass(slots=True)
@@ -647,7 +637,11 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # Retrieve all of the specified keys from the database
         # All database calls to pipe will be executed immediately,
         # since we have not yet called pipe.multi()
-        raw_data_list: list[object] = pipe.mget(*keys)
+        #
+        # The redis type annotations are not ideal, so we need to use cast here
+        # But we cast to object to avoid making any assumptions about its type
+        # We do this rather than casting to Any since the Any type bypasses type checking
+        raw_data_list = cast(list[object], pipe.mget(*keys))
 
         if not patch_options.skip_nonexistent_keys:
             # In this case, check for None values before parsing
@@ -688,7 +682,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
                 # If this did not actually change the entry, then there is no need to
                 # actually update the DB. We will just report to the caller that it was
                 # patched.
-                patch_status.apply_patch(key, new_data)
+                patch_status.patch_applied(key, new_data)
                 continue
 
             pending_patched_data_map[key] = new_data
