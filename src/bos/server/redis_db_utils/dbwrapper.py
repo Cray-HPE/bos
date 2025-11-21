@@ -71,13 +71,15 @@ class EntryChecker[DataT](Protocol):
 class PatchHandler[DataT, PatchDataFormat](Protocol):
     def __call__(self, data: DataT, patch_data: PatchDataFormat) -> None: ...
 
-#class BaseBulkPatchOptions[DataT, PatchDataFormat](ABC, NamedTuple):
+#@dataclass(slots=True)
+#class BaseBulkPatchOptions[DataT, PatchDataFormat](ABC):
 #    patch_handler: PatchHandler[DataT, PatchDataFormat]
 #    skip_nonexistent_keys: bool
-#    __slots__ = () # Prevents the creation of instance __dict__, for improved performance
+#    data_filter: EntryChecker[DataT] | None
 #
 #    @abstractmethod
 #    def apply_patch(self, key: str, data: DataT, /) -> None: ...
+
 
 
 @dataclass(slots=True)
@@ -814,7 +816,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         patch_status: BulkPatchStatus[DataT] = BulkPatchStatus.new_bulk_patch(keys_left)
 
         opts: BulkPatchOptions[DataT, PatchDataFormat] = BulkPatchOptions(
-                                                          patch=patch_data,
+                                                          patch_data=patch_data,
                                                           patch_handler=patch_handler,
                                                           data_filter=data_filter
                                                          )
