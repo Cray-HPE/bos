@@ -45,8 +45,7 @@ from typing import (ClassVar,
                     Literal,
                     Protocol,
                     Self,
-                    cast,
-                    final)
+                    cast)
 
 import redis
 from redis.maint_notifications import MaintNotificationsConfig
@@ -144,7 +143,6 @@ class BaseBulkPatchStatus(Generic[DataT]):
         return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
 
 
-@final
 @dataclass(slots=True, frozen=True)
 class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
     keys: InitVar[Iterable[str]]
@@ -199,8 +197,7 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
         # present to avoid a method which endlessly keeps retrying.
         no_retries_after: float = time.time() + DB_BUSY_SECONDS
 
-        # Because this class has been marked as final, we know cls is BulkPatchStatus
-        return BulkPatchStatus(
+        return cls(
                     keys=keys, keys_done=keys_done, patched_data_map=patched_data_map,
                     no_retries_after=no_retries_after, batch_size=batch_size
                )
