@@ -155,8 +155,8 @@ class BulkPatchStatus[DataT](NamedTuple):
 
     @classmethod
     def new_bulk_patch(cls, keys_left: list[str], batch_size: int|None = None) -> Self:
-        keys_done=set()
-        patched_data_map={}
+        keys_done: set[str] = set()
+        patched_data_map: dict[str, DataT] = {}
         # Set the time after which we will perform no more DB retries.
         # Note that this is not the same as it being a hard timeout. If no Redis
         # WatchErrors are raised after this time limit has been passed, then the method
