@@ -32,8 +32,7 @@ from collections.abc import (
                                 Generator,
                                 Iterable,
                                 Mapping,
-                                MutableMapping,
-                                Self
+                                MutableMapping
                             )
 import copy
 from itertools import batched, islice
@@ -45,6 +44,7 @@ from typing import (ClassVar,
                     Literal,
                     NamedTuple,
                     Protocol,
+                    Self,
                     cast)
 
 import redis
@@ -118,6 +118,10 @@ class BulkPatchStatus[DataT](NamedTuple):
         if not self.keys_done:
             # Nothing to do
             return
+
+        i=0
+        while i < len(self.keys_left):
+            if self.keys_left[i] in self.keys_done:
 
         # keys_done is non-empty, which means that some keys were processed
         # So we remove those from our list of remaining keys
