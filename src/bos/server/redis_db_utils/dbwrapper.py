@@ -800,7 +800,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         # keys_left starts being set to all of the keys in the patch data map
         patch_status: BulkPatchStatus[DataT] = BulkPatchStatus.new_bulk_patch(
                                                 keys=key_patch_data_map,
-                                                batch_size=len(keys_left)
+                                                batch_size=len(key_patch_data_map)
                                                )
 
         opts: BulkDictPatchOptions[DataT,
