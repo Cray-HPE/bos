@@ -71,22 +71,22 @@ class EntryChecker[DataT](Protocol):
 class PatchHandler[DataT, PatchDataFormat](Protocol):
     def __call__(self, data: DataT, patch_data: PatchDataFormat) -> None: ...
 
-class BaseBulkPatch[DataT, PatchDataFormat](ABC, NamedTuple):
-    patch_handler: PatchHandler[DataT, PatchDataFormat]
-    skip_nonexistent_keys: bool
-    __slots__ = () # Prevents the creation of instance __dict__, for improved performance
-
-
-
-#class BulkDictPatchOptions[DataT, PatchDataFormat](NamedTuple):
-#    key_patch_data_map: Mapping[str, PatchDataFormat]
+#class BaseBulkPatch[DataT, PatchDataFormat](ABC, NamedTuple):
 #    patch_handler: PatchHandler[DataT, PatchDataFormat]
 #    skip_nonexistent_keys: bool
-#    data_filter: None = None
 #    __slots__ = () # Prevents the creation of instance __dict__, for improved performance
 
-#    def apply_patch(self, key: str, data: DataT, /) -> None:
-#        self.patch_handler(data, self.key_patch_data_map[key])
+
+
+class BulkDictPatchOptions[DataT, PatchDataFormat](NamedTuple):
+    key_patch_data_map: Mapping[str, PatchDataFormat]
+    patch_handler: PatchHandler[DataT, PatchDataFormat]
+    skip_nonexistent_keys: bool
+    data_filter: None = None
+    __slots__ = () # Prevents the creation of instance __dict__, for improved performance
+
+    def apply_patch(self, key: str, data: DataT, /) -> None:
+        self.patch_handler(data, self.key_patch_data_map[key])
 
 class BulkPatchOptions[DataT, PatchDataFormat](NamedTuple):
     patch_data: PatchDataFormat
