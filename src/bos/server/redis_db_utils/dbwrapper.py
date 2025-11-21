@@ -72,10 +72,7 @@ class PatchHandler[DataT, PatchDataFormat](Protocol):
     def __call__(self, data: DataT, patch_data: PatchDataFormat, /) -> None: ...
 
 
-@dataclass(slots=True, frozen=True)
 class BaseBulkPatchOptions[DataT, PatchDataFormat](ABC):
-    patch_handler: PatchHandler[DataT, PatchDataFormat]
-    
     @property
     @abstractmethod
     def skip_nonexistent_keys(self) -> bool: ...
@@ -90,6 +87,7 @@ class BaseBulkPatchOptions[DataT, PatchDataFormat](ABC):
 
 @dataclass(slots=True, frozen=True)
 class BulkDictPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, PatchDataFormat]):
+    patch_handler: PatchHandler[DataT, PatchDataFormat]
     key_patch_data_map: Mapping[str, PatchDataFormat]
     skip_nonexistent_keys: bool
     data_filter: None = None
@@ -100,6 +98,7 @@ class BulkDictPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, P
 
 @dataclass(slots=True, frozen=True)
 class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, PatchDataFormat]):
+    patch_handler: PatchHandler[DataT, PatchDataFormat]
     patch_data: PatchDataFormat
     data_filter: EntryChecker[DataT]
     skip_nonexistent_keys: Literal[True] = True
