@@ -46,7 +46,6 @@ from typing import (ClassVar,
                     Protocol,
                     Self,
                     cast)
-#                    final)
 
 import redis
 from redis.maint_notifications import MaintNotificationsConfig
@@ -113,11 +112,19 @@ class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT]):
 
 
 @dataclass(slots=True, frozen=True)
-class BaseBulkPatchStatus[DataT]:
+class BulkPatchStatus[DataT]:
     patched_data_map: MutableMapping[str, DataT]
     keys_done: set[str]
     no_retries_after: float
     batch_size: int
+    keys: InitVar[Iterable[str]]
+
+    def __post_init__(self, keys: Iterable[str]) -> None:
+        self._keys_left = tuple(keys)
+
+    @property
+    def keys_left(self) -> tuple[str]:
+        return self._keys_left
 
     def patch_applied(self, key: str, data: DataT, /) -> None:
         self.patched_data_map[key] = data
@@ -138,14 +145,6 @@ class BaseBulkPatchStatus[DataT]:
     def patched_data_list(self) -> list[DataT]:
         return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
 
-#@final
-@dataclass(slots=True)
-class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
-    keys: InitVar[Iterable[str]]
-    keys_left: tuple[str] = ()
-
-    def __post_init__(self, keys: Iterable[str]) -> None:
-        self.keys_left = tuple(keys)
 
     def update_keys_left(self) -> None:
         if not self.keys_done:
@@ -153,7 +152,7 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
             return
 
         # Create a new keys_left list without the keys from keys_done
-        self.keys_left = tuple( k for k in self.keys_left if k not in self.keys_done )
+        self._keys_left = tuple( k for k in self.keys_left if k not in self.keys_done )
 
         # Clear the keys_done set
         self.keys_done.clear()
