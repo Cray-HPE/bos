@@ -556,7 +556,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         key: str,
         patch_data: PatchDataFormat,
         /, *,
-        patch_handler: PatchHandler[DataT, PatchDataFormat]
+        patch_handler: PatchHandler[DataT, PatchDataFormat],
         default_entry: DataT | None = None
     ) -> DataT:
         """
