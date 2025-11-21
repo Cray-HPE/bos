@@ -91,7 +91,6 @@ class BaseBulkPatchOptions[DataT, PatchDataFormat](ABC):
 @dataclass(slots=True, frozen=True)
 class BulkDictPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, PatchDataFormat]):
     key_patch_data_map: Mapping[str, PatchDataFormat]
-    patch_handler: PatchHandler[DataT, PatchDataFormat]
     skip_nonexistent_keys: bool
     data_filter: None = None
 
@@ -102,7 +101,6 @@ class BulkDictPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, P
 @dataclass(slots=True, frozen=True)
 class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, PatchDataFormat]):
     patch_data: PatchDataFormat
-    patch_handler: PatchHandler[DataT, PatchDataFormat]
     data_filter: EntryChecker[DataT]
     skip_nonexistent_keys: Literal[True] = True
 
