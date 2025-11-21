@@ -111,13 +111,12 @@ class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT]):
         self.patch_handler(data, self.patch_data)
 
 
-@dataclass(slots=True)
-class BulkPatchStatus[DataT]:
+@dataclass(slots=True, frozen=True)
+class BaseBulkPatchStatus[DataT]:
     patched_data_map: MutableMapping[str, DataT]
     keys_done: set[str]
-    keys_left: list[str]
     no_retries_after: float
-    batch_size: int = DB_BATCH_SIZE
+    batch_size: int
 
     def patch_applied(self, key: str, data: DataT, /) -> None:
         self.patched_data_map[key] = data
@@ -130,6 +129,18 @@ class BulkPatchStatus[DataT]:
     def skip_key(self, key: str, /) -> None:
         self.keys_done.add(key)
 
+    @property
+    def timed_out(self) -> bool:
+        return time.time() > self.no_retries_after
+
+    @property
+    def patched_data_list(self) -> list[DataT]:
+        return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
+
+@dataclass(slots=True)
+class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
+    keys_left: list[str]
+
     def update_keys_left(self) -> None:
         if not self.keys_done:
             # Nothing to do
@@ -140,10 +151,6 @@ class BulkPatchStatus[DataT]:
 
         # Clear the keys_done set
         self.keys_done.clear()
-
-    @property
-    def timed_out(self) -> bool:
-        return time.time() > self.no_retries_after
 
     def __bool__(self) -> bool:
         """
@@ -157,6 +164,7 @@ class BulkPatchStatus[DataT]:
     def new_bulk_patch(cls, keys_left: list[str], batch_size: int|None = None) -> Self:
         keys_done: set[str] = set()
         patched_data_map: dict[str, DataT] = {}
+        _batch_size = DB_BATCH_SIZE if batch_size is None else batch_size
         # Set the time after which we will perform no more DB retries.
         # Note that this is not the same as it being a hard timeout. If no Redis
         # WatchErrors are raised after this time limit has been passed, then the method
@@ -164,9 +172,6 @@ class BulkPatchStatus[DataT]:
         # present to avoid a method which endlessly keeps retrying.
         no_retries_after: float = time.time() + DB_BUSY_SECONDS
 
-        if batch_size is None:
-            return cls(keys_left=keys_left, keys_done=keys_done, patched_data_map=patched_data_map,
-                       no_retries_after=no_retries_after)
         return cls(keys_left=keys_left, keys_done=keys_done, patched_data_map=patched_data_map,
                    no_retries_after=no_retries_after, batch_size=batch_size)
 
@@ -174,9 +179,6 @@ class BulkPatchStatus[DataT]:
     def key_batches(self) -> Generator[tuple[str, ...], None, None]:
         yield from batched(self.keys_left, self.batch_size)
 
-    @property
-    def patched_data_list(self) -> list[DataT]:
-        return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
 
 class SpecificDatabase(Protocol): # pylint: disable=too-few-public-methods
     """ Require that some classes set the _Database class variable """
