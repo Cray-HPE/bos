@@ -93,7 +93,7 @@ class BulkPatchOptions[DataT, PatchDataFormat](NamedTuple):
         self.patch_handler(data, patch_data)
 
 class BulkPatchStatus[DataT](NamedTuple):
-    patched_data_map: MutableMapping[str, DataT],
+    patched_data_map: MutableMapping[str, DataT]
     keys_done: set[str]
     keys_left: list[str]
     no_retries_after: float
