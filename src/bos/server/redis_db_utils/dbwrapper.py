@@ -31,7 +31,8 @@ from collections.abc import (
                                 Collection,
                                 Generator,
                                 Iterable,
-                                Mapping
+                                Mapping,
+                                MutableMapping
                             )
 import copy
 from itertools import batched, islice
@@ -40,6 +41,7 @@ import logging
 import time
 from typing import (ClassVar,
                     Generic,
+                    Literal,
                     NamedTuple,
                     Protocol,
                     cast)
@@ -90,7 +92,7 @@ class BulkPatchOptions[DataT, PatchDataFormat](NamedTuple):
         String argument present to make this function signature
         match the one in BulkDictPatchOptions
         """
-        self.patch_handler(data, patch_data)
+        self.patch_handler(data, self.patch_data)
 
 class BulkPatchStatus[DataT](NamedTuple):
     patched_data_map: MutableMapping[str, DataT]

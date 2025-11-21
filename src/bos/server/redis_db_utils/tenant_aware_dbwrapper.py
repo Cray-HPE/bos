@@ -31,7 +31,7 @@ from typing import Generic
 
 from bos.common.tenant_utils import get_tenant_aware_key
 
-from .dbwrapper import DBWrapper, PatchHandler, UpdateHandler
+from .dbwrapper import DBWrapper, PatchHandler
 from .defs import BosDataRecord as DataT
 
 class TenantAwareDBWrapper(DBWrapper[DataT], Generic[DataT], ABC):
@@ -72,7 +72,6 @@ class TenantAwareDBWrapper(DBWrapper[DataT], Generic[DataT], ABC):
         patch_data: PatchDataFormat,
         /, *,
         patch_handler: PatchHandler[DataT, PatchDataFormat],
-        update_handler: UpdateHandler[DataT] | None = None,
         default_entry: DataT | None = None
     ) -> DataT:
         """Patch data in the database"""
@@ -80,5 +79,4 @@ class TenantAwareDBWrapper(DBWrapper[DataT], Generic[DataT], ABC):
             get_tenant_aware_key(name, tenant),
             patch_data,
             patch_handler=patch_handler,
-            update_handler=update_handler,
             default_entry=default_entry)
