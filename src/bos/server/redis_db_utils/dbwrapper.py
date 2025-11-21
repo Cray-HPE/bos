@@ -73,7 +73,23 @@ class PatchHandler[DataT, PatchDataFormat](Protocol):
 
 
 @dataclass(slots=True, frozen=True)
-class BulkDictPatchOptions[DataT, PatchDataFormat]:
+class BaseBulkPatchOptions[DataT, PatchDataFormat](ABC):
+    patch_handler: PatchHandler[DataT, PatchDataFormat]
+    
+    @property
+    @abstractmethod
+    def skip_nonexistent_keys(self) -> bool: ...
+
+    @property
+    @abstractmethod
+    def data_filter(self) -> EntryChecker[DataT] | None: ...
+
+    @abstractmethod
+    def apply_patch(self, key: str, data: DataT, /) -> None: ...
+
+
+@dataclass(slots=True, frozen=True)
+class BulkDictPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, PatchDataFormat]):
     key_patch_data_map: Mapping[str, PatchDataFormat]
     patch_handler: PatchHandler[DataT, PatchDataFormat]
     skip_nonexistent_keys: bool
@@ -82,8 +98,9 @@ class BulkDictPatchOptions[DataT, PatchDataFormat]:
     def apply_patch(self, key: str, data: DataT, /) -> None:
         self.patch_handler(data, self.key_patch_data_map[key])
 
+
 @dataclass(slots=True, frozen=True)
-class BulkPatchOptions[DataT, PatchDataFormat]:
+class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT, PatchDataFormat]):
     patch_data: PatchDataFormat
     patch_handler: PatchHandler[DataT, PatchDataFormat]
     data_filter: EntryChecker[DataT]
@@ -95,6 +112,7 @@ class BulkPatchOptions[DataT, PatchDataFormat]:
         match the one in BulkDictPatchOptions
         """
         self.patch_handler(data, self.patch_data)
+
 
 @dataclass(slots=True)
 class BulkPatchStatus[DataT]:
@@ -609,7 +627,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         pipe: redis.client.Pipeline,
         *,
         keys: Collection[str],
-        patch_options: BulkPatchOptions[DataT, PatchDataFormat] | BulkDictPatchOptions[DataT, PatchDataFormat],
+        patch_options: BaseBulkPatchOptions[DataT, PatchDataFormat],
         patch_status: BulkPatchStatus[DataT]
     ) -> None:
         # Mapping from keys to the updated data to be written to the DB
@@ -710,7 +728,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
     def _bulk_patch_loop[PatchDataFormat](
         self, *,
-        patch_options: BulkPatchOptions[DataT, PatchDataFormat] | BulkDictPatchOptions[DataT, PatchDataFormat],
+        patch_options: BaseBulkPatchOptions[DataT, PatchDataFormat],
         patch_status: BulkPatchStatus[DataT]
     ) -> list[DataT]:
         # Keep looping until either we have processed all of the keys in our keys_left list -- we
