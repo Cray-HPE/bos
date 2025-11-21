@@ -35,6 +35,7 @@ from collections.abc import (
                                 MutableMapping
                             )
 import copy
+from dataclasses import dataclass
 from itertools import batched, islice
 import json
 import logging
@@ -42,7 +43,6 @@ import time
 from typing import (ClassVar,
                     Generic,
                     Literal,
-                    NamedTuple,
                     Protocol,
                     Self,
                     cast)
@@ -80,8 +80,8 @@ class PatchHandler[DataT, PatchDataFormat](Protocol):
 #    def apply_patch(self, key: str, data: DataT, /) -> None: ...
 
 
-
-class BulkDictPatchOptions[DataT, PatchDataFormat](NamedTuple):
+@dataclass(slots=True)
+class BulkDictPatchOptions[DataT, PatchDataFormat]:
     key_patch_data_map: Mapping[str, PatchDataFormat]
     patch_handler: PatchHandler[DataT, PatchDataFormat]
     skip_nonexistent_keys: bool
@@ -90,7 +90,8 @@ class BulkDictPatchOptions[DataT, PatchDataFormat](NamedTuple):
     def apply_patch(self, key: str, data: DataT, /) -> None:
         self.patch_handler(data, self.key_patch_data_map[key])
 
-class BulkPatchOptions[DataT, PatchDataFormat](NamedTuple):
+@dataclass(slots=True)
+class BulkPatchOptions[DataT, PatchDataFormat]:
     patch_data: PatchDataFormat
     patch_handler: PatchHandler[DataT, PatchDataFormat]
     data_filter: EntryChecker[DataT]
@@ -103,13 +104,13 @@ class BulkPatchOptions[DataT, PatchDataFormat](NamedTuple):
         """
         self.patch_handler(data, self.patch_data)
 
-class BulkPatchStatus[DataT](NamedTuple):
+@dataclass(slots=True)
+class BulkPatchStatus[DataT]:
     patched_data_map: MutableMapping[str, DataT]
     keys_done: set[str]
     keys_left: list[str]
     no_retries_after: float
     batch_size: int = DB_BATCH_SIZE
-    __slots__ = () # Prevents the creation of instance __dict__, for improved performance
 
     def patch_applied(self, key: str, data: DataT, /) -> None:
         self.patched_data_map[key] = data
