@@ -624,7 +624,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         pipe: redis.client.Pipeline,
         *,
         keys: Collection[str],
-        patch_options: BaseBulkPatchOptions[DataT, PatchDataFormat],
+        patch_options: BaseBulkPatchOptions[DataT],
         patch_status: BulkPatchStatus[DataT]
     ) -> None:
         # Mapping from keys to the updated data to be written to the DB
@@ -725,7 +725,7 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
 
     def _bulk_patch_loop[PatchDataFormat](
         self, *,
-        patch_options: BaseBulkPatchOptions[DataT, PatchDataFormat],
+        patch_options: BaseBulkPatchOptions[DataT],
         patch_status: BulkPatchStatus[DataT]
     ) -> list[DataT]:
         # Keep looping until either we have processed all of the keys in our keys_left list -- we
