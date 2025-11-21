@@ -35,7 +35,7 @@ from collections.abc import (
                                 MutableMapping
                             )
 import copy
-from dataclasses import dataclass
+from dataclasses import dataclass, InitVar
 from itertools import batched, islice
 import json
 import logging
@@ -139,7 +139,11 @@ class BaseBulkPatchStatus[DataT]:
 
 @dataclass(slots=True)
 class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
-    keys_left: list[str]
+    keys: InitVar[Iterable[[str]]
+    keys_left: tuple[str] = ()
+
+    def __post_init__(self, keys: Iterable[[str]) -> None:
+        self.keys_left = tuple(keys)
 
     def update_keys_left(self) -> None:
         if not self.keys_done:
@@ -147,7 +151,7 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
             return
 
         # Create a new keys_left list without the keys from keys_done
-        self.keys_left = [ k for k in self.keys_left if k not in self.keys_done ]
+        self.keys_left = tuple( k for k in self.keys_left if k not in self.keys_done )
 
         # Clear the keys_done set
         self.keys_done.clear()
@@ -161,7 +165,7 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
         return bool(self.keys_left)
 
     @classmethod
-    def new_bulk_patch(cls, keys_left: list[str], batch_size: int|None = None) -> Self:
+    def new_bulk_patch(cls, keys: Iterable[str], batch_size: int|None = None) -> Self:
         keys_done: set[str] = set()
         patched_data_map: dict[str, DataT] = {}
         _batch_size = DB_BATCH_SIZE if batch_size is None else batch_size
@@ -172,7 +176,7 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
         # present to avoid a method which endlessly keeps retrying.
         no_retries_after: float = time.time() + DB_BUSY_SECONDS
 
-        return cls(keys_left=keys_left, keys_done=keys_done, patched_data_map=patched_data_map,
+        return cls(keys=keys, keys_done=keys_done, patched_data_map=patched_data_map,
                    no_retries_after=no_retries_after, batch_size=batch_size)
 
     @property
@@ -784,9 +788,8 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
         patch_handler: PatchHandler[DataT, PatchDataFormat]
     ) -> list[DataT]:
         # keys_left starts being set to all of the keys in the patch data map
-        keys_left: list[str] = list(key_patch_data_map)
         patch_status: BulkPatchStatus[DataT] = BulkPatchStatus.new_bulk_patch(
-                                                keys_left,
+                                                keys=key_patch_data_map,
                                                 batch_size=len(keys_left)
                                                )
 
@@ -812,11 +815,9 @@ class DBWrapper(SpecificDatabase, Generic[DataT], ABC):
     ) -> list[DataT]:
         # keys_left starts being set to all of the keys in the database
         # (intersected with our list of specific keys, if set)
-        # We will remove keys from it as we process them (either by patching
-        # them or determining that they do not need to be patched).
-        keys_left: list[str] = list(self.iter_keys(specific_keys=specific_keys))
-
-        patch_status: BulkPatchStatus[DataT] = BulkPatchStatus.new_bulk_patch(keys_left)
+        patch_status: BulkPatchStatus[DataT] = BulkPatchStatus.new_bulk_patch(
+                                                keys=self.iter_keys(specific_keys=specific_keys)
+                                               )
 
         opts: BulkPatchOptions[DataT, PatchDataFormat] = BulkPatchOptions(
                                                           patch_data=patch_data,
