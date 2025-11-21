@@ -142,7 +142,7 @@ class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
     keys: InitVar[Iterable[[str]]
     keys_left: tuple[str] = ()
 
-    def __post_init__(self, keys: Iterable[[str]) -> None:
+    def __post_init__(self, keys: Iterable[str]) -> None:
         self.keys_left = tuple(keys)
 
     def update_keys_left(self) -> None:
