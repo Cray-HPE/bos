@@ -41,7 +41,6 @@ import json
 import logging
 import time
 from typing import (ClassVar,
-                    Final,
                     Generic,
                     Literal,
                     Protocol,
@@ -73,21 +72,21 @@ class PatchHandler[DataT, PatchDataFormat](Protocol):
     def __call__(self, data: DataT, patch_data: PatchDataFormat, /) -> None: ...
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class BulkDictPatchOptions[DataT, PatchDataFormat]:
-    key_patch_data_map: Final[Mapping[str, PatchDataFormat]]
-    patch_handler: Final[PatchHandler[DataT, PatchDataFormat]]
-    skip_nonexistent_keys: Final[bool]
-    data_filter: Final[None] = None
+    key_patch_data_map: Mapping[str, PatchDataFormat]
+    patch_handler: PatchHandler[DataT, PatchDataFormat]
+    skip_nonexistent_keys: bool
+    data_filter: None = None
 
     def apply_patch(self, key: str, data: DataT, /) -> None:
         self.patch_handler(data, self.key_patch_data_map[key])
 
-@dataclass(slots=True)
+@dataclass(slots=True, frozen=True)
 class BulkPatchOptions[DataT, PatchDataFormat]:
-    patch_data: Final[PatchDataFormat]
-    patch_handler: Final[PatchHandler[DataT, PatchDataFormat]]
-    data_filter: Final[EntryChecker[DataT]]
+    patch_data: PatchDataFormat
+    patch_handler: PatchHandler[DataT, PatchDataFormat]
+    data_filter: EntryChecker[DataT]
     skip_nonexistent_keys: Literal[True] = True
 
     def apply_patch(self, _: str, data: DataT, /) -> None:
@@ -99,11 +98,11 @@ class BulkPatchOptions[DataT, PatchDataFormat]:
 
 @dataclass(slots=True)
 class BulkPatchStatus[DataT]:
-    patched_data_map: Final[MutableMapping[str, DataT]]
-    keys_done: Final[set[str]]
+    patched_data_map: MutableMapping[str, DataT]
+    keys_done: set[str]
     keys_left: list[str]
-    no_retries_after: Final[float]
-    batch_size: Final[int] = DB_BATCH_SIZE
+    no_retries_after: float
+    batch_size: int = DB_BATCH_SIZE
 
     def patch_applied(self, key: str, data: DataT, /) -> None:
         self.patched_data_map[key] = data
