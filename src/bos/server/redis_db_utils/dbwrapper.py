@@ -112,25 +112,11 @@ class BulkPatchOptions[DataT, PatchDataFormat](BaseBulkPatchOptions[DataT]):
 
 
 @dataclass(slots=True, frozen=True)
-class BulkPatchStatus[DataT]:
+class BaseBulkPatchStatus[DataT]:
     patched_data_map: MutableMapping[str, DataT]
     keys_done: set[str]
     no_retries_after: float
     batch_size: int
-    keys: InitVar[Iterable[str]]
-    _keys_left: tuple[str] = () # "Private" mutable attribute.
-                                # Must be included here because of slots
-
-    def _update_keys_left(self, new_keys_left: tuple[str]) -> None:
-        # must use this roundabout method because this dataclass is frozen
-        object.__setattr__(self, '_keys_left', new_keys_left)
-
-    def __post_init__(self, keys: Iterable[str]) -> None:
-        self._update_keys_left(tuple(keys))
-
-    @property
-    def keys_left(self) -> tuple[str]:
-        return self._keys_left
 
     def patch_applied(self, key: str, data: DataT, /) -> None:
         self.patched_data_map[key] = data
@@ -150,6 +136,24 @@ class BulkPatchStatus[DataT]:
     @property
     def patched_data_list(self) -> list[DataT]:
         return [ self.patched_data_map[key] for key in sorted(self.patched_data_map) ]
+
+
+@dataclass(slots=True, frozen=True)
+class BulkPatchStatus[DataT](BaseBulkPatchStatus[DataT]):
+    keys: InitVar[Iterable[str]]
+    keys_left: tuple[str, ...] = () # This field is intended to be mutable within the class.
+                               # There is no clean way to do this in Python (having only some
+                               # dataclass fields as frozen), and mypy does not like it if we
+                               # have a non-frozen dataclass inherit from a frozen one.
+                               # Instead, we internally bypass the frozen-ness of this field
+                               # when needed
+
+    def _update_keys_left(self, new_keys_left: tuple[str, ...]) -> None:
+        # must use this roundabout method because this dataclass is frozen
+        object.__setattr__(self, 'keys_left', new_keys_left)
+
+    def __post_init__(self, keys: Iterable[str]) -> None:
+        self._update_keys_left(tuple(keys))
 
     def update_keys_left(self) -> None:
         if not self.keys_done:
