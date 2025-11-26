@@ -31,7 +31,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 import copy
 import logging
-from typing import Any
 
 from botocore.exceptions import ClientError
 
@@ -115,16 +114,16 @@ class BaseSession[TargetStateT: (ComponentDesiredState, ComponentStagedState)](A
         self.HSMState = hsm_state
         self._component_last_action = component_last_action
 
-    def _log_debug(self, message: str, *xargs: Any) -> None:
+    def _log_debug(self, message: str, *xargs: object) -> None:
         LOGGER.debug(f'Session {self.name}: {message}', *xargs)
 
-    def _log_error(self, message: str, *xargs: Any) -> None:
+    def _log_error(self, message: str, *xargs: object) -> None:
         LOGGER.error(f'Session {self.name}: {message}', *xargs)
 
-    def _log_info(self, message: str, *xargs: Any) -> None:
+    def _log_info(self, message: str, *xargs: object) -> None:
         LOGGER.info(f'Session {self.name}: {message}', *xargs)
 
-    def _log_warning(self, message: str, *xargs: Any) -> None:
+    def _log_warning(self, message: str, *xargs: object) -> None:
         LOGGER.warning(f'Session {self.name}: {message}', *xargs)
 
     @abstractmethod

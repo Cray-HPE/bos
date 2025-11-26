@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.49.2] - 2025-11-26
+
+### Changed
+- Replace few remaining uses of `Any` with `object`, to strengthen type checking.
+
+### Dependencies
+- CASMCMS-9599: Update Redis Python module from 7.0 to 7.1
+
 ## [2.49.1] - 2025-11-18
 ### Fixed
 - CASMCMS-9593

@@ -26,7 +26,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial, singledispatch
 import logging
-from typing import Any, Literal, cast
+from typing import Literal, cast
 
 import connexion
 from connexion.lifecycle import ConnexionResponse as CxResponse
@@ -348,7 +348,7 @@ def patch_v2_components(
 
 @singledispatch
 def _parse_v2_components_bulk_patch(
-    data: Any, /, *, skip_bad_ids: bool
+    data: object, /, *, skip_bad_ids: bool
 ) -> tuple[dict[str, ComponentRecord],
            Mapping[str, ComponentData] | Mapping[str, ComponentRecord]]:
     """
