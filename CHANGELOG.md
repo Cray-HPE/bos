@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.49.2] - 2025-11-26
+
 ### Changed
 - Replace few remaining uses of `Any` with `object`, to strengthen type checking.
 
