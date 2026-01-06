@@ -49,7 +49,7 @@ python-dateutil>=2.9,<3.0
 types-python-dateutil>=2.9,<3.0
 PyYAML>=6.0.2,<6.1
 types-PyYAML>=6.0.2,<6.1
-redis>=7.1,<7.2
+redis>=7.2.0
 referencing>=0.37,<0.38
 # types-requests 2.31.0.7 requires urllib3 >= 2
 # Other BOS dependencies constrain us to urllib3 < 2
@@ -71,7 +71,7 @@ s3transfer>=0.14,<0.15
 types-s3transfer>=0.14,<0.15
 setuptools>=80.9,<80.10
 six>=1.17,<1.18
-swagger-ui-bundle>=0.0.9,<0.1
+swagger-ui-bundle>=1.1.0
 tenacity>=9.1,<9.2
 urllib3>=1.26.20,<1.27
 types-urllib3>=1.26.25,<1.27
