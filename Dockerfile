@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2019-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2019-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -24,8 +24,8 @@
 # Dockerfile for Cray Boot Orchestration Service (BOS)
 
 # Upstream Build Args
-ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/openapitools/openapi-generator-cli:v7.17.0
-ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/stable/docker.io/library/alpine:3.22
+ARG OPENAPI_IMAGE=artifactory.algol60.net/csm-docker/unstable/docker.io/openapitools/openapi-generator-cli:v7.18.0
+ARG ALPINE_BASE_IMAGE=artifactory.algol60.net/csm-docker/unstable/docker.io/library/alpine:3.23
 
 # Generate Code
 FROM $OPENAPI_IMAGE AS codegen
