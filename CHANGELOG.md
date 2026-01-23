@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.10.34] - 2026-01-23
+
+### Changed
+- CASMCMS-9618: Updated API spec description of `component_actual_state_ttl` option and added warning.
+
 ## [2.10.33] - 2025-04-14
 
 ### Changed
