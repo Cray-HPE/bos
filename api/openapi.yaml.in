@@ -1012,7 +1012,8 @@ components:
           type: string
           description: |
             The maximum amount of time a Component's actual state is considered valid (in minutes, hours, days, or weeks).
-            0 disables cleanup behavior for newly booted nodes and instructs bos-state-reporter to report once instead of periodically.
+            WARNING: This option should NOT be set to a 0 value. Doing this will cause serious disruptions to BOS operations.
+            To avoid problems, never set this option to a value less than 1 hour.
           example: "6h"
           pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
           minLength: 1
