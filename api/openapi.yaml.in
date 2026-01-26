@@ -1665,7 +1665,10 @@ it=999 spire_join_token=${SPIRE_JOIN_TOKEN}"
           description: Allows components staged information to be cleared when the requested staging action has been started. Defaults to false.
         component_actual_state_ttl:
           type: string
-          description: The maximum amount of time a component's actual state is considered valid (in minutes, hours, days, or weeks). WARNING: This option should NOT be set to a 0 value. Doing this will cause serious disruptions to BOS operations. To avoid problems, never set this option to a value less than 1 hour.
+          description: |
+            The maximum amount of time a component's actual state is considered valid (in minutes, hours, days, or weeks).
+            WARNING: This option should NOT be set to a 0 value. Doing this will cause serious disruptions to BOS operations.
+            To avoid problems, never set this option to a value less than 1 hour.
         disable_components_on_completion:
           type: boolean
           description: |
