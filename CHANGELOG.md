@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- CASMCMS-9618: Updated API spec to disallow values of `component_actual_state_ttl` under 1 hour
+  Note that no code was added to handle the case where the option had previously been set to
+  such a value. In that case, BOS will continue to use the value (but will still not let the
+  option be updated to such a value).
+
 ## [2.49.3] - 2026-01-23
 
 ### Changed
