@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.30.17] - 2026-02-09
+
+### Fixed
+- CASMCMS-9623: When processing a session owned by a tenant, the `session-completion` operator now
+  only considers components that are owned by that tenant.
+
 ## [2.30.16] - 2026-01-23
 
 ### Changed
