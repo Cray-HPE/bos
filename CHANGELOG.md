@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Modified Options DB wrapper to prevent it from returning now-illegal values (which will cause the
   default value to be used instead).
 
+### Fixed
+- CASMCMS-9623: When processing a session owned by a tenant, the `session-completion` operator now
+  only considers components that are owned by that tenant.
+
 ## [2.49.3] - 2026-01-23
 
 ### Changed

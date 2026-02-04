@@ -2,7 +2,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2021-2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2021-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -30,6 +30,7 @@ BOS session completion operator
 import logging
 
 from bos.common.clients.bos import BOSClient
+from bos.common.tenant_utils import get_tenant_component_set
 from bos.common.types.components import ComponentRecord
 from bos.common.types.sessions import Session, SessionStatus, SessionUpdate
 from bos.common.utils import get_current_timestamp
@@ -56,23 +57,70 @@ class SessionCompletionOperator(BaseOperator):
 
     def _run(self) -> None:
         """ A single pass of complete sessions """
-        sessions = self._get_incomplete_sessions()
+        sessions = self.client.bos.sessions.get_sessions(status='running')
         for session in sessions:
-            components = self._get_incomplete_components(session["name"])
-            if not components:
+            if self._session_complete(session):
                 mark_session_complete(session_id=session["name"],
                                       tenant=session.get("tenant"),
                                       bos_client=self.client.bos)
 
-    def _get_incomplete_sessions(self) -> list[Session]:
-        return self.client.bos.sessions.get_sessions(status='running')
+    def _session_complete(self, session: Session) -> bool:
+        """
+        Determines if the session is complete, using the following
+        method:
 
-    def _get_incomplete_components(self, session_id: str) -> list[ComponentRecord]:
-        components = self.client.bos.components.get_components(
-            session=session_id, enabled=True)
-        components += self.client.bos.components.get_components(
-            staged_session=session_id)
-        return components
+        Finds every component that meets either of the following criteria:
+
+        * It is enabled and its session field is set to the name of this session
+        * Its staged_state.session field is set to the name of this session
+
+        CASMCMS-9623: If this session is on behalf of a tenant, filter out any components that
+        are not owned by the tenant (according to TAPMS).
+        If this session is not run on behalf of a tenant, then no component filtering
+        is done. See CASMCMS-9622 for issues that can arise from this.
+
+        Returns True if no components are found (after the filter is applied, if applicable).
+        Returns False otherwise.
+        """
+        session_id = session["name"]
+
+        # Query BOS for all components that are enabled and have the session name in their
+        # session field
+        components = self.client.bos.components.get_components(session=session_id, enabled=True)
+
+        # Query BOS for all components that have the session name in their staged_state.session
+        # field, and append this to our previous list
+        components += self.client.bos.components.get_components(staged_session=session_id)
+
+        # If the above did not find any components, then we are done, before even worrying about
+        # multi-tenancy. The session is complete.
+        if not components:
+            return True
+
+        tenant = session.get("tenant")
+        if not tenant:
+            # This means the session is not run on behalf of a tenant, so just check if our
+            # existing list is empty. If so, the session is complete.
+            return not bool(components)
+
+        # You and I know that the previous conditional ensures that if we reach this line,
+        # the tenant variable cannot be None AND cannot have a falsey value. But
+        # mypy is dubious on the first point, so we must reassure it.
+        assert tenant is not None
+
+        # The BOS API does not support including this filtering as part of the earlier get
+        # components request, so we do it here. We could get the tenant component list
+        # first and then pass that list as a filter for the get request, but that could
+        # potentially be a long list of IDs (possibly more than can be passed as a request
+        # parameter). We could add logic to split long lists up into multiple API
+        # requests, but at that point, the solution here is the cleaner option.
+
+        # Get the component IDs owned by the tenant
+        tenant_comp_ids: set[str] = get_tenant_component_set(tenant)
+
+        # We already know the components list is not empty. The only way we can return
+        # true is if no components in the list belongs to this tenant
+        return all(comp["id"] not in tenant_comp_ids for comp in components)
 
 
 # CASMCMS-9288: This function is not a method of the operator class, because it is also called
