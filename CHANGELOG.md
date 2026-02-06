@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.50.0] - 2026-02-06
+
 ### Changed
 - CASMCMS-9618: Updated API spec to disallow values of `component_actual_state_ttl` under 1 hour.
   Modified Options DB wrapper to prevent it from returning now-illegal values (which will cause the
