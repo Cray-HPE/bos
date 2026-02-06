@@ -1011,13 +1011,11 @@ components:
         component_actual_state_ttl:
           type: string
           description: |
-            The maximum amount of time a Component's actual state is considered valid (in minutes, hours, days, or weeks).
-            WARNING: This option should NOT be set to a 0 value. Doing this will cause serious disruptions to BOS operations.
-            To avoid problems, never set this option to a value less than 1 hour.
+            The maximum amount of time a Component's actual state is considered valid (in hours, days, or weeks).
           example: "6h"
-          pattern: '^(0|0[mMhHdDwW]|[1-9][0-9]*[mMhHdDwW])$'
-          minLength: 1
-          # This allows for over 10 years using the smallest units (minutes)
+          pattern: '^[1-9][0-9]*[hHdDwW]$'
+          minLength: 2
+          # This allows for over 60 years using the smallest units (hours)
           maxLength: 8
         default_retry_policy:
           type: integer

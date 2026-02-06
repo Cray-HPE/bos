@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.50.0] - 2026-02-06
+
+### Changed
+- CASMCMS-9618: Updated API spec to disallow values of `component_actual_state_ttl` under 1 hour.
+  Modified Options DB wrapper to prevent it from returning now-illegal values (which will cause the
+  default value to be used instead).
+
+### Fixed
+- CASMCMS-9623: When processing a session owned by a tenant, the `session-completion` operator now
+  only considers components that are owned by that tenant.
+
 ## [2.49.3] - 2026-01-23
 
 ### Changed
